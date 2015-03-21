@@ -26,11 +26,11 @@ class Node(Base):
 
     time = Column(Float, nullable=True)
 
-    discourse_id = Column(Integer, ForeignKey('discourse.id'), nullable = False)
-    type = relationship(Discourse)
+    discourse_id = Column(Integer, ForeignKey('discourse.discourse_id'), nullable = False)
+    discourse = relationship(Discourse)
 
 
-class AnnotationType(Base)
+class AnnotationType(Base):
     __tablename__ = 'annotationtype'
 
     type_id = Column(Integer, primary_key=True)
@@ -48,8 +48,6 @@ class Annotation(Base):
 class Edge(Base):
     __tablename__ = 'edge'
 
-    edge_id = Column(Integer, primary_key=True)
-
     source_id = Column(Integer,
                         ForeignKey('node.node_id'),
                         primary_key = True)
@@ -58,10 +56,10 @@ class Edge(Base):
                         ForeignKey('node.node_id'),
                         primary_key = True)
 
-    type_id = Column(Integer, ForeignKey('annotationtype.id'), primary_key = True)
+    type_id = Column(Integer, ForeignKey('annotationtype.type_id'), primary_key = True)
     type = relationship(AnnotationType)
 
-    annotation_id = Column(Integer, ForeignKey('annotation.id'))
+    annotation_id = Column(Integer, ForeignKey('annotation.annotation_id'))
     annotation = relationship(Annotation)
 
     source_node = relationship(Node,
