@@ -6,7 +6,17 @@ from sqlalchemy.orm import sessionmaker
 from .db import Base, Discourse, Node, AnnotationType, Annotation, Edge
 
 class Corpus(object):
-    """"""
+    """
+    Basic corpus object that has information about the SQL database
+    and serves as an abstraction layer between the SQL representations
+    and Python usage.
+
+    Parameters
+    ----------
+    engine_string : str
+        String specifying the url of the database to use, such as 'sqlite:///dev.db'
+
+    """
 
     def __init__(self, engine_string):
         self.engine_string = engine_string
@@ -22,6 +32,21 @@ class Corpus(object):
 
     def add_discourse(self, data):
         """
+        Add a discourse to the corpus.
+
+        Data should be a dictionary with keys for 'name', and for the
+        relevant annotation types.  The lowest level of annotation should
+        have timestamps, if applicable and the higher levels should have
+        a key for the lower level they're associated with, with values of
+        spans.
+
+        In general, this function should not be called, as helper functions
+        should exist to facilitate adding data to the corpus.
+
+        Parameters
+        ----------
+        data : dict
+            Data associated with the discourse
         """
         DBSession = sessionmaker(bind=self.engine)
         session = DBSession()
@@ -105,8 +130,5 @@ class Corpus(object):
                         target_node = nodes[end - 1])
             session.add(edge)
             session.flush()
-
-
-
 
         session.commit()
