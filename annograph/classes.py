@@ -23,6 +23,10 @@ class Corpus(object):
         self.engine = create_engine(self.engine_string)
 
     def initial_setup(self):
+        """
+        Clears the current database and sets up the various tables needed.
+        This function should only be called once.
+        """
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)
 
@@ -84,51 +88,51 @@ class Corpus(object):
 
             prev = node
             session.flush()
+        if 'words' in data['data']:
 
-        wt = AnnotationType(type_label = 'word')
-        session.add(wt)
-        session.flush()
+            wt = AnnotationType(type_label = 'word')
+            session.add(wt)
+            session.flush()
+            for w in data['data']['words']:
+                query = session.query(Annotation).filter_by(annotation_label=p['label'])
+                if query.count() == 0:
+                    annotation = Annotation(annotation_label = p['label'])
+                    session.add(annotation)
+                else:
+                    annotation = query.first()
+                begin, end = w['phones']
+                session.flush()
+                edge = Edge(annotation = annotation,
+                            type = wt,
+                            source_node = nodes[begin],
+                            target_node = nodes[end - 1])
+                session.add(edge)
+                session.flush()
 
-        for w in data['data']['words']:
-            query = session.query(Annotation).filter_by(annotation_label=p['label'])
-            if query.count() == 0:
-                annotation = Annotation(annotation_label = p['label'])
-                session.add(annotation)
-            else:
-                annotation = query.first()
-            begin, end = w['phones']
+        if 'lines' in data['data']:
+            lt = AnnotationType(type_label = 'line')
+            session.add(lt)
             session.flush()
-            edge = Edge(annotation = annotation,
-                        type = wt,
-                        source_node = nodes[begin],
-                        target_node = nodes[end - 1])
-            session.add(edge)
-            session.flush()
-
-        lt = AnnotationType(type_label = 'line')
-        session.add(lt)
-        session.flush()
-
-        for l in data['data']['lines']:
-            query = session.query(Annotation).filter_by(annotation_label=p['label'])
-            if query.count() == 0:
-                annotation = Annotation(annotation_label = p['label'])
-                session.add(annotation)
-            else:
-                annotation = query.first()
-            session.add(annotation)
-            first_ind, final_ind = l['words']
-            words = data['data']['words'][first_ind:final_ind]
-            first_word = words[0]
-            final_word = words[-1]
-            begin = first_word['phones'][0]
-            end = final_word['phones'][1]
-            session.flush()
-            edge = Edge(annotation = annotation,
-                        type = wt,
-                        source_node = nodes[begin],
-                        target_node = nodes[end - 1])
-            session.add(edge)
-            session.flush()
+                for l in data['data']['lines']:
+                    query = session.query(Annotation).filter_by(annotation_label=p['label'])
+                    if query.count() == 0:
+                        annotation = Annotation(annotation_label = p['label'])
+                        session.add(annotation)
+                    else:
+                        annotation = query.first()
+                    session.add(annotation)
+                    first_ind, final_ind = l['words']
+                    words = data['data']['words'][first_ind:final_ind]
+                    first_word = words[0]
+                    final_word = words[-1]
+                    begin = first_word['phones'][0]
+                    end = final_word['phones'][1]
+                    session.flush()
+                    edge = Edge(annotation = annotation,
+                                type = wt,
+                                source_node = nodes[begin],
+                                target_node = nodes[end - 1])
+                    session.add(edge)
+                    session.flush()
 
         session.commit()
