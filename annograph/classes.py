@@ -113,26 +113,26 @@ class Corpus(object):
             lt = AnnotationType(type_label = 'line')
             session.add(lt)
             session.flush()
-                for l in data['data']['lines']:
-                    query = session.query(Annotation).filter_by(annotation_label=p['label'])
-                    if query.count() == 0:
-                        annotation = Annotation(annotation_label = p['label'])
-                        session.add(annotation)
-                    else:
-                        annotation = query.first()
+            for l in data['data']['lines']:
+                query = session.query(Annotation).filter_by(annotation_label=p['label'])
+                if query.count() == 0:
+                    annotation = Annotation(annotation_label = p['label'])
                     session.add(annotation)
-                    first_ind, final_ind = l['words']
-                    words = data['data']['words'][first_ind:final_ind]
-                    first_word = words[0]
-                    final_word = words[-1]
-                    begin = first_word['phones'][0]
-                    end = final_word['phones'][1]
-                    session.flush()
-                    edge = Edge(annotation = annotation,
-                                type = wt,
-                                source_node = nodes[begin],
-                                target_node = nodes[end - 1])
-                    session.add(edge)
-                    session.flush()
+                else:
+                    annotation = query.first()
+                session.add(annotation)
+                first_ind, final_ind = l['words']
+                words = data['data']['words'][first_ind:final_ind]
+                first_word = words[0]
+                final_word = words[-1]
+                begin = first_word['phones'][0]
+                end = final_word['phones'][1]
+                session.flush()
+                edge = Edge(annotation = annotation,
+                            type = wt,
+                            source_node = nodes[begin],
+                            target_node = nodes[end - 1])
+                session.add(edge)
+                session.flush()
 
         session.commit()
