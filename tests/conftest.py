@@ -3,6 +3,8 @@ import os
 
 @pytest.fixture(scope='module')
 def test_dir():
+    if not os.path.exists('tests/data/generated'):
+        os.makedirs('tests/data/generated')
     return os.path.abspath('tests/data')
 
 @pytest.fixture(scope='module')
