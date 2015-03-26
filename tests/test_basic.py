@@ -26,10 +26,6 @@ def test_corpus_timed(test_dir, corpus_data_timed):
         pt = c._type(session, 'phone')
         assert('.'.join(map(str,w.subarc(pt))) == 'k.ae.t')
 
-
-
-
-
 def test_corpus_untimed(test_dir, corpus_data_untimed):
 
     c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_untimed.db'))
