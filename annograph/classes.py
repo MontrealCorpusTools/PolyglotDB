@@ -102,24 +102,25 @@ class Corpus(object):
             begin_node = Node(time = 0, discourse = new_discourse)
             session.add(begin_node)
             pts = list()
+            base_ind_to_node = dict()
             for b in base_levels:
+                base_ind_to_node[b] = dict()
                 pt = AnnotationType(type_label = b)
                 session.add(pt)
                 pts.append(pt)
             nodes.append(begin_node)
-            level_node_list = dict()
             for i, level in enumerate(process_order):
-                level_node_list[level] = list()
                 anno_type = AnnotationType(type_label = level)
                 session.add(anno_type)
                 session.flush()
                 for d in data['data'][level]:
-                    print(d)
                     annotation = get_or_create(session, Annotation, annotation_label = d['label'])
                     if i == 0:
                         begin_node = nodes[-1]
                         if len(base_levels) == 1:
                             begin, end = d[base_levels[0]]
+                            base_ind_to_node[base_levels[0]][begin] = begin_node
+
                             base = data['data'][base_levels[0]][begin:end]
                             for b in base:
                                 if 'end' in b:
@@ -133,17 +134,20 @@ class Corpus(object):
                                 session.add(node)
                                 nodes.append(node)
                                 session.flush()
-                                print(nodes[-2], node, pt.type_id)
                                 edge = Edge(annotation = phone_annotation, type = pt,
                                             source_node = nodes[-2], target_node = node)
                                 session.add(edge)
                                 session.flush()
-                                print(repr(edge))
+                            base_ind_to_node[base_levels[0]][end] = nodes[-1]
                         elif len(base_levels) == 2:
-                            begin, end = d[base_levels[0]]
-                            first_base = data['data'][base_levels[0]][begin:end]
-                            begin, end = d[base_levels[1]]
-                            second_base = data['data'][base_levels[1]][begin:end]
+                            first_begin, first_end = d[base_levels[0]]
+                            second_begin, second_end = d[base_levels[1]]
+
+                            first_base = data['data'][base_levels[0]][first_begin:first_end]
+                            second_base = data['data'][base_levels[1]][second_begin:second_end]
+
+                            base_ind_to_node[base_levels[0]][first_begin] = begin_node
+                            base_ind_to_node[base_levels[1]][second_begin] = begin_node
                             first_aligned, second_aligned = align_phones(first_base,
                                                                         second_base)
                             for j, f in enumerate(first_aligned):
@@ -185,14 +189,16 @@ class Corpus(object):
                                             target_node = node)
                                     session.add(edge)
                                 session.flush()
+                            base_ind_to_node[base_levels[0]][first_end] = nodes[-1]
+                            base_ind_to_node[base_levels[1]][second_end] = nodes[-1]
                         end_node = nodes[-1]
                     else:
-                        lower = process_order[i-1]
-                        begin, end = d[lower]
-                        lower_begin = level_node_list[lower][begin]
-                        begin_node = lower_begin[0]
-                        lower_end = level_node_list[lower][end-1]
-                        end_node = lower_end[1]
+                        for b in base_levels:
+                            if b in d:
+
+                                begin, end = d[b]
+                                begin_node = base_ind_to_node[b][begin]
+                                end_node = base_ind_to_node[b][end]
 
                     edge = Edge(annotation = annotation,
                             type = anno_type,
@@ -200,7 +206,6 @@ class Corpus(object):
                             target_node = end_node)
                     session.add(edge)
                     session.flush()
-                    level_node_list[level].append((begin_node, end_node))
 
 
 

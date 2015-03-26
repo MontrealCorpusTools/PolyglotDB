@@ -9,7 +9,7 @@ def test_corpus_timed(corpus_data_timed):
 def test_corpus_untimed(corpus_data_untimed):
     base_levels, has_name, has_labels, process_order = inspect_discourse(corpus_data_untimed[0])
     assert(base_levels == ['phone'])
-    assert(process_order == ['word','line'])
+    assert(process_order == ['morpheme','word','line'])
 
 def test_corpus_srur(corpus_data_ur_sr):
     base_levels, has_name, has_labels, process_order = inspect_discourse(corpus_data_ur_sr[0])

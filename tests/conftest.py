@@ -77,32 +77,29 @@ def corpus_data_timed():
                             ],
                     'word':[
                             {'label': 'cats',
-                            'phone':(0,4)
-                            },
+                            'phone':(0,4)},
                             {'label': 'are',
                             'phone':(4,6)},
                             {'label': 'cute',
                             'phone':(6,9)},
                             {'label': 'dogs',
-                            'phone': (9,13)
-                                },
+                            'phone': (9,13)},
                             {'label': 'are',
                             'phone': (13,15)},
                             {'label': 'too',
                             'phone': (15,17)},
-                            {'label':'i',
-                            'phone': (17,18)
-                                },
+                            {'label': 'i',
+                            'phone': (17,18)},
                             {'label':'guess',
                             'phone':(18,21)},
                             ],
                     'line': [
                             {'label': '1',
-                            'word':(0,3)},
+                            'phone':(0,9)},
                             {'label': '2',
-                            'word':(3,6)},
+                            'phone':(9,13)},
                             {'label': '3',
-                            'word': (6,8)}
+                            'phone': (13,21)}
                             ]
                     }
                 }]
@@ -177,11 +174,11 @@ def corpus_data_untimed():
                             ],
                     'line': [
                             {'label': '1',
-                            'word':(0,3)},
+                            'phone':(0,9)},
                             {'label': '2',
-                            'word':(3,6)},
+                            'phone':(9,13)},
                             {'label': '3',
-                            'word': (6,8)}
+                            'phone': (13,21)}
                             ]
                     }
                 }]
@@ -303,11 +300,11 @@ def corpus_data_ur_sr():
                             ],
                     'line': [
                             {'label': '1',
-                            'word':(0,3)},
+                            'sr':(0,7)},
                             {'label': '2',
-                            'word':(3,6)},
+                            'sr':(7,16)},
                             {'label': '3',
-                            'word': (6,8)}
+                            'sr': (16,20)}
                             ]
                     }
                 }]

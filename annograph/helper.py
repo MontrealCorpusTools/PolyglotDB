@@ -36,6 +36,9 @@ def inspect_discourse(discourse):
     base_levels = []
     has_label = {}
     hierarchy = {}
+    print(annotation_types)
+    top_down = {}
+    non_base = list()
     for k in annotation_types:
         v = discourse['data'][k]
         example = v[0]
@@ -47,21 +50,12 @@ def inspect_discourse(discourse):
         if not found:
             base_levels.append(k)
         else:
-            hierarchy[found[0]] = k
-    key = base_levels[0]
-    process_order = list()
-    while True:
-        if key not in hierarchy:
-            break
-        key = hierarchy[key]
-        process_order.append(key)
-
+            non_base.append(k)
+    process_order = sorted(non_base, key = lambda x: len(discourse['data'][x]), reverse=True)
     return base_levels, has_name, has_label, process_order
 
 def align_phones(seqj, seqi, gap=-1, matrix=None, match=1, mismatch=-1):
     """
-    >>> global_align('COELANCANTH', 'PELICAN')
-    ('COELANCANTH', '-PEL-ICAN--')
     """
     UP, LEFT, DIAG, NONE = range(4)
     max_j = len(seqj)
