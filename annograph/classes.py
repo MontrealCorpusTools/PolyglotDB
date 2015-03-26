@@ -164,9 +164,9 @@ class Corpus(object):
                                                                     Annotation,
                                                                     annotation_label = f['label'])
                                     for k in range(j-1, -1, -1):
-                                        if first_aligned != '-':
+                                        if first_aligned[k] != '-':
                                             break
-                                        first_begin_node[k] -= 1
+                                        first_begin_node -= 1
                                     edge = Edge(annotation = first_annotation, type = pts[0],
                                             source_node = nodes[first_begin_node],
                                             target_node = node)

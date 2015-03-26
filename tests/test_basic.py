@@ -30,6 +30,17 @@ def test_corpus_untimed(test_dir, corpus_data_untimed):
     c.add_discourses(corpus_data_untimed)
 
 def test_corpus_srur(test_dir, corpus_data_ur_sr):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_untimed.db'))
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_ur_sr.db'))
     c.initial_setup()
     c.add_discourses(corpus_data_ur_sr)
+
+    w = c.find('cats')
+    assert(w.annotation.annotation_label == 'cats')
+
+    with session_scope() as session:
+        session.add(w)
+        pt = c._type(session, 'sr')
+        assert('.'.join(map(str,w.subarc(pt))) == 'k.ae.s')
+
+        pt = c._type(session, 'ur')
+        assert('.'.join(map(str,w.subarc(pt))) == 'k.ae.t.s')
