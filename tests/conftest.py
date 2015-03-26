@@ -250,7 +250,7 @@ def corpus_data_ur_sr():
                             {'label':'s',
                                     'begin': 3.5,
                                     'end': 3.6},
-                            ]
+                            ],
                     'words':[
                             {'label': 'cats',
                             'ur':(0,4),
