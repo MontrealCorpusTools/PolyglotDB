@@ -1,4 +1,5 @@
 import os
+import pytest
 
 from annograph.classes import Corpus
 
@@ -34,3 +35,10 @@ def test_corpus_untimed(test_dir, corpus_data_untimed):
     c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_untimed.db'))
     c.initial_setup()
     c.add_discourses(corpus_data_untimed)
+
+@pytest.mark.xfail
+def test_corpus_srur(test_dir, corpus_data_ur_sr):
+
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_untimed.db'))
+    c.initial_setup()
+    c.add_discourses(corpus_data_ur_sr)
