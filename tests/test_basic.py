@@ -29,6 +29,14 @@ def test_corpus_untimed(test_dir, corpus_data_untimed):
     c.initial_setup()
     c.add_discourses(corpus_data_untimed)
 
+    w = c.find('cats')
+    assert(w.annotation.annotation_label == 'cats')
+
+    with session_scope() as session:
+        session.add(w)
+        pt = c._type(session, 'phone')
+        assert('.'.join(map(str,w.subarc(pt))) == 'k.ae.t.s')
+
 def test_corpus_srur(test_dir, corpus_data_ur_sr):
     c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_ur_sr.db'))
     c.initial_setup()
@@ -44,3 +52,14 @@ def test_corpus_srur(test_dir, corpus_data_ur_sr):
 
         pt = c._type(session, 'ur')
         assert('.'.join(map(str,w.subarc(pt))) == 'k.ae.t.s')
+
+    w = c.find('dogs')
+    assert(w.annotation.annotation_label == 'dogs')
+
+    with session_scope() as session:
+        session.add(w)
+        pt = c._type(session, 'sr')
+        assert('.'.join(map(str,w.subarc(pt))) == 'd.aa.g.ah.z')
+
+        pt = c._type(session, 'ur')
+        assert('.'.join(map(str,w.subarc(pt))) == 'd.aa.g.z')
