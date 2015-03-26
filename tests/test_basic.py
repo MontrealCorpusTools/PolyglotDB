@@ -2,16 +2,35 @@ import os
 
 from annograph.classes import Corpus
 
-TEST_DIR = 'tests/data'
+from annograph.config import session_scope
 
-def test_corpus_timed(corpus_data_timed):
+def test_corpus_timed(test_dir, corpus_data_timed):
 
-    c = Corpus('sqlite:///'+ os.path.join(TEST_DIR,'generated','test_timed.db'))
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_timed.db'))
     c.initial_setup()
     c.add_discourses(corpus_data_timed)
 
-def test_corpus_untimed(corpus_data_untimed):
+    with session_scope() as session:
+        t = c._wordtype(session)
+        pt = c._type(session, 'phone')
 
-    c = Corpus('sqlite:///'+ os.path.join(TEST_DIR,'generated','test_untimed.db'))
+        assert(t.type_label == 'word')
+
+    w = c.find('cats')
+
+    assert(w.annotation.annotation_label == 'cats')
+
+    with session_scope() as session:
+        session.add(w)
+        pt = c._type(session, 'phone')
+        assert('.'.join(map(str,w.subarc(pt))) == 'k.ae.t')
+
+
+
+
+
+def test_corpus_untimed(test_dir, corpus_data_untimed):
+
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_untimed.db'))
     c.initial_setup()
     c.add_discourses(corpus_data_untimed)

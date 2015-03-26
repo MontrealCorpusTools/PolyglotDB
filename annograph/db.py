@@ -1,14 +1,10 @@
 
-import os
-import pickle
 
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey,Boolean,Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
 
@@ -32,6 +28,13 @@ class Discourse(Base):
 
     sound_file_path = Column(String(250), nullable=True)
 
+    def __repr__(self):
+        return '<Discourse: id {} with label {}>'.format(self.discourse_id,
+                                                        self.discourse_label)
+
+    def __str__(self):
+        return repr(self)
+
 class Node(Base):
     """
     Node for edges to connect to.  These can be anchored in time, or
@@ -54,6 +57,12 @@ class Node(Base):
     discourse_id = Column(Integer, ForeignKey('discourse.discourse_id'), nullable = False)
     discourse = relationship(Discourse)
 
+    def __repr__(self):
+        return '<Node: id {} of discourse {}>'.format(self.node_id, self.discourse)
+
+    def __str__(self):
+        return repr(self)
+
 
 class AnnotationType(Base):
     """
@@ -70,6 +79,13 @@ class AnnotationType(Base):
 
     type_label = Column(String(250), nullable=False)
 
+    def __repr__(self):
+        return '<AnnotationType: id {}, label \'{}\'>'.format(self.type_id,
+                                                            self.type_label)
+
+    def __str__(self):
+        return self.type_label
+
 class Annotation(Base):
     """
     Annotation for edges.
@@ -85,6 +101,12 @@ class Annotation(Base):
 
     annotation_label = Column(String(250), nullable=False)
 
+    def __repr__(self):
+        return '<Annotation: id {}, label \'{}\'>'.format(self.annotation_id,
+                                                            self.annotation_label)
+
+    def __str__(self):
+        return self.annotation_label
 
 class Edge(Base):
     """
@@ -127,9 +149,32 @@ class Edge(Base):
                                 primaryjoin=target_id==Node.node_id,
                                 backref='target_edges')
 
-    def subarcs(self, type = None):
+    #parent_id = Column(Integer, nullable=True)
+    #parent = relationship("Edge", backref = 'subarcs')
+
+    def __repr__(self):
+        return '<Edge: {} from Node {} to Node {} of Type {}>'.format(str(self.annotation),
+                                                                self.source_id,
+                                                                self.target_id,
+                                                                str(self.type))
+
+    def __str__(self):
+        return str(self.annotation)
+
+    def subarc(self, type):
         s = self.source_node
         t = self.target_node
-        for e in s.target_edges:
-            if e == self:
-                continue
+        subarc = list()
+        edges = s.source_edges
+        while True:
+            for e in edges:
+                print(e, e.type, type)
+
+                if e.type == type:
+                    break
+            subarc.append(e)
+            edges = e.target_node.source_edges
+            if e.target_node == t:
+                break
+        return subarc
+
