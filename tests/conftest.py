@@ -11,7 +11,7 @@ def test_dir():
 def corpus_data_timed():
     discourses = [{'name': 'test',
                     'data': {
-                    'phones':[{'label': 'k',
+                    'phone':[{'label': 'k',
                                     'begin': 0.0,
                                     'end': 0.1},
                             {'label': 'ae',
@@ -75,34 +75,34 @@ def corpus_data_timed():
                                     'begin': 3.5,
                                     'end': 3.6},
                             ],
-                    'words':[
+                    'word':[
                             {'label': 'cats',
-                            'phones':(0,4)
+                            'phone':(0,4)
                             },
                             {'label': 'are',
-                            'phones':(4,6)},
+                            'phone':(4,6)},
                             {'label': 'cute',
-                            'phones':(6,9)},
+                            'phone':(6,9)},
                             {'label': 'dogs',
-                            'phones': (9,13)
+                            'phone': (9,13)
                                 },
                             {'label': 'are',
-                            'phones': (13,15)},
+                            'phone': (13,15)},
                             {'label': 'too',
-                            'phones': (15,17)},
+                            'phone': (15,17)},
                             {'label':'i',
-                            'phones': (17,18)
+                            'phone': (17,18)
                                 },
                             {'label':'guess',
-                            'phones':(18,21)},
+                            'phone':(18,21)},
                             ],
-                    'lines': [
+                    'line': [
                             {'label': '1',
-                            'words':(0,3)},
+                            'word':(0,3)},
                             {'label': '2',
-                            'words':(3,6)},
+                            'word':(3,6)},
                             {'label': '3',
-                            'words': (6,8)}
+                            'word': (6,8)}
                             ]
                     }
                 }]
@@ -113,7 +113,7 @@ def corpus_data_timed():
 def corpus_data_untimed():
     discourses = [{'name': 'test',
                     'data': {
-                    'phones':[{'label': 'k'},
+                    'phone':[{'label': 'k'},
                             {'label': 'ae'},
                             {'label': 't'},
                             {'label': 's'},
@@ -135,34 +135,34 @@ def corpus_data_untimed():
                             {'label':'eh'},
                             {'label':'s'},
                             ],
-                    'words':[
+                    'word':[
                             {'label': 'cats',
-                            'phones':(0,4)
+                            'phone':(0,4)
                             },
                             {'label': 'are',
-                            'phones':(4,6)},
+                            'phone':(4,6)},
                             {'label': 'cute',
-                            'phones':(6,9)},
+                            'phone':(6,9)},
                             {'label': 'dogs',
-                            'phones': (9,13)
+                            'phone': (9,13)
                                 },
                             {'label': 'are',
-                            'phones': (13,15)},
+                            'phone': (13,15)},
                             {'label': 'too',
-                            'phones': (15,17)},
+                            'phone': (15,17)},
                             {'label': 'i',
-                            'phones': (17,18)
+                            'phone': (17,18)
                                 },
                             {'label':'guess',
-                            'phones':(18,21)},
+                            'phone':(18,21)},
                             ],
-                    'lines': [
+                    'line': [
                             {'label': '1',
-                            'words':(0,3)},
+                            'word':(0,3)},
                             {'label': '2',
-                            'words':(3,6)},
+                            'word':(3,6)},
                             {'label': '3',
-                            'words': (6,8)}
+                            'word': (6,8)}
                             ]
                     }
                 }]
@@ -253,7 +253,7 @@ def corpus_data_ur_sr():
                                     'begin': 3.5,
                                     'end': 3.6},
                             ],
-                    'words':[
+                    'word':[
                             {'label': 'cats',
                             'ur':(0,4),
                             'sr': (0,3)},
@@ -279,13 +279,13 @@ def corpus_data_ur_sr():
                             'ur':(18,21),
                             'sr': (16,19)},
                             ],
-                    'lines': [
+                    'line': [
                             {'label': '1',
-                            'words':(0,3)},
+                            'word':(0,3)},
                             {'label': '2',
-                            'words':(3,6)},
+                            'word':(3,6)},
                             {'label': '3',
-                            'words': (6,8)}
+                            'word': (6,8)}
                             ]
                     }
                 }]

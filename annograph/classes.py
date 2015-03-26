@@ -7,6 +7,8 @@ from .db import Base, Discourse, Node, AnnotationType, Annotation, Edge
 
 from .config import Session, session_scope
 
+from .helper import inspect_discourse, align_phones, get_or_create
+
 class Corpus(object):
     """
     Basic corpus object that has information about the SQL database
@@ -57,7 +59,7 @@ class Corpus(object):
             t = self._wordtype(session)
             if t is None:
                 return
-
+            print('querying')
             q = session.query(Edge).options(joinedload('*'))
             q = q.join(Edge.type)
             q = q.join(Edge.annotation)
@@ -90,6 +92,7 @@ class Corpus(object):
         data : dict
             Data associated with the discourse
         """
+        base_levels, has_name, has_label, process_order = inspect_discourse(data)
         with session_scope() as session:
             new_discourse = Discourse(discourse_label=data['name'])
 
@@ -98,77 +101,107 @@ class Corpus(object):
             nodes = list()
             begin_node = Node(time = 0, discourse = new_discourse)
             session.add(begin_node)
+            pts = list()
+            for b in base_levels:
+                pt = AnnotationType(type_label = b)
+                session.add(pt)
+                pts.append(pt)
             nodes.append(begin_node)
-            pt = AnnotationType(type_label = 'phone')
-            session.add(pt)
-            session.flush()
-            prev = begin_node
-            for p in data['data']['phones']:
-                if 'end' in p:
-                    time = p['end']
-                else:
-                    time = None
-                node = Node(time = time, discourse = new_discourse)
-                session.add(node)
-                query = session.query(Annotation).filter_by(annotation_label=p['label'])
-                if query.count() == 0:
-                    annotation = Annotation(annotation_label = p['label'])
-                    session.add(annotation)
-                else:
-                    annotation = query.first()
+            level_node_list = dict()
+            for i, level in enumerate(process_order):
+                level_node_list[level] = list()
+                anno_type = AnnotationType(type_label = level)
+                session.add(anno_type)
                 session.flush()
-                nodes.append(node)
-                edge = Edge(annotation = annotation, type = pt,
-                            source_node = prev, target_node = node)
-                session.add(edge)
-
-                prev = node
-                session.flush()
-            if 'words' in data['data']:
-
-                wt = AnnotationType(type_label = 'word')
-                session.add(wt)
-                session.flush()
-                for w in data['data']['words']:
-                    query = session.query(Annotation).filter_by(annotation_label=w['label'])
-                    if query.count() == 0:
-                        annotation = Annotation(annotation_label = w['label'])
-                        session.add(annotation)
+                for d in data['data'][level]:
+                    print(d)
+                    annotation = get_or_create(session, Annotation, annotation_label = d['label'])
+                    if i == 0:
+                        begin_node = nodes[-1]
+                        if len(base_levels) == 1:
+                            begin, end = d[base_levels[0]]
+                            base = data['data'][base_levels[0]][begin:end]
+                            for b in base:
+                                if 'end' in b:
+                                    time = b['end']
+                                else:
+                                    time = None
+                                phone_annotation = get_or_create(session,
+                                                                Annotation,
+                                                                annotation_label = b['label'])
+                                node = Node(time = time, discourse = new_discourse)
+                                session.add(node)
+                                nodes.append(node)
+                                session.flush()
+                                print(nodes[-2], node, pt.type_id)
+                                edge = Edge(annotation = phone_annotation, type = pt,
+                                            source_node = nodes[-2], target_node = node)
+                                session.add(edge)
+                                session.flush()
+                                print(repr(edge))
+                        elif len(base_levels) == 2:
+                            begin, end = d[base_levels[0]]
+                            first_base = data['data'][base_levels[0]][begin:end]
+                            begin, end = d[base_levels[1]]
+                            second_base = data['data'][base_levels[1]][begin:end]
+                            first_aligned, second_aligned = align_phones(first_base,
+                                                                        second_base)
+                            for j, f in enumerate(first_aligned):
+                                s = second_aligned[j]
+                                if f != '-' and 'end' in f:
+                                    time = f['end']
+                                elif s != '-' and 'end' in s:
+                                    time = s['end']
+                                else:
+                                    time = None
+                                node = Node(time = time, discourse = new_discourse)
+                                session.add(node)
+                                nodes.append(node)
+                                session.flush()
+                                first_begin_node = -2
+                                if f != '-':
+                                    first_annotation = get_or_create(session,
+                                                                    Annotation,
+                                                                    annotation_label = f['label'])
+                                    for k in range(j-1, -1, -1):
+                                        if first_aligned != '-':
+                                            break
+                                        first_begin_node[k] -= 1
+                                    edge = Edge(annotation = first_annotation, type = pts[0],
+                                            source_node = nodes[first_begin_node],
+                                            target_node = node)
+                                    session.add(edge)
+                                second_begin_node = -2
+                                if s != '-':
+                                    second_annotation = get_or_create(session,
+                                                                Annotation,
+                                                                annotation_label = s['label'])
+                                    for k in range(j-1, -1, -1):
+                                        if second_aligned[k] != '-':
+                                            break
+                                        second_begin_node -= 1
+                                    edge = Edge(annotation = second_annotation, type = pts[1],
+                                            source_node = nodes[second_begin_node],
+                                            target_node = node)
+                                    session.add(edge)
+                                session.flush()
+                        end_node = nodes[-1]
                     else:
-                        annotation = query.first()
-                    begin, end = w['phones']
-                    session.flush()
+                        lower = process_order[i-1]
+                        begin, end = d[lower]
+                        lower_begin = level_node_list[lower][begin]
+                        begin_node = lower_begin[0]
+                        lower_end = level_node_list[lower][end-1]
+                        end_node = lower_end[1]
+
                     edge = Edge(annotation = annotation,
-                                type = wt,
-                                source_node = nodes[begin],
-                                target_node = nodes[end - 1])
+                            type = anno_type,
+                            source_node = begin_node,
+                            target_node = end_node)
                     session.add(edge)
                     session.flush()
+                    level_node_list[level].append((begin_node, end_node))
 
-            if 'lines' in data['data']:
-                lt = AnnotationType(type_label = 'line')
-                session.add(lt)
-                session.flush()
-                for l in data['data']['lines']:
-                    query = session.query(Annotation).filter_by(annotation_label=l['label'])
-                    if query.count() == 0:
-                        annotation = Annotation(annotation_label = l['label'])
-                        session.add(annotation)
-                    else:
-                        annotation = query.first()
-                    session.add(annotation)
-                    first_ind, final_ind = l['words']
-                    words = data['data']['words'][first_ind:final_ind]
-                    first_word = words[0]
-                    final_word = words[-1]
-                    begin = first_word['phones'][0]
-                    end = final_word['phones'][1]
-                    session.flush()
-                    edge = Edge(annotation = annotation,
-                                type = lt,
-                                source_node = nodes[begin],
-                                target_node = nodes[end - 1])
-                    session.add(edge)
-                    session.flush()
+
 
             session.commit()

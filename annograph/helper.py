@@ -1,5 +1,15 @@
 import numpy as np
 
+def get_or_create(session, model, **kwargs):
+    instance = session.query(model).filter_by(**kwargs).first()
+    if instance:
+        return instance
+    else:
+        instance = model(**kwargs)
+        session.add(instance)
+        session.commit()
+        return instance
+
 def inspect_discourse(discourse):
     """
     Inspect an initial discourse data structure to extract relevant information
@@ -48,7 +58,7 @@ def inspect_discourse(discourse):
 
     return base_levels, has_name, has_label, process_order
 
-def global_align(seqj, seqi, gap=-1, matrix=None, match=1, mismatch=-1):
+def align_phones(seqj, seqi, gap=-1, matrix=None, match=1, mismatch=-1):
     """
     >>> global_align('COELANCANTH', 'PELICAN')
     ('COELANCANTH', '-PEL-ICAN--')
@@ -79,9 +89,9 @@ def global_align(seqj, seqi, gap=-1, matrix=None, match=1, mismatch=-1):
             cj = seqj[j - 1]
 
             if matrix is None:
-                diag_score = score[i - 1, j - 1] + (cj == ci and match or mismatch)
+                diag_score = score[i - 1, j - 1] + (cj['label'] == ci['label'] and match or mismatch)
             else:
-                diag_score = score[i - 1, j - 1] + matrix[cj][ci]
+                diag_score = score[i - 1, j - 1] + matrix[cj['label']][ci['label']]
 
             up_score   = score[i - 1, j] + gap
             left_score = score[i, j - 1] + gap
