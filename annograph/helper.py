@@ -28,7 +28,6 @@ def inspect_discourse(discourse):
     hierarchy = {}
     for k in annotation_types:
         v = discourse['data'][k]
-        print(v)
         example = v[0]
         has_label[k] = 'label' in example.keys()
         found = list()
@@ -38,8 +37,16 @@ def inspect_discourse(discourse):
         if not found:
             base_levels.append(k)
         else:
-            hierarchy[k] = found
-    return base_levels, has_name, has_label, hierarchy
+            hierarchy[found[0]] = k
+    key = base_levels[0]
+    process_order = list()
+    while True:
+        if key not in hierarchy:
+            break
+        key = hierarchy[key]
+        process_order.append(key)
+
+    return base_levels, has_name, has_label, process_order
 
 def global_align(seqj, seqi, gap=-1, matrix=None, match=1, mismatch=-1):
     """
@@ -96,24 +103,24 @@ def global_align(seqj, seqi, gap=-1, matrix=None, match=1, mismatch=-1):
                     pointer[i, j] = LEFT
 
 
-    align_j = ""
-    align_i = ""
+    align_j = list()
+    align_i = list()
     while True:
         p = pointer[i, j]
         if p == NONE: break
         s = score[i, j]
         if p == DIAG:
-            align_j += seqj[j - 1]
-            align_i += seqi[i - 1]
+            align_j.append(seqj[j - 1])
+            align_i.append(seqi[i - 1])
             i -= 1
             j -= 1
         elif p == LEFT:
-            align_j += seqj[j - 1]
-            align_i += "-"
+            align_j.append(seqj[j - 1])
+            align_i.append("-")
             j -= 1
         elif p == UP:
-            align_j += "-"
-            align_i += seqi[i - 1]
+            align_j.append("-")
+            align_i.append(seqi[i - 1])
             i -= 1
         else:
             raise Exception('wtf!')
