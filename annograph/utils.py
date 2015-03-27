@@ -9,8 +9,10 @@ def plot_graph(corpus, show=True, output = None):
     for v in edge_labels.values():
         for k2,v2 in v.items():
             G.add_edge(*k2,label=v2)
-    pos=nx.graphviz_layout(G,prog='dot')
-
+    try:
+        pos = nx.graphviz_layout(G,prog='dot')
+    except Exception:
+        pos = nx.spring_layout(G)
     nx.draw_networkx_nodes(G,pos)
     nx.draw_networkx_edges(G,pos)
 
