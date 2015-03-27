@@ -67,6 +67,17 @@ class Corpus(object):
             q = q.filter(Annotation.annotation_label.ilike(orthography))
             return q.first()
 
+    def _find(self, session, key, type):
+        t = self._type(session, type)
+        if t is None:
+            return
+        q = session.query(Edge).options(joinedload('*'))
+        q = q.join(Edge.type)
+        q = q.join(Edge.annotation)
+        q = q.filter(AnnotationType.type_id == t.type_id)
+        q = q.filter(Annotation.annotation_label.ilike(key))
+        return q.all()
+
     def get_wordlist(self):
         pass
 
@@ -197,7 +208,21 @@ class Corpus(object):
                             if b in d:
 
                                 begin, end = d[b]
+                                if begin not in base_ind_to_node[b]:
+                                    n = nodes[0]
+                                    for i in range(begin+1):
+                                        for e in n.source_edges:
+                                            if str(e.type) == b:
+                                                n = e.target_node
+                                    base_ind_to_node[b][begin] = n
                                 begin_node = base_ind_to_node[b][begin]
+                                if end not in base_ind_to_node[b]:
+                                    n = nodes[0]
+                                    for i in range(end):
+                                        for e in n.source_edges:
+                                            if str(e.type) == b:
+                                                n = e.target_node
+                                    base_ind_to_node[b][end] = n
                                 end_node = base_ind_to_node[b][end]
 
                     edge = Edge(annotation = annotation,

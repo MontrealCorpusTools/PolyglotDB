@@ -167,6 +167,7 @@ class Edge(Base):
         subarc = list()
         edges = s.source_edges
         while True:
+            print(edges)
             for e in edges:
                 print(e, e.type, type)
 

@@ -329,3 +329,67 @@ def lexicon_data():
                     {'spelling':'tusa','transcription':['t','u','s','ɑ'],'frequency':32.0},
                     {'spelling':'ʃi','transcription':['ʃ','i'],'frequency':2.0}]
     return corpus_data
+
+
+@pytest.fixture(scope='module')
+def corpus_data_stress_morpheme():
+    discourses = [{'name': 'test',
+                    'data': {
+                    'phone':[{'label': 'b'},
+                            {'label': 'aa'},
+                            {'label': 'k'},
+                            {'label': 's'},
+                            {'label': 'ah'},
+                            {'label': 'z'},
+                            {'label': 'aa'},
+                            {'label': 'r'},
+                            {'label': 'f'},
+                            {'label': 'ao'},
+                            {'label': 'r'},
+                            {'label': 'p'},
+                            {'label': 'ae'},
+                            {'label': 'k'},
+                            {'label': 'ih'},
+                            {'label': 'ng'},
+                            ],
+                    'syllable':[
+                            {'label': '(b.aa.k)',
+                            'phone':(0,3)},
+                            {'label': '(s.ah.z)',
+                            'phone':(3,6)},
+                            {'label': '(aa.r)',
+                            'phone':(6,8)},
+                            {'label': '(f.ao.r)',
+                            'phone':(8,11)},
+                            {'label': '(p.ae)',
+                            'phone': (11,13)},
+                            {'label': '(k.ih.ng)',
+                            'phone': (13,16)},
+                            ],
+                    'morpheme':[
+                            {'label': 'box',
+                            'phone':(0,4)},
+                            {'label': 'PL',
+                            'phone':(4,6)},
+                            {'label': 'are',
+                            'phone':(6,8)},
+                            {'label': 'for',
+                            'phone':(8,11)},
+                            {'label': 'pack',
+                            'phone': (11,14)},
+                            {'label': 'PROG',
+                            'phone': (14,16)},
+                            ],
+                    'word':[
+                            {'label': 'boxes',
+                            'phone':(0,6)},
+                            {'label': 'are',
+                            'phone':(6,8)},
+                            {'label': 'for',
+                            'phone':(8,11)},
+                            {'label': 'packing',
+                            'phone': (11,16)},
+                            ]
+                    }
+                }]
+    return discourses
