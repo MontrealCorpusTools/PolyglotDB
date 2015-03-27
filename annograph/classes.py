@@ -81,6 +81,18 @@ class Corpus(object):
     def get_wordlist(self):
         pass
 
+    def get_edge_labels(self):
+        labels = dict()
+        with session_scope() as session:
+            q = session.query(Edge)
+            q = q.join(Edge.type)
+            q = q.join(Edge.annotation)
+            for e in q.all():
+                if str(e.type) not in labels:
+                    labels[str(e.type)] = dict()
+                labels[str(e.type)][e.source_id,e.target_id] = '{}/{}'.format(str(e.type),str(e.annotation))
+        return labels
+
     def add_discourses(self, discourses):
         for data in discourses:
             self.add_discourse(data)

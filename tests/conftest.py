@@ -1,6 +1,12 @@
 import pytest
 import os
 
+@pytest.fixture(scope='session')
+def show_plots():
+    if os.environ.get('TRAVIS'):
+        return False
+    return True
+
 @pytest.fixture(scope='module')
 def test_dir():
     if not os.path.exists('tests/data/generated'):
