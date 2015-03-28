@@ -3,6 +3,7 @@ import os
 
 @pytest.fixture(scope='session')
 def show_plots():
+    return False
     if os.environ.get('TRAVIS'):
         return False
     return True

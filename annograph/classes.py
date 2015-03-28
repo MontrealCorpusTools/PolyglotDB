@@ -1,9 +1,10 @@
 
 import sqlalchemy, sqlalchemy.orm
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import joinedload
 
-from .db import Base, Discourse, Node, AnnotationType, Annotation, Edge
+from .db import (Base, Discourse, Node, AnnotationType, Annotation, Edge,
+                            AnnotationFrequencies, AnnotationAttributes)
 
 from .config import Session, session_scope
 
@@ -28,6 +29,7 @@ class Corpus(object):
         Session.configure(bind=self.engine)
 
         self.column_mapping = kwargs
+        self.lexicon_only = False
 
     def initial_setup(self):
         """
@@ -59,7 +61,6 @@ class Corpus(object):
             t = self._wordtype(session)
             if t is None:
                 return
-            print('querying')
             q = session.query(Edge).options(joinedload('*'))
             q = q.join(Edge.type)
             q = q.join(Edge.annotation)
@@ -79,7 +80,33 @@ class Corpus(object):
         return q.all()
 
     def get_wordlist(self):
-        pass
+        with session_scope() as session:
+            wt = self._wordtype(session)
+            q = session.query(AnnotationFrequencies).options(joinedload('*'))
+            q = q.filter(AnnotationFrequencies.type_id == wt.type_id)
+            results = q.all()
+        return results
+
+    def _generate_frequency_table(self):
+        if self.lexicon_only:
+            return
+
+        with session_scope() as session:
+            q = session.query(AnnotationFrequencies)
+            q.delete()
+            session.flush()
+
+            q = session.query(Edge, func.count(Edge.annotation_id))
+            q = q.join(Edge.type)
+            q = q.join(Edge.annotation)
+            q = q.group_by(Edge.annotation_id, Edge.type_id)
+            for row in q.all():
+                e, count = row
+                r = AnnotationFrequencies(annotation = e.annotation,
+                                            type = e.type,
+                                            frequency = count)
+                session.add(r)
+            session.flush()
 
     def get_edge_labels(self):
         labels = dict()

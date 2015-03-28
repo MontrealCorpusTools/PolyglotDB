@@ -1,6 +1,6 @@
 
 
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey,Boolean,Float
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey,Boolean,Float, PickleType
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -167,9 +167,7 @@ class Edge(Base):
         subarc = list()
         edges = s.source_edges
         while True:
-            print(edges)
             for e in edges:
-                print(e, e.type, type)
 
                 if e.type == type:
                     break
@@ -179,3 +177,57 @@ class Edge(Base):
                 break
         return subarc
 
+
+class AnnotationFrequencies(Base):
+    """
+    Cache table for storing frequency information for annotations and
+    how they're used in the corpus.
+
+    Attributes
+    ----------
+    annotation : Annotation
+        Column for annotations
+
+    type : AnnotationType
+        column for the types of annotations
+
+    frequency : float
+        Frequency of the annotation-type combination
+    """
+    __tablename__ = 'annotationfrequencies'
+
+
+    annotation_id = Column(Integer, ForeignKey('annotation.annotation_id'), primary_key = True)
+    annotation = relationship(Annotation)
+
+    type_id = Column(Integer, ForeignKey('annotationtype.type_id'), primary_key = True)
+    type = relationship(AnnotationType)
+
+    frequency = Column(Float, nullable=False)
+
+class AnnotationAttributes(Base):
+    """
+    Cache table for storing frequency information for annotations and
+    how they're used in the corpus.
+
+    Attributes
+    ----------
+    annotation : Annotation
+        Column for annotations
+
+    type : AnnotationType
+        column for the types of annotations
+
+    sound_file_path : str or None
+        Fully specified path to a sound file, if applicable
+    """
+    __tablename__ = 'annotationattributes'
+
+
+    annotation_id = Column(Integer, ForeignKey('annotation.annotation_id'), primary_key = True)
+    annotation = relationship(Annotation)
+
+    type_id = Column(Integer, ForeignKey('annotationtype.type_id'), primary_key = True)
+    type = relationship(AnnotationType)
+
+    attributes = Column(PickleType, nullable=True)
