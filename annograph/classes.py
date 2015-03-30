@@ -1,14 +1,16 @@
 
 import sqlalchemy, sqlalchemy.orm
 from sqlalchemy import create_engine, func
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy.sql.expression import and_
 
-from .db import (Base, Discourse, Node, AnnotationType, Annotation, Edge,
-                            AnnotationFrequencies, AnnotationAttributes)
+from .db import (Base, Discourse, Node, Edge, generate_edge_class, AnnotationType, Annotation,
+                            AnnotationFrequencies, AnnotationAttributes, AnnotationSubarcs)
 
 from .config import Session, session_scope
 
 from .helper import inspect_discourse, align_phones, get_or_create
+
 
 class Corpus(object):
     """
@@ -79,11 +81,70 @@ class Corpus(object):
         q = q.filter(Annotation.annotation_label.ilike(key))
         return q.all()
 
+    def _get_transitive_closures(self, higher_type, lower_type):
+        with session_scope() as session:
+            subarcs = session.query(
+                                Edge.type_id.label('type_id'),
+                                Edge.source_id.label('source_id'),
+                                Edge.target_id.label('target_id'),
+                                Edge.annotation_id.label('annotation_id')).\
+                                join(Edge.annotation).\
+                                join(Edge.type).\
+                                filter(AnnotationType.type_label == lower_type).\
+                                add_columns(Annotation.annotation_label.concat('.').label(lower_type)).\
+                                cte("subarcs", recursive = True)
+            subarc_alias = aliased(subarcs, name="s")
+            edge_alias = aliased(Edge, name='e')
+            subarcs = subarcs.union_all(
+                      session.query(
+                                edge_alias.type_id.label('type_id'),
+                                subarc_alias.c.source_id.label('source_id'),
+                                edge_alias.target_id.label('target_id'),
+                                edge_alias.target_id.label('annotation_id')).\
+                      join(subarc_alias, edge_alias.source_id == subarc_alias.c.target_id).\
+                      join(edge_alias.annotation).\
+                      join(edge_alias.type).\
+                      filter(AnnotationType.type_label == lower_type).\
+                      add_columns(getattr(subarc_alias.c, lower_type).\
+                                    concat(Annotation.annotation_label).concat('.').\
+                                    label(lower_type)
+                                    )
+                    )
+            q = session.query(Edge.annotation_id, Edge.type_id.label('higher_type_id'),).\
+                            join(Edge.type).\
+                            join(subarcs, and_(subarcs.c.target_id == Edge.target_id, \
+                                            subarcs.c.source_id == Edge.source_id)).\
+                            add_columns(subarcs.c.type_id.label('lower_type_id'),getattr(subarcs.c, lower_type))
+            q = q.filter(AnnotationType.type_label == higher_type).distinct()
+            for row in q.all():
+                #e, count = row
+                r = AnnotationSubarcs(annotation_id = row[0],
+                                            higher_type_id = row[1],
+                                            lower_type_id = row[2],
+                                            subarc = row[3])
+                session.add(r)
+            session.flush()
+
+
     def get_wordlist(self):
         with session_scope() as session:
             wt = self._wordtype(session)
-            q = session.query(AnnotationFrequencies).options(joinedload('*'))
-            q = q.filter(AnnotationFrequencies.type_id == wt.type_id)
+            pt = self._type(session, 'phone')
+            print(Edge.phone)
+            #print(Edge.phone.expression)
+            #subarcs = self._get_transitive_closures(session, 'word', 'phone')
+            q = session.query(Annotation.annotation_label,
+                    AnnotationFrequencies.frequency).options(joinedload('*'))
+            q = q.join(Edge, Edge.annotation_id == Annotation.annotation_id)
+            q = q.join(AnnotationFrequencies,
+                        Annotation.annotation_id == AnnotationFrequencies.annotation_id)
+            q = q.join(AnnotationSubarcs, and_(AnnotationSubarcs.annotation_id == Annotation.annotation_id,
+                                            AnnotationSubarcs.higher_types == wt))
+            q = q.filter(Edge.type_id == wt.type_id)
+            q = q.filter(AnnotationSubarcs.lower_types == pt)
+            q = q.add_columns(AnnotationSubarcs.subarc)
+            q = q.distinct()
+
             results = q.all()
         return results
 
@@ -155,14 +216,15 @@ class Corpus(object):
             base_ind_to_node = dict()
             for b in base_levels:
                 base_ind_to_node[b] = dict()
-                pt = AnnotationType(type_label = b)
-                session.add(pt)
+                pt = get_or_create(session,
+                                    AnnotationType,
+                                    type_label = b)
                 pts.append(pt)
             nodes.append(begin_node)
             for i, level in enumerate(process_order):
-                anno_type = AnnotationType(type_label = level)
-                session.add(anno_type)
-                session.flush()
+                anno_type = get_or_create(session,
+                                    AnnotationType,
+                                    type_label = level)
                 for d in data['data'][level]:
                     annotation = get_or_create(session, Annotation, annotation_label = d['label'])
                     if i == 0:
@@ -264,13 +326,11 @@ class Corpus(object):
                                     base_ind_to_node[b][end] = n
                                 end_node = base_ind_to_node[b][end]
 
-                    edge = Edge(annotation = annotation,
+                    edge = generate_edge_class(base_levels)(annotation = annotation,
                             type = anno_type,
                             source_node = begin_node,
                             target_node = end_node)
                     session.add(edge)
                     session.flush()
-
-
 
             session.commit()

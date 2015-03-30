@@ -1,12 +1,35 @@
+from functools import partial
 
-
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey,Boolean,Float, PickleType
+from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
+                        Boolean,Float, PickleType, types, select )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, aliased
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.sql.expression import cast, literal_column, column, and_, text
 
 Base = declarative_base()
+
+
+class AnnotationPath(types.TypeDecorator):
+    '''
+    Returns CHAR values with spaces stripped
+    '''
+
+    impl = types.String
+
+    def process_bind_param(self, value, dialect):
+        "No-op"
+        return value
+
+    def process_result_value(self, value, dialect):
+        "Strip the trailing spaces on resulting values"
+        return value[:-1]
+
+    def copy(self):
+        "Make a copy of this type"
+        return AnnotationPath(self.impl.length)
 
 class Discourse(Base):
     """
@@ -152,6 +175,20 @@ class Edge(Base):
     #parent_id = Column(Integer, nullable=True)
     #parent = relationship("Edge", backref = 'subarcs')
 
+    def __init__(self, source_node, target_node, type, annotation):
+        self.source_node = source_node
+        self.target_node = target_node
+        self.type = type
+        self.annotation = annotation
+
+    @hybrid_property
+    def phone(self):
+        return self.subarc('phone')
+
+    @phone.expression
+    def phone(cls):
+        return cls.subarc_subquery(cls, 'phone')
+
     def __repr__(self):
         return '<Edge: {} from Node {} to Node {} of Type {}>'.format(str(self.annotation),
                                                                 self.source_id,
@@ -161,6 +198,67 @@ class Edge(Base):
     def __str__(self):
         return str(self.annotation)
 
+    def subarc_subquery(cls, type):
+        subarcs = select([column("edge.type_id").label('type_id'),
+                        column("edge.source_id").label('source_id'),
+                        column("edge.target_id").label('target_id'),
+                        literal_column("annotation.annotation_label || '.'").label(type)]).\
+                        where(
+                            and_(column("edge.source_id") == cls.source_id,
+                            column("annotationtype.type_label") == type)
+                            ).\
+                        select_from(text("edge JOIN annotationtype ON \
+                                    edge.type_id = annotationtype.type_id \
+                                    JOIN annotation ON edge.annotation_id = annotation.annotation_id")).\
+                        cte("subarcs", recursive = True)
+
+        subarcs = subarcs.union_all(
+                    select(
+                            [literal_column("e.type_id").label("type_id"),
+                            literal_column("s.source_id").label("source_id"),
+                            literal_column("e.target_id").label("target_id"),
+                            literal_column("s.{0} || annotation.annotation_label || '.'".format(type)).label(type)]
+                    ).\
+                    select_from(text("edge AS e JOIN subarcs AS s ON e.source_id = s.target_id \
+                                    JOIN annotation ON e.annotation_id = annotation.annotation_id"
+                                    ))
+
+                )
+        statement = select([column(type, AnnotationPath)]).\
+                        where(column("subarcs.target_id") == cls.target_id).\
+                        select_from(subarcs)
+        return statement
+
+    def subarc_sql(self, session, type):
+        subarcs = session.query(
+                            Edge.type_id.label('type_id'),
+                            Edge.source_id.label('source_id'),
+                            Edge.target_id.label('target_id')).\
+                            join(Edge.annotation).\
+                            filter(Edge.source_id == self.source_id).\
+                            filter(Edge.type_id == type.type_id).\
+                            add_columns(Annotation.annotation_label.concat('.').label(type.type_label)).\
+                            cte("subarcs", recursive = True)
+        subarc_alias = aliased(subarcs, name="s")
+        edge_alias = aliased(Edge, name='e')
+        subarcs = subarcs.union_all(
+                  session.query(
+                            edge_alias.type_id.label('type_id'),
+                            subarc_alias.c.source_id.label('source_id'),
+                            edge_alias.target_id.label('target_id')).\
+                  join(subarc_alias, edge_alias.source_id == subarc_alias.c.target_id).\
+                  join(edge_alias.annotation).\
+                  #join(edge_alias.type).\
+                  #filter(edge_alias.type == type).\
+                  add_columns(getattr(subarc_alias.c,type.type_label).\
+                                concat(Annotation.annotation_label).concat('.').\
+                                label(type.type_label)
+                                )
+                )
+        q = session.query(cast(getattr(subarcs.c,type.type_label), AnnotationPath)).filter(subarcs.c.target_id == self.target_id)
+
+        return q
+
     def subarc(self, type):
         s = self.source_node
         t = self.target_node
@@ -169,13 +267,22 @@ class Edge(Base):
         while True:
             for e in edges:
 
-                if e.type == type:
+                if str(e.type) == type:
                     break
             subarc.append(e)
             edges = e.target_node.source_edges
             if e.target_node == t:
                 break
         return subarc
+
+def generate_edge_class(subarcs, edge_class = Edge):
+    #for s in subarcs:
+        #func = partial(edge_class.subarc, type = s)
+        #exp = partial(edge_class.subarc_subquery, type = s)
+        #p = hybrid_property(lambda self: func(self))
+        #p.expression = lambda cls: exp(cls)
+        #setattr(edge_class, s, p)
+    return edge_class
 
 
 class AnnotationFrequencies(Base):
@@ -231,3 +338,38 @@ class AnnotationAttributes(Base):
     type = relationship(AnnotationType)
 
     attributes = Column(PickleType, nullable=True)
+
+class AnnotationSubarcs(Base):
+    """
+    Cache table for storing subarcs of annotations
+
+    Attributes
+    ----------
+    annotation : Annotation
+        Column for annotations
+
+    type : AnnotationType
+        column for the types of annotations
+
+    sound_file_path : str or None
+        Fully specified path to a sound file, if applicable
+    """
+    __tablename__ = 'annotationsubarcs'
+
+
+    annotation_id = Column(Integer, ForeignKey('annotation.annotation_id'), primary_key = True)
+    annotation = relationship(Annotation)
+
+    higher_type_id = Column(Integer, ForeignKey('annotationtype.type_id'), primary_key = True)
+
+    lower_type_id = Column(Integer, ForeignKey('annotationtype.type_id'), primary_key = True)
+
+    higher_types = relationship(AnnotationType,
+                                primaryjoin=higher_type_id==AnnotationType.type_id,
+                                backref='higher_types')
+
+    lower_types = relationship(AnnotationType,
+                                primaryjoin=lower_type_id==AnnotationType.type_id,
+                                backref='lower_types')
+
+    subarc = Column(String(250), nullable = False)
