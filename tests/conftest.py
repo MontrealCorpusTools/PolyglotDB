@@ -1,6 +1,8 @@
 import pytest
 import os
 
+from annograph.classes import Corpus
+
 @pytest.fixture(scope='session')
 def show_plots():
     return False
@@ -111,7 +113,6 @@ def corpus_data_timed():
                     }
                 }]
     return discourses
-
 
 @pytest.fixture(scope='module')
 def corpus_data_untimed():
@@ -400,3 +401,32 @@ def corpus_data_stress_morpheme():
                     }
                 }]
     return discourses
+
+
+@pytest.fixture(scope = 'module')
+def timed_corpus(test_dir, corpus_data_timed):
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_timed.db'))
+    c.initial_setup()
+    c.add_discourses(corpus_data_timed)
+    return c
+
+@pytest.fixture(scope = 'module')
+def untimed_corpus(test_dir, corpus_data_untimed):
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_untimed.db'))
+    c.initial_setup()
+    c.add_discourses(corpus_data_untimed)
+    return c
+
+@pytest.fixture(scope = 'module')
+def syllable_morpheme_corpus(test_dir, corpus_data_stress_morpheme):
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_syllable_morpheme.db'))
+    c.initial_setup()
+    c.add_discourses(corpus_data_stress_morpheme)
+    return c
+
+@pytest.fixture(scope = 'module')
+def srur_corpus(test_dir, corpus_data_ur_sr):
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_ur_sr.db'))
+    c.initial_setup()
+    c.add_discourses(corpus_data_ur_sr)
+    return c
