@@ -1,5 +1,163 @@
 import numpy as np
 
+class AnnotationType(object):
+    def __init__(self, name, subtype, supertype, anchor = False,
+                    token = False, base = False,
+                    delimited = False, speaker = None):
+        self._list = list()
+        self.name = name
+        self.subtype = subtype
+        self.supertype = supertype
+        self.token = token
+        self.base = base
+        self.delimited = delimited
+        self.anchor = anchor
+        self.speaker = speaker
+        if supertype is None:
+            self.root = True
+        else:
+            self.root = False
+        if self.speaker is not None:
+            self.output_name = re.sub('{}\W*'.format(self.speaker),'',self.name)
+        else:
+            self.output_name = self.name
+
+    def __getitem__(self, key):
+        return self._list[key]
+
+    def add(self, annotations):
+        self._list.extend(annotations)
+
+    def __iter__(self):
+        for x in self._list:
+            yield x
+
+    def __len__(self):
+        return len(self._list)
+
+    @property
+    def delimiter(self):
+        return self.attribute.delimiter
+
+    @property
+    def is_word_anchor(self):
+        return not self.token and self.anchor
+
+    @property
+    def is_token_base(self):
+        return self.token and self.base
+
+    @property
+    def is_type_base(self):
+        return not self.token and self.base
+
+class DiscourseData(object):
+    def __init__(self, name, levels):
+        self.name = name
+        self.data = {x.name: x for x in levels}
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __contains__(self, item):
+        return item in self.data
+
+    def keys(self):
+        return self.data.keys()
+
+    def values(self):
+        return self.data.values()
+
+    def items(self):
+        return self.data.items()
+
+    def collapse_speakers(self):
+        newdata = dict()
+        shifts = {self.data[x].output_name: 0 for x in self.base_levels}
+        #Sort keys by speaker, then non-base levels, then base levels
+
+        keys = list()
+        speakers = sorted(set(x.speaker for x in self.data.values() if x.speaker is not None))
+        for s in speakers:
+            base = list()
+            for k,v in self.data.items():
+                if v.speaker != s:
+                    continue
+                if v.base:
+                    base.append(k)
+                else:
+                    keys.append(k)
+            keys.extend(base)
+        for k in keys:
+            v = self.data[k]
+            name = v.output_name
+            if name not in newdata:
+                subtype = v.subtype
+                supertype = v.supertype
+                if subtype is not None:
+                    subtype = self.data[subtype].output_name
+                if supertype is not None:
+                    supertype = self.data[supertype].output_name
+                newdata[v.output_name] = AnnotationType(v.output_name, subtype, supertype,
+                    anchor = v.anchor,token = v.token, base = v.base,
+                    delimited = v.delimited)
+            for ann in v:
+                newann = dict()
+                for k2,v2 in ann.items():
+                    try:
+                        newk2 = self.data[k2].output_name
+                        newv2 = (v2[0]+shifts[newk2],v2[1]+shifts[newk2])
+
+                    except KeyError:
+                        newk2 = k2
+                        newv2 = v2
+                    newann[newk2] = newv2
+
+                newdata[v.output_name].add([newann])
+            if v.base:
+                shifts[v.output_name] += len(v)
+        self.data = newdata
+
+    @property
+    def process_order(self):
+        order = self.word_levels
+        while len(order) < len(self.data.keys()) - len(self.base_levels):
+            for k,v in self.data.items():
+                if k in order:
+                    continue
+                if v.base:
+                    continue
+                if v.root:
+                    order.append(k)
+                    continue
+                if v.supertype in order:
+                    order.append(k)
+        return order
+
+
+    @property
+    def word_levels(self):
+        levels = list()
+        for k in self.data.keys():
+            if self.data[k].is_word_anchor:
+                levels.append(k)
+        return levels
+
+    @property
+    def base_levels(self):
+        levels = list()
+        for k in self.data.keys():
+            if self.data[k].base:
+                levels.append(k)
+        return levels
+
+    def add_annotations(self,**kwargs):
+        for k,v in kwargs.items():
+            self.data[k].add(v)
+
+    def level_length(self, key):
+        return len(self.data[key])
+
 def get_or_create(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     if instance:
@@ -9,50 +167,6 @@ def get_or_create(session, model, **kwargs):
         session.add(instance)
         session.flush()
         return instance
-
-def inspect_discourse(discourse):
-    """
-    Inspect an initial discourse data structure to extract relevant information
-
-    Parameters
-    ----------
-    discourse : dict
-        Initial discourse data structure
-
-    Returns
-    -------
-    list
-        List of base levels to form nodes the annotation graph
-    bool
-        Whether the discourse has a 'name' key
-    dict
-        Whether each annotation type has a 'label' key associated with them
-    """
-    has_name = 'name' in discourse.keys()
-
-    keys = discourse['data'].keys()
-    annotation_types = [x for x in keys]
-
-    base_levels = []
-    has_label = {}
-    hierarchy = {}
-    print(annotation_types)
-    top_down = {}
-    non_base = list()
-    for k in annotation_types:
-        v = discourse['data'][k]
-        example = v[0]
-        has_label[k] = 'label' in example.keys()
-        found = list()
-        for a in annotation_types:
-            if a in example.keys():
-                found.append(a)
-        if not found:
-            base_levels.append(k)
-        else:
-            non_base.append(k)
-    process_order = sorted(non_base, key = lambda x: len(discourse['data'][x]), reverse=True)
-    return base_levels, has_name, has_label, process_order
 
 def align_phones(seqj, seqi, gap=-1, matrix=None, match=1, mismatch=-1):
     """

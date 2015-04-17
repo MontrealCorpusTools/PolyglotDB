@@ -1,27 +1,5 @@
 
-from annograph.helper import inspect_discourse, align_phones
-
-def test_corpus_timed(corpus_data_timed):
-    base_levels, has_name, has_labels, process_order = inspect_discourse(corpus_data_timed[0])
-    assert(base_levels == ['phone'])
-    assert(process_order == ['word','line'])
-
-def test_corpus_untimed(corpus_data_untimed):
-    base_levels, has_name, has_labels, process_order = inspect_discourse(corpus_data_untimed[0])
-    assert(base_levels == ['phone'])
-    assert(process_order == ['morpheme','word','line'])
-
-def test_corpus_stress_morpheme(corpus_data_stress_morpheme):
-    base_levels, has_name, has_labels, process_order = inspect_discourse(corpus_data_stress_morpheme[0])
-    assert(base_levels == ['phone'])
-    assert(process_order == ['syllable','morpheme','word'] or
-            process_order == ['morpheme','syllable','word'])
-
-
-def test_corpus_srur(corpus_data_ur_sr):
-    base_levels, has_name, has_labels, process_order = inspect_discourse(corpus_data_ur_sr[0])
-    assert(set(base_levels) == set(['ur','sr']))
-    assert(process_order == ['word','line'])
+from annograph.helper import align_phones
 
 def test_align():
     cats = [{'label':'k'}, {'label':'ae'},{'label':'t'},{'label':'s'}]

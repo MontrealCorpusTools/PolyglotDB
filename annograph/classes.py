@@ -9,7 +9,7 @@ from .db import (Base, Discourse, Node, Edge, generate_edge_class, AnnotationTyp
 
 from .config import Session, session_scope
 
-from .helper import inspect_discourse, align_phones, get_or_create
+from .helper import align_phones, get_or_create
 
 
 class Corpus(object):
@@ -130,7 +130,6 @@ class Corpus(object):
         with session_scope() as session:
             wt = self._wordtype(session)
             pt = self._type(session, 'phone')
-            print(Edge.phone)
             #print(Edge.phone.expression)
             #subarcs = self._get_transitive_closures(session, 'word', 'phone')
             q = session.query(Annotation.annotation_label,
@@ -189,23 +188,16 @@ class Corpus(object):
         """
         Add a discourse to the corpus.
 
-        Data should be a dictionary with keys for 'name', and for the
-        relevant annotation types.  The lowest level of annotation should
-        have timestamps, if applicable and the higher levels should have
-        a key for the lower level they're associated with, with values of
-        spans.
-
         In general, this function should not be called, as helper functions
         should exist to facilitate adding data to the corpus.
 
         Parameters
         ----------
-        data : dict
+        data : DiscourseData
             Data associated with the discourse
         """
-        base_levels, has_name, has_label, process_order = inspect_discourse(data)
         with session_scope() as session:
-            new_discourse = Discourse(discourse_label=data['name'])
+            new_discourse = Discourse(discourse_label=data.name)
 
             session.add(new_discourse)
             session.flush()
@@ -214,6 +206,7 @@ class Corpus(object):
             session.add(begin_node)
             pts = list()
             base_ind_to_node = dict()
+            base_levels = data.base_levels
             for b in base_levels:
                 base_ind_to_node[b] = dict()
                 pt = get_or_create(session,
@@ -221,88 +214,75 @@ class Corpus(object):
                                     type_label = b)
                 pts.append(pt)
             nodes.append(begin_node)
-            for i, level in enumerate(process_order):
+            for i, level in enumerate(data.process_order):
                 anno_type = get_or_create(session,
                                     AnnotationType,
                                     type_label = level)
-                for d in data['data'][level]:
+                for d in data[level]:
                     annotation = get_or_create(session, Annotation, annotation_label = d['label'])
-                    if i == 0:
+
+                    print(i, level)
+                    if i == 0: #Anchor level, should have all base levels in it
                         begin_node = nodes[-1]
-                        if len(base_levels) == 1:
-                            begin, end = d[base_levels[0]]
-                            base_ind_to_node[base_levels[0]][begin] = begin_node
 
-                            base = data['data'][base_levels[0]][begin:end]
-                            for b in base:
-                                if 'end' in b:
-                                    time = b['end']
-                                else:
-                                    time = None
-                                phone_annotation = get_or_create(session,
+                        to_align = list()
+                        endpoints = list()
+                        print(d)
+                        for b in base_levels:
+                            begin, end = d[b]
+                            endpoints.append(end)
+                            base = data[b][begin:end]
+                            to_align.append(base)
+
+                        if len(to_align) > 1:
+                            aligned = list(align_phones(*to_align))
+                        else:
+                            aligned = to_align
+                        first_aligned = aligned.pop(0)
+                        for j, first in enumerate(first_aligned):
+                            time = None
+                            if first != '-' and 'end' in first:
+                                time = first['end']
+                            else:
+                                for second in aligned:
+                                    s = second[j]
+                                    if s != '-' and 'end' in s:
+                                        time = s['end']
+                            node = Node(time = time, discourse = new_discourse)
+                            session.add(node)
+                            nodes.append(node)
+                            session.flush()
+                            first_begin_node = -2
+                            second_begin_nodes = [-2 for k in aligned]
+                            if first != '-':
+                                first_annotation = get_or_create(session,
                                                                 Annotation,
-                                                                annotation_label = b['label'])
-                                node = Node(time = time, discourse = new_discourse)
-                                session.add(node)
-                                nodes.append(node)
-                                session.flush()
-                                edge = Edge(annotation = phone_annotation, type = pt,
-                                            source_node = nodes[-2], target_node = node)
+                                                                annotation_label = first['label'])
+                                for k in range(j-1, -1, -1):
+                                    if first_aligned[k] != '-':
+                                        break
+                                    first_begin_node -= 1
+                                edge = Edge(annotation = first_annotation, type = pts[0],
+                                        source_node = nodes[first_begin_node],
+                                        target_node = node)
                                 session.add(edge)
-                                session.flush()
-                            base_ind_to_node[base_levels[0]][end] = nodes[-1]
-                        elif len(base_levels) == 2:
-                            first_begin, first_end = d[base_levels[0]]
-                            second_begin, second_end = d[base_levels[1]]
-
-                            first_base = data['data'][base_levels[0]][first_begin:first_end]
-                            second_base = data['data'][base_levels[1]][second_begin:second_end]
-
-                            base_ind_to_node[base_levels[0]][first_begin] = begin_node
-                            base_ind_to_node[base_levels[1]][second_begin] = begin_node
-                            first_aligned, second_aligned = align_phones(first_base,
-                                                                        second_base)
-                            for j, f in enumerate(first_aligned):
-                                s = second_aligned[j]
-                                if f != '-' and 'end' in f:
-                                    time = f['end']
-                                elif s != '-' and 'end' in s:
-                                    time = s['end']
-                                else:
-                                    time = None
-                                node = Node(time = time, discourse = new_discourse)
-                                session.add(node)
-                                nodes.append(node)
-                                session.flush()
-                                first_begin_node = -2
-                                if f != '-':
-                                    first_annotation = get_or_create(session,
-                                                                    Annotation,
-                                                                    annotation_label = f['label'])
-                                    for k in range(j-1, -1, -1):
-                                        if first_aligned[k] != '-':
-                                            break
-                                        first_begin_node -= 1
-                                    edge = Edge(annotation = first_annotation, type = pts[0],
-                                            source_node = nodes[first_begin_node],
-                                            target_node = node)
-                                    session.add(edge)
-                                second_begin_node = -2
+                            for k, second in enumerate(aligned):
+                                s = second[j]
                                 if s != '-':
                                     second_annotation = get_or_create(session,
                                                                 Annotation,
                                                                 annotation_label = s['label'])
-                                    for k in range(j-1, -1, -1):
-                                        if second_aligned[k] != '-':
+                                    for m in range(j-1, -1, -1):
+                                        if second[m] != '-':
                                             break
-                                        second_begin_node -= 1
-                                    edge = Edge(annotation = second_annotation, type = pts[1],
-                                            source_node = nodes[second_begin_node],
+                                        second_begin_nodes[k] -= 1
+                                    edge = Edge(annotation = second_annotation, type = pts[k+1],
+                                            source_node = nodes[second_begin_nodes[k]],
                                             target_node = node)
                                     session.add(edge)
                                 session.flush()
-                            base_ind_to_node[base_levels[0]][first_end] = nodes[-1]
-                            base_ind_to_node[base_levels[1]][second_end] = nodes[-1]
+                        for ind, b in enumerate(base_levels):
+                            base_ind_to_node[b][endpoints[ind]] = nodes[-1]
                         end_node = nodes[-1]
                     else:
                         for b in base_levels:
@@ -311,7 +291,7 @@ class Corpus(object):
                                 begin, end = d[b]
                                 if begin not in base_ind_to_node[b]:
                                     n = nodes[0]
-                                    for i in range(begin+1):
+                                    for ind in range(begin+1):
                                         for e in n.source_edges:
                                             if str(e.type) == b:
                                                 n = e.target_node
@@ -319,7 +299,7 @@ class Corpus(object):
                                 begin_node = base_ind_to_node[b][begin]
                                 if end not in base_ind_to_node[b]:
                                     n = nodes[0]
-                                    for i in range(end):
+                                    for ind in range(end):
                                         for e in n.source_edges:
                                             if str(e.type) == b:
                                                 n = e.target_node

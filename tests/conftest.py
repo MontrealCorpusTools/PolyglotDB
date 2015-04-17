@@ -3,6 +3,8 @@ import os
 
 from annograph.classes import Corpus
 
+from annograph.helper import AnnotationType, DiscourseData
+
 @pytest.fixture(scope='session')
 def show_plots():
     return False
@@ -18,107 +20,60 @@ def test_dir():
 
 @pytest.fixture(scope='module')
 def corpus_data_timed():
-    discourses = [{'name': 'test',
-                    'data': {
-                    'phone':[{'label': 'k',
-                                    'begin': 0.0,
-                                    'end': 0.1},
-                            {'label': 'ae',
-                                    'begin': 0.1,
-                                    'end': 0.2},
-                            {'label': 't',
-                                    'begin': 0.2,
-                                    'end': 0.3},
-                            {'label': 's',
-                                    'begin': 0.3,
-                                    'end': 0.4},
-                            {'label': 'aa',
-                                    'begin': 0.5,
-                                    'end': 0.6},
-                            {'label': 'r',
-                                    'begin': 0.6,
-                                    'end': 0.7},
-                            {'label': 'k',
-                                    'begin': 0.8,
-                                    'end': 0.9},
-                            {'label': 'u',
-                                    'begin': 0.9,
-                                    'end': 1.0},
-                            {'label': 't',
-                                    'begin': 1.0,
-                                    'end': 1.1},
-                            {'label': 'd',
-                                    'begin': 2.0,
-                                    'end': 2.1},
-                            {'label': 'aa',
-                                    'begin': 2.1,
-                                    'end': 2.2},
-                            {'label': 'g',
-                                    'begin': 2.2,
-                                    'end': 2.3},
-                            {'label': 'z',
-                                    'begin': 2.3,
-                                    'end': 2.4},
-                            {'label': 'aa',
-                                    'begin': 2.4,
-                                    'end': 2.5},
-                            {'label': 'r',
-                                    'begin': 2.5,
-                                    'end': 2.6},
-                            {'label': 't',
-                                    'begin': 2.6,
-                                    'end': 2.7},
-                            {'label': 'uw',
-                                    'begin': 2.7,
-                                    'end': 2.8},
-                            {'label':'ay',
-                                    'begin': 3.0,
-                                    'end': 3.1},
-                            {'label':'g',
-                                    'begin': 3.3,
-                                    'end': 3.4},
-                            {'label':'eh',
-                                    'begin': 3.4,
-                                    'end': 3.5},
-                            {'label':'s',
-                                    'begin': 3.5,
-                                    'end': 3.6},
+    levels = [AnnotationType('phone', None, 'word', base = True, token = True),
+                AnnotationType('word','phone','line', anchor = True),
+                AnnotationType('line', 'word', None)]
+    data = DiscourseData('test',levels)
+    annotations = {
+                    'phone':[{'label': 'k','begin': 0.0,'end': 0.1},
+                            {'label': 'ae','begin': 0.1,'end': 0.2},
+                            {'label': 't','begin': 0.2,'end': 0.3},
+                            {'label': 's','begin': 0.3,'end': 0.4},
+                            {'label': 'aa','begin': 0.5,'end': 0.6},
+                            {'label': 'r', 'begin': 0.6,'end': 0.7},
+                            {'label': 'k','begin': 0.8,'end': 0.9},
+                            {'label': 'u','begin': 0.9,'end': 1.0},
+                            {'label': 't','begin': 1.0,'end': 1.1},
+                            {'label': 'd','begin': 2.0, 'end': 2.1},
+                            {'label': 'aa','begin': 2.1,'end': 2.2},
+                            {'label': 'g','begin': 2.2,'end': 2.3},
+                            {'label': 'z','begin': 2.3,'end': 2.4},
+                            {'label': 'aa','begin': 2.4,'end': 2.5},
+                            {'label': 'r','begin': 2.5,'end': 2.6},
+                            {'label': 't','begin': 2.6,'end': 2.7},
+                            {'label': 'uw','begin': 2.7,'end': 2.8},
+                            {'label': 'ay','begin': 3.0,'end': 3.1},
+                            {'label': 'g','begin': 3.3,'end': 3.4},
+                            {'label': 'eh','begin': 3.4,'end': 3.5},
+                            {'label': 's','begin': 3.5,'end': 3.6},
                             ],
                     'word':[
-                            {'label': 'cats',
-                            'phone':(0,4)},
-                            {'label': 'are',
-                            'phone':(4,6)},
-                            {'label': 'cute',
-                            'phone':(6,9)},
-                            {'label': 'dogs',
-                            'phone': (9,13)},
-                            {'label': 'are',
-                            'phone': (13,15)},
-                            {'label': 'too',
-                            'phone': (15,17)},
-                            {'label': 'i',
-                            'phone': (17,18)},
-                            {'label':'guess',
-                            'phone':(18,21)},
+                            {'label': 'cats','phone':(0,4)},
+                            {'label': 'are','phone':(4,6)},
+                            {'label': 'cute','phone':(6,9)},
+                            {'label': 'dogs','phone': (9,13)},
+                            {'label': 'are','phone': (13,15)},
+                            {'label': 'too','phone': (15,17)},
+                            {'label': 'i','phone': (17,18)},
+                            {'label':'guess','phone':(18,21)},
                             ],
                     'line': [
-                            {'label': '1',
-                            'phone':(0,9)},
-                            {'label': '2',
-                            'phone':(9,13)},
-                            {'label': '3',
-                            'phone': (13,21)}
+                            {'label': '1','phone':(0,9)},
+                            {'label': '2','phone':(9,13)},
+                            {'label': '3','phone': (13,21)}
                             ]
                     }
-                }]
-    return discourses
+    data.add_annotations(**annotations)
+    return [data]
 
 @pytest.fixture(scope='module')
 def corpus_data_untimed():
-    discourses = [{'name': 'test',
-                    'data': {
-                    'phone':[{'label': 'k'},
+    levels = [AnnotationType('phone', None, 'word', base = True, token = True),
+                AnnotationType('morpheme', 'phone', 'word'),
+                AnnotationType('word','phone','line', anchor = True),
+                AnnotationType('line', 'word', None)]
+    data = DiscourseData('test',levels)
+    annotations = {'phone':[{'label': 'k'},
                             {'label': 'ae'},
                             {'label': 't'},
                             {'label': 's'},
@@ -141,63 +96,45 @@ def corpus_data_untimed():
                             {'label':'s'},
                             ],
                     'morpheme':[
-                            {'label': 'cat',
-                            'phone':(0,3)},
-                            {'label': 'PL',
-                            'phone':(3,4)},
-                            {'label': 'are',
-                            'phone':(4,6)},
-                            {'label': 'cute',
-                            'phone':(6,9)},
-                            {'label': 'dogs',
-                            'phone': (9,12)},
-                            {'label': 'PL',
-                            'phone': (12,13)},
-                            {'label': 'are',
-                            'phone': (13,15)},
-                            {'label': 'too',
-                            'phone': (15,17)},
-                            {'label': 'i',
-                            'phone': (17,18)},
-                            {'label':'guess',
-                            'phone':(18,21)},
+                            {'label': 'cat','phone':(0,3)},
+                            {'label': 'PL','phone':(3,4)},
+                            {'label': 'are','phone':(4,6)},
+                            {'label': 'cute','phone':(6,9)},
+                            {'label': 'dogs','phone': (9,12)},
+                            {'label': 'PL','phone': (12,13)},
+                            {'label': 'are','phone': (13,15)},
+                            {'label': 'too','phone': (15,17)},
+                            {'label': 'i','phone': (17,18)},
+                            {'label':'guess','phone':(18,21)},
                             ],
                     'word':[
-                            {'label': 'cats',
-                            'phone':(0,4)},
-                            {'label': 'are',
-                            'phone':(4,6)},
-                            {'label': 'cute',
-                            'phone':(6,9)},
-                            {'label': 'dogs',
-                            'phone': (9,13)},
-                            {'label': 'are',
-                            'phone': (13,15)},
-                            {'label': 'too',
-                            'phone': (15,17)},
-                            {'label': 'i',
-                            'phone': (17,18)},
-                            {'label':'guess',
-                            'phone':(18,21)},
+                            {'label': 'cats','phone':(0,4)},
+                            {'label': 'are','phone':(4,6)},
+                            {'label': 'cute','phone':(6,9)},
+                            {'label': 'dogs','phone': (9,13)},
+                            {'label': 'are','phone': (13,15)},
+                            {'label': 'too','phone': (15,17)},
+                            {'label': 'i','phone': (17,18)},
+                            {'label':'guess','phone':(18,21)},
                             ],
                     'line': [
-                            {'label': '1',
-                            'phone':(0,9)},
-                            {'label': '2',
-                            'phone':(9,13)},
-                            {'label': '3',
-                            'phone': (13,21)}
+                            {'label': '1','phone':(0,9)},
+                            {'label': '2','phone':(9,13)},
+                            {'label': '3','phone': (13,21)}
                             ]
                     }
-                }]
-    return discourses
+    data.add_annotations(**annotations)
+    return [data]
 
 
 @pytest.fixture(scope='module')
 def corpus_data_ur_sr():
-    discourses = [{'name': 'test',
-                    'data': {
-                    'ur':[{'label': 'k'},
+    levels = [AnnotationType('ur', None, 'word', base = True, token = False),
+                AnnotationType('sr', None, 'word', base = True, token = True),
+                AnnotationType('word','sr','line', anchor = True),
+                AnnotationType('line', 'word', None, anchor = False)]
+    data = DiscourseData('test',levels)
+    annotations = {'ur':[{'label': 'k'},
                             {'label': 'ae'},
                             {'label': 't'},
                             {'label': 's'},
@@ -219,104 +156,45 @@ def corpus_data_ur_sr():
                             {'label': 'eh'},
                             {'label': 's'},
                             ],
-                    'sr':[{'label': 'k',
-                                    'begin': 0.0,
-                                    'end': 0.1},
-                            {'label': 'ae',
-                                    'begin': 0.1,
-                                    'end': 0.2},
-                            {'label': 's',
-                                    'begin': 0.2,
-                                    'end': 0.4},
-                            {'label': 'aa',
-                                    'begin': 0.5,
-                                    'end': 0.6},
-                            {'label': 'r',
-                                    'begin': 0.6,
-                                    'end': 0.7},
-                            {'label': 'k',
-                                    'begin': 0.8,
-                                    'end': 0.9},
-                            {'label': 'u',
-                                    'begin': 0.9,
-                                    'end': 1.1},
-                            {'label': 'd',
-                                    'begin': 2.0,
-                                    'end': 2.1},
-                            {'label': 'aa',
-                                    'begin': 2.1,
-                                    'end': 2.2},
-                            {'label': 'g',
-                                    'begin': 2.2,
-                                    'end': 2.25},
-                            {'label': 'ah',
-                                    'begin': 2.25,
-                                    'end': 2.3},
-                            {'label': 'z',
-                                    'begin': 2.3,
-                                    'end': 2.4},
-                            {'label': 'aa',
-                                    'begin': 2.4,
-                                    'end': 2.5},
-                            {'label': 'r',
-                                    'begin': 2.5,
-                                    'end': 2.6},
-                            {'label': 't',
-                                    'begin': 2.6,
-                                    'end': 2.7},
-                            {'label': 'uw',
-                                    'begin': 2.7,
-                                    'end': 2.8},
-                            {'label':'ay',
-                                    'begin': 3.0,
-                                    'end': 3.1},
-                            {'label':'g',
-                                    'begin': 3.3,
-                                    'end': 3.4},
-                            {'label':'eh',
-                                    'begin': 3.4,
-                                    'end': 3.5},
-                            {'label':'s',
-                                    'begin': 3.5,
-                                    'end': 3.6},
+                    'sr':[{'label': 'k','begin': 0.0,'end': 0.1},
+                            {'label': 'ae','begin': 0.1,'end': 0.2},
+                            {'label': 's','begin': 0.2,'end': 0.4},
+                            {'label': 'aa','begin': 0.5,'end': 0.6},
+                            {'label': 'r','begin': 0.6,'end': 0.7},
+                            {'label': 'k','begin': 0.8,'end': 0.9},
+                            {'label': 'u','begin': 0.9,'end': 1.1},
+                            {'label': 'd', 'begin': 2.0,'end': 2.1},
+                            {'label': 'aa','begin': 2.1,'end': 2.2},
+                            {'label': 'g','begin': 2.2,'end': 2.25},
+                            {'label': 'ah','begin': 2.25,'end': 2.3},
+                            {'label': 'z','begin': 2.3,'end': 2.4},
+                            {'label': 'aa','begin': 2.4,'end': 2.5},
+                            {'label': 'r','begin': 2.5,'end': 2.6},
+                            {'label': 't','begin': 2.6,'end': 2.7},
+                            {'label': 'uw','begin': 2.7,'end': 2.8},
+                            {'label':'ay','begin': 3.0,'end': 3.1},
+                            {'label':'g','begin': 3.3,'end': 3.4},
+                            {'label':'eh','begin': 3.4,'end': 3.5},
+                            {'label':'s','begin': 3.5, 'end': 3.6},
                             ],
                     'word':[
-                            {'label': 'cats',
-                            'ur':(0,4),
-                            'sr': (0,3)},
-                            {'label': 'are',
-                            'ur':(4,6),
-                            'sr': (3,5)},
-                            {'label': 'cute',
-                            'ur':(6,9),
-                            'sr': (5,7)},
-                            {'label': 'dogs',
-                            'ur': (9,13),
-                            'sr': (7,12)},
-                            {'label': 'are',
-                            'ur': (13,15),
-                            'sr': (12,14)},
-                            {'label': 'too',
-                            'ur': (15,17),
-                            'sr': (14,16)},
-                            {'label': 'i',
-                            'ur': (17,18),
-                            'sr': (16,17)},
-                            {'label':'guess',
-                            'ur':(18,21),
-                            'sr': (17,20)},
+                            {'label': 'cats','ur':(0,4),'sr': (0,3)},
+                            {'label': 'are','ur':(4,6),'sr': (3,5)},
+                            {'label': 'cute','ur':(6,9),'sr': (5,7)},
+                            {'label': 'dogs','ur': (9,13),'sr': (7,12)},
+                            {'label': 'are','ur': (13,15),'sr': (12,14)},
+                            {'label': 'too','ur': (15,17),'sr': (14,16)},
+                            {'label': 'i','ur': (17,18),'sr': (16,17)},
+                            {'label':'guess','ur':(18,21),'sr': (17,20)},
                             ],
                     'line': [
-                            {'label': '1',
-                            'sr':(0,7)},
-                            {'label': '2',
-                            'sr':(7,16)},
-                            {'label': '3',
-                            'sr': (16,20)}
+                            {'label': '1','sr':(0,7)},
+                            {'label': '2','sr':(7,16)},
+                            {'label': '3','sr': (16,20)}
                             ]
                     }
-                }]
-    return discourses
+    data.add_annotations(**annotations)
+    return [data]
 
 
 @pytest.fixture(scope='module')
@@ -340,10 +218,81 @@ def lexicon_data():
 
 
 @pytest.fixture(scope='module')
-def corpus_data_stress_morpheme():
-    discourses = [{'name': 'test',
-                    'data': {
-                    'phone':[{'label': 'b'},
+def corpus_data_syllable_morpheme_srur():
+    levels = [AnnotationType('ur', None, 'word', base = True, token = False),
+                AnnotationType('sr', None, 'word', base = True, token = True),
+                AnnotationType('syllable', 'sr', 'word'),
+                AnnotationType('morpheme', 'ur', 'word'),
+                AnnotationType('word','phone','line', anchor = True),
+                AnnotationType('line', 'word', None)]
+    data = DiscourseData('test',levels)
+    annotations = {'ur':[{'label': 'b'},
+                            {'label': 'aa'},
+                            {'label': 'k'},
+                            {'label': 's'},
+                            {'label': 'ah'},
+                            {'label': 'z'},
+                            {'label': 'aa'},
+                            {'label': 'r'},
+                            {'label': 'f'},
+                            {'label': 'ao'},
+                            {'label': 'r'},
+                            {'label': 'p'},
+                            {'label': 'ae'},
+                            {'label': 'k'},
+                            {'label': 'ih'},
+                            {'label': 'ng'},
+                            ],
+                    'sr':[{'label': 'b'},
+                            {'label': 'aa'},
+                            {'label': 'k'},
+                            {'label': 's'},
+                            {'label': 'ah'},
+                            {'label': 's'},
+                            {'label': 'er'},
+                            {'label': 'f'},
+                            {'label': 'er'},
+                            {'label': 'p'},
+                            {'label': 'ae'},
+                            {'label': 'k'},
+                            {'label': 'eng'},
+                            ],
+                    'syllable':[
+                            {'label': '(b.aa.k)','sr':(0,3)},
+                            {'label': '(s.ah.s)','sr':(3,6)},
+                            {'label': '(er)','sr':(6,7)},
+                            {'label': '(f.er)','sr':(7,9)},
+                            {'label': '(p.ae)','sr': (9,11)},
+                            {'label': '(k.eng)','sr': (11,13)},
+                            ],
+                    'morpheme':[
+                            {'label': 'box','ur':(0,4)},
+                            {'label': 'PL','ur':(4,6)},
+                            {'label': 'are','ur':(6,8)},
+                            {'label': 'for','ur':(8,11)},
+                            {'label': 'pack','ur': (11,14)},
+                            {'label': 'PROG','ur': (14,16)},
+                            ],
+                    'word':[
+                            {'label': 'boxes','ur':(0,6), 'sr':(0,6)},
+                            {'label': 'are','ur':(6,8), 'sr': (6,7)},
+                            {'label': 'for','ur':(8,11), 'sr': (7,9)},
+                            {'label': 'packing','ur': (11,16), 'sr':(9,13)},
+                            ],
+                    'line':[{'label':'1', 'sr':(0,16)}]
+                    }
+    data.add_annotations(**annotations)
+    return [data]
+
+@pytest.fixture(scope='module')
+def corpus_data_syllable_morpheme():
+    levels = [AnnotationType('phone', None, 'word', base = True, token = True),
+                AnnotationType('syllable', 'phone', 'word'),
+                AnnotationType('morpheme', 'phone', 'word'),
+                AnnotationType('word','phone','line', anchor = True),
+                AnnotationType('line', 'word', None)]
+    data = DiscourseData('test',levels)
+    annotations = {'phone':[{'label': 'b'},
                             {'label': 'aa'},
                             {'label': 'k'},
                             {'label': 's'},
@@ -361,46 +310,30 @@ def corpus_data_stress_morpheme():
                             {'label': 'ng'},
                             ],
                     'syllable':[
-                            {'label': '(b.aa.k)',
-                            'phone':(0,3)},
-                            {'label': '(s.ah.z)',
-                            'phone':(3,6)},
-                            {'label': '(aa.r)',
-                            'phone':(6,8)},
-                            {'label': '(f.ao.r)',
-                            'phone':(8,11)},
-                            {'label': '(p.ae)',
-                            'phone': (11,13)},
-                            {'label': '(k.ih.ng)',
-                            'phone': (13,16)},
+                            {'label': '(b.aa.k)','phone':(0,3)},
+                            {'label': '(s.ah.z)','phone':(3,6)},
+                            {'label': '(aa.r)','phone':(6,8)},
+                            {'label': '(f.ao.r)','phone':(8,11)},
+                            {'label': '(p.ae)','phone': (11,13)},
+                            {'label': '(k.ih.ng)','phone': (13,16)},
                             ],
                     'morpheme':[
-                            {'label': 'box',
-                            'phone':(0,4)},
-                            {'label': 'PL',
-                            'phone':(4,6)},
-                            {'label': 'are',
-                            'phone':(6,8)},
-                            {'label': 'for',
-                            'phone':(8,11)},
-                            {'label': 'pack',
-                            'phone': (11,14)},
-                            {'label': 'PROG',
-                            'phone': (14,16)},
+                            {'label': 'box','phone':(0,4)},
+                            {'label': 'PL','phone':(4,6)},
+                            {'label': 'are','phone':(6,8)},
+                            {'label': 'for','phone':(8,11)},
+                            {'label': 'pack','phone': (11,14)},
+                            {'label': 'PROG','phone': (14,16)},
                             ],
                     'word':[
-                            {'label': 'boxes',
-                            'phone':(0,6)},
-                            {'label': 'are',
-                            'phone':(6,8)},
-                            {'label': 'for',
-                            'phone':(8,11)},
-                            {'label': 'packing',
-                            'phone': (11,16)},
+                            {'label': 'boxes','phone':(0,6)},
+                            {'label': 'are','phone':(6,8)},
+                            {'label': 'for','phone':(8,11)},
+                            {'label': 'packing','phone': (11,16)},
                             ]
                     }
-                }]
-    return discourses
+    data.add_annotations(**annotations)
+    return [data]
 
 
 @pytest.fixture(scope = 'module')
@@ -418,10 +351,10 @@ def untimed_corpus(test_dir, corpus_data_untimed):
     return c
 
 @pytest.fixture(scope = 'module')
-def syllable_morpheme_corpus(test_dir, corpus_data_stress_morpheme):
+def syllable_morpheme_corpus(test_dir, corpus_data_syllable_morpheme):
     c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_syllable_morpheme.db'))
     c.initial_setup()
-    c.add_discourses(corpus_data_stress_morpheme)
+    c.add_discourses(corpus_data_syllable_morpheme)
     return c
 
 @pytest.fixture(scope = 'module')
