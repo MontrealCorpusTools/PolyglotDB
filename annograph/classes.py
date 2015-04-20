@@ -1,4 +1,4 @@
-
+import re
 import sqlalchemy, sqlalchemy.orm
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import joinedload, aliased
@@ -9,8 +9,213 @@ from .db import (Base, Discourse, Node, Edge, generate_edge_class, AnnotationTyp
 
 from .config import Session, session_scope
 
-from .helper import align_phones, get_or_create
 
+class Attribute(object):
+    """
+    Attributes are for collecting summary information about attributes of
+    Words or WordTokens, with different types of attributes allowing for
+    different behaviour
+
+    Parameters
+    ----------
+    name : str
+        Python-safe name for using `getattr` and `setattr` on Words and
+        WordTokens
+
+    att_type : str
+        Either 'spelling', 'tier', 'numeric' or 'factor'
+
+    display_name : str
+        Human-readable name of the Attribute, defaults to None
+
+    default_value : object
+        Default value for initializing the attribute
+
+    Attributes
+    ----------
+    name : string
+        Python-readable name for the Attribute on Word and WordToken objects
+
+    display_name : string
+        Human-readable name for the Attribute
+
+    default_value : object
+        Default value for the Attribute.  The type of `default_value` is
+        dependent on the attribute type.  Numeric Attributes have a float
+        default value.  Factor and Spelling Attributes have a string
+        default value.  Tier Attributes have a Transcription default value.
+
+    range : object
+        Range of the Attribute, type depends on the attribute type.  Numeric
+        Attributes have a tuple of floats for the range for the minimum
+        and maximum.  The range for Factor Attributes is a set of all
+        factor levels.  The range for Tier Attributes is the set of segments
+        in that tier across the corpus.  The range for Spelling Attributes
+        is None.
+    """
+    ATT_TYPES = ['spelling', 'tier', 'numeric', 'factor']
+    def __init__(self, name, att_type, display_name = None, default_value = None):
+        self.name = name
+        self.att_type = att_type
+        self._display_name = display_name
+
+        if self.att_type == 'numeric':
+            self._range = [0,0]
+            if default_value is not None and isinstance(default_value,(int,float)):
+                self._default_value = default_value
+            else:
+                self._default_value = 0
+        elif self.att_type == 'factor':
+            if default_value is not None and isinstance(default_value,str):
+                self._default_value = default_value
+            else:
+                self._default_value = ''
+            if default_value:
+                self._range = set([default_value])
+            else:
+                self._range = set()
+        elif self.att_type == 'spelling':
+            self._range = None
+            if default_value is not None and isinstance(default_value,str):
+                self._default_value = default_value
+            else:
+                self._default_value = ''
+        elif self.att_type == 'tier':
+            self._range = set()
+            self._delim = None
+            if default_value is not None:
+                self._default_value = default_value
+            else:
+                self._default_value = []
+
+    @property
+    def delimiter(self):
+        if self.att_type != 'tier':
+            return None
+        else:
+            return self._delim
+
+    @delimiter.setter
+    def delimiter(self, value):
+        self._delim = value
+
+    @staticmethod
+    def guess_type(values, trans_delimiters = None):
+        if trans_delimiters is None:
+            trans_delimiters = ['.',' ', ';', ',']
+        probable_values = {x: 0 for x in Attribute.ATT_TYPES}
+        for i,v in enumerate(values):
+            try:
+                t = float(v)
+                probable_values['numeric'] += 1
+                continue
+            except ValueError:
+                for d in trans_delimiters:
+                    if d in v:
+                        probable_values['tier'] += 1
+                        break
+                else:
+                    if v in [v2 for j,v2 in enumerate(values) if i != j]:
+                        probable_values['factor'] += 1
+                    else:
+                        probable_values['spelling'] += 1
+        return max(probable_values.items(), key=operator.itemgetter(1))[0]
+
+    @staticmethod
+    def sanitize_name(name):
+        """
+        Sanitize a display name into a Python-readable attribute name
+
+        Parameters
+        ----------
+        name : string
+            Display name to sanitize
+
+        Returns
+        -------
+        string
+            Sanitized name
+        """
+        return re.sub('\W','',name.lower())
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __str__(self):
+        return self.display_name
+
+    def __eq__(self,other):
+        if isinstance(other,Attribute):
+            if self.name == other.name:
+                return True
+        if isinstance(other,str):
+            if self.name == other:
+                return True
+        return False
+
+    @property
+    def display_name(self):
+        if self._display_name is not None:
+            return self._display_name
+        return self.name.title()
+
+    @property
+    def default_value(self):
+        return self._default_value
+
+    @default_value.setter
+    def default_value(self, value):
+        self._default_value = value
+        self._range = set([value])
+
+    @property
+    def range(self):
+        return self._range
+
+    def update_range(self,value):
+        """
+        Update the range of the Attribute with the value specified.
+        If the attribute is a Factor, the value is added to the set of levels.
+        If the attribute is Numeric, the value expands the minimum and
+        maximum values, if applicable.  If the attribute is a Tier, the
+        value (a segment) is added to the set of segments allowed. If
+        the attribute is Spelling, nothing is done.
+
+        Parameters
+        ----------
+        value : object
+            Value to update range with, the type depends on the attribute
+            type
+        """
+        if value is None:
+            return
+        if self.att_type == 'numeric':
+            if isinstance(value, str):
+                try:
+                    value = float(value)
+                except ValueError:
+                    self.att_type = 'spelling'
+                    self._range = None
+                    return
+            if value < self._range[0]:
+                self._range[0] = value
+            elif value > self._range[1]:
+                self._range[1] = value
+        elif self.att_type == 'factor':
+            self._range.add(value)
+            #if len(self._range) > 1000:
+            #    self.att_type = 'spelling'
+            #    self._range = None
+        elif self.att_type == 'tier':
+            if isinstance(self._range, list):
+                self._range = set(self._range)
+            self._range.update([x for x in value])
+
+class Word(object):
+    pass
+
+class Environment(object):
+    pass
 
 class Corpus(object):
     """
@@ -180,137 +385,4 @@ class Corpus(object):
                 labels[str(e.type)][e.source_id,e.target_id] = '{}/{}'.format(str(e.type),str(e.annotation))
         return labels
 
-    def add_discourses(self, discourses):
-        for data in discourses:
-            self.add_discourse(data)
 
-    def add_discourse(self, data):
-        """
-        Add a discourse to the corpus.
-
-        In general, this function should not be called, as helper functions
-        should exist to facilitate adding data to the corpus.
-
-        Parameters
-        ----------
-        data : DiscourseData
-            Data associated with the discourse
-        """
-        with session_scope() as session:
-            new_discourse = Discourse(discourse_label=data.name)
-
-            session.add(new_discourse)
-            session.flush()
-            nodes = list()
-            begin_node = Node(time = 0, discourse = new_discourse)
-            session.add(begin_node)
-            pts = list()
-            base_ind_to_node = dict()
-            base_levels = data.base_levels
-            for b in base_levels:
-                base_ind_to_node[b] = dict()
-                pt = get_or_create(session,
-                                    AnnotationType,
-                                    type_label = b)
-                pts.append(pt)
-            nodes.append(begin_node)
-            for i, level in enumerate(data.process_order):
-                anno_type = get_or_create(session,
-                                    AnnotationType,
-                                    type_label = level)
-                for d in data[level]:
-                    annotation = get_or_create(session, Annotation, annotation_label = d['label'])
-
-                    print(i, level)
-                    if i == 0: #Anchor level, should have all base levels in it
-                        begin_node = nodes[-1]
-
-                        to_align = list()
-                        endpoints = list()
-                        print(d)
-                        for b in base_levels:
-                            begin, end = d[b]
-                            endpoints.append(end)
-                            base = data[b][begin:end]
-                            to_align.append(base)
-
-                        if len(to_align) > 1:
-                            aligned = list(align_phones(*to_align))
-                        else:
-                            aligned = to_align
-                        first_aligned = aligned.pop(0)
-                        for j, first in enumerate(first_aligned):
-                            time = None
-                            if first != '-' and 'end' in first:
-                                time = first['end']
-                            else:
-                                for second in aligned:
-                                    s = second[j]
-                                    if s != '-' and 'end' in s:
-                                        time = s['end']
-                            node = Node(time = time, discourse = new_discourse)
-                            session.add(node)
-                            nodes.append(node)
-                            session.flush()
-                            first_begin_node = -2
-                            second_begin_nodes = [-2 for k in aligned]
-                            if first != '-':
-                                first_annotation = get_or_create(session,
-                                                                Annotation,
-                                                                annotation_label = first['label'])
-                                for k in range(j-1, -1, -1):
-                                    if first_aligned[k] != '-':
-                                        break
-                                    first_begin_node -= 1
-                                edge = Edge(annotation = first_annotation, type = pts[0],
-                                        source_node = nodes[first_begin_node],
-                                        target_node = node)
-                                session.add(edge)
-                            for k, second in enumerate(aligned):
-                                s = second[j]
-                                if s != '-':
-                                    second_annotation = get_or_create(session,
-                                                                Annotation,
-                                                                annotation_label = s['label'])
-                                    for m in range(j-1, -1, -1):
-                                        if second[m] != '-':
-                                            break
-                                        second_begin_nodes[k] -= 1
-                                    edge = Edge(annotation = second_annotation, type = pts[k+1],
-                                            source_node = nodes[second_begin_nodes[k]],
-                                            target_node = node)
-                                    session.add(edge)
-                                session.flush()
-                        for ind, b in enumerate(base_levels):
-                            base_ind_to_node[b][endpoints[ind]] = nodes[-1]
-                        end_node = nodes[-1]
-                    else:
-                        for b in base_levels:
-                            if b in d:
-
-                                begin, end = d[b]
-                                if begin not in base_ind_to_node[b]:
-                                    n = nodes[0]
-                                    for ind in range(begin+1):
-                                        for e in n.source_edges:
-                                            if str(e.type) == b:
-                                                n = e.target_node
-                                    base_ind_to_node[b][begin] = n
-                                begin_node = base_ind_to_node[b][begin]
-                                if end not in base_ind_to_node[b]:
-                                    n = nodes[0]
-                                    for ind in range(end):
-                                        for e in n.source_edges:
-                                            if str(e.type) == b:
-                                                n = e.target_node
-                                    base_ind_to_node[b][end] = n
-                                end_node = base_ind_to_node[b][end]
-
-                    edge = generate_edge_class(base_levels)(annotation = annotation,
-                            type = anno_type,
-                            source_node = begin_node,
-                            target_node = end_node)
-                    session.add(edge)
-                    session.flush()
-
-            session.commit()

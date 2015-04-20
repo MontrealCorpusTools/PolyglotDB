@@ -20,7 +20,6 @@ def test_lexicons_timed(timed_corpus):
     c._get_transitive_closures( 'word', 'phone')
     wordlist = c.get_wordlist()
     print(wordlist)
-    assert(False)
 
 def test_lexicons_untimed(untimed_corpus):
     c = untimed_corpus

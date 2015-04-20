@@ -1,26 +1,35 @@
 import numpy as np
 
+from annograph.classes import Attribute
+
 class AnnotationType(object):
-    def __init__(self, name, subtype, supertype, anchor = False,
+    def __init__(self, name, subtype, supertype, attribute = None, anchor = False,
                     token = False, base = False,
                     delimited = False, speaker = None):
         self._list = list()
         self.name = name
         self.subtype = subtype
         self.supertype = supertype
+        if supertype is None:
+            self.root = True
+        else:
+            self.root = False
         self.token = token
         self.base = base
         self.delimited = delimited
         self.anchor = anchor
         self.speaker = speaker
-        if supertype is None:
-            self.root = True
-        else:
-            self.root = False
         if self.speaker is not None:
             self.output_name = re.sub('{}\W*'.format(self.speaker),'',self.name)
         else:
             self.output_name = self.name
+        if attribute is None:
+            if base:
+                self.attribute = Attribute(Attribute.sanitize_name(name), 'tier', name)
+            else:
+                self.attribute = Attribute(Attribute.sanitize_name(name), 'spelling', name)
+        else:
+            self.attribute = attribute
 
     def __getitem__(self, key):
         return self._list[key]
@@ -50,6 +59,7 @@ class AnnotationType(object):
     @property
     def is_type_base(self):
         return not self.token and self.base
+
 
 class DiscourseData(object):
     def __init__(self, name, levels):
