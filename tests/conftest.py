@@ -1,11 +1,13 @@
 import pytest
 import os
 
-from annograph.classes import Corpus
+from annograph.sql.classes import Corpus
 
-from annograph.helper import AnnotationType, DiscourseData
+from annograph.io.helper import BaseAnnotation, Annotation, AnnotationType, DiscourseData
 
-from annograph.io import add_discourse
+from annograph.io.io import add_discourse
+
+from annograph.graph.util import GraphContext
 
 @pytest.fixture(scope='session')
 def show_plots():
@@ -21,48 +23,83 @@ def test_dir():
     return os.path.abspath('tests/data')
 
 @pytest.fixture(scope='module')
+def buckeye_test_dir(test_dir):
+    return os.path.join(test_dir, 'buckeye')
+
+@pytest.fixture(scope='module')
+def timit_test_dir(test_dir):
+    return os.path.join(test_dir, 'timit')
+
+@pytest.fixture(scope='module')
+def textgrid_test_dir(test_dir):
+    return os.path.join(test_dir, 'textgrids')
+
+@pytest.fixture(scope='module')
+def text_test_dir(test_dir):
+    return os.path.join(test_dir, 'text')
+
+@pytest.fixture(scope='module')
+def ilg_test_dir(test_dir):
+    return os.path.join(test_dir, 'ilg')
+
+@pytest.fixture(scope='module')
+def csv_test_dir(test_dir):
+    return os.path.join(test_dir, 'csv')
+
+@pytest.fixture(scope='module')
+def features_test_dir(test_dir):
+    return os.path.join(test_dir, 'features')
+
+@pytest.fixture(scope='module')
+def export_test_dir(test_dir):
+    path = os.path.join(test_dir, 'export')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+@pytest.fixture(scope='module')
 def corpus_data_timed():
     levels = [AnnotationType('phone', None, 'word', base = True, token = True),
                 AnnotationType('word','phone','line', anchor = True),
                 AnnotationType('line', 'word', None)]
     data = DiscourseData('test',levels)
     annotations = {
-                    'phone':[{'label': 'k','begin': 0.0,'end': 0.1},
-                            {'label': 'ae','begin': 0.1,'end': 0.2},
-                            {'label': 't','begin': 0.2,'end': 0.3},
-                            {'label': 's','begin': 0.3,'end': 0.4},
-                            {'label': 'aa','begin': 0.5,'end': 0.6},
-                            {'label': 'r', 'begin': 0.6,'end': 0.7},
-                            {'label': 'k','begin': 0.8,'end': 0.9},
-                            {'label': 'u','begin': 0.9,'end': 1.0},
-                            {'label': 't','begin': 1.0,'end': 1.1},
-                            {'label': 'd','begin': 2.0, 'end': 2.1},
-                            {'label': 'aa','begin': 2.1,'end': 2.2},
-                            {'label': 'g','begin': 2.2,'end': 2.3},
-                            {'label': 'z','begin': 2.3,'end': 2.4},
-                            {'label': 'aa','begin': 2.4,'end': 2.5},
-                            {'label': 'r','begin': 2.5,'end': 2.6},
-                            {'label': 't','begin': 2.6,'end': 2.7},
-                            {'label': 'uw','begin': 2.7,'end': 2.8},
-                            {'label': 'ay','begin': 3.0,'end': 3.1},
-                            {'label': 'g','begin': 3.3,'end': 3.4},
-                            {'label': 'eh','begin': 3.4,'end': 3.5},
-                            {'label': 's','begin': 3.5,'end': 3.6},
+                    'phone':[BaseAnnotation('k', 0.0, 0.1),
+                            BaseAnnotation('ae', 0.1, 0.2),
+                            BaseAnnotation('t', 0.2, 0.3),
+                            BaseAnnotation('s', 0.3, 0.4),
+                            BaseAnnotation('aa', 0.5, 0.6),
+                            BaseAnnotation('r',  0.6, 0.7),
+                            BaseAnnotation('k', 0.8, 0.9),
+                            BaseAnnotation('u', 0.9, 1.0),
+                            BaseAnnotation('t', 1.0, 1.1),
+                            BaseAnnotation('d', 2.0,  2.1),
+                            BaseAnnotation('aa', 2.1, 2.2),
+                            BaseAnnotation('g', 2.2, 2.3),
+                            BaseAnnotation('z', 2.3, 2.4),
+                            BaseAnnotation('aa', 2.4, 2.5),
+                            BaseAnnotation('r', 2.5, 2.6),
+                            BaseAnnotation('t', 2.6, 2.7),
+                            BaseAnnotation('uw', 2.7, 2.8),
+                            BaseAnnotation('ay', 3.0, 3.1),
+                            BaseAnnotation('g', 3.3, 3.4),
+                            BaseAnnotation('eh', 3.4, 3.5),
+                            BaseAnnotation('s', 3.5, 3.6),
                             ],
                     'word':[
-                            {'label': 'cats','phone':(0,4)},
-                            {'label': 'are','phone':(4,6)},
-                            {'label': 'cute','phone':(6,9)},
-                            {'label': 'dogs','phone': (9,13)},
-                            {'label': 'are','phone': (13,15)},
-                            {'label': 'too','phone': (15,17)},
-                            {'label': 'i','phone': (17,18)},
-                            {'label':'guess','phone':(18,21)},
+                            Annotation('cats', phone = (0,4)),
+                            Annotation('are', phone = (4,6)),
+                            Annotation('cute', phone = (6,9)),
+                            Annotation('dogs', phone =  (9,13)),
+                            Annotation('are', phone =  (13,15)),
+                            Annotation('too', phone =  (15,17)),
+                            Annotation('i', phone =  (17,18)),
+                            Annotation('guess', phone = (18,21)),
                             ],
                     'line': [
-                            {'label': '1','phone':(0,9)},
-                            {'label': '2','phone':(9,13)},
-                            {'label': '3','phone': (13,21)}
+                            Annotation('', phone = (0,9)),
+                            Annotation('', phone = (9,17)),
+                            Annotation('', phone =  (17,21))
                             ]
                     }
     data.add_annotations(**annotations)
@@ -75,54 +112,54 @@ def corpus_data_untimed():
                 AnnotationType('word','phone','line', anchor = True),
                 AnnotationType('line', 'word', None)]
     data = DiscourseData('test',levels)
-    annotations = {'phone':[{'label': 'k'},
-                            {'label': 'ae'},
-                            {'label': 't'},
-                            {'label': 's'},
-                            {'label': 'aa'},
-                            {'label': 'r'},
-                            {'label': 'k'},
-                            {'label': 'u'},
-                            {'label': 't'},
-                            {'label': 'd'},
-                            {'label': 'aa'},
-                            {'label': 'g'},
-                            {'label': 'z'},
-                            {'label': 'aa'},
-                            {'label': 'r'},
-                            {'label': 't'},
-                            {'label': 'uw'},
-                            {'label':'ay'},
-                            {'label':'g'},
-                            {'label':'eh'},
-                            {'label':'s'},
+    annotations = {'phone':[BaseAnnotation('k'),
+                            BaseAnnotation('ae'),
+                            BaseAnnotation('t'),
+                            BaseAnnotation('s'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('r'),
+                            BaseAnnotation('k'),
+                            BaseAnnotation('u'),
+                            BaseAnnotation('t'),
+                            BaseAnnotation('d'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('g'),
+                            BaseAnnotation('z'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('r'),
+                            BaseAnnotation('t'),
+                            BaseAnnotation('uw'),
+                            BaseAnnotation('ay'),
+                            BaseAnnotation('g'),
+                            BaseAnnotation('eh'),
+                            BaseAnnotation('s'),
                             ],
                     'morpheme':[
-                            {'label': 'cat','phone':(0,3)},
-                            {'label': 'PL','phone':(3,4)},
-                            {'label': 'are','phone':(4,6)},
-                            {'label': 'cute','phone':(6,9)},
-                            {'label': 'dogs','phone': (9,12)},
-                            {'label': 'PL','phone': (12,13)},
-                            {'label': 'are','phone': (13,15)},
-                            {'label': 'too','phone': (15,17)},
-                            {'label': 'i','phone': (17,18)},
-                            {'label':'guess','phone':(18,21)},
+                            Annotation('cat', phone = (0,3)),
+                            Annotation('PL', phone = (3,4)),
+                            Annotation('are', phone = (4,6)),
+                            Annotation('cute', phone = (6,9)),
+                            Annotation('dogs', phone =  (9,12)),
+                            Annotation('PL', phone =  (12,13)),
+                            Annotation('are', phone =  (13,15)),
+                            Annotation('too', phone =  (15,17)),
+                            Annotation('i', phone =  (17,18)),
+                            Annotation('guess', phone = (18,21)),
                             ],
                     'word':[
-                            {'label': 'cats','phone':(0,4)},
-                            {'label': 'are','phone':(4,6)},
-                            {'label': 'cute','phone':(6,9)},
-                            {'label': 'dogs','phone': (9,13)},
-                            {'label': 'are','phone': (13,15)},
-                            {'label': 'too','phone': (15,17)},
-                            {'label': 'i','phone': (17,18)},
-                            {'label':'guess','phone':(18,21)},
+                            Annotation('cats', phone = (0,4)),
+                            Annotation('are', phone = (4,6)),
+                            Annotation('cute', phone = (6,9)),
+                            Annotation('dogs', phone =  (9,13)),
+                            Annotation('are', phone =  (13,15)),
+                            Annotation('too', phone =  (15,17)),
+                            Annotation('i', phone =  (17,18)),
+                            Annotation('guess', phone = (18,21)),
                             ],
                     'line': [
-                            {'label': '1','phone':(0,9)},
-                            {'label': '2','phone':(9,13)},
-                            {'label': '3','phone': (13,21)}
+                            Annotation('', phone = (0,9)),
+                            Annotation('', phone = (9,17)),
+                            Annotation('', phone =  (17,21))
                             ]
                     }
     data.add_annotations(**annotations)
@@ -136,63 +173,63 @@ def corpus_data_ur_sr():
                 AnnotationType('word','sr','line', anchor = True),
                 AnnotationType('line', 'word', None, anchor = False)]
     data = DiscourseData('test',levels)
-    annotations = {'ur':[{'label': 'k'},
-                            {'label': 'ae'},
-                            {'label': 't'},
-                            {'label': 's'},
-                            {'label': 'aa'},
-                            {'label': 'r'},
-                            {'label': 'k'},
-                            {'label': 'u'},
-                            {'label': 't'},
-                            {'label': 'd'},
-                            {'label': 'aa'},
-                            {'label': 'g'},
-                            {'label': 'z'},
-                            {'label': 'aa'},
-                            {'label': 'r'},
-                            {'label': 't'},
-                            {'label': 'uw'},
-                            {'label': 'ay'},
-                            {'label': 'g'},
-                            {'label': 'eh'},
-                            {'label': 's'},
+    annotations = {'ur':[BaseAnnotation('k'),
+                            BaseAnnotation('ae'),
+                            BaseAnnotation('t'),
+                            BaseAnnotation('s'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('r'),
+                            BaseAnnotation('k'),
+                            BaseAnnotation('u'),
+                            BaseAnnotation('t'),
+                            BaseAnnotation('d'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('g'),
+                            BaseAnnotation('z'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('r'),
+                            BaseAnnotation('t'),
+                            BaseAnnotation('uw'),
+                            BaseAnnotation('ay'),
+                            BaseAnnotation('g'),
+                            BaseAnnotation('eh'),
+                            BaseAnnotation('s'),
                             ],
-                    'sr':[{'label': 'k','begin': 0.0,'end': 0.1},
-                            {'label': 'ae','begin': 0.1,'end': 0.2},
-                            {'label': 's','begin': 0.2,'end': 0.4},
-                            {'label': 'aa','begin': 0.5,'end': 0.6},
-                            {'label': 'r','begin': 0.6,'end': 0.7},
-                            {'label': 'k','begin': 0.8,'end': 0.9},
-                            {'label': 'u','begin': 0.9,'end': 1.1},
-                            {'label': 'd', 'begin': 2.0,'end': 2.1},
-                            {'label': 'aa','begin': 2.1,'end': 2.2},
-                            {'label': 'g','begin': 2.2,'end': 2.25},
-                            {'label': 'ah','begin': 2.25,'end': 2.3},
-                            {'label': 'z','begin': 2.3,'end': 2.4},
-                            {'label': 'aa','begin': 2.4,'end': 2.5},
-                            {'label': 'r','begin': 2.5,'end': 2.6},
-                            {'label': 't','begin': 2.6,'end': 2.7},
-                            {'label': 'uw','begin': 2.7,'end': 2.8},
-                            {'label':'ay','begin': 3.0,'end': 3.1},
-                            {'label':'g','begin': 3.3,'end': 3.4},
-                            {'label':'eh','begin': 3.4,'end': 3.5},
-                            {'label':'s','begin': 3.5, 'end': 3.6},
+                    'sr':[BaseAnnotation('k', 0.0, 0.1),
+                            BaseAnnotation('ae', 0.1, 0.2),
+                            BaseAnnotation('s', 0.2, 0.4),
+                            BaseAnnotation('aa', 0.5, 0.6),
+                            BaseAnnotation('r', 0.6, 0.7),
+                            BaseAnnotation('k', 0.8, 0.9),
+                            BaseAnnotation('u', 0.9, 1.1),
+                            BaseAnnotation('d',  2.0, 2.1),
+                            BaseAnnotation('aa', 2.1, 2.2),
+                            BaseAnnotation('g', 2.2, 2.25),
+                            BaseAnnotation('ah', 2.25, 2.3),
+                            BaseAnnotation('z', 2.3, 2.4),
+                            BaseAnnotation('aa', 2.4, 2.5),
+                            BaseAnnotation('r', 2.5, 2.6),
+                            BaseAnnotation('t', 2.6, 2.7),
+                            BaseAnnotation('uw', 2.7, 2.8),
+                            BaseAnnotation('ay', 3.0, 3.1),
+                            BaseAnnotation('g', 3.3, 3.4),
+                            BaseAnnotation('eh', 3.4, 3.5),
+                            BaseAnnotation('s', 3.5, 3.6),
                             ],
                     'word':[
-                            {'label': 'cats','ur':(0,4),'sr': (0,3)},
-                            {'label': 'are','ur':(4,6),'sr': (3,5)},
-                            {'label': 'cute','ur':(6,9),'sr': (5,7)},
-                            {'label': 'dogs','ur': (9,13),'sr': (7,12)},
-                            {'label': 'are','ur': (13,15),'sr': (12,14)},
-                            {'label': 'too','ur': (15,17),'sr': (14,16)},
-                            {'label': 'i','ur': (17,18),'sr': (16,17)},
-                            {'label':'guess','ur':(18,21),'sr': (17,20)},
+                            Annotation('cats', ur = (0,4), sr =  (0,3)),
+                            Annotation('are', ur = (4,6), sr =  (3,5)),
+                            Annotation('cute', ur = (6,9), sr =  (5,7)),
+                            Annotation('dogs', ur =  (9,13), sr =  (7,12)),
+                            Annotation('are', ur =  (13,15), sr =  (12,14)),
+                            Annotation('too', ur =  (15,17), sr =  (14,16)),
+                            Annotation('i', ur =  (17,18), sr =  (16,17)),
+                            Annotation('guess', ur = (18,21), sr =  (17,20)),
                             ],
                     'line': [
-                            {'label': '1','sr':(0,7)},
-                            {'label': '2','sr':(7,16)},
-                            {'label': '3','sr': (16,20)}
+                            Annotation('', sr = (0,7)),
+                            Annotation('', sr = (7,16)),
+                            Annotation('', sr =  (16,20))
                             ]
                     }
     data.add_annotations(**annotations)
@@ -228,60 +265,60 @@ def corpus_data_syllable_morpheme_srur():
                 AnnotationType('word','phone','line', anchor = True),
                 AnnotationType('line', 'word', None)]
     data = DiscourseData('test',levels)
-    annotations = {'ur':[{'label': 'b'},
-                            {'label': 'aa'},
-                            {'label': 'k'},
-                            {'label': 's'},
-                            {'label': 'ah'},
-                            {'label': 'z'},
-                            {'label': 'aa'},
-                            {'label': 'r'},
-                            {'label': 'f'},
-                            {'label': 'ao'},
-                            {'label': 'r'},
-                            {'label': 'p'},
-                            {'label': 'ae'},
-                            {'label': 'k'},
-                            {'label': 'ih'},
-                            {'label': 'ng'},
+    annotations = {'ur':[BaseAnnotation('b'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('k'),
+                            BaseAnnotation('s'),
+                            BaseAnnotation('ah'),
+                            BaseAnnotation('z'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('r'),
+                            BaseAnnotation('f'),
+                            BaseAnnotation('ao'),
+                            BaseAnnotation('r'),
+                            BaseAnnotation('p'),
+                            BaseAnnotation('ae'),
+                            BaseAnnotation('k'),
+                            BaseAnnotation('ih'),
+                            BaseAnnotation('ng'),
                             ],
-                    'sr':[{'label': 'b'},
-                            {'label': 'aa'},
-                            {'label': 'k'},
-                            {'label': 's'},
-                            {'label': 'ah'},
-                            {'label': 's'},
-                            {'label': 'er'},
-                            {'label': 'f'},
-                            {'label': 'er'},
-                            {'label': 'p'},
-                            {'label': 'ae'},
-                            {'label': 'k'},
-                            {'label': 'eng'},
+                    'sr':[BaseAnnotation('b'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('k'),
+                            BaseAnnotation('s'),
+                            BaseAnnotation('ah'),
+                            BaseAnnotation('s'),
+                            BaseAnnotation('er'),
+                            BaseAnnotation('f'),
+                            BaseAnnotation('er'),
+                            BaseAnnotation('p'),
+                            BaseAnnotation('ae'),
+                            BaseAnnotation('k'),
+                            BaseAnnotation('eng'),
                             ],
                     'syllable':[
-                            {'label': '(b.aa.k)','sr':(0,3)},
-                            {'label': '(s.ah.s)','sr':(3,6)},
-                            {'label': '(er)','sr':(6,7)},
-                            {'label': '(f.er)','sr':(7,9)},
-                            {'label': '(p.ae)','sr': (9,11)},
-                            {'label': '(k.eng)','sr': (11,13)},
+                            Annotation('', sr = (0,3)),
+                            Annotation('', sr = (3,6)),
+                            Annotation('', sr = (6,7)),
+                            Annotation('', sr = (7,9)),
+                            Annotation('', sr =  (9,11)),
+                            Annotation('', sr =  (11,13)),
                             ],
                     'morpheme':[
-                            {'label': 'box','ur':(0,4)},
-                            {'label': 'PL','ur':(4,6)},
-                            {'label': 'are','ur':(6,8)},
-                            {'label': 'for','ur':(8,11)},
-                            {'label': 'pack','ur': (11,14)},
-                            {'label': 'PROG','ur': (14,16)},
+                            Annotation('box', ur = (0,4)),
+                            Annotation('PL', ur = (4,6)),
+                            Annotation('are', ur = (6,8)),
+                            Annotation('for', ur = (8,11)),
+                            Annotation('pack', ur =  (11,14)),
+                            Annotation('PROG', ur =  (14,16)),
                             ],
                     'word':[
-                            {'label': 'boxes','ur':(0,6), 'sr':(0,6)},
-                            {'label': 'are','ur':(6,8), 'sr': (6,7)},
-                            {'label': 'for','ur':(8,11), 'sr': (7,9)},
-                            {'label': 'packing','ur': (11,16), 'sr':(9,13)},
+                            Annotation('boxes', ur = (0,6), sr = (0,6)),
+                            Annotation('are', ur = (6,8), sr =  (6,7)),
+                            Annotation('for', ur = (8,11), sr =  (7,9)),
+                            Annotation('packing', ur =  (11,16), sr = (9,13)),
                             ],
-                    'line':[{'label':'1', 'sr':(0,16)}]
+                    'line':[Annotation('', sr = (0,13))]
                     }
     data.add_annotations(**annotations)
     return [data]
@@ -294,44 +331,44 @@ def corpus_data_syllable_morpheme():
                 AnnotationType('word','phone','line', anchor = True),
                 AnnotationType('line', 'word', None)]
     data = DiscourseData('test',levels)
-    annotations = {'phone':[{'label': 'b'},
-                            {'label': 'aa'},
-                            {'label': 'k'},
-                            {'label': 's'},
-                            {'label': 'ah'},
-                            {'label': 'z'},
-                            {'label': 'aa'},
-                            {'label': 'r'},
-                            {'label': 'f'},
-                            {'label': 'ao'},
-                            {'label': 'r'},
-                            {'label': 'p'},
-                            {'label': 'ae'},
-                            {'label': 'k'},
-                            {'label': 'ih'},
-                            {'label': 'ng'},
+    annotations = {'phone':[BaseAnnotation('b'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('k'),
+                            BaseAnnotation('s'),
+                            BaseAnnotation('ah'),
+                            BaseAnnotation('z'),
+                            BaseAnnotation('aa'),
+                            BaseAnnotation('r'),
+                            BaseAnnotation('f'),
+                            BaseAnnotation('ao'),
+                            BaseAnnotation('r'),
+                            BaseAnnotation('p'),
+                            BaseAnnotation('ae'),
+                            BaseAnnotation('k'),
+                            BaseAnnotation('ih'),
+                            BaseAnnotation('ng'),
                             ],
                     'syllable':[
-                            {'label': '(b.aa.k)','phone':(0,3)},
-                            {'label': '(s.ah.z)','phone':(3,6)},
-                            {'label': '(aa.r)','phone':(6,8)},
-                            {'label': '(f.ao.r)','phone':(8,11)},
-                            {'label': '(p.ae)','phone': (11,13)},
-                            {'label': '(k.ih.ng)','phone': (13,16)},
+                            Annotation('', phone = (0,3)),
+                            Annotation('', phone = (3,6)),
+                            Annotation('', phone = (6,8)),
+                            Annotation('', phone = (8,11)),
+                            Annotation('', phone =  (11,13)),
+                            Annotation('', phone =  (13,16)),
                             ],
                     'morpheme':[
-                            {'label': 'box','phone':(0,4)},
-                            {'label': 'PL','phone':(4,6)},
-                            {'label': 'are','phone':(6,8)},
-                            {'label': 'for','phone':(8,11)},
-                            {'label': 'pack','phone': (11,14)},
-                            {'label': 'PROG','phone': (14,16)},
+                            Annotation('box', phone = (0,4)),
+                            Annotation('PL', phone = (4,6)),
+                            Annotation('are', phone = (6,8)),
+                            Annotation('for', phone = (8,11)),
+                            Annotation('pack', phone =  (11,14)),
+                            Annotation('PROG', phone =  (14,16)),
                             ],
                     'word':[
-                            {'label': 'boxes','phone':(0,6)},
-                            {'label': 'are','phone':(6,8)},
-                            {'label': 'for','phone':(8,11)},
-                            {'label': 'packing','phone': (11,16)},
+                            Annotation('boxes', phone = (0,6)),
+                            Annotation('are', phone = (6,8)),
+                            Annotation('for', phone = (8,11)),
+                            Annotation('packing', phone = (11,16)),
                             ]
                     }
     data.add_annotations(**annotations)
@@ -340,28 +377,91 @@ def corpus_data_syllable_morpheme():
 
 @pytest.fixture(scope = 'module')
 def timed_corpus(test_dir, corpus_data_timed):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_timed.db'))
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','timed.db'))
     c.initial_setup()
     add_discourse(c,corpus_data_timed[0])
     return c
 
 @pytest.fixture(scope = 'module')
 def untimed_corpus(test_dir, corpus_data_untimed):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_untimed.db'))
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','untimed.db'))
     c.initial_setup()
     add_discourse(c, corpus_data_untimed[0])
     return c
 
 @pytest.fixture(scope = 'module')
 def syllable_morpheme_corpus(test_dir, corpus_data_syllable_morpheme):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_syllable_morpheme.db'))
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','syllable_morpheme.db'))
     c.initial_setup()
     add_discourse(c, corpus_data_syllable_morpheme[0])
     return c
 
 @pytest.fixture(scope = 'module')
 def srur_corpus(test_dir, corpus_data_ur_sr):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','test_ur_sr.db'))
+    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','ur_sr.db'))
     c.initial_setup()
     add_discourse(c, corpus_data_ur_sr[0])
     return c
+
+
+
+@pytest.fixture(scope='module')
+def unspecified_test_corpus():
+    return None
+    corpus_data = [{'spelling':'atema','transcription':['ɑ','t','e','m','ɑ'],'frequency':11.0},
+                    {'spelling':'enuta','transcription':['e','n','u','t','ɑ'],'frequency':11.0},
+                    {'spelling':'mashomisi','transcription':['m','ɑ','ʃ','o','m','i','s','i'],'frequency':5.0},
+                    {'spelling':'mata','transcription':['m','ɑ','t','ɑ'],'frequency':2.0},
+                    {'spelling':'nata','transcription':['n','ɑ','t','ɑ'],'frequency':2.0},
+                    {'spelling':'sasi','transcription':['s','ɑ','s','i'],'frequency':139.0},
+                    {'spelling':'shashi','transcription':['ʃ','ɑ','ʃ','i'],'frequency':43.0},
+                    {'spelling':'shisata','transcription':['ʃ','i','s','ɑ','t','ɑ'],'frequency':3.0},
+                    {'spelling':'shushoma','transcription':['ʃ','u','ʃ','o','m','ɑ'],'frequency':126.0},
+                    {'spelling':'ta','transcription':['t','ɑ'],'frequency':67.0},
+                    {'spelling':'tatomi','transcription':['t','ɑ','t','o','m','i'],'frequency':7.0},
+                    {'spelling':'tishenishu','transcription':['t','i','ʃ','e','n','i','ʃ','u'],'frequency':96.0},
+                    {'spelling':'toni','transcription':['t','o','n','i'],'frequency':33.0},
+                    {'spelling':'tusa','transcription':['t','u','s','ɑ'],'frequency':32.0},
+                    {'spelling':'ʃi','transcription':['ʃ','i'],'frequency':2.0}]
+    corpus = Corpus('test')
+    for w in corpus_data:
+        corpus.add_word(Word(**w))
+    return corpus
+
+@pytest.fixture(scope='module')
+def graph_user():
+    return 'neo4j'
+
+@pytest.fixture(scope='module')
+def graph_pw():
+    return 'testtest'
+
+@pytest.fixture(scope='module')
+def graph_host():
+    return 'localhost'
+
+@pytest.fixture(scope='module')
+def graph_port():
+    return 7474
+
+
+@pytest.fixture(scope='module')
+def graph_db(graph_host, graph_port, graph_user, graph_pw,
+            corpus_data_untimed, corpus_data_timed, corpus_data_syllable_morpheme,
+            corpus_data_syllable_morpheme_srur, corpus_data_ur_sr):
+    with GraphContext(graph_user, graph_pw, 'untimed', graph_host, graph_port) as g:
+        g.reset_graph()
+        g.add_discourse(corpus_data_untimed[0])
+
+    with GraphContext(graph_user, graph_pw, 'timed', graph_host, graph_port) as g:
+        g.add_discourse(corpus_data_timed[0])
+
+    with GraphContext(graph_user, graph_pw, 'syllable_morpheme', graph_host, graph_port) as g:
+        g.add_discourse(corpus_data_syllable_morpheme[0])
+
+    with GraphContext(graph_user, graph_pw, 'syllable_morpheme_srur', graph_host, graph_port) as g:
+        g.add_discourse(corpus_data_syllable_morpheme_srur[0])
+
+    with GraphContext(graph_user, graph_pw, 'ur_sr', graph_host, graph_port) as g:
+        g.add_discourse(corpus_data_ur_sr[0])
+    return {'host':graph_host, 'port': graph_port, 'user': graph_user, 'password': graph_pw}

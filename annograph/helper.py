@@ -1,6 +1,6 @@
 import numpy as np
 
-from annograph.classes import Attribute
+from annograph.sql.classes import Attribute
 
 class AnnotationType(object):
     def __init__(self, name, subtype, supertype, attribute = None, anchor = False,
@@ -207,9 +207,9 @@ def align_phones(seqj, seqi, gap=-1, matrix=None, match=1, mismatch=-1):
             cj = seqj[j - 1]
 
             if matrix is None:
-                diag_score = score[i - 1, j - 1] + (cj['label'] == ci['label'] and match or mismatch)
+                diag_score = score[i - 1, j - 1] + (cj.label == ci.label and match or mismatch)
             else:
-                diag_score = score[i - 1, j - 1] + matrix[cj['label']][ci['label']]
+                diag_score = score[i - 1, j - 1] + matrix[cj.label][ci.label]
 
             up_score   = score[i - 1, j] + gap
             left_score = score[i, j - 1] + gap

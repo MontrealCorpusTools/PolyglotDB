@@ -1,9 +1,11 @@
 import os
 import pytest
 
-from annograph.classes import Corpus
+from annograph.sql.classes import Corpus
 
-from annograph.config import session_scope
+from annograph.sql.config import session_scope
+
+from annograph.io.io import add_discourse_graph
 
 def test_corpus_timed(timed_corpus):
     c = timed_corpus
@@ -31,3 +33,4 @@ def test_corpus_srur(srur_corpus):
 
     w = c.find('cats')
     assert(w.annotation.annotation_label == 'cats')
+

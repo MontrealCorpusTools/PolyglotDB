@@ -1,16 +1,18 @@
 
 from annograph.helper import align_phones
 
-def test_align():
-    cats = [{'label':'k'}, {'label':'ae'},{'label':'t'},{'label':'s'}]
-    cats2 = [{'label':'k'},{'label':'ae'},{'label':'s'}]
-    assert(align_phones(cats, cats2) ==
-                        (cats, [{'label':'k'},{'label':'ae'}, '-', {'label':'s'}]))
+from annograph.io.helper import BaseAnnotation
 
-    probably = [{'label':'p'},{'label':'r'},{'label':'aa'},{'label':'b'},
-                {'label':'ah'},{'label':'b'},{'label':'l'},{'label':'iy'}]
-    probably2 = [{'label':'p'},{'label':'r'},{'label':'ah'},{'label':'l'},{'label':'iy'}]
+def test_align():
+    cats = [BaseAnnotation('k'), BaseAnnotation('ae'),BaseAnnotation('t'),BaseAnnotation('s')]
+    cats2 = [BaseAnnotation('k'),BaseAnnotation('ae'),BaseAnnotation('s')]
+    assert(align_phones(cats, cats2) ==
+                        (cats, [BaseAnnotation('k'),BaseAnnotation('ae'), '-', BaseAnnotation('s')]))
+
+    probably = [BaseAnnotation('p'),BaseAnnotation('r'),BaseAnnotation('aa'),BaseAnnotation('b'),
+                BaseAnnotation('ah'),BaseAnnotation('b'),BaseAnnotation('l'),BaseAnnotation('iy')]
+    probably2 = [BaseAnnotation('p'),BaseAnnotation('r'),BaseAnnotation('ah'),BaseAnnotation('l'),BaseAnnotation('iy')]
     assert(align_phones(probably, probably2) ==
-                        (probably, [{'label':'p'},{'label':'r'},'-','-',
-                                    {'label':'ah'},'-',{'label':'l'},
-                                    {'label':'iy'}]))
+                        (probably, [BaseAnnotation('p'),BaseAnnotation('r'),'-','-',
+                                    BaseAnnotation('ah'),'-',BaseAnnotation('l'),
+                                    BaseAnnotation('iy')]))

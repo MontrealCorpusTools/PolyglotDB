@@ -9,27 +9,24 @@ branches:
 notifications:
   email: false
 
-# Setup anaconda
+sudo: false
+
+jdk:
+  - oraclejdk7
+
 before_install:
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b
-  - export PATH=/home/travis/miniconda/bin:$PATH
-  - conda update --yes conda
+  # install Neo4j locally:
+  - wget dist.neo4j.org/neo4j-community-2.2.0-unix.tar.gz
+  - tar -xzf neo4j-community-2.2.0-unix.tar.gz
+  - sed -i.bak s/dbms.security.auth_enabled=true/dbms.security.auth_enabled=false/g neo4j-community-2.2.0/conf/neo4j-server.properties
+  - neo4j-community-2.2.0/bin/neo4j start
+  - bash continuous-integration/travis/install.sh
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
 # Install packages
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION sqlalchemy pytest numpy networkx matplotlib
-  - pip install -q coveralls coverage
   - python setup.py install
-
-
-before_script:
- - export DISPLAY=:99.0
- - sh -e /etc/init.d/xvfb start
- - sleep 3
 
 # Run test
 script:

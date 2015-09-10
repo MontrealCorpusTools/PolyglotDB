@@ -1,4 +1,5 @@
 import re
+import operator
 import sqlalchemy, sqlalchemy.orm
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import joinedload, aliased
