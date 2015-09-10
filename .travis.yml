@@ -24,6 +24,10 @@ before_install:
 
 # Install packages
 install:
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - source activate test-environment
+  - which python
+  - conda list
   - python setup.py install
 
 # Run test
