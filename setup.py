@@ -38,6 +38,8 @@ setup(name='annograph',
       packages=['annograph'],
       install_requires=[
           'sqlalchemy',
+          'textgrid',
+          'py2neo'
       ],
     cmdclass={'test': PyTest},
     extras_require={
