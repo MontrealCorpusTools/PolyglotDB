@@ -21,9 +21,7 @@ before_install:
   - sed -i.bak s/dbms.security.auth_enabled=true/dbms.security.auth_enabled=false/g neo4j-community-2.2.0/conf/neo4j-server.properties
   - neo4j-community-2.2.0/bin/neo4j start
   - bash continuous-integration/travis/install.sh
-  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
+
 # Install packages
 install:
   - python setup.py install
