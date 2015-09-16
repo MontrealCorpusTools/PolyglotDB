@@ -91,6 +91,7 @@ def inspect_discourse_textgrid(path):
     for t in textgrids:
         tg = load_textgrid(t)
         spellings, segments, attributes = guess_tiers(tg)
+        print(spellings, segments, attributes)
         if len(segments) == 0:
             base = None
         else:
@@ -123,7 +124,7 @@ def inspect_discourse_textgrid(path):
                 anno_types.append(a)
         else:
             if len(anno_types) != len(interval_tiers):
-                raise(PCTError("The TextGrids must have the same number of tiers."))
+                raise(TextGridTierError("The TextGrids must have the same number of tiers."))
             for i, ti in enumerate(interval_tiers):
                 anno_types[i].add((x.mark for x in ti), save = False)
 
@@ -142,11 +143,11 @@ def guess_tiers(tg):
     interval_tiers = [x for x in tg.tiers if isinstance(x, IntervalTier)]
     for i,t in enumerate(interval_tiers):
         tier_properties[t.name] = (i, len(t), averageLabelLen(t), len(uniqueLabels(t)))
-
+    print(tier_properties)
     max_labels = max(tier_properties.values(), key = lambda x: x[2])
     likely_segment = [k for k,v in tier_properties.items() if v == max_labels]
     if len(likely_segment) == 1:
-        segment_tiers.append(likely_segment)
+        segment_tiers.append(likely_segment[0])
     likely_spelling = min((x for x in tier_properties.keys() if x not in segment_tiers),
                         key = lambda x: tier_properties[x][0])
     spelling_tiers.append(likely_spelling)
@@ -243,7 +244,7 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
     return data
 
 
-def load_discourse_textgrid(corpus_name, path, annotation_types,
+def load_discourse_textgrid(corpus_context, path, annotation_types,
                             lexicon = None,
                             feature_system_path = None,
                             stop_check = None, call_back = None):
@@ -274,16 +275,10 @@ def load_discourse_textgrid(corpus_name, path, annotation_types,
         Discourse object generated from the TextGrid file
     """
     data = textgrid_to_data(path, annotation_types, call_back, stop_check)
-    data.name = corpus_name
     data.wav_path = find_wav_path(path)
-    discourse = data_to_discourse(data, lexicon)
+    corpus_context.add_discourse(data)
 
-    if feature_system_path is not None:
-        feature_matrix = load_binary(feature_system_path)
-        discourse.lexicon.set_feature_matrix(feature_matrix)
-    return discourse
-
-def load_directory_textgrid(corpus_name, path, annotation_types,
+def load_directory_textgrid(corpus_context, path, annotation_types,
                             feature_system_path = None,
                             stop_check = None, call_back = None):
     """
@@ -325,7 +320,6 @@ def load_directory_textgrid(corpus_name, path, annotation_types,
         call_back('Parsing files...')
         call_back(0,len(file_tuples))
         cur = 0
-    corpus = SpontaneousSpeechCorpus(corpus_name, path)
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -334,13 +328,7 @@ def load_directory_textgrid(corpus_name, path, annotation_types,
             call_back(i)
         root, filename = t
         name = os.path.splitext(filename)[0]
-        d = load_discourse_textgrid(name, os.path.join(root,filename),
-                                    annotation_types, corpus.lexicon,
+        load_discourse_textgrid(corpus_context, os.path.join(root,filename),
+                                    annotation_types, None,
                                     None,
                                     stop_check, call_back)
-        corpus.add_discourse(d)
-
-    if feature_system_path is not None:
-        feature_matrix = load_binary(feature_system_path)
-        corpus.lexicon.set_feature_matrix(feature_matrix)
-    return corpus

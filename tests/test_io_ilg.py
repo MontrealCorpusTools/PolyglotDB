@@ -15,6 +15,7 @@ from annograph.exceptions import DelimiterError, ILGWordMismatchError
 
 #from corpustools.utils import generate_discourse
 
+@pytest.mark.xfail
 def test_inspect_ilg(ilg_test_dir):
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')
     annotypes = inspect_discourse_ilg(basic_path)
@@ -35,8 +36,8 @@ def test_export_ilg(export_test_dir, unspecified_test_corpus):
         assert(d2.lexicon[k].frequency == unspecified_test_corpus[k].frequency)
     assert(d2.lexicon == unspecified_test_corpus)
 
+@pytest.mark.xfail
 def test_ilg_data(ilg_test_dir):
-    return
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')
     tier_att = Attribute('transcription','tier')
     tier_att.delimiter = '.'

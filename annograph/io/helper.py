@@ -40,9 +40,12 @@ class Annotation(BaseAnnotation):
         self.ends = []
         self.references = []
         for k,v in kwargs.items():
-            self.references.append(k)
-            self.begins.append(v[0])
-            self.ends.append(v[1])
+            if isinstance(v, tuple):
+                self.references.append(k)
+                self.begins.append(v[0])
+                self.ends.append(v[1])
+            else:
+                setattr(self, k, v)
         self.token = {}
         self.additional = {}
 
@@ -170,6 +173,10 @@ class DiscourseData(object):
 
     def __contains__(self, item):
         return item in self.data
+
+    @property
+    def types(self):
+        return self.keys()
 
     def keys(self):
         return self.data.keys()

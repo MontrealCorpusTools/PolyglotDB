@@ -82,6 +82,33 @@ class Attribute(object):
         self.name = label
         self.pos = pos
 
+    def for_cypher(self):
+        if self.name == 'begin':
+            return 'b.time'
+        elif self.name == 'end':
+            return 'e.time'
+        if self.pos == 0:
+            return 'r.{}'.format(key_for_cypher(self.name))
+        if self.pos < 0:
+            temp = 'prevr{}.{}'
+        elif self.pos > 0:
+            temp = 'follr{}.{}'
+        return temp.format(self.pos,key_for_cypher(self.name))
+
+    def aliased_for_cypher(self):
+        if self.name == 'begin':
+            return 'b.time AS begin'
+        elif self.name == 'end':
+            return 'e.time AS end'
+        if self.pos == 0:
+            return 'r.{} as {}'.format(key_for_cypher(self.name), self.name)
+        if self.pos < 0:
+            temp = 'prevr{}.{} AS previous_{}'
+        elif self.pos > 0:
+            temp = 'follr{}.{} AS following_{}'
+        return temp.format(self.pos,key_for_cypher(self.name), self.name)
+
+
     def __eq__(self, other):
         return EqualClauseElement(self.name, other, self.pos)
 
@@ -101,9 +128,18 @@ class Attribute(object):
         return LteClauseElement(self.name, other, self.pos)
 
     def in_(self, other):
-        if not hasattr(other, '__iter__'):
-            t = other.all()
-        t = [x.properties[self.name] for x in t]
+        if other.__class__.__name__ == 'Query': #Avoid circular imports
+            other = other.all()
+            t = []
+            for x in other:
+                print(x)
+                try:
+                    t.append(x.r.properties[self.name])
+                except AttributeError:
+                    t.append(x)
+        else:
+            t = other
+        print(t)
         return InClauseElement(self.name, t, self.pos)
 
 class AnnotationAttribute(Attribute):

@@ -32,7 +32,7 @@ def inspect_discourse_multiple_files(word_path, dialect):
     """
     if dialect == 'buckeye':
         annotation_types = [AnnotationType('spelling', 'surface_transcription', None, anchor = True),
-                            AnnotationType('transcription', None, 'spelling', base = True, token = False),
+                            AnnotationType('transcription', None, 'spelling', base = False, token = False),
                             AnnotationType('surface_transcription', None, 'spelling', base = True, token = True),
                             AnnotationType('category', None, 'spelling', base = False, token = True)]
     elif dialect == 'timit':
@@ -91,15 +91,11 @@ def multiple_files_to_data(word_path, phone_path, dialect, annotation_types = No
             word.ends.append(level_count + len(found))
             annotations[n] = found
         elif dialect == 'buckeye':
-            if w['transcription'] is None:
-                for n in data.base_levels:
-                    level_count = data.level_length(n)
-                    word.references.append(n)
-                    word.begins.append(level_count)
-                    word.ends.append(level_count)
-            else:
-                for n in data.base_levels:
-                    if data[n].token:
+            for n in data.base_levels:
+                if data[n].token:
+                    if w[n] is None:
+                        found = [BaseAnnotation('?',w['begin'], w['end'])]
+                    else:
                         expected = w[n]
                         found = []
                         while len(found) < len(expected):
@@ -111,32 +107,35 @@ def multiple_files_to_data(word_path, phone_path, dialect, annotation_types = No
                                 print(name)
                                 print(w)
                                 raise(Exception)
+                else:
+                    if w[n] is None:
+                        found = [BaseAnnotation('?')]
                     else:
                         found = [BaseAnnotation(x) for x in w[n]]
-                    level_count = data.level_length(n)
-                    word.references.append(n)
-                    word.begins.append(level_count)
-                    word.ends.append(level_count+len(found))
-                    annotations[n] = found
-                for at in annotation_types:
-                    if at.ignored:
-                        continue
-                    if at.base:
-                        continue
-                    if at.anchor:
-                        continue
-                    value = w[at.name]
-                    if at.delimited:
-                        value = [Annotation(x) for x in parse_transcription(ti.mark)]
-                    if at.token:
-                        word.token[at.name] = value
-                    else:
-                        word.additional[at.name] = value
+                level_count = data.level_length(n)
+                word.references.append(n)
+                word.begins.append(level_count)
+                word.ends.append(level_count+len(found))
+                annotations[n] = found
+            for at in annotation_types:
+                if at.ignored:
+                    continue
+                if at.base:
+                    continue
+                if at.anchor:
+                    continue
+                value = w[at.name]
+                if at.delimited:
+                    value = [Annotation(x) for x in parse_transcription(ti.mark)]
+                if at.token:
+                    word.token[at.name] = value
+                else:
+                    word.additional[at.name] = value
         annotations[data.word_levels[0]] = [word]
         data.add_annotations(**annotations)
     return data
 
-def load_directory_multiple_files(corpus_name, path, dialect,
+def load_directory_multiple_files(corpus_context, path, dialect,
                                     annotation_types = None,
                                     feature_system_path = None,
                                     stop_check = None, call_back = None):
@@ -182,7 +181,6 @@ def load_directory_multiple_files(corpus_name, path, dialect,
         call_back('Parsing files...')
         call_back(0,len(file_tuples))
         cur = 0
-    corpus = SpontaneousSpeechCorpus(corpus_name, path)
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -197,18 +195,17 @@ def load_directory_multiple_files(corpus_name, path, dialect,
             phone_ext = '.phn'
         word_path = os.path.join(root,filename)
         phone_path = os.path.splitext(word_path)[0] + phone_ext
-        d = load_discourse_multiple_files(name, word_path, phone_path,
-                                            dialect, annotation_types,
-                                            corpus.lexicon, None,
-                                            stop_check, None)
-        corpus.add_discourse(d)
+        data = multiple_files_to_data(word_path,phone_path, dialect,
+                                        annotation_types,
+                                        call_back, stop_check)
+        data.wav_path = find_wav_path(word_path)
+        corpus_context.add_discourse(data)
 
-    if feature_system_path is not None:
-        feature_matrix = load_binary(feature_system_path)
-        corpus.lexicon.set_feature_matrix(feature_matrix)
-    return corpus
+    #if feature_system_path is not None:
+    #    feature_matrix = load_binary(feature_system_path)
+    #    corpus.lexicon.set_feature_matrix(feature_matrix)
 
-def load_discourse_multiple_files(corpus_name, word_path, phone_path, dialect,
+def load_discourse_multiple_files(corpus_context, word_path, phone_path, dialect,
                                     annotation_types = None,
                                     lexicon = None,
                                     feature_system_path = None,
@@ -246,14 +243,8 @@ def load_discourse_multiple_files(corpus_name, word_path, phone_path, dialect,
     data = multiple_files_to_data(word_path,phone_path, dialect,
                                     annotation_types,
                                     call_back, stop_check)
-    data.name = corpus_name
     data.wav_path = find_wav_path(word_path)
-    discourse = data_to_discourse(data, lexicon)
-
-    if feature_system_path is not None:
-        feature_matrix = load_binary(feature_system_path)
-        discourse.lexicon.set_feature_matrix(feature_matrix)
-    return discourse
+    corpus_context.add_discourse(data)
 
 def read_phones(path, dialect, sr = None):
     output = []

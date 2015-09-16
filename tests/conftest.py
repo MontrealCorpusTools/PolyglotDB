@@ -6,8 +6,10 @@ from annograph.sql.classes import Corpus
 from annograph.io.helper import BaseAnnotation, Annotation, AnnotationType, DiscourseData
 
 from annograph.io.io import add_discourse
+from annograph.io.textgrid import inspect_discourse_textgrid, load_discourse_textgrid
 
-from annograph.graph.util import GraphContext
+from annograph.graph.util import CorpusContext
+
 
 @pytest.fixture(scope='session')
 def show_plots():
@@ -103,7 +105,7 @@ def corpus_data_timed():
                             ]
                     }
     data.add_annotations(**annotations)
-    return [data]
+    return data
 
 @pytest.fixture(scope='module')
 def corpus_data_untimed():
@@ -163,39 +165,16 @@ def corpus_data_untimed():
                             ]
                     }
     data.add_annotations(**annotations)
-    return [data]
+    return data
 
 
 @pytest.fixture(scope='module')
 def corpus_data_ur_sr():
-    levels = [AnnotationType('ur', None, 'word', base = True, token = False),
-                AnnotationType('sr', None, 'word', base = True, token = True),
+    levels = [AnnotationType('sr', None, 'word', base = True, token = True),
                 AnnotationType('word','sr','line', anchor = True),
                 AnnotationType('line', 'word', None, anchor = False)]
     data = DiscourseData('test',levels)
-    annotations = {'ur':[BaseAnnotation('k'),
-                            BaseAnnotation('ae'),
-                            BaseAnnotation('t'),
-                            BaseAnnotation('s'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('r'),
-                            BaseAnnotation('k'),
-                            BaseAnnotation('u'),
-                            BaseAnnotation('t'),
-                            BaseAnnotation('d'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('g'),
-                            BaseAnnotation('z'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('r'),
-                            BaseAnnotation('t'),
-                            BaseAnnotation('uw'),
-                            BaseAnnotation('ay'),
-                            BaseAnnotation('g'),
-                            BaseAnnotation('eh'),
-                            BaseAnnotation('s'),
-                            ],
-                    'sr':[BaseAnnotation('k', 0.0, 0.1),
+    annotations = {'sr':[BaseAnnotation('k', 0.0, 0.1),
                             BaseAnnotation('ae', 0.1, 0.2),
                             BaseAnnotation('s', 0.2, 0.4),
                             BaseAnnotation('aa', 0.5, 0.6),
@@ -217,14 +196,14 @@ def corpus_data_ur_sr():
                             BaseAnnotation('s', 3.5, 3.6),
                             ],
                     'word':[
-                            Annotation('cats', ur = (0,4), sr =  (0,3)),
-                            Annotation('are', ur = (4,6), sr =  (3,5)),
-                            Annotation('cute', ur = (6,9), sr =  (5,7)),
-                            Annotation('dogs', ur =  (9,13), sr =  (7,12)),
-                            Annotation('are', ur =  (13,15), sr =  (12,14)),
-                            Annotation('too', ur =  (15,17), sr =  (14,16)),
-                            Annotation('i', ur =  (17,18), sr =  (16,17)),
-                            Annotation('guess', ur = (18,21), sr =  (17,20)),
+                            Annotation('cats', ur = ['k','ae','t','s'], sr =  (0,3)),
+                            Annotation('are', ur = ['aa','r'], sr =  (3,5)),
+                            Annotation('cute', ur = ['k','uw','t'], sr =  (5,7)),
+                            Annotation('dogs', ur =  ['d','aa','g','z'], sr =  (7,12)),
+                            Annotation('are', ur =  ['aa','r'], sr =  (12,14)),
+                            Annotation('too', ur =  ['t','uw'], sr =  (14,16)),
+                            Annotation('i', ur =  ['ay'], sr =  (16,17)),
+                            Annotation('guess', ur = ['g','eh','s'], sr =  (17,20)),
                             ],
                     'line': [
                             Annotation('', sr = (0,7)),
@@ -233,7 +212,7 @@ def corpus_data_ur_sr():
                             ]
                     }
     data.add_annotations(**annotations)
-    return [data]
+    return data
 
 
 @pytest.fixture(scope='module')
@@ -321,7 +300,7 @@ def corpus_data_syllable_morpheme_srur():
                     'line':[Annotation('', sr = (0,13))]
                     }
     data.add_annotations(**annotations)
-    return [data]
+    return data
 
 @pytest.fixture(scope='module')
 def corpus_data_syllable_morpheme():
@@ -372,35 +351,35 @@ def corpus_data_syllable_morpheme():
                             ]
                     }
     data.add_annotations(**annotations)
-    return [data]
+    return data
 
 
 @pytest.fixture(scope = 'module')
 def timed_corpus(test_dir, corpus_data_timed):
     c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','timed.db'))
     c.initial_setup()
-    add_discourse(c,corpus_data_timed[0])
+    add_discourse(c,corpus_data_timed)
     return c
 
 @pytest.fixture(scope = 'module')
 def untimed_corpus(test_dir, corpus_data_untimed):
     c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','untimed.db'))
     c.initial_setup()
-    add_discourse(c, corpus_data_untimed[0])
+    add_discourse(c, corpus_data_untimed)
     return c
 
 @pytest.fixture(scope = 'module')
 def syllable_morpheme_corpus(test_dir, corpus_data_syllable_morpheme):
     c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','syllable_morpheme.db'))
     c.initial_setup()
-    add_discourse(c, corpus_data_syllable_morpheme[0])
+    add_discourse(c, corpus_data_syllable_morpheme)
     return c
 
 @pytest.fixture(scope = 'module')
 def srur_corpus(test_dir, corpus_data_ur_sr):
     c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','ur_sr.db'))
     c.initial_setup()
-    add_discourse(c, corpus_data_ur_sr[0])
+    add_discourse(c, corpus_data_ur_sr)
     return c
 
 
@@ -448,20 +427,26 @@ def graph_port():
 @pytest.fixture(scope='module')
 def graph_db(graph_host, graph_port, graph_user, graph_pw,
             corpus_data_untimed, corpus_data_timed, corpus_data_syllable_morpheme,
-            corpus_data_syllable_morpheme_srur, corpus_data_ur_sr):
-    with GraphContext(graph_user, graph_pw, 'untimed', graph_host, graph_port) as g:
-        g.reset_graph()
-        g.add_discourse(corpus_data_untimed[0])
+            corpus_data_syllable_morpheme_srur, corpus_data_ur_sr,
+            textgrid_test_dir):
+    with CorpusContext(graph_user, graph_pw, 'untimed', graph_host, graph_port) as c:
+        c.reset_graph()
+        c.add_discourse(corpus_data_untimed)
 
-    with GraphContext(graph_user, graph_pw, 'timed', graph_host, graph_port) as g:
-        g.add_discourse(corpus_data_timed[0])
+    with CorpusContext(graph_user, graph_pw, 'timed', graph_host, graph_port) as c:
+        c.add_discourse(corpus_data_timed)
 
-    with GraphContext(graph_user, graph_pw, 'syllable_morpheme', graph_host, graph_port) as g:
-        g.add_discourse(corpus_data_syllable_morpheme[0])
+    with CorpusContext(graph_user, graph_pw, 'syllable_morpheme', graph_host, graph_port) as c:
+        c.add_discourse(corpus_data_syllable_morpheme)
 
-    with GraphContext(graph_user, graph_pw, 'syllable_morpheme_srur', graph_host, graph_port) as g:
-        g.add_discourse(corpus_data_syllable_morpheme_srur[0])
+    #with CorpusContext(graph_user, graph_pw, 'syllable_morpheme_srur', graph_host, graph_port) as c:
+    #    c.add_discourse(corpus_data_syllable_morpheme_srur)
 
-    with GraphContext(graph_user, graph_pw, 'ur_sr', graph_host, graph_port) as g:
-        g.add_discourse(corpus_data_ur_sr[0])
+    with CorpusContext(graph_user, graph_pw, 'ur_sr', graph_host, graph_port) as c:
+        c.add_discourse(corpus_data_ur_sr)
+
+    acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
+    with CorpusContext(graph_user, graph_pw, 'acoustic', graph_host, graph_port) as c:
+        annotation_types = inspect_discourse_textgrid(acoustic_path)
+        load_discourse_textgrid(c, acoustic_path, annotation_types)
     return {'host':graph_host, 'port': graph_port, 'user': graph_user, 'password': graph_pw}

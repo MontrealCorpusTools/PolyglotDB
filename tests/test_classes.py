@@ -4,6 +4,7 @@ import pytest
 
 from annograph.sql.config import session_scope
 
+@pytest.mark.xfail
 def test_lexicons_timed(timed_corpus):
     c = timed_corpus
 
@@ -21,6 +22,7 @@ def test_lexicons_timed(timed_corpus):
     wordlist = c.get_wordlist()
     print(wordlist)
 
+@pytest.mark.xfail
 def test_lexicons_untimed(untimed_corpus):
     c = untimed_corpus
 
@@ -32,6 +34,7 @@ def test_lexicons_untimed(untimed_corpus):
         pt = c._type(session, 'phone')
         assert('.'.join(map(str,w.subarc('phone'))) == 'k.ae.t.s')
 
+@pytest.mark.xfail
 def test_lexicons_syllable_morpheme(syllable_morpheme_corpus):
     c = syllable_morpheme_corpus
 
@@ -58,6 +61,7 @@ def test_lexicons_syllable_morpheme(syllable_morpheme_corpus):
         qs = c._find(session, 'PROG', 'morpheme')
         assert('.'.join(map(str,qs[0].subarc('phone'))), 'ih.ng')
 
+@pytest.mark.xfail
 def test_lexicons_srur(srur_corpus):
     c = srur_corpus
 

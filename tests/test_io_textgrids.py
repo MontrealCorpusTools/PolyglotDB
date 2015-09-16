@@ -5,8 +5,10 @@ import os
 
 from annograph.io.helper import AnnotationType, Annotation, BaseAnnotation
 
-from annograph.io.textgrid import (textgrid_to_data,load_textgrid,
-                                            guess_tiers)
+from annograph.io.textgrid import (textgrid_to_data,
+                    inspect_discourse_textgrid, load_discourse_textgrid)
+
+from annograph.graph.util import CorpusContext
 
 #def test_guess_tiers(textgrid_test_dir):
 #    tg = load_textgrid(os.path.join(textgrid_test_dir,'phone_word.TextGrid'))
@@ -14,6 +16,8 @@ from annograph.io.textgrid import (textgrid_to_data,load_textgrid,
 #    assert(result[0] == ['word'])
 #    assert(result[1] == ['phone'])
 #    assert(result[2] == [])
+
+
 
 def test_basic(textgrid_test_dir):
     path = os.path.join(textgrid_test_dir,'phone_word.TextGrid')
@@ -44,6 +48,13 @@ def test_basic(textgrid_test_dir):
                         BaseAnnotation('a', 0.25, 0.5),
                         BaseAnnotation('b', 0.5, 0.75),
                         BaseAnnotation('#', 0.75, 1)])
+
+def test_load(textgrid_test_dir, graph_db):
+    path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
+    with CorpusContext(corpus_name = 'test_textgrid', **graph_db) as c:
+        annotation_types = inspect_discourse_textgrid(path)
+        print(annotation_types)
+        load_discourse_textgrid(c, path, annotation_types)
 
 @pytest.mark.xfail
 def test_two_speakers(textgrid_test_dir):
