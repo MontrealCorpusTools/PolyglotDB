@@ -5,7 +5,7 @@ import logging
 
 from annograph.exceptions import DelimiterError
 
-from annograph.sql.classes import Attribute
+from annograph.corpus import Attribute
 
 NUMBER_CHARACTERS = set(string.digits)
 

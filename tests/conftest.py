@@ -1,14 +1,11 @@
 import pytest
 import os
 
-from annograph.sql.classes import Corpus
-
 from annograph.io.helper import BaseAnnotation, Annotation, AnnotationType, DiscourseData
 
-from annograph.io.io import add_discourse
 from annograph.io.textgrid import inspect_discourse_textgrid, load_discourse_textgrid
 
-from annograph.graph.util import CorpusContext
+from annograph.corpus import CorpusContext
 
 
 @pytest.fixture(scope='session')
@@ -353,34 +350,6 @@ def corpus_data_syllable_morpheme():
     data.add_annotations(**annotations)
     return data
 
-
-@pytest.fixture(scope = 'module')
-def timed_corpus(test_dir, corpus_data_timed):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','timed.db'))
-    c.initial_setup()
-    add_discourse(c,corpus_data_timed)
-    return c
-
-@pytest.fixture(scope = 'module')
-def untimed_corpus(test_dir, corpus_data_untimed):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','untimed.db'))
-    c.initial_setup()
-    add_discourse(c, corpus_data_untimed)
-    return c
-
-@pytest.fixture(scope = 'module')
-def syllable_morpheme_corpus(test_dir, corpus_data_syllable_morpheme):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','syllable_morpheme.db'))
-    c.initial_setup()
-    add_discourse(c, corpus_data_syllable_morpheme)
-    return c
-
-@pytest.fixture(scope = 'module')
-def srur_corpus(test_dir, corpus_data_ur_sr):
-    c = Corpus('sqlite:///'+ os.path.join(test_dir,'generated','ur_sr.db'))
-    c.initial_setup()
-    add_discourse(c, corpus_data_ur_sr)
-    return c
 
 
 

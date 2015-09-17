@@ -1,8 +1,8 @@
 import os
 import pytest
 
-from annograph.graph.util import CorpusContext
-from annograph.graph.models import Anchor, Annotation
+from annograph.corpus import CorpusContext
+from annograph.graph.models import Annotation
 
 def test_basic_query(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:

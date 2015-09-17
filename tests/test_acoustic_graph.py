@@ -2,8 +2,9 @@
 import os
 import pytest
 
-from annograph.graph.util import CorpusContext, Average, Count
-from annograph.graph.models import Anchor, Annotation
+from annograph.corpus import CorpusContext
+from annograph.graph.func import Average, Count
+from annograph.graph.models import Annotation
 
 def test_query_duration(graph_db):
     with CorpusContext(corpus_name = 'acoustic', **graph_db) as g:

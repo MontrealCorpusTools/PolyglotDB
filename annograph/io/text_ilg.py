@@ -5,14 +5,13 @@ from collections import Counter
 
 #from corpustools.corpus.classes import SpontaneousSpeechCorpus
 #from corpustools.corpus.classes import Corpus, Word, Discourse, WordToken, Attribute
-from annograph.sql.classes import Attribute
 
 from annograph.exceptions import (DelimiterError, ILGError, ILGLinesMismatchError,
                                 ILGWordMismatchError)
 
 from .helper import (compile_digraphs, parse_transcription,
                     DiscourseData, AnnotationType,data_to_discourse,
-                    Annotation, BaseAnnotation)
+                    Annotation, BaseAnnotation, Attribute)
 
 def calculate_lines_per_gloss(lines):
     line_counts = [len(x[1]) for x in lines]
