@@ -30,8 +30,6 @@ class Attribute(object):
 
     def for_cypher(self):
         if self.name == 'begin':
-            print(self)
-            print(self.annotation)
             b_node = self.annotation.begin_alias
             return '{}.time'.format(b_node)
         elif self.name == 'end':
