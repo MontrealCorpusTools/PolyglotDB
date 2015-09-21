@@ -19,72 +19,127 @@ class MetaAnnotation(type):
             return Attribute(key, 0)
 
 class Attribute(object):
-    def __init__(self, label, pos = 0):
+    def __init__(self, annotation, label):
+        self.annotation = annotation
         self.name = label
-        self.pos = pos
+
+        self.output_label = None
+
+    def __hash__(self):
+        return hash((self.annotation, self.name))
 
     def for_cypher(self):
         if self.name == 'begin':
-            return 'b.time'
+            print(self)
+            print(self.annotation)
+            b_node = self.annotation.begin_alias
+            return '{}.time'.format(b_node)
         elif self.name == 'end':
-            return 'e.time'
-        if self.pos == 0:
-            return 'r.{}'.format(key_for_cypher(self.name))
-        if self.pos < 0:
-            temp = 'prevr{}.{}'
-        elif self.pos > 0:
-            temp = 'follr{}.{}'
-        return temp.format(self.pos,key_for_cypher(self.name))
+            e_node = self.annotation.end_alias
+            return '{}.time'.format(e_node)
+        elif self.name == 'duration':
+            b_node = self.annotation.begin_alias
+            e_node = self.annotation.end_alias
+            return '{}.time - {}.time'.format(e_node, b_node)
+        return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.name))
+
+    @property
+    def alias(self):
+        return '{}_{}'.format(self.annotation.alias, self.name)
 
     def aliased_for_cypher(self):
-        if self.name == 'begin':
-            return 'b.time AS begin'
-        elif self.name == 'end':
-            return 'e.time AS end'
-        if self.pos == 0:
-            return 'r.{} as {}'.format(key_for_cypher(self.name), self.name)
-        if self.pos < 0:
-            temp = 'prevr{}.{} AS previous_{}'
-        elif self.pos > 0:
-            temp = 'follr{}.{} AS following_{}'
-        return temp.format(self.pos,key_for_cypher(self.name), self.name)
+        return '{} AS {}'.format(self.for_cypher(), self.alias)
 
+    def aliased_for_output(self):
+        if self.output_label is not None:
+            a = self.output_label
+        else:
+            a = self.alias
+        return '{} AS {}'.format(self.for_cypher(), a)
+
+    @property
+    def output_alias(self):
+        if self.output_label is not None:
+            return self.output_label
+        return self.alias
+
+    def column_name(self, label):
+        self.output_label = label
+        return self
 
     def __eq__(self, other):
-        return EqualClauseElement(self.name, other, self.pos)
+        return EqualClauseElement(self, other)
 
     def __neq__(self, other):
-        return NotEqualClauseElement(self.name, other, self.pos)
+        return NotEqualClauseElement(self, other)
 
     def __gt__(self, other):
-        return GtClauseElement(self.name, other, self.pos)
+        return GtClauseElement(self, other)
 
     def __gte__(self, other):
-        return GteClauseElement(self.name, other, self.pos)
+        return GteClauseElement(self, other)
 
     def __lt__(self, other):
-        return LtClauseElement(self.name, other, self.pos)
+        return LtClauseElement(self, other)
 
     def __lte__(self, other):
-        return LteClauseElement(self.name, other, self.pos)
+        return LteClauseElement(self, other)
 
     def in_(self, other):
         if isinstance(other, GraphQuery):
-            other = other.all()
+            results = other.all()
             t = []
-            for x in other:
-                try:
-                    t.append(x.r.properties[self.name])
-                except AttributeError:
-                    t.append(x)
+            for x in results:
+                t.append(getattr(x, other.to_find.alias).properties[self.name])
         else:
             t = other
-        return InClauseElement(self.name, t, self.pos)
+        return InClauseElement(self, t)
 
 class AnnotationAttribute(Attribute):
-    def __init__(self, key, pos = 0):
-        self.key = key
+    begin_template = '{}_b{}'
+    end_template = '{}_e{}'
+    def __init__(self, type, pos = 0):
+        self.type = type
         self.pos = pos
+
+    def __hash__(self):
+        return hash((self.type, self.pos))
+
+    @property
+    def rel_alias(self):
+        if self.pos == 0:
+            return 'r_{t}:{t}'.format(t=self.type)
+        elif self.pos < 0:
+            return 'prevr{p}_{t}:{t}'.format(t=self.type, p = -1 * self.pos)
+        elif self.pos > 0:
+            return 'follr{p}_{t}:{t}'.format(t=self.type, p = self.pos)
+
+    @property
+    def alias(self):
+        if self.pos == 0:
+            return 'r_{t}'.format(t=self.type)
+        elif self.pos < 0:
+            return 'prevr{p}_{t}'.format(t=self.type, p = -1 * self.pos)
+        elif self.pos > 0:
+            return 'follr{p}_{t}'.format(t=self.type, p = self.pos)
+
+    @property
+    def begin_alias(self):
+        if self.pos == 0:
+            return self.begin_template.format(self.type, self.pos)
+        elif self.pos > 0:
+            return self.end_template.format(self.type, self.pos - 1)
+        elif self.pos < 0:
+            return self.begin_template.format(self.type, -1 * self.pos)
+
+    @property
+    def end_alias(self):
+        if self.pos == 0:
+            return self.end_template.format(self.type, self.pos)
+        elif self.pos > 0:
+            return self.end_template.format(self.type, self.pos)
+        elif self.pos < 0:
+            return self.begin_template.format(self.type, -1 * (self.pos + 1))
 
     def __getattr__(self, key):
         if key in ['previous', 'following']:
@@ -92,6 +147,6 @@ class AnnotationAttribute(Attribute):
                 pos = self.pos - 1
             else:
                 pos = self.pos + 1
-            return AnnotationAttribute(key, pos)
+            return AnnotationAttribute(self.type, pos)
         else:
-            return Attribute(key, self.pos)
+            return Attribute(self, key)

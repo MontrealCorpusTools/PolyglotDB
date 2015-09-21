@@ -3,25 +3,18 @@ from .helper import key_for_cypher, value_for_cypher
 
 class ClauseElement(object):
     sign = ''
-    def __init__(self, key, value, pos):
-        self.key = key
+    def __init__(self, attribute, value):
+        self.attribute = attribute
         self.value = value
-        self.pos = pos
 
-    def __str__(self):
-        return "{}:'{}'".format(self.key, self.value)
-
-    def for_cypher(self, item_name):
-        if self.key == 'type':
-            return "type({}) {} {}".format(item_name, self.sign, value_for_cypher(self.value))
-        elif self.key == 'begin':
-            return "b.time {} {}".format(self.sign, value_for_cypher(self.value))
-        elif self.key == 'end':
-            return "e.time {} {}".format(self.sign, value_for_cypher(self.value))
-        return "{}.{} {} {}".format(item_name,
-                                key_for_cypher(self.key),
+    def for_cypher(self):
+        try:
+            value = self.value.for_cypher()
+        except AttributeError:
+            value = value_for_cypher(self.value)
+        return "{} {} {}".format(self.attribute.for_cypher(),
                                 self.sign,
-                                value_for_cypher(self.value))
+                                value)
 
 class EqualClauseElement(ClauseElement):
     sign = '='
@@ -46,7 +39,7 @@ class InClauseElement(ClauseElement):
 
 
 class ContainsClauseElement(EqualClauseElement):
-    def for_cypher(self, item_name):
+    def for_cypher(self):
         return "{} in extract(x in {}| x.{})".format(value_for_cypher(self.value),
-                                                item_name,
-                                                key_for_cypher(self.key))
+                                                self.attribute.annotation.alias,
+                                                key_for_cypher(self.attribute.name))

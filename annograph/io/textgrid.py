@@ -90,7 +90,6 @@ def inspect_discourse_textgrid(path):
     for t in textgrids:
         tg = load_textgrid(t)
         spellings, segments, attributes = guess_tiers(tg)
-        print(spellings, segments, attributes)
         if len(segments) == 0:
             base = None
         else:
@@ -142,8 +141,7 @@ def guess_tiers(tg):
     interval_tiers = [x for x in tg.tiers if isinstance(x, IntervalTier)]
     for i,t in enumerate(interval_tiers):
         tier_properties[t.name] = (i, len(t), averageLabelLen(t), len(uniqueLabels(t)))
-    print(tier_properties)
-    max_labels = max(tier_properties.values(), key = lambda x: x[2])
+    max_labels = max(tier_properties.values(), key = lambda x: x[1])
     likely_segment = [k for k,v in tier_properties.items() if v == max_labels]
     if len(likely_segment) == 1:
         segment_tiers.append(likely_segment[0])
@@ -204,9 +202,8 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
                     else:
                         if ti.mark == '':
                             ti.mark = '#'
-                        a = parse_transcription(ti.mark, data[n])[0]
-                        a.begin = phoneBegin
-                        a.end = phoneEnd
+                        a = BaseAnnotation(ti.mark,
+                                    begin = phoneBegin, end = phoneEnd)
                         tier_elements.append(a)
                 level_count = data.level_length(n)
                 word.references.append(n)

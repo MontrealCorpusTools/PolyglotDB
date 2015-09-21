@@ -2,11 +2,21 @@ import os
 import re
 import shutil
 from py2neo import Graph
+from collections import defaultdict
 
 
 from annograph.io.graph import data_to_graph_csvs
 
 from annograph.graph.query import GraphQuery
+from annograph.graph.attributes import AnnotationAttribute
+
+from annograph.sql.models import Base, Word, WordProperty, WordPropertyType, InventoryItem, AnnotationType, SoundFile
+
+from sqlalchemy import create_engine
+
+from annograph.sql.config import Session, session_scope
+
+from annograph.sql.helper import get_or_create
 
 class CorpusContext(object):
     def __init__(self, user, password, corpus_name, host = 'localhost', port = 7474):
@@ -23,6 +33,15 @@ class CorpusContext(object):
         self.data_dir = os.path.join(self.base_dir, 'data')
         os.makedirs(self.data_dir, exist_ok = True)
 
+        db_path = os.path.join(self.data_dir, self.corpus_name)
+        engine_string = 'sqlite:///{}.db'.format(db_path)
+        self.engine = create_engine(engine_string)
+        Session.configure(bind=self.engine)
+        if not os.path.exists(db_path):
+            Base.metadata.create_all(self.engine)
+
+        self.relationship_types = self.lookup_relationship_types()
+
     def __enter__(self):
         return self
 
@@ -31,13 +50,33 @@ class CorpusContext(object):
             shutil.rmtree(self.temp_dir)
             return True
 
+    def __getattr__(self, key):
+        if key in self.relationship_types:
+            return AnnotationAttribute(key)
+        return super(CorpusContext, self).__getattr__(key)
+
+    def lookup_relationship_types(self):
+        cypher = '''MATCH (n)-[r]->()
+                    WHERE n.corpus = '%s'
+                    RETURN DISTINCT type(r) AS relationship_type''' % self.corpus_name
+        results = self.graph.cypher.execute(cypher)
+        return [x['relationship_type'] for x in results]
+
     def reset_graph(self):
-        self.graph.delete_all()
+        self.graph.cypher.execute('''MATCH (n {corpus: '%s'})-[r]->() DELETE n, r''' % self.corpus_name)
+
+    def reset(self):
+        self.reset_graph()
+        Base.metadata.drop_all(self.engine)
+        Base.metadata.create_all(self.engine)
 
     def remove_discourse(self, name):
-        pass
+        self.graph.cypher.execute('''MATCH (n {corpus: '%s', discourse: '%s'})-[r]->() DELETE n, r'''
+                                    % (self.corpus_name, name))
 
-    def query(self, annotation_type):
+    def query_graph(self, annotation_type):
+        if annotation_type.name not in self.relationship_types:
+            raise(AttributeError('The graph does not have any annotations of type \'{}\''.format(annotation_type.name)))
         return GraphQuery(self, annotation_type)
 
     def import_csvs(self, name, annotation_types):
@@ -70,204 +109,61 @@ discourse: csvLine.discourse })'''
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(data, self.temp_dir)
         self.import_csvs(data.name, data.types)
+        self.relationship_types = self.lookup_relationship_types()
+        self.update_sql_database(data)
 
-class Attribute(object):
-    """
-    Attributes are for collecting summary information about attributes of
-    Words or WordTokens, with different types of attributes allowing for
-    different behaviour
-
-    Parameters
-    ----------
-    name : str
-        Python-safe name for using `getattr` and `setattr` on Words and
-        WordTokens
-
-    att_type : str
-        Either 'spelling', 'tier', 'numeric' or 'factor'
-
-    display_name : str
-        Human-readable name of the Attribute, defaults to None
-
-    default_value : object
-        Default value for initializing the attribute
-
-    Attributes
-    ----------
-    name : string
-        Python-readable name for the Attribute on Word and WordToken objects
-
-    display_name : string
-        Human-readable name for the Attribute
-
-    default_value : object
-        Default value for the Attribute.  The type of `default_value` is
-        dependent on the attribute type.  Numeric Attributes have a float
-        default value.  Factor and Spelling Attributes have a string
-        default value.  Tier Attributes have a Transcription default value.
-
-    range : object
-        Range of the Attribute, type depends on the attribute type.  Numeric
-        Attributes have a tuple of floats for the range for the minimum
-        and maximum.  The range for Factor Attributes is a set of all
-        factor levels.  The range for Tier Attributes is the set of segments
-        in that tier across the corpus.  The range for Spelling Attributes
-        is None.
-    """
-    ATT_TYPES = ['spelling', 'tier', 'numeric', 'factor']
-    def __init__(self, name, att_type, display_name = None, default_value = None):
-        self.name = name
-        self.att_type = att_type
-        self._display_name = display_name
-
-        if self.att_type == 'numeric':
-            self._range = [0,0]
-            if default_value is not None and isinstance(default_value,(int,float)):
-                self._default_value = default_value
-            else:
-                self._default_value = 0
-        elif self.att_type == 'factor':
-            if default_value is not None and isinstance(default_value,str):
-                self._default_value = default_value
-            else:
-                self._default_value = ''
-            if default_value:
-                self._range = set([default_value])
-            else:
-                self._range = set()
-        elif self.att_type == 'spelling':
-            self._range = None
-            if default_value is not None and isinstance(default_value,str):
-                self._default_value = default_value
-            else:
-                self._default_value = ''
-        elif self.att_type == 'tier':
-            self._range = set()
-            self._delim = None
-            if default_value is not None:
-                self._default_value = default_value
-            else:
-                self._default_value = []
-
-    @property
-    def delimiter(self):
-        if self.att_type != 'tier':
-            return None
-        else:
-            return self._delim
-
-    @delimiter.setter
-    def delimiter(self, value):
-        self._delim = value
-
-    @staticmethod
-    def guess_type(values, trans_delimiters = None):
-        if trans_delimiters is None:
-            trans_delimiters = ['.',' ', ';', ',']
-        probable_values = {x: 0 for x in Attribute.ATT_TYPES}
-        for i,v in enumerate(values):
-            try:
-                t = float(v)
-                probable_values['numeric'] += 1
-                continue
-            except ValueError:
-                for d in trans_delimiters:
-                    if d in v:
-                        probable_values['tier'] += 1
-                        break
-                else:
-                    if v in [v2 for j,v2 in enumerate(values) if i != j]:
-                        probable_values['factor'] += 1
+    def update_sql_database(self, data):
+        word_property_types = {}
+        inventory_items = defaultdict(dict)
+        with session_scope() as session:
+            base_levels = data.base_levels
+            for i, level in enumerate(data.process_order):
+                for d in data[level]:
+                    if i != 0:
+                        continue
+                    b = base_levels[0]
+                    base_type, _ = get_or_create(session, AnnotationType, label = b)
+                    transcription_type, _ =  get_or_create(session, AnnotationType, label = 'transcription')
+                    session.flush()
+                    begin, end = d[b]
+                    base_sequence = data[b][begin:end]
+                    for j, first in enumerate(base_sequence):
+                        if first.label not in inventory_items[b]:
+                            p, _ = get_or_create(session, InventoryItem, label = first.label, annotation_type = base_type)
+                            inventory_items[b][first.label] = p
+                    if 'transcription' in d.additional:
+                        trans = d.additional['transcription']
+                        if isinstance(trans, list):
+                            for seg in trans:
+                                if seg not in inventory_items['transcription']:
+                                    p, _ = get_or_create(session, InventoryItem, label = seg, annotation_type = transcription_type)
+                                    inventory_items['transcription'][seg] = p
+                            trans = '.'.join(trans)
+                        else:
+                            print(trans)
+                            raise(ValueError)
+                        if trans is None:
+                            trans = ''
                     else:
-                        probable_values['spelling'] += 1
-        return max(probable_values.items(), key=operator.itemgetter(1))[0]
+                        trans = ''
+                    word,_ = get_or_create(session, Word, defaults = {'frequency':0}, orthography = d.label, transcription = trans)
+                    word.frequency += 1
+                    session.flush()
+                    for k,v in d.additional.items():
+                        if v is None:
+                            continue
+                        if k not in word_property_types:
 
-    @staticmethod
-    def sanitize_name(name):
-        """
-        Sanitize a display name into a Python-readable attribute name
+                            prop_type, _ = get_or_create(session, WordPropertyType, label = k)
+                            word_property_types[k] = prop_type
+                        else:
+                            prop_type = word_property_types[k]
+                        if isinstance(v, (int,float)):
+                            prop, _ = get_or_create(session, WordNumericProperty, word = word, property_type = prop_type, value = v)
+                        elif isinstance(v, (list, tuple)):
+                            prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = '.'.join(v))
+                        else:
+                            prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = v)
+                    session.flush()
 
-        Parameters
-        ----------
-        name : string
-            Display name to sanitize
 
-        Returns
-        -------
-        string
-            Sanitized name
-        """
-        return re.sub('\W','',name.lower())
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def __str__(self):
-        return self.display_name
-
-    def __eq__(self,other):
-        if isinstance(other,Attribute):
-            if self.name == other.name:
-                return True
-        if isinstance(other,str):
-            if self.name == other:
-                return True
-        return False
-
-    @property
-    def display_name(self):
-        if self._display_name is not None:
-            return self._display_name
-        return self.name.title()
-
-    @property
-    def default_value(self):
-        return self._default_value
-
-    @default_value.setter
-    def default_value(self, value):
-        self._default_value = value
-        self._range = set([value])
-
-    @property
-    def range(self):
-        return self._range
-
-    def update_range(self,value):
-        """
-        Update the range of the Attribute with the value specified.
-        If the attribute is a Factor, the value is added to the set of levels.
-        If the attribute is Numeric, the value expands the minimum and
-        maximum values, if applicable.  If the attribute is a Tier, the
-        value (a segment) is added to the set of segments allowed. If
-        the attribute is Spelling, nothing is done.
-
-        Parameters
-        ----------
-        value : object
-            Value to update range with, the type depends on the attribute
-            type
-        """
-        if value is None:
-            return
-        if self.att_type == 'numeric':
-            if isinstance(value, str):
-                try:
-                    value = float(value)
-                except ValueError:
-                    self.att_type = 'spelling'
-                    self._range = None
-                    return
-            if value < self._range[0]:
-                self._range[0] = value
-            elif value > self._range[1]:
-                self._range[1] = value
-        elif self.att_type == 'factor':
-            self._range.add(value)
-            #if len(self._range) > 1000:
-            #    self.att_type = 'spelling'
-            #    self._range = None
-        elif self.att_type == 'tier':
-            if isinstance(self._range, list):
-                self._range = set(self._range)
-            self._range.update([x for x in value])

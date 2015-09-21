@@ -1,26 +1,22 @@
 
+
 class AggregateFunction(object):
     function = ''
-    def __init__(self, key):
-        self.key = key
+    def __init__(self, attribute = None):
+        self.attribute = attribute
 
     def for_cypher(self):
-        if self.key == 'duration':
-            element = 'e.time - b.time'
-        elif self.key == 'begin':
-            element = 'b.time'
-        elif self.key == 'end':
-            element = 'e.time'
+        template = '{function}({property}) AS {readable_function}_{name}'
+        if self.attribute is not None:
+            element = self.attribute.for_cypher()
+            name = self.attribute.name
         else:
-            element = self.key
-        if self.key != '*':
-            template = '{function}({property}) AS {readable_function}_{name}'
-        else:
-            template = '{function}({property}) AS {readable_function}_all'
+            element = '*'
+            name = 'all'
         return template.format(function = self.function,
                                 readable_function = self.__class__.__name__.lower(),
                                 property = element,
-                                name = self.key)
+                                name = name)
 
 class Average(AggregateFunction):
     function = 'avg'

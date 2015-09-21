@@ -15,48 +15,48 @@ def show_plots():
         return False
     return True
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def test_dir():
     if not os.path.exists('tests/data/generated'):
         os.makedirs('tests/data/generated')
     return os.path.abspath('tests/data')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def buckeye_test_dir(test_dir):
     return os.path.join(test_dir, 'buckeye')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def timit_test_dir(test_dir):
     return os.path.join(test_dir, 'timit')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def text_test_dir(test_dir):
     return os.path.join(test_dir, 'text')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def ilg_test_dir(test_dir):
     return os.path.join(test_dir, 'ilg')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def csv_test_dir(test_dir):
     return os.path.join(test_dir, 'csv')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def features_test_dir(test_dir):
     return os.path.join(test_dir, 'features')
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def export_test_dir(test_dir):
     path = os.path.join(test_dir, 'export')
     if not os.path.exists(path):
         os.makedirs(path)
     return path
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def corpus_data_timed():
     levels = [AnnotationType('phone', None, 'word', base = True, token = True),
                 AnnotationType('word','phone','line', anchor = True),
@@ -104,7 +104,7 @@ def corpus_data_timed():
     data.add_annotations(**annotations)
     return data
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def corpus_data_untimed():
     levels = [AnnotationType('phone', None, 'word', base = True, token = True),
                 AnnotationType('morpheme', 'phone', 'word'),
@@ -165,7 +165,7 @@ def corpus_data_untimed():
     return data
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def corpus_data_ur_sr():
     levels = [AnnotationType('sr', None, 'word', base = True, token = True),
                 AnnotationType('word','sr','line', anchor = True),
@@ -212,7 +212,7 @@ def corpus_data_ur_sr():
     return data
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def lexicon_data():
     corpus_data = [{'spelling':'atema','transcription':['ɑ','t','e','m','ɑ'],'frequency':11.0},
                     {'spelling':'enuta','transcription':['e','n','u','t','ɑ'],'frequency':11.0},
@@ -232,7 +232,7 @@ def lexicon_data():
     return corpus_data
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def corpus_data_syllable_morpheme_srur():
     levels = [AnnotationType('ur', None, 'word', base = True, token = False),
                 AnnotationType('sr', None, 'word', base = True, token = True),
@@ -299,7 +299,7 @@ def corpus_data_syllable_morpheme_srur():
     data.add_annotations(**annotations)
     return data
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def corpus_data_syllable_morpheme():
     levels = [AnnotationType('phone', None, 'word', base = True, token = True),
                 AnnotationType('syllable', 'phone', 'word'),
@@ -353,7 +353,7 @@ def corpus_data_syllable_morpheme():
 
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def unspecified_test_corpus():
     return None
     corpus_data = [{'spelling':'atema','transcription':['ɑ','t','e','m','ɑ'],'frequency':11.0},
@@ -376,46 +376,50 @@ def unspecified_test_corpus():
         corpus.add_word(Word(**w))
     return corpus
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def graph_user():
     return 'neo4j'
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def graph_pw():
     return 'testtest'
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def graph_host():
     return 'localhost'
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def graph_port():
     return 7474
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def graph_db(graph_host, graph_port, graph_user, graph_pw,
             corpus_data_untimed, corpus_data_timed, corpus_data_syllable_morpheme,
             corpus_data_syllable_morpheme_srur, corpus_data_ur_sr,
             textgrid_test_dir):
     with CorpusContext(graph_user, graph_pw, 'untimed', graph_host, graph_port) as c:
-        c.reset_graph()
+        c.reset()
         c.add_discourse(corpus_data_untimed)
 
     with CorpusContext(graph_user, graph_pw, 'timed', graph_host, graph_port) as c:
+        c.reset()
         c.add_discourse(corpus_data_timed)
 
     with CorpusContext(graph_user, graph_pw, 'syllable_morpheme', graph_host, graph_port) as c:
+        c.reset()
         c.add_discourse(corpus_data_syllable_morpheme)
 
     #with CorpusContext(graph_user, graph_pw, 'syllable_morpheme_srur', graph_host, graph_port) as c:
     #    c.add_discourse(corpus_data_syllable_morpheme_srur)
 
     with CorpusContext(graph_user, graph_pw, 'ur_sr', graph_host, graph_port) as c:
+        c.reset()
         c.add_discourse(corpus_data_ur_sr)
 
     acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
     with CorpusContext(graph_user, graph_pw, 'acoustic', graph_host, graph_port) as c:
+        c.reset()
         annotation_types = inspect_discourse_textgrid(acoustic_path)
         load_discourse_textgrid(c, acoustic_path, annotation_types)
     return {'host':graph_host, 'port': graph_port, 'user': graph_user, 'password': graph_pw}

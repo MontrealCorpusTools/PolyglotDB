@@ -126,7 +126,7 @@ def multiple_files_to_data(word_path, phone_path, dialect, annotation_types = No
                     continue
                 value = w[at.name]
                 if at.delimited:
-                    value = [Annotation(x) for x in parse_transcription(ti.mark)]
+                    value = [BaseAnnotation(x) for x in parse_transcription(value)]
                 if at.token:
                     word.token[at.name] = value
                 else:

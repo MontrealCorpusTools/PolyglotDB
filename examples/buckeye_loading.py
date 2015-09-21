@@ -5,7 +5,7 @@ base = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0,base)
 import annograph.io as aio
 
-from annograph.graph.util import CorpusContext
+from annograph.corpus import CorpusContext
 from annograph.graph.models import Anchor, Annotation
 
 path_to_buckeye = r'D:\Data\VIC\Speakers'
