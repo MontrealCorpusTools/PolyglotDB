@@ -1,4 +1,3 @@
-import unittest
 import pytest
 import os
 import sys
@@ -7,15 +6,12 @@ from annograph.io.text_ilg import (load_discourse_ilg,
                                             inspect_discourse_ilg,
                                             ilg_to_data, export_discourse_ilg)
 
-from annograph.io.helper import BaseAnnotation, Annotation, AnnotationType
+from annograph.io.helper import BaseAnnotation, Annotation, AnnotationType, Attribute
 
 from annograph.exceptions import DelimiterError, ILGWordMismatchError
 
-#from corpustools.corpus.classes import (Word, Corpus, FeatureMatrix, Discourse, Attribute)
+from annograph.corpus import CorpusContext
 
-#from corpustools.utils import generate_discourse
-
-@pytest.mark.xfail
 def test_inspect_ilg(ilg_test_dir):
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')
     annotypes = inspect_discourse_ilg(basic_path)
@@ -23,7 +19,7 @@ def test_inspect_ilg(ilg_test_dir):
     assert(annotypes[1].delimiter == '.')
 
 @pytest.mark.xfail
-def test_export_ilg(export_test_dir, unspecified_test_corpus):
+def test_export_ilg(graph_db, export_test_dir, unspecified_test_corpus):
     d = generate_discourse(unspecified_test_corpus)
     export_path = os.path.join(export_test_dir, 'export_ilg.txt')
     export_discourse_ilg(d, export_path)
@@ -36,7 +32,6 @@ def test_export_ilg(export_test_dir, unspecified_test_corpus):
         assert(d2.lexicon[k].frequency == unspecified_test_corpus[k].frequency)
     assert(d2.lexicon == unspecified_test_corpus)
 
-@pytest.mark.xfail
 def test_ilg_data(ilg_test_dir):
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')
     tier_att = Attribute('transcription','tier')
@@ -76,8 +71,7 @@ def test_ilg_data(ilg_test_dir):
                                         BaseAnnotation('c'),
                                         BaseAnnotation('d')])
 
-def test_ilg_basic(ilg_test_dir):
-    return
+def test_ilg_basic(graph_db, ilg_test_dir):
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')
     tier_att = Attribute('transcription','tier')
     tier_att.delimiter = '.'
@@ -87,13 +81,12 @@ def test_ilg_basic(ilg_test_dir):
                                         token = False, base = True,
                                         attribute = tier_att)]
     ats[1].trans_delimiter = '.'
-    corpus = load_discourse_ilg('test', basic_path, ats)
-    print(corpus.words)
-    print(corpus.lexicon.words)
-    assert(corpus.lexicon.find('a').frequency == 2)
+    with CorpusContext(corpus_name = 'basic_ilg', **graph_db) as c:
+        c.reset()
+        load_discourse_ilg(c, basic_path, ats)
+        assert(c.lexicon['a'].frequency == 2)
 
-def test_ilg_mismatched(ilg_test_dir):
-    return
+def test_ilg_mismatched(graph_db, ilg_test_dir):
     mismatched_path = os.path.join(ilg_test_dir, 'mismatched.txt')
 
     ats = [AnnotationType('spelling', 'transcription',
@@ -102,5 +95,8 @@ def test_ilg_mismatched(ilg_test_dir):
                                         token = False, base = True,
                                         attribute = Attribute('transcription','tier'))]
     ats[1].trans_delimiter = '.'
-    with pytest.raises(ILGWordMismatchError):
-        t = load_discourse_ilg('test', mismatched_path, ats)
+
+    with CorpusContext(corpus_name = 'mismatch', **graph_db) as c:
+        c.reset()
+        with pytest.raises(ILGWordMismatchError):
+            load_discourse_ilg(c, mismatched_path, ats)

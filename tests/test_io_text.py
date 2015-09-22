@@ -13,14 +13,12 @@ from annograph.io.text_transcription import (load_discourse_transcription,
 
 from annograph.exceptions import DelimiterError
 
-#from corpustools.corpus.classes import (Word, Corpus, FeatureMatrix, Discourse)
+from annograph.corpus import CorpusContext
 
-#from corpustools.utils import generate_discourse
-
+@pytest.mark.xfail
 def test_export_spelling(export_test_dir, unspecified_test_corpus):
-    return
     d = generate_discourse(unspecified_test_corpus)
-    export_path = os.path.join(export_test_dir, 'test_export_spelling.txt')
+    export_path = os.path.join(export_test_dir, 'export_spelling.txt')
     export_discourse_spelling(d, export_path, single_line = False)
 
     d2 = load_discourse_spelling('test', export_path)
@@ -28,13 +26,15 @@ def test_export_spelling(export_test_dir, unspecified_test_corpus):
         assert(d2.lexicon[k].spelling == unspecified_test_corpus[k].spelling)
         assert(d2.lexicon[k].frequency == unspecified_test_corpus[k].frequency)
 
-def test_export_transcription(export_test_dir, unspecified_test_corpus):
-    return
+@pytest.mark.xfail
+def test_export_transcription(graph_db, export_test_dir, unspecified_test_corpus):
     d = generate_discourse(unspecified_test_corpus)
-    export_path = os.path.join(export_test_dir, 'test_export_transcription.txt')
+    export_path = os.path.join(export_test_dir, 'export_transcription.txt')
     export_discourse_transcription(d, export_path, single_line = False)
 
-    d2 = load_discourse_transcription('test', export_path)
+    with CorpusContext(corpus_name = 'exported_transcription', **graph_db) as c:
+        c.reset()
+        load_discourse_transcription(c, export_path)
     words = sorted([x for x in unspecified_test_corpus], key = lambda x: x.transcription)
     words2 = sorted([x for x in d2.lexicon], key = lambda x: x.transcription)
     for i,w in enumerate(words):
@@ -42,44 +42,48 @@ def test_export_transcription(export_test_dir, unspecified_test_corpus):
         assert(w.transcription == w2.transcription)
         assert(w.frequency == w2.frequency)
 
-def test_load_spelling_no_ignore(text_test_dir):
-    return
-    spelling_path = os.path.join(text_test_dir, 'test_text_spelling.txt')
+def test_load_spelling_no_ignore(graph_db, text_test_dir):
+    spelling_path = os.path.join(text_test_dir, 'text_spelling.txt')
 
-    c = load_discourse_spelling('test',spelling_path)
+    with CorpusContext(corpus_name = 'spelling_no_ignore', **graph_db) as c:
+        c.reset()
+        load_discourse_spelling(c,spelling_path)
 
     assert(c.lexicon['ab'].frequency == 2)
 
 
-def test_load_spelling_ignore(text_test_dir):
-    return
-    spelling_path = os.path.join(text_test_dir, 'test_text_spelling.txt')
+def test_load_spelling_ignore(graph_db, text_test_dir):
+    spelling_path = os.path.join(text_test_dir, 'text_spelling.txt')
     a = inspect_discourse_spelling(spelling_path)
     a[0].ignored_characters = set(["'",'.'])
-    c = load_discourse_spelling('test',spelling_path, a)
+    with CorpusContext(corpus_name = 'spelling_ignore', **graph_db) as c:
+        c.reset()
+        load_discourse_spelling(c, spelling_path, a)
 
     assert(c.lexicon['ab'].frequency == 3)
     assert(c.lexicon['cabd'].frequency == 1)
 
-def text_test_dir(text_test_dir):
-    return
-    transcription_path = os.path.join(text_test_dir, 'test_text_transcription.txt')
-    with pytest.raises(DelimiterError):
-        load_discourse_transcription('test',
-                            transcription_path," ",[],
-                            trans_delimiter = ',')
+def text_test_dir(graph_db, text_test_dir):
+    transcription_path = os.path.join(text_test_dir, 'text_transcription.txt')
+    with CorpusContext(corpus_name = 'transcription_test_raises', **graph_db) as c:
+        c.reset()
+        with pytest.raises(DelimiterError):
+            load_discourse_transcription(c,
+                                transcription_path," ",[],
+                                trans_delimiter = ',')
 
-    c = load_discourse_transcription('test',transcription_path)
+        load_discourse_transcription(c,transcription_path)
 
     assert(sorted(c.lexicon.inventory) == sorted(['#','a','b','c','d']))
 
-def test_load_transcription_morpheme(text_test_dir):
-    return
-    transcription_morphemes_path = os.path.join(text_test_dir, 'test_text_transcription_morpheme_boundaries.txt')
+def test_load_transcription_morpheme(graph_db, text_test_dir):
+    transcription_morphemes_path = os.path.join(text_test_dir, 'text_transcription_morpheme_boundaries.txt')
     ats = inspect_discourse_transcription(transcription_morphemes_path)
     ats[0].morph_delimiters = set('-=')
-    c = load_discourse_transcription('test',transcription_morphemes_path, ats)
+    with CorpusContext(corpus_name = 'transcription_morpheme', **graph_db) as c:
+        c.reset()
+        load_discourse_transcription(c,transcription_morphemes_path, ats)
 
     assert(c.lexicon['cab'].frequency == 2)
-    assert(str(c.lexicon['cab'].transcription) == 'c.a-b')
+    assert(str(c.lexicon['cab'].transcription) == 'c.a.b')
 

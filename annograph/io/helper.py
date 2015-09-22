@@ -2,6 +2,7 @@ import re
 import os
 import string
 import logging
+import operator
 
 from annograph.exceptions import DelimiterError
 
@@ -587,59 +588,3 @@ def log_annotation_types(annotation_types):
     logging.info('')
     for a in annotation_types:
         logging.info(a.pretty_print())
-
-def data_to_discourse(data, lexicon = None):
-    attribute_mapping = data.mapping()
-    d = Discourse(name = data.name, wav_path = data.wav_path)
-    ind = 0
-    if lexicon is None:
-        lexicon = d.lexicon
-
-    for k,v in attribute_mapping.items():
-        a = data[k]
-
-        if a.token and v not in d.attributes:
-            d.add_attribute(v, initialize_defaults = True)
-
-        if not a.token and v not in d.lexicon.attributes:
-            lexicon.add_attribute(v, initialize_defaults = True)
-
-    for level in data.word_levels:
-        for i, s in enumerate(data[level]):
-            word_kwargs = {'spelling':(attribute_mapping[level], s.label)}
-            word_token_kwargs = {}
-            if s.token is not None:
-                for token_key, token_value in s.token.items():
-                    att = attribute_mapping[token_key]
-                    word_token_kwargs[att.name] = (att, token_value)
-            if s.additional is not None:
-                for add_key, add_value in s.additional.items():
-                    att = attribute_mapping[add_key]
-                    if data[add_key].token:
-                        word_token_kwargs[att.name] = (att, add_value)
-                    else:
-                        word_kwargs[att.name] = (att, add_value)
-            for j, r in enumerate(s.references):
-                if r in data and len(data[r]) > 0:
-                    seq = data[r][s.begins[j]:s.ends[j]]
-                    att = attribute_mapping[r]
-                    if data[r].token:
-                        word_token_kwargs[att.name] = (att, seq)
-                        if len(seq) > 0 and seq[0].begin is not None:
-                            word_token_kwargs['begin'] = seq[0].begin
-                            word_token_kwargs['end'] = seq[-1].end
-
-                    else:
-                        word_kwargs[att.name] = (att, seq)
-
-            word = lexicon.get_or_create_word(**word_kwargs)
-            word_token_kwargs['word'] = word
-            if 'begin' not in word_token_kwargs:
-                word_token_kwargs['begin'] = ind
-                word_token_kwargs['end'] = ind + 1
-            wordtoken = WordToken(**word_token_kwargs)
-            word.frequency += 1
-            word.wordtokens.append(wordtoken)
-            d.add_word(wordtoken)
-            ind += 1
-    return d

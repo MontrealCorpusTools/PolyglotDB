@@ -3,14 +3,11 @@ import os
 import re
 from collections import Counter
 
-#from corpustools.corpus.classes import SpontaneousSpeechCorpus
-#from corpustools.corpus.classes import Corpus, Word, Discourse, WordToken, Attribute
-
 from annograph.exceptions import (DelimiterError, ILGError, ILGLinesMismatchError,
                                 ILGWordMismatchError)
 
 from .helper import (compile_digraphs, parse_transcription,
-                    DiscourseData, AnnotationType,data_to_discourse,
+                    DiscourseData, AnnotationType,
                     Annotation, BaseAnnotation, Attribute)
 
 def calculate_lines_per_gloss(lines):
@@ -197,7 +194,7 @@ def ilg_to_data(path, annotation_types,
     return data
 
 
-def load_discourse_ilg(corpus_name, path, annotation_types,
+def load_discourse_ilg(corpus_context, path, annotation_types,
                     lexicon = None,
                     feature_system_path = None,
                     stop_check = None, call_back = None):
@@ -229,15 +226,13 @@ def load_discourse_ilg(corpus_name, path, annotation_types,
     """
     data = ilg_to_data(path, annotation_types,
                     stop_check, call_back)
-    discourse = data_to_discourse(data, lexicon)
+    corpus_context.add_discourse(data)
 
-    if feature_system_path is not None:
-        feature_matrix = load_binary(feature_system_path)
-        discourse.lexicon.set_feature_matrix(feature_matrix)
+    #if feature_system_path is not None:
+    #    feature_matrix = load_binary(feature_system_path)
+    #    discourse.lexicon.set_feature_matrix(feature_matrix)
 
-    return discourse
-
-def load_directory_ilg(corpus_name, path, annotation_types,
+def load_directory_ilg(corpus_context, path, annotation_types,
                         feature_system_path = None,
                         stop_check = None, call_back = None):
     """
@@ -277,7 +272,6 @@ def load_directory_ilg(corpus_name, path, annotation_types,
         call_back('Parsing files...')
         call_back(0,len(file_tuples))
         cur = 0
-    corpus = SpontaneousSpeechCorpus(corpus_name, path)
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -286,16 +280,14 @@ def load_directory_ilg(corpus_name, path, annotation_types,
             call_back(i)
         root, filename = t
         name = os.path.splitext(filename)[0]
-        d = load_discourse_ilg(name, os.path.join(root,filename),
+        load_discourse_ilg(corpus_context, os.path.join(root,filename),
                                     annotation_types, corpus.lexicon,
                                     None,
                                     stop_check, call_back)
-        corpus.add_discourse(d)
 
-    if feature_system_path is not None:
-        feature_matrix = load_binary(feature_system_path)
-        corpus.lexicon.set_feature_matrix(feature_matrix)
-    return corpus
+    #if feature_system_path is not None:
+    #    feature_matrix = load_binary(feature_system_path)
+    #    corpus.lexicon.set_feature_matrix(feature_matrix)
 
 def export_discourse_ilg(discourse, path, trans_delim = '.'):
     """

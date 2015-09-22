@@ -5,12 +5,11 @@ import re
 from textgrid import TextGrid, IntervalTier
 from textgrid.textgrid import readFile, Interval, Point, PointTier, _getMark
 
-#from corpustools.corpus.classes import SpontaneousSpeechCorpus, Speaker, Attribute
 from annograph.exceptions import TextGridTierError
 
 
 from .helper import (compile_digraphs, parse_transcription, DiscourseData,
-                    AnnotationType,data_to_discourse, find_wav_path,
+                    AnnotationType, find_wav_path,
                     Annotation, BaseAnnotation, Attribute)
 
 class PCTTextGrid(TextGrid):

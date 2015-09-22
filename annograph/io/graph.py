@@ -32,32 +32,42 @@ def data_to_graph_csvs(data, directory):
 
                     to_align = []
                     endpoints = []
-                    if len(base_levels) != 1:
-                        print(data.name)
-                        print(base_levels)
-                        raise(ValueError)
-                    b = base_levels[0]
-                    begin, end = d[b]
-                    base_sequence = data[b][begin:end]
+                    if len(base_levels) == 1:
 
-                    if len(base_sequence) == 0:
-                        print(d)
-                        print(to_align)
-                        print(begin_node)
-                        raise(ValueError)
-                    for j, first in enumerate(base_sequence):
-                        time = None
-                        time = first.end
+                        b = base_levels[0]
+                        begin, end = d[b]
+                        base_sequence = data[b][begin:end]
+
+                        if len(base_sequence) == 0:
+                            print(d)
+                            print(to_align)
+                            print(begin_node)
+                            raise(ValueError)
+                        for j, first in enumerate(base_sequence):
+                            time = None
+                            time = first.end
+                            node_ind += 1
+                            node = dict(id = node_ind, label = uuid1(),
+                                            time = time, corpus = data.corpus_name,
+                                            discourse = data.name)
+                            node_writer.writerow(node)
+                            nodes.append(node)
+                            first_begin_node = -2
+                            rel_writers[base_levels[0]].writerow(dict(from_id=nodes[first_begin_node]['id'],
+                                                to_id=node['id'], label=first.label, id = uuid1()))
+                        end_node = nodes[-1]
+                    elif len(base_levels) == 0:
                         node_ind += 1
                         node = dict(id = node_ind, label = uuid1(),
-                                        time = time, corpus = data.corpus_name,
+                                        time = None, corpus = data.corpus_name,
                                         discourse = data.name)
                         node_writer.writerow(node)
                         nodes.append(node)
-                        first_begin_node = -2
-                        rel_writers[base_levels[0]].writerow(dict(from_id=nodes[first_begin_node]['id'],
-                                            to_id=node['id'], label=first.label, id = uuid1()))
-                    end_node = nodes[-1]
+                        end_node = nodes[-1]
+                    else:
+                        print(data.name)
+                        print(base_levels)
+                        raise(ValueError)
                 else:
                     for b in base_levels:
                         if b in d.references:

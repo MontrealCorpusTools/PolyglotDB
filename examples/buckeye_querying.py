@@ -14,7 +14,7 @@ with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter_contained_by(g.spelling.label == 'dog')
-    print(q.cypher())
+
     results = q.count()
     end = time.time()
     print('Duration of \'aa\' before stops (overall):')
@@ -25,6 +25,7 @@ with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
     q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
+
     results = q.aggregate(Average(g.surface_transcription.duration), Count())
     end = time.time()
     print('Duration of \'aa\' before stops (overall):')
@@ -60,6 +61,7 @@ with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
     q = q.filter(g.surface_transcription.end != g.spelling.end)
     q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
+
     results = q.aggregate(Average(g.surface_transcription.duration), Count())
     end = time.time()
     print('Duration of \'aa\' before stops (within words):')

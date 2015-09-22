@@ -68,7 +68,7 @@ class Attribute(object):
     def __eq__(self, other):
         return EqualClauseElement(self, other)
 
-    def __neq__(self, other):
+    def __ne__(self, other):
         return NotEqualClauseElement(self, other)
 
     def __gt__(self, other):

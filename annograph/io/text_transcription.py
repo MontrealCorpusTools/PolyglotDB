@@ -1,13 +1,11 @@
 import os
 import re
 
-#from corpustools.corpus.classes import SpontaneousSpeechCorpus, Corpus, Word, Discourse, WordToken, Attribute
-
-from annograph.exceptions import DelimiterError#, PCTOSError
+from annograph.exceptions import DelimiterError
 
 from .helper import (compile_digraphs, parse_transcription, DiscourseData,
-                    data_to_discourse, AnnotationType, text_to_lines,
-                    Annotation, BaseAnnotation)
+                    AnnotationType, text_to_lines,
+                    Annotation, BaseAnnotation, Attribute)
 
 
 def inspect_discourse_transcription(path):
@@ -122,7 +120,7 @@ def transcription_text_to_data(path, annotation_types = None,
 
     return data
 
-def load_directory_transcription(corpus_name, path, annotation_types = None,
+def load_directory_transcription(corpus_context, path, annotation_types = None,
                                 feature_system_path = None,
                                 stop_check = None, call_back = None):
     """
@@ -162,7 +160,6 @@ def load_directory_transcription(corpus_name, path, annotation_types = None,
         call_back('Parsing files...')
         call_back(0,len(file_tuples))
         cur = 0
-    corpus = SpontaneousSpeechCorpus(corpus_name, path)
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -170,16 +167,14 @@ def load_directory_transcription(corpus_name, path, annotation_types = None,
             call_back('Parsing file {} of {}...'.format(i+1,len(file_tuples)))
             call_back(i)
         root, filename = t
+        path = os.path.join(root, filename)
         name = os.path.splitext(filename)[0]
-        d = load_discourse_transcription(name, os.path.join(root,filename),
-                                    annotation_types,
-                                    corpus.lexicon, None,
-                                    stop_check, call_back)
-        corpus.add_discourse(d)
-    return corpus
+        data = transcription_text_to_data(path, annotation_types,
+                                stop_check, call_back)
+        corpus_context.add_discourse(d)
 
 
-def load_discourse_transcription(corpus_name, path, annotation_types = None,
+def load_discourse_transcription(corpus_context, path, annotation_types = None,
                     lexicon = None, feature_system_path = None,
                     stop_check = None, call_back = None):
     """
@@ -213,15 +208,12 @@ def load_discourse_transcription(corpus_name, path, annotation_types = None,
 
     data = transcription_text_to_data(path, annotation_types,
                             stop_check, call_back)
+    corpus_context.add_discourse(data)
 
-    discourse = data_to_discourse(data, lexicon)
-    discourse.name = corpus_name
+    #if feature_system_path is not None:
+    #    feature_matrix = load_binary(feature_system_path)
+    #    discourse.lexicon.set_feature_matrix(feature_matrix)
 
-    if feature_system_path is not None:
-        feature_matrix = load_binary(feature_system_path)
-        discourse.lexicon.set_feature_matrix(feature_matrix)
-
-    return discourse
 
 def export_discourse_transcription(discourse, path, trans_delim = '.', single_line = False):
     """

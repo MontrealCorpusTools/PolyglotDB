@@ -18,6 +18,8 @@ from annograph.sql.config import Session, session_scope
 
 from annograph.sql.helper import get_or_create
 
+from annograph.sql.query import Lexicon
+
 class CorpusContext(object):
     def __init__(self, user, password, corpus_name, host = 'localhost', port = 7474):
         self.graph = Graph("http://{}:{}@{}:{}/db/data/".format(user, password, host, port))
@@ -53,7 +55,11 @@ class CorpusContext(object):
     def __getattr__(self, key):
         if key in self.relationship_types:
             return AnnotationAttribute(key)
-        return super(CorpusContext, self).__getattr__(key)
+        if key == 'lexicon':
+            return Lexicon()
+        elif key == 'inventory':
+            return {}
+        return getattr(self, key)
 
     def lookup_relationship_types(self):
         cypher = '''MATCH (n)-[r]->()
@@ -121,31 +127,33 @@ discourse: csvLine.discourse })'''
                 for d in data[level]:
                     if i != 0:
                         continue
-                    b = base_levels[0]
-                    base_type, _ = get_or_create(session, AnnotationType, label = b)
-                    transcription_type, _ =  get_or_create(session, AnnotationType, label = 'transcription')
-                    session.flush()
-                    begin, end = d[b]
-                    base_sequence = data[b][begin:end]
-                    for j, first in enumerate(base_sequence):
-                        if first.label not in inventory_items[b]:
-                            p, _ = get_or_create(session, InventoryItem, label = first.label, annotation_type = base_type)
-                            inventory_items[b][first.label] = p
-                    if 'transcription' in d.additional:
-                        trans = d.additional['transcription']
-                        if isinstance(trans, list):
-                            for seg in trans:
-                                if seg not in inventory_items['transcription']:
-                                    p, _ = get_or_create(session, InventoryItem, label = seg, annotation_type = transcription_type)
-                                    inventory_items['transcription'][seg] = p
-                            trans = '.'.join(trans)
-                        else:
-                            print(trans)
-                            raise(ValueError)
-                        if trans is None:
-                            trans = ''
-                    else:
+                    trans = None
+                    if len(base_levels) > 0:
+                        b = base_levels[0]
+                        base_type, _ = get_or_create(session, AnnotationType, label = b)
+                        transcription_type, _ =  get_or_create(session, AnnotationType, label = 'transcription')
+                        session.flush()
+                        begin, end = d[b]
+                        base_sequence = data[b][begin:end]
+                        for j, first in enumerate(base_sequence):
+                            if first.label not in inventory_items[b]:
+                                p, _ = get_or_create(session, InventoryItem, label = first.label, annotation_type = base_type)
+                                inventory_items[b][first.label] = p
+                        if 'transcription' in d.additional:
+                            trans = d.additional['transcription']
+                        elif not data[b].token:
+                            trans = [x.label for x in base_sequence]
+                    if trans is None:
                         trans = ''
+                    elif isinstance(trans, list):
+                        for seg in trans:
+                            if seg not in inventory_items['transcription']:
+                                p, _ = get_or_create(session, InventoryItem, label = seg, annotation_type = transcription_type)
+                                inventory_items['transcription'][seg] = p
+                        trans = '.'.join(trans)
+                    else:
+                        print(trans)
+                        raise(ValueError)
                     word,_ = get_or_create(session, Word, defaults = {'frequency':0}, orthography = d.label, transcription = trans)
                     word.frequency += 1
                     session.flush()

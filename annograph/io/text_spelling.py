@@ -1,11 +1,9 @@
 import os
 
-#from corpustools.corpus.classes import SpontaneousSpeechCorpus, Corpus, Word, Discourse, WordToken
-
-from annograph.exceptions import DelimiterError#, PCTOSError
+from annograph.exceptions import DelimiterError
 
 from .helper import (DiscourseData, Annotation, BaseAnnotation,
-                        data_to_discourse, AnnotationType, text_to_lines)
+                        AnnotationType, text_to_lines)
 
 def inspect_discourse_spelling(path, support_corpus_path = None):
     """
@@ -104,7 +102,7 @@ def spelling_text_to_data(path, annotation_types = None,
 
     return data
 
-def load_directory_spelling(corpus_name, path, annotation_types = None,
+def load_directory_spelling(corpus_context, path, annotation_types = None,
                             support_corpus_path = None, ignore_case = False,
                             stop_check = None, call_back = None):
     """
@@ -126,11 +124,6 @@ def load_directory_spelling(corpus_name, path, annotation_types = None,
         Optional function to check whether to gracefully terminate early
     call_back : callable, optional
         Optional function to supply progress information during the function
-
-    Returns
-    -------
-    SpontaneousSpeechCorpus
-        Corpus containing Discourses corresponding to the text files
     """
     if call_back is not None:
         call_back('Finding  files...')
@@ -146,7 +139,6 @@ def load_directory_spelling(corpus_name, path, annotation_types = None,
         call_back('Parsing files...')
         call_back(0,len(file_tuples))
         cur = 0
-    corpus = SpontaneousSpeechCorpus(corpus_name, path)
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -154,15 +146,14 @@ def load_directory_spelling(corpus_name, path, annotation_types = None,
             call_back('Parsing file {} of {}...'.format(i+1, len(file_tuples)))
             call_back(i)
         root, filename = t
+        path = os.path.join(root, filename)
         name = os.path.splitext(filename)[0]
-        d = load_discourse_spelling(name, os.path.join(root,filename),
-                                    annotation_types, corpus.lexicon,
-                                    support_corpus_path, ignore_case,
-                                    stop_check, call_back)
-        corpus.add_discourse(d)
-    return corpus
+        data = spelling_text_to_data(path, annotation_types,
+                    support_corpus_path, ignore_case,
+                        stop_check, call_back)
+        corpus_context.add_discourse(data)
 
-def load_discourse_spelling(corpus_name, path, annotation_types = None,
+def load_discourse_spelling(corpus_context, path, annotation_types = None,
                             lexicon = None,
                             support_corpus_path = None, ignore_case = False,
                             stop_check = None, call_back = None):
@@ -204,9 +195,7 @@ def load_discourse_spelling(corpus_name, path, annotation_types = None,
     data = spelling_text_to_data(path, annotation_types,
                 support_corpus_path, ignore_case,
                     stop_check, call_back)
-    discourse = data_to_discourse(data, lexicon)
-    discourse.name = corpus_name
-    return discourse
+    corpus_context.add_discourse(data)
 
 def export_discourse_spelling(discourse, path, single_line = False):
     """

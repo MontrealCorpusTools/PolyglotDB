@@ -6,8 +6,8 @@ import sys
 FILLERS = set(['uh','um','okay','yes','yeah','oh','heh','yknow','um-huh',
                 'uh-uh','uh-huh','uh-hum','mm-hmm'])
 
-#from corpustools.corpus.classes import SpontaneousSpeechCorpus
-from annograph.io.helper import DiscourseData,data_to_discourse, AnnotationType, Annotation, BaseAnnotation, find_wav_path
+from annograph.io.helper import (DiscourseData, AnnotationType,
+                            Annotation, BaseAnnotation, find_wav_path)
 
 def phone_match(one,two):
     if one != two and one not in two:

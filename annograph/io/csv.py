@@ -3,13 +3,15 @@ import collections
 import re
 import os
 
-#from corpustools.corpus.classes import Corpus, FeatureMatrix, Word, Attribute
-
-from .helper import parse_transcription, AnnotationType
+from .helper import parse_transcription, AnnotationType, Attribute
 
 from annograph.exceptions import DelimiterError, CorpusIntegrityError
 
-import time
+from annograph.sql.config import session_scope
+
+from annograph.sql.models import (Word, WordPropertyType, WordNumericProperty,
+                                WordProperty, InventoryItem, AnnotationType as SQLAnnotationType,
+                                InventoryProperty)
 
 def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
     """
@@ -88,7 +90,7 @@ def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
 
     return atts, best
 
-def load_corpus_csv(corpus_name, path, delimiter,
+def load_corpus_csv(corpus_context, path, delimiter,
                     annotation_types = None,
                     feature_system_path = None,
                     stop_check = None, call_back = None):
@@ -119,10 +121,9 @@ def load_corpus_csv(corpus_name, path, delimiter,
 
     """
     #begin = time.time()
-    corpus = Corpus(corpus_name)
-    if feature_system_path is not None and os.path.exists(feature_system_path):
-        feature_matrix = load_binary(feature_system_path)
-        corpus.set_feature_matrix(feature_matrix)
+    #if feature_system_path is not None and os.path.exists(feature_system_path):
+    #    feature_matrix = load_binary(feature_system_path)
+    #    corpus.set_feature_matrix(feature_matrix)
 
     if annotation_types is None:
         annotation_types, _ = inspect_csv(path, coldelim = delimiter)
@@ -137,8 +138,7 @@ def load_corpus_csv(corpus_name, path, delimiter,
                                             'preview to the right.').format(a.name)))
     for a in annotation_types:
         a.reset()
-
-    with open(path, encoding='utf-8') as f:
+    with session_scope() as session, open(path, encoding='utf-8') as f:
         headers = f.readline()
         headers = headers.split(delimiter)
         if len(headers)==1:
@@ -147,8 +147,21 @@ def load_corpus_csv(corpus_name, path, delimiter,
                                 'the one used in the file.'))
             raise(e)
         headers = annotation_types
-        for a in headers:
-            corpus.add_attribute(a.attribute)
+        property_types = {}
+        sql_annotation_types = {'transcription':SQLAnnotationType(label = 'transcription')}
+        session.add(sql_annotation_types['transcription'])
+        for k in headers:
+            if k.attribute.name in ['spelling','transcription','frequency']:
+                continue
+            if k.attribute.att_type == 'tier':
+                at = SQLAnnotationType(label = k.attribute.display_name)
+                session.add(at)
+                sql_annotation_types[k.attribute.name] = at
+            pt = WordPropertyType(label = k.attribute.display_name)
+            session.add(pt)
+            property_types[k.attribute.name] = pt
+        inventory = {}
+
         trans_check = False
 
         for line in f.readlines():
@@ -162,24 +175,54 @@ def load_corpus_csv(corpus_name, path, delimiter,
                     trans = parse_transcription(v, k)
                     if not trans_check and len(trans) > 1:
                         trans_check = True
-                    d[k.attribute.name] = (k.attribute, trans)
+                    d[k.attribute.name] = [x.label for x in trans]
                 else:
-                    d[k.attribute.name] = (k.attribute, v)
-            word = Word(**d)
-            if word.transcription:
-                #transcriptions can have phonetic symbol delimiters which is a period
-                if not word.spelling:
-                    word.spelling = ''.join(map(str,word.transcription))
+                    d[k.attribute.name] = v
+            if 'transcription' not in d:
+                d['transcription'] = []
+            if 'spelling' not in d:
+                d['spelling'] = ''.join(d['transcription'])
+            for s in d['transcription']:
+                if (s, 'transcription') not in inventory:
+                    seg = InventoryItem(label = s,
+                        annotation_type = sql_annotation_types['transcription'])
+                    session.add(seg)
+                    inventory[(s,'transcription')] = seg
 
-            corpus.add_word(word)
-    if corpus.has_transcription and not trans_check:
-        e = DelimiterError(('Could not parse transcriptions with that delimiter. '
-                            '\n\Check that the transcription delimiter you typed '
-                            'in matches the one used in the file.'))
-        raise(e)
+            word = Word(orthography=d['spelling'], transcription = '.'.join(d['transcription']),
+                        frequency = d.get('frequency',0))
+            session.add(word)
+            for k in headers:
+                if k.attribute.name in ['spelling','transcription','frequency']:
+                    continue
 
-    transcription_errors = corpus.check_coverage()
-    return corpus
+                if k.attribute.att_type == 'tier':
+                    for s in d[k.attribute.name]:
+                        if (s, k.attribute.name) not in inventory:
+                            seg = InventoryItem(label = s,
+                                annotation_type = sql_annotation_types[k.attribute.name])
+                            session.add(seg)
+                            inventory[(s,k.attribute.name)] = seg
+                    prop = WordProperty(word = word,
+                            property = property_types[k.attribute.name],
+                            value = '.'.join(d[k.attribute.name]))
+
+                elif k.attribute.att_type == 'numeric':
+                    prop = WordNumericProperty(word = word,
+                            property = property_types[k.attribute.name],
+                            value = float(d[k.attribute.name]))
+                else:
+                    prop = WordProperty(word = word,
+                            property = property_types[k.attribute.name],
+                            value = str(d[k.attribute.name]))
+                session.add(prop)
+        if not trans_check:
+            e = DelimiterError(('Could not parse transcriptions with that delimiter. '
+                                '\n\Check that the transcription delimiter you typed '
+                                'in matches the one used in the file.'))
+            raise(e)
+        session.commit()
+
 
 def load_feature_matrix_csv(name, path, delimiter, stop_check = None, call_back = None):
     """
