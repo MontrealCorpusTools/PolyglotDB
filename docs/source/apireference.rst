@@ -21,6 +21,8 @@ Corpus class
 Graph classes
 =============
 
+.. _graph_queries:
+
 Queries
 -------
 .. currentmodule:: polyglotdb.graph.query
@@ -30,6 +32,8 @@ Queries
    :template: class.rst
 
    GraphQuery
+
+.. _graph_attributes:
 
 Attributes
 ----------
@@ -41,6 +45,8 @@ Attributes
 
    Attribute
    AnnotationAttribute
+
+.. _graph_clauses:
 
 Clause elements
 ---------------
@@ -59,6 +65,9 @@ Clause elements
    NotEqualClauseElement
    InClauseElement
    ContainsClauseElement
+
+
+.. _graph_qaggregates:
 
 Aggregate functions
 -------------------
@@ -81,6 +90,9 @@ Aggregate functions
 Importing and exporting
 =======================
 
+
+.. _io_helper_classes:
+
 Helper classes
 --------------
 
@@ -95,6 +107,8 @@ Helper classes
    helper.Annotation
    helper.AnnotationType
    helper.DiscourseData
+
+.. _io_helper_functions:
 
 Helper functions
 ----------------
@@ -111,6 +125,7 @@ Helper functions
    helper.text_to_lines
    helper.find_wav_path
 
+.. _io_csv:
 
 Loading from CSV
 ----------------
@@ -124,6 +139,8 @@ Loading from CSV
    csv.load_corpus_csv
    csv.load_feature_matrix_csv
 
+.. _io_csv_export:
+
 Export to CSV
 -------------
 
@@ -135,6 +152,8 @@ Export to CSV
 
    csv.export_corpus_csv
    csv.export_feature_matrix_csv
+
+.. _io_tg:
 
 TextGrids
 ---------
@@ -148,6 +167,8 @@ TextGrids
    textgrid.inspect_discourse_textgrid
    textgrid.load_discourse_textgrid
    textgrid.load_directory_textgrid
+
+.. _io_text:
 
 Running text
 ------------
@@ -167,6 +188,8 @@ Running text
    text_transcription.load_directory_transcription
    text_transcription.export_discourse_transcription
 
+.. _io_ilg:
+
 Interlinear gloss text
 ----------------------
 
@@ -181,6 +204,8 @@ Interlinear gloss text
    text_ilg.load_directory_ilg
    text_ilg.export_discourse_ilg
 
+.. _io_buckeye:
+
 Buckeye
 -------
 
@@ -193,6 +218,8 @@ Buckeye
    buckeye.inspect_discourse_buckeye
    buckeye.load_discourse_buckeye
    buckeye.load_directory_buckeye
+
+.. _io_timit:
 
 TIMIT
 -----
