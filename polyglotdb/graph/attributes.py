@@ -7,17 +7,6 @@ from .elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
                         InClauseElement, ContainsClauseElement)
 
-class MetaAnnotation(type):
-    def __getattr__(cls, key):
-        if key in ['previous', 'following']:
-            if key == 'previous':
-                pos = -1
-            else:
-                pos = 1
-            return AnnotationAttribute(key, pos)
-        else:
-            return Attribute(key, 0)
-
 class Attribute(object):
     def __init__(self, annotation, label):
         self.annotation = annotation
@@ -39,6 +28,9 @@ class Attribute(object):
             b_node = self.annotation.begin_alias
             e_node = self.annotation.end_alias
             return '{}.time - {}.time'.format(e_node, b_node)
+        elif self.name == 'discourse':
+            b_node = self.annotation.begin_alias
+            return '{}.discourse'.format(b_node)
         return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.name))
 
     @property
