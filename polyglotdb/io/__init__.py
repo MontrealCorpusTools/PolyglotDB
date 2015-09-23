@@ -11,5 +11,9 @@ from .text_transcription import (load_discourse_transcription,
 
 from .text_ilg import load_discourse_ilg, export_discourse_ilg
 
-from .multiple_files import (inspect_discourse_multiple_files,
-                            load_directory_multiple_files)
+from .standards import (inspect_discourse_buckeye,
+                            load_directory_buckeye,
+                            load_discourse_buckeye,
+                            inspect_discourse_timit,
+                            load_directory_timit,
+                            load_discourse_timit)

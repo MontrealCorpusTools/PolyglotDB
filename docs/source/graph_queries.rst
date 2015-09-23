@@ -11,6 +11,9 @@ a corpus.
 .. note:: See :code:`examples/buckeye_querying.py` for some example queries in
    the Buckeye corpus.
 
+
+.. _basic_queries:
+
 Basic structural queries
 ========================
 
@@ -113,6 +116,9 @@ the annotation is contained by an annotation that matches a condition:
 The above example finds a similar set of labels as the one above that,
 but the returned annotation types are different.
 
+
+.. _following_previous:
+
 Following and previous annotations
 ----------------------------------
 
@@ -130,6 +136,7 @@ The above query will find all the 'aa' phones that are followed by an 'r'
 phone.  Similarly, :code:`c.phone.previous` would provide access to filtering on
 preceding phones.
 
+.. _aggregates_and_groups:
 
 Aggregates and groups
 =====================
@@ -188,6 +195,7 @@ phones grouped by whether they're followed by an 'r' or an 'l'.
    an alias for output.  In the print statment and in the results, the column
    will be called 'following_label' instead of the default (more opaque) one.
 
+.. _ordering:
 
 Ordering
 ========

@@ -36,55 +36,12 @@ class Attribute(object):
 
     display_name : string
         Human-readable name for the Attribute
-
-    default_value : object
-        Default value for the Attribute.  The type of `default_value` is
-        dependent on the attribute type.  Numeric Attributes have a float
-        default value.  Factor and Spelling Attributes have a string
-        default value.  Tier Attributes have a Transcription default value.
-
-    range : object
-        Range of the Attribute, type depends on the attribute type.  Numeric
-        Attributes have a tuple of floats for the range for the minimum
-        and maximum.  The range for Factor Attributes is a set of all
-        factor levels.  The range for Tier Attributes is the set of segments
-        in that tier across the corpus.  The range for Spelling Attributes
-        is None.
     """
     ATT_TYPES = ['spelling', 'tier', 'numeric', 'factor']
     def __init__(self, name, att_type, display_name = None, default_value = None):
         self.name = name
         self.att_type = att_type
         self._display_name = display_name
-
-        if self.att_type == 'numeric':
-            self._range = [0,0]
-            if default_value is not None and isinstance(default_value,(int,float)):
-                self._default_value = default_value
-            else:
-                self._default_value = 0
-        elif self.att_type == 'factor':
-            if default_value is not None and isinstance(default_value,str):
-                self._default_value = default_value
-            else:
-                self._default_value = ''
-            if default_value:
-                self._range = set([default_value])
-            else:
-                self._range = set()
-        elif self.att_type == 'spelling':
-            self._range = None
-            if default_value is not None and isinstance(default_value,str):
-                self._default_value = default_value
-            else:
-                self._default_value = ''
-        elif self.att_type == 'tier':
-            self._range = set()
-            self._delim = None
-            if default_value is not None:
-                self._default_value = default_value
-            else:
-                self._default_value = []
 
     @property
     def delimiter(self):
@@ -156,59 +113,6 @@ class Attribute(object):
         if self._display_name is not None:
             return self._display_name
         return self.name.title()
-
-    @property
-    def default_value(self):
-        return self._default_value
-
-    @default_value.setter
-    def default_value(self, value):
-        self._default_value = value
-        self._range = set([value])
-
-    @property
-    def range(self):
-        return self._range
-
-    def update_range(self,value):
-        """
-        Update the range of the Attribute with the value specified.
-        If the attribute is a Factor, the value is added to the set of levels.
-        If the attribute is Numeric, the value expands the minimum and
-        maximum values, if applicable.  If the attribute is a Tier, the
-        value (a segment) is added to the set of segments allowed. If
-        the attribute is Spelling, nothing is done.
-
-        Parameters
-        ----------
-        value : object
-            Value to update range with, the type depends on the attribute
-            type
-        """
-        if value is None:
-            return
-        if self.att_type == 'numeric':
-            if isinstance(value, str):
-                try:
-                    value = float(value)
-                except ValueError:
-                    self.att_type = 'spelling'
-                    self._range = None
-                    return
-            if value < self._range[0]:
-                self._range[0] = value
-            elif value > self._range[1]:
-                self._range[1] = value
-        elif self.att_type == 'factor':
-            self._range.add(value)
-            #if len(self._range) > 1000:
-            #    self.att_type = 'spelling'
-            #    self._range = None
-        elif self.att_type == 'tier':
-            if isinstance(self._range, list):
-                self._range = set(self._range)
-            self._range.update([x for x in value])
-
 
 class BaseAnnotation(object):
     def __init__(self, label, begin = None, end = None):

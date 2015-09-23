@@ -240,7 +240,6 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
 
 
 def load_discourse_textgrid(corpus_context, path, annotation_types,
-                            lexicon = None,
                             feature_system_path = None,
                             stop_check = None, call_back = None):
     """
@@ -248,26 +247,19 @@ def load_discourse_textgrid(corpus_context, path, annotation_types,
 
     Parameters
     ----------
-    corpus_name : str
-        Informative identifier to refer to corpus
+    corpus_context : CorpusContext
+        Context manager for the corpus
     path : str
         Full path to TextGrid file
     annotation_types : list of AnnotationType
         List of AnnotationType specifying how to parse the TextGrids.
         Can be generated through ``inspect_discourse_textgrid``.
-    lexicon : Corpus, optional
-        Corpus to store Discourse word information
     feature_system_path : str
         Full path to pickled FeatureMatrix to use with the Corpus
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None
         Optional function to supply progress information during the loading
-
-    Returns
-    -------
-    Discourse
-        Discourse object generated from the TextGrid file
     """
     data = textgrid_to_data(path, annotation_types, call_back, stop_check)
     data.wav_path = find_wav_path(path)
@@ -281,8 +273,8 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
 
     Parameters
     ----------
-    corpus_name : str
-        Name of corpus
+    corpus_context : CorpusContext
+        Context manager for the corpus
     path : str
         Path to directory of TextGrid files
     annotation_types : list of AnnotationType
@@ -294,11 +286,6 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
         Optional function to check whether to gracefully terminate early
     call_back : callable or None
         Optional function to supply progress information during the loading
-
-    Returns
-    -------
-    SpontaneousSpeechCorpus
-        Corpus containing Discourses corresponding to the TextGrid files
     """
     if call_back is not None:
         call_back('Finding  files...')

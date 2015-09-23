@@ -110,8 +110,8 @@ def load_directory_spelling(corpus_context, path, annotation_types = None,
 
     Parameters
     ----------
-    corpus_name : str
-        Name of corpus
+    corpus_context : CorpusContext
+        Context manager for the corpus
     path : str
         Path to directory of text files
     annotation_types : list of AnnotationType, optional
@@ -163,15 +163,12 @@ def load_discourse_spelling(corpus_context, path, annotation_types = None,
 
     Parameters
     ----------
-    corpus_name : str
-        Informative identifier to refer to corpus
-
+    corpus_context : CorpusContext
+        Context manager for the corpus
     path : str
         Full path to text file
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse text files
-    lexicon : Corpus, optional
-        Corpus to store Discourse word information
     support_corpus_path : str, optional
         Full path to a corpus to look up transcriptions from spellings
         in the text
@@ -185,11 +182,6 @@ def load_discourse_spelling(corpus_context, path, annotation_types = None,
         Function that can handle strings (text updates of progress),
         tuples of two integers (0, total number of steps) and an integer
         for updating progress out of the total set by a tuple
-
-    Returns
-    -------
-    Discourse
-        Discourse object generated from the text file
     """
 
     data = spelling_text_to_data(path, annotation_types,

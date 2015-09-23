@@ -15,6 +15,7 @@ Contents:
    installation.rst
    importing.rst
    graph_queries.rst
+   apireference.rst
 
 
 

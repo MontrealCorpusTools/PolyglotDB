@@ -2,9 +2,9 @@
 import pytest
 import os
 
-from polyglotdb.io.multiple_files import (read_phones, read_words,
+from polyglotdb.io.standards.buckeye import (read_phones, read_words,
                             BaseAnnotation,
-                            multiple_files_to_data)
+                            buckeye_to_data)
 
 def test_load_phones(buckeye_test_dir):
     expected_phones = [BaseAnnotation('{B_TRANS}',0.0, 2.609000),
@@ -33,12 +33,12 @@ def test_load_phones(buckeye_test_dir):
                             BaseAnnotation('ah',4.369000, 4.443707),
                             BaseAnnotation('t',4.443707, 4.501000),
                             ]
-    phones = read_phones(os.path.join(buckeye_test_dir,'test.phones'),dialect='buckeye')
+    phones = read_phones(os.path.join(buckeye_test_dir,'test.phones'))
     for i,p in enumerate(expected_phones):
         assert(p == phones[i])
 
 def test_load_words(buckeye_test_dir):
-    words = read_words(os.path.join(buckeye_test_dir, 'test.words'),dialect='buckeye')
+    words = read_words(os.path.join(buckeye_test_dir, 'test.words'))
     expected_words = [{'spelling':'{B_TRANS}','begin':0,'end':2.609000,'transcription':None,'surface_transcription':None,'category':None},
         {'spelling':'<IVER>','begin':2.609000,'end':2.714347,'transcription':None,'surface_transcription':None,'category':None},
         {'spelling':'that\'s','begin':2.714347,'end':2.892096,'transcription':['dh', 'ae', 't', 's'],'surface_transcription':['eh', 's'],'category':'DT_VBZ'},
@@ -54,6 +54,6 @@ def test_load_words(buckeye_test_dir):
         assert(w == words[i])
 
 def test_files_to_data(buckeye_test_dir):
-    words = multiple_files_to_data(os.path.join(buckeye_test_dir,'test.words'),os.path.join(buckeye_test_dir,'test.phones'), 'buckeye')
+    words = buckeye_to_data(os.path.join(buckeye_test_dir,'test.words'),os.path.join(buckeye_test_dir,'test.phones'))
 
 

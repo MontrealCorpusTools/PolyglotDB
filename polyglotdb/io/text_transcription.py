@@ -128,8 +128,8 @@ def load_directory_transcription(corpus_context, path, annotation_types = None,
 
     Parameters
     ----------
-    corpus_name : str
-        Name of corpus
+    corpus_context : CorpusContext
+        Context manager for the corpus
     path : str
         Path to directory of text files
     annotation_types : list of AnnotationType, optional
@@ -140,11 +140,6 @@ def load_directory_transcription(corpus_context, path, annotation_types = None,
         Optional function to check whether to gracefully terminate early
     call_back : callable, optional
         Optional function to supply progress information during the loading
-
-    Returns
-    -------
-    SpontaneousSpeechCorpus
-        Corpus containing Discourses corresponding to the text files
     """
     if call_back is not None:
         call_back('Finding  files...')
@@ -182,25 +177,18 @@ def load_discourse_transcription(corpus_context, path, annotation_types = None,
 
     Parameters
     ----------
-    corpus_name : str
-        Informative identifier to refer to corpus
+    corpus_context : CorpusContext
+        Context manager for the corpus
     path : str
         Full path to text file
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse text files
-    lexicon : Corpus, optional
-        Corpus to store Discourse word information
     feature_system_path : str, optional
         Full path to pickled FeatureMatrix to use with the Corpus
     stop_check : callable, optional
         Optional function to check whether to gracefully terminate early
     call_back : callable, optional
         Optional function to supply progress information during the loading
-
-    Returns
-    -------
-    Discourse
-        Discourse object generated from the text file
     """
     if feature_system_path is not None:
         if not os.path.exists(feature_system_path):

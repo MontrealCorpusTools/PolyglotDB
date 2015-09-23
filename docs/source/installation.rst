@@ -4,6 +4,8 @@
 Installation
 ************
 
+.. _prerequisites:
+
 Prerequisites
 =============
 
@@ -17,6 +19,8 @@ The first time, Neo4j will prompt you to set a password for future connections.
 PolyglotDB currently only supports SQLite for its relational database component,
 which requires no extra installation.
 In the future, more sophisticated relational database servers will be supported.
+
+.. _actual_install:
 
 Installation
 ============
