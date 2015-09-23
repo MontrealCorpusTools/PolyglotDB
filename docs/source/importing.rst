@@ -57,10 +57,10 @@ TextGrid has a tier 'Words' and a tier 'Phones', it will identify 'Words'
 as containing 'Phones' if the 'Phones' tier has more intervals than the 'Words'
 tier.
 
-.. note:: All load functions accept a keyword argument for `annotation_types`
+.. note:: All load functions accept a keyword argument for :code:`annotation_types`
    to allow the user to modify aspects of how a corpus is imported.  For set
    standards, such as the Buckeye corpus, annotation_types do not have to be
-   explicitly loaded.  See `examples/buckeye_loading.py` in the Git repository
+   explicitly loaded.  See :code:`examples/buckeye_loading.py` in the Git repository
    for an example of loading the complete Buckeye corpus.
 
 All interaction with the databases is via the :code:`CorpusContext` context manager.

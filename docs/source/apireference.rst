@@ -21,7 +21,7 @@ Corpus class
 Graph classes
 =============
 
-.. _graph_queries:
+.. _graph_queries_api:
 
 Queries
 -------
@@ -33,7 +33,7 @@ Queries
 
    GraphQuery
 
-.. _graph_attributes:
+.. _graph_attributes_api:
 
 Attributes
 ----------
@@ -46,7 +46,7 @@ Attributes
    Attribute
    AnnotationAttribute
 
-.. _graph_clauses:
+.. _graph_clauses_api:
 
 Clause elements
 ---------------
@@ -67,7 +67,7 @@ Clause elements
    ContainsClauseElement
 
 
-.. _graph_qaggregates:
+.. _graph_qaggregates_api:
 
 Aggregate functions
 -------------------
@@ -91,7 +91,7 @@ Importing and exporting
 =======================
 
 
-.. _io_helper_classes:
+.. _io_helper_classes_api:
 
 Helper classes
 --------------
@@ -108,7 +108,7 @@ Helper classes
    helper.AnnotationType
    helper.DiscourseData
 
-.. _io_helper_functions:
+.. _io_helper_functions_api:
 
 Helper functions
 ----------------
@@ -125,7 +125,7 @@ Helper functions
    helper.text_to_lines
    helper.find_wav_path
 
-.. _io_csv:
+.. _io_csv_api:
 
 Loading from CSV
 ----------------
@@ -139,7 +139,7 @@ Loading from CSV
    csv.load_corpus_csv
    csv.load_feature_matrix_csv
 
-.. _io_csv_export:
+.. _io_csv_export_api:
 
 Export to CSV
 -------------
@@ -153,7 +153,7 @@ Export to CSV
    csv.export_corpus_csv
    csv.export_feature_matrix_csv
 
-.. _io_tg:
+.. _io_tg_api:
 
 TextGrids
 ---------
@@ -168,7 +168,7 @@ TextGrids
    textgrid.load_discourse_textgrid
    textgrid.load_directory_textgrid
 
-.. _io_text:
+.. _io_text_api:
 
 Running text
 ------------
@@ -188,7 +188,7 @@ Running text
    text_transcription.load_directory_transcription
    text_transcription.export_discourse_transcription
 
-.. _io_ilg:
+.. _io_ilg_api:
 
 Interlinear gloss text
 ----------------------
@@ -204,7 +204,7 @@ Interlinear gloss text
    text_ilg.load_directory_ilg
    text_ilg.export_discourse_ilg
 
-.. _io_buckeye:
+.. _io_buckeye_api:
 
 Buckeye
 -------
@@ -219,7 +219,7 @@ Buckeye
    buckeye.load_discourse_buckeye
    buckeye.load_directory_buckeye
 
-.. _io_timit:
+.. _io_timit_api:
 
 TIMIT
 -----

@@ -55,7 +55,7 @@ The :code:`in_` conditional function can take any iterable, including another qu
        q = c.query_graph(c.phone).filter(c.word.id.in_(sub_q))
        print(q.all())
 
-In this case, it will find all `phone` annotations that are in the words
+In this case, it will find all :code:`phone` annotations that are in the words
 listed.  Using the :code:`id` attribute will use unique identifiers for the filter.
 In this particular instance, it does not matter, but it does in the following:
 
@@ -191,7 +191,7 @@ Aggregates are particularly useful with grouping.  For instance:
 The above query will return the average duration and the count of 'aa'
 phones grouped by whether they're followed by an 'r' or an 'l'.
 
-.. note:: In the above example, the `group_by` attribute is supplied with
+.. note:: In the above example, the :code:`group_by` attribute is supplied with
    an alias for output.  In the print statment and in the results, the column
    will be called 'following_label' instead of the default (more opaque) one.
 
@@ -219,5 +219,5 @@ discourses (as including multiple discourses in a query would invalidate the
 ordering).
 
 .. note:: In grouped aggregate queries, ordering is by default by the
-   first `group_by` attribute.  This can be changed by calling :code:`order_by`
+   first :code:`group_by` attribute.  This can be changed by calling :code:`order_by`
    before evaluating with :code:`aggregate`.
