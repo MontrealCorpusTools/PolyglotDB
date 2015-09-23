@@ -4,7 +4,7 @@ import string
 import logging
 import operator
 
-from annograph.exceptions import DelimiterError
+from polyglotdb.exceptions import DelimiterError
 
 NUMBER_CHARACTERS = set(string.digits)
 

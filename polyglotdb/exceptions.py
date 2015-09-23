@@ -4,7 +4,7 @@ import traceback
 
 ## Base exception classes
 
-class AGError(Exception):
+class PGError(Exception):
     """
     Base class for all exceptions explicitly raised in corpustools.
     """
@@ -12,7 +12,7 @@ class AGError(Exception):
 
 ## Context Manager exceptions
 
-class AGContextError(AGError):
+class PGContextError(PGError):
     """
     Exception class for when context managers should be used and aren't.
     """
@@ -20,33 +20,33 @@ class AGContextError(AGError):
 
 ## Corpus loading exceptions
 
-class AGOSError(AGError):
+class PGOSError(PGError):
     """
     Exception class for when files or directories that are expected are missing.
     Wrapper for OSError.
     """
     pass
 
-class CorpusIntegrityError(AGError):
+class CorpusIntegrityError(PGError):
     """
     Exception for when a problem arises while loading in the corpus.
     """
     pass
 
-class DelimiterError(AGError):
+class DelimiterError(PGError):
     """
     Exception for mismatch between specified delimiter and the actual text
     when loading in CSV files and transcriptions.
     """
     pass
 
-class ILGError(AGError):
+class ILGError(PGError):
     """
     Exception for general issues when loading interlinear gloss files.
     """
     pass
 
-class ILGWordMismatchError(AGError):
+class ILGWordMismatchError(PGError):
     """
     Exception for when interlinear gloss files have different numbers of
     words across lines that should have a one-to-one mapping.
@@ -70,7 +70,7 @@ class ILGWordMismatchError(AGError):
                 self.details += '({}, {} words) '.format(k,len(v))
                 self.details += ' '.join(str(x) for x in v) + '\n'
 
-class ILGLinesMismatchError(AGError):
+class ILGLinesMismatchError(PGError):
     """
     Exception for when the number of lines in a interlinear gloss file
     is not a multiple of the number of types of lines.
@@ -91,7 +91,7 @@ class ILGLinesMismatchError(AGError):
             else:
                 self.details += str(line) + '\n'
 
-class TextGridTierError(AGError):
+class TextGridTierError(PGError):
     """
     Exception for when a specified tier was not found in a TextGrid.
 

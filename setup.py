@@ -2,7 +2,7 @@ import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
-import annograph
+import polyglotdb
 
 def readme():
     with open('README.md') as f:
@@ -19,8 +19,8 @@ class PyTest(TestCommand):
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
-setup(name='annograph',
-      version=annograph.__version__,
+setup(name='polyglotdb',
+      version=polyglotdb.__version__,
       description='',
       long_description='',
       classifiers=[
@@ -35,10 +35,10 @@ setup(name='annograph',
       url='https://github.com/PhonologicalCorpusTools/PyAnnotationGraph',
       author='Phonological CorpusTools',
       author_email='michael.e.mcauliffe@gmail.com',
-      packages=['annograph',
-                'annograph.io',
-                'annograph.graph',
-                'annograph.sql'],
+      packages=['polyglotdb',
+                'polyglotdb.io',
+                'polyglotdb.graph',
+                'polyglotdb.sql'],
       install_requires=[
           'sqlalchemy',
           'textgrid',

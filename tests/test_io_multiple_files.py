@@ -2,7 +2,7 @@
 import pytest
 import os
 
-from annograph.io.multiple_files import (read_phones, read_words,
+from polyglotdb.io.multiple_files import (read_phones, read_words,
                             BaseAnnotation,
                             multiple_files_to_data)
 

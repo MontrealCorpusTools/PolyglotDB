@@ -1,11 +1,11 @@
 import pytest
 import os
 
-from annograph.io.helper import BaseAnnotation, Annotation, AnnotationType, DiscourseData
+from polyglotdb.io.helper import BaseAnnotation, Annotation, AnnotationType, DiscourseData
 
-from annograph.io.textgrid import inspect_discourse_textgrid, load_discourse_textgrid
+from polyglotdb.io.textgrid import inspect_discourse_textgrid, load_discourse_textgrid
 
-from annograph.corpus import CorpusContext
+from polyglotdb.corpus import CorpusContext
 
 
 @pytest.fixture(scope='session')

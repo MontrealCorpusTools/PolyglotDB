@@ -1,5 +1,5 @@
 
-from annograph.io.helper import parse_transcription, AnnotationType
+from polyglotdb.io.helper import parse_transcription, AnnotationType
 
 
 def test_parse_transcription():

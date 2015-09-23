@@ -6,7 +6,7 @@ import sys
 FILLERS = set(['uh','um','okay','yes','yeah','oh','heh','yknow','um-huh',
                 'uh-uh','uh-huh','uh-hum','mm-hmm'])
 
-from annograph.io.helper import (DiscourseData, AnnotationType,
+from .helper import (DiscourseData, AnnotationType,
                             Annotation, BaseAnnotation, find_wav_path)
 
 def phone_match(one,two):

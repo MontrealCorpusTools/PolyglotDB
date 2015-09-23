@@ -1,7 +1,7 @@
 import os
 import re
 
-from annograph.exceptions import DelimiterError
+from polyglotdb.exceptions import DelimiterError
 
 from .helper import (compile_digraphs, parse_transcription, DiscourseData,
                     AnnotationType, text_to_lines,

@@ -5,11 +5,11 @@ import os
 
 from .helper import parse_transcription, AnnotationType, Attribute
 
-from annograph.exceptions import DelimiterError, CorpusIntegrityError
+from polyglotdb.exceptions import DelimiterError, CorpusIntegrityError
 
-from annograph.sql.config import session_scope
+from polyglotdb.sql.config import session_scope
 
-from annograph.sql.models import (Word, WordPropertyType, WordNumericProperty,
+from polyglotdb.sql.models import (Word, WordPropertyType, WordNumericProperty,
                                 WordProperty, InventoryItem, AnnotationType as SQLAnnotationType,
                                 InventoryProperty)
 

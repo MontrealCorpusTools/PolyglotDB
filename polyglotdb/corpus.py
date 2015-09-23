@@ -5,20 +5,20 @@ from py2neo import Graph
 from collections import defaultdict
 
 
-from annograph.io.graph import data_to_graph_csvs
+from .io.graph import data_to_graph_csvs
 
-from annograph.graph.query import GraphQuery
-from annograph.graph.attributes import AnnotationAttribute
+from .graph.query import GraphQuery
+from .graph.attributes import AnnotationAttribute
 
-from annograph.sql.models import Base, Word, WordProperty, WordPropertyType, InventoryItem, AnnotationType, SoundFile
+from .sql.models import Base, Word, WordProperty, WordPropertyType, InventoryItem, AnnotationType, SoundFile
 
 from sqlalchemy import create_engine
 
-from annograph.sql.config import Session, session_scope
+from .sql.config import Session, session_scope
 
-from annograph.sql.helper import get_or_create
+from .sql.helper import get_or_create
 
-from annograph.sql.query import Lexicon
+from .sql.query import Lexicon
 
 class CorpusContext(object):
     def __init__(self, user, password, corpus_name, host = 'localhost', port = 7474):

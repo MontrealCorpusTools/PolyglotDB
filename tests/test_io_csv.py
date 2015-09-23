@@ -2,13 +2,13 @@
 import pytest
 import os
 
-from annograph.io.csv import (load_corpus_csv, export_corpus_csv, inspect_csv,
+from polyglotdb.io.csv import (load_corpus_csv, export_corpus_csv, inspect_csv,
                                         load_feature_matrix_csv, export_feature_matrix_csv)
 
-from annograph.io.helper import BaseAnnotation, Annotation, AnnotationType, Attribute
+from polyglotdb.io.helper import BaseAnnotation, Annotation, AnnotationType, Attribute
 
-from annograph.exceptions import DelimiterError
-from annograph.corpus import CorpusContext
+from polyglotdb.exceptions import DelimiterError
+from polyglotdb.corpus import CorpusContext
 
 def test_inspect_example(csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'example.txt')

@@ -3,10 +3,9 @@ import os
 import time
 base = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0,base)
-import annograph.io as aio
+import polyglotdb.io as aio
 
-from annograph.corpus import CorpusContext
-from annograph.graph.models import Anchor, Annotation
+from polyglotdb.corpus import CorpusContext
 
 path_to_buckeye = r'D:\Data\VIC\Speakers'
 

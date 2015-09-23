@@ -5,7 +5,7 @@ import re
 from textgrid import TextGrid, IntervalTier
 from textgrid.textgrid import readFile, Interval, Point, PointTier, _getMark
 
-from annograph.exceptions import TextGridTierError
+from polyglotdb.exceptions import TextGridTierError
 
 
 from .helper import (compile_digraphs, parse_transcription, DiscourseData,

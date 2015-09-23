@@ -3,7 +3,7 @@ import os
 import re
 from collections import Counter
 
-from annograph.exceptions import (DelimiterError, ILGError, ILGLinesMismatchError,
+from polyglotdb.exceptions import (DelimiterError, ILGError, ILGLinesMismatchError,
                                 ILGWordMismatchError)
 
 from .helper import (compile_digraphs, parse_transcription,

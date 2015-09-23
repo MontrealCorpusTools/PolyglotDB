@@ -2,8 +2,8 @@
 import os
 import pytest
 
-from annograph.corpus import CorpusContext
-from annograph.graph.func import Average, Count
+from polyglotdb.corpus import CorpusContext
+from polyglotdb.graph.func import Average, Count
 
 def test_query_duration(graph_db):
     with CorpusContext(corpus_name = 'acoustic', **graph_db) as g:

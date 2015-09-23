@@ -2,18 +2,18 @@
 import pytest
 import os
 
-from annograph.io.text_spelling import (load_discourse_spelling,
+from polyglotdb.io.text_spelling import (load_discourse_spelling,
                                                 load_directory_spelling,
                                                 inspect_discourse_spelling,
                                                 export_discourse_spelling)
-from annograph.io.text_transcription import (load_discourse_transcription,
+from polyglotdb.io.text_transcription import (load_discourse_transcription,
                                                 load_directory_transcription,
                                                 inspect_discourse_transcription,
                                                 export_discourse_transcription)
 
-from annograph.exceptions import DelimiterError
+from polyglotdb.exceptions import DelimiterError
 
-from annograph.corpus import CorpusContext
+from polyglotdb.corpus import CorpusContext
 
 @pytest.mark.xfail
 def test_export_spelling(export_test_dir, unspecified_test_corpus):

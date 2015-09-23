@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from annograph.corpus import CorpusContext
+from polyglotdb.corpus import CorpusContext
 
 def test_basic_query(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:

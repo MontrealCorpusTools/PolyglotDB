@@ -3,12 +3,12 @@ import pytest
 import os
 
 
-from annograph.io.helper import AnnotationType, Annotation, BaseAnnotation
+from polyglotdb.io.helper import AnnotationType, Annotation, BaseAnnotation
 
-from annograph.io.textgrid import (textgrid_to_data,
+from polyglotdb.io.textgrid import (textgrid_to_data,
                     inspect_discourse_textgrid, load_discourse_textgrid)
 
-from annograph.corpus import CorpusContext
+from polyglotdb.corpus import CorpusContext
 
 #def test_guess_tiers(textgrid_test_dir):
 #    tg = load_textgrid(os.path.join(textgrid_test_dir,'phone_word.TextGrid'))

@@ -2,15 +2,15 @@ import pytest
 import os
 import sys
 
-from annograph.io.text_ilg import (load_discourse_ilg,
+from polyglotdb.io.text_ilg import (load_discourse_ilg,
                                             inspect_discourse_ilg,
                                             ilg_to_data, export_discourse_ilg)
 
-from annograph.io.helper import BaseAnnotation, Annotation, AnnotationType, Attribute
+from polyglotdb.io.helper import BaseAnnotation, Annotation, AnnotationType, Attribute
 
-from annograph.exceptions import DelimiterError, ILGWordMismatchError
+from polyglotdb.exceptions import DelimiterError, ILGWordMismatchError
 
-from annograph.corpus import CorpusContext
+from polyglotdb.corpus import CorpusContext
 
 def test_inspect_ilg(ilg_test_dir):
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')
