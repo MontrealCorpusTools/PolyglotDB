@@ -25,8 +25,8 @@ def inspect_discourse_timit(word_path):
     list of AnnotationTypes
         Auto-detected AnnotationTypes for TIMIT
     """
-    annotation_types = [AnnotationType('spelling', 'transcription', None, anchor = True),
-                       AnnotationType('transcription', None, 'spelling', base = True, token = True)]
+    annotation_types = [AnnotationType('spelling', 'surface_transcription', None, anchor = True),
+                       AnnotationType('surface_transcription', None, 'spelling', base = True, token = True)]
     return annotation_types
 
 def timit_to_data(word_path, phone_path, annotation_types = None,
@@ -69,7 +69,7 @@ def timit_to_data(word_path, phone_path, annotation_types = None,
             found.append(p)
             if p.end == end:
                 found_all = True
-        n = 'transcription'
+        n = data.base_levels[0]
         level_count = data.level_length(n)
         word.references.append(n)
         word.begins.append(level_count)
@@ -149,7 +149,7 @@ def load_discourse_timit(corpus_context, word_path, phone_path,
                                     feature_system_path = None,
                                     stop_check = None, call_back = None):
     """
-    Load a discourse from a text file containing interlinear glosses
+    Load a discourse from a TIMIT style corpus
 
     Parameters
     ----------
@@ -163,7 +163,7 @@ def load_discourse_timit(corpus_context, word_path, phone_path,
         List of AnnotationType specifying how to parse the glosses.
         Auto-generated based on dialect.
     feature_system_path : str
-        Full path to pickled FeatureMatrix to use with the Corpus
+        Full path to pickled FeatureMatrix to use with the corpus
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None
@@ -180,31 +180,21 @@ def read_phones(path):
     sr = 16000
     with open(path,'r') as file_handle:
         for line in file_handle:
-
             l = line.strip().split(' ')
-            start = float(l[0])
-            end = float(l[1])
+            begin = float(l[0]) / sr
+            end = float(l[1])/ sr
             label = l[2]
-            if sr is not None:
-                start /= sr
-                end /= sr
             output.append(BaseAnnotation(label, begin, end))
-
     return output
 
 def read_words(path):
-    output = list()
+    output = []
     sr = 16000
     with open(path,'r') as file_handle:
         for line in file_handle:
-
             l = line.strip().split(' ')
-            start = float(l[0])
-            end = float(l[1])
+            begin = float(l[0]) / sr
+            end = float(l[1]) / sr
             word = l[2]
-            if sr is not None:
-                start /= sr
-                end /= sr
-            output.append({'spelling':word, 'begin':start, 'end':end})
-
+            output.append({'spelling':word, 'begin':begin, 'end':end})
     return output
