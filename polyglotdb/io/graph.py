@@ -4,10 +4,22 @@ from uuid import uuid1
 
 def data_to_graph_csvs(data, directory):
     node_path = os.path.join(directory,'{}_nodes.csv'.format(data.name))
-    rel_paths = {x:os.path.join(directory,'{}_{}.csv'.format(data.name,x)) for x in data.types}
+    rel_paths = {}
+    for x in data.types:
+        level = x
+        if data[level].anchor:
+            level = 'word'
+        rel_paths[level] = os.path.join(directory,'{}_{}.csv'.format(data.name,level))
     rfs = {k: open(v, 'w') for k,v in rel_paths.items()}
-    rel_writers = {k:csv.DictWriter(v, ['from_id', 'to_id','label', 'id'], delimiter = ',')
-                        for k,v in rfs.items()}
+    rel_writers = {}
+    for k,v in rfs.items():
+        header = ['from_id', 'to_id','label', 'id']
+        if k == 'word':
+            header += data.token_properties
+            if 'transcription' in data.types and not data['transcription'].base:
+                header.append('transcription')
+        rel_writers[k] = csv.DictWriter(v, header, delimiter = ',')
+
     for x in rel_writers.values():
         x.writeheader()
     with open(node_path,'w') as nf:
@@ -75,7 +87,19 @@ def data_to_graph_csvs(data, directory):
                             begin, end = d[b]
                             begin_node = nodes[begin]
                             end_node = nodes[end]
-                rel_writers[level].writerow(dict(from_id=begin_node['id'],
-                                to_id=end_node['id'], label=d.label, id = uuid1()))
+                if data[level].anchor:
+                    label = 'word'
+                    additional = d.token
+                    if 'transcription' in d.additional:
+                        t = d.additional['transcription']
+                        if isinstance(t, list):
+                            t = '.'.join(t)
+                        additional['transcription'] = t
+                else:
+                    label = level
+                    additional = {}
+                rel_writers[label].writerow(dict(from_id=begin_node['id'],
+                                to_id=end_node['id'], label=d.label, id = uuid1(),
+                                **additional))
     for x in rfs.values():
         x.close()

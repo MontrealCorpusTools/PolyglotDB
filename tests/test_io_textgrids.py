@@ -6,9 +6,13 @@ import os
 from polyglotdb.io.helper import AnnotationType, Annotation, BaseAnnotation
 
 from polyglotdb.io.textgrid import (textgrid_to_data,
-                    inspect_discourse_textgrid, load_discourse_textgrid)
+                    inspect_discourse_textgrid,
+                    load_discourse_textgrid,
+                    load_directory_textgrid)
 
 from polyglotdb.corpus import CorpusContext
+
+from polyglotdb.exceptions import TextGridError
 
 #def test_guess_tiers(textgrid_test_dir):
 #    tg = load_textgrid(os.path.join(textgrid_test_dir,'phone_word.TextGrid'))
@@ -55,6 +59,13 @@ def test_load(textgrid_test_dir, graph_db):
         annotation_types = inspect_discourse_textgrid(path)
         print(annotation_types)
         load_discourse_textgrid(c, path, annotation_types)
+
+def test_directory(textgrid_test_dir, graph_db):
+    path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
+    with CorpusContext(corpus_name = 'test_textgrid_directory', **graph_db) as c:
+        with pytest.raises(TextGridError):
+            annotation_types = inspect_discourse_textgrid(path)
+            load_directory_textgrid(c, textgrid_test_dir, annotation_types)
 
 @pytest.mark.xfail
 def test_two_speakers(textgrid_test_dir):

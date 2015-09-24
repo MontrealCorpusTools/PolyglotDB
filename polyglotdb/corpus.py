@@ -85,7 +85,7 @@ class CorpusContext(object):
             raise(AttributeError('The graph does not have any annotations of type \'{}\''.format(annotation_type.name)))
         return GraphQuery(self, annotation_type)
 
-    def import_csvs(self, name, annotation_types):
+    def import_csvs(self, name, annotation_types, token_properties):
         node_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
 
         node_import_statement = '''LOAD CSV WITH HEADERS FROM "%s" AS csvLine
@@ -100,12 +100,29 @@ discourse: csvLine.discourse })'''
 
         for at in annotation_types:
             rel_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
-            rel_import_statement = '''USING PERIODIC COMMIT 1000
+
+            if at == 'word':
+                token_temp = '''{name}: csvLine.{name}'''
+                properties = []
+                for x in token_properties:
+                    properties.append(token_temp.format(name=x))
+                if properties:
+                    prop_string = ', ' + ', '.join(properties)
+                else:
+                    prop_string = ''
+                rel_import_statement = '''USING PERIODIC COMMIT 1000
+    LOAD CSV WITH HEADERS FROM "%%s" AS csvLine
+    MATCH (begin_node:Anchor { id: toInt(csvLine.from_id)}),(end_node:Anchor { id: toInt(csvLine.to_id)})
+    CREATE (begin_node)-[:%%s { label: csvLine.label%s, id: csvLine.id }]->(end_node)''' % prop_string
+            else:
+                rel_import_statement = '''USING PERIODIC COMMIT 1000
     LOAD CSV WITH HEADERS FROM "%s" AS csvLine
     MATCH (begin_node:Anchor { id: toInt(csvLine.from_id)}),(end_node:Anchor { id: toInt(csvLine.to_id)})
     CREATE (begin_node)-[:%s { label: csvLine.label, id: csvLine.id }]->(end_node)'''
             self.graph.cypher.execute(rel_import_statement % (rel_path,at))
             self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
+            if at == 'word':
+                self.graph.cypher.execute('CREATE INDEX ON :%s(transcription)' % at)
         self.graph.cypher.execute('DROP CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
         self.graph.cypher.execute('''MATCH (n)
                                     WHERE n:Anchor
@@ -114,14 +131,20 @@ discourse: csvLine.discourse })'''
     def add_discourse(self, data):
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(data, self.temp_dir)
-        self.import_csvs(data.name, data.types)
+        token_properties = data.token_properties
+        if 'transcription' in data and not data['transcription'].base:
+            token_properties.append('transcription')
+        self.import_csvs(data.name, data.output_types, token_properties)
         self.relationship_types = self.lookup_relationship_types()
         self.update_sql_database(data)
 
     def update_sql_database(self, data):
         word_property_types = {}
+        annotation_types = {}
         inventory_items = defaultdict(dict)
+        words = {}
         with session_scope() as session:
+            transcription_type, _ =  get_or_create(session, AnnotationType, label = 'transcription')
             base_levels = data.base_levels
             for i, level in enumerate(data.process_order):
                 for d in data[level]:
@@ -130,9 +153,11 @@ discourse: csvLine.discourse })'''
                     trans = None
                     if len(base_levels) > 0:
                         b = base_levels[0]
-                        base_type, _ = get_or_create(session, AnnotationType, label = b)
-                        transcription_type, _ =  get_or_create(session, AnnotationType, label = 'transcription')
-                        session.flush()
+                        if b not in annotation_types:
+                            base_type, _ = get_or_create(session, AnnotationType, label = b)
+                            annotation_types[b] = base_type
+                        else:
+                            base_type = annotation_types[b]
                         begin, end = d[b]
                         base_sequence = data[b][begin:end]
                         for j, first in enumerate(base_sequence):
@@ -154,9 +179,12 @@ discourse: csvLine.discourse })'''
                     else:
                         print(trans)
                         raise(ValueError)
-                    word,_ = get_or_create(session, Word, defaults = {'frequency':0}, orthography = d.label, transcription = trans)
+                    if (d.label, trans) not in words:
+                        word,_ = get_or_create(session, Word, defaults = {'frequency':0}, orthography = d.label, transcription = trans)
+                        words[(d.label, trans)] = word
+                    else:
+                        word = words[(d.label, trans)]
                     word.frequency += 1
-                    session.flush()
                     for k,v in d.additional.items():
                         if v is None:
                             continue
@@ -172,6 +200,6 @@ discourse: csvLine.discourse })'''
                             prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = '.'.join(v))
                         else:
                             prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = v)
-                    session.flush()
+            session.commit()
 
 

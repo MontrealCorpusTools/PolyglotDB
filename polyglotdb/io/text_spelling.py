@@ -189,25 +189,31 @@ def load_discourse_spelling(corpus_context, path, annotation_types = None,
                     stop_check, call_back)
     corpus_context.add_discourse(data)
 
-def export_discourse_spelling(discourse, path, single_line = False):
+def export_discourse_spelling(corpus_context, discourse, path, single_line = False):
     """
     Export an orthography discourse to a text file
 
     Parameters
     ----------
-    discourse : Discourse
-        Discourse object to export
+    corpus_context : CorpusContext
+        Context manager for the corpus
+    discourse : str
+        Discourse to export
     path : str
         Path to export to
     single_line : bool, optional
         Flag to enforce all text to be on a single line, defaults to False.
         If False, lines are 10 words long.
     """
+
+    q = corpus_context.query_graph(corpus_context.word)
+    q = q.filter(corpus_context.word.discourse == discourse)
+    discourse = q.all()
     with open(path, encoding='utf-8', mode='w') as f:
         count = 0
         for i, wt in enumerate(discourse):
             count += 1
-            f.write(wt.spelling)
+            f.write(wt.r_word.properties['label'])
             if i != len(discourse) -1:
                 if not single_line and count <= 10:
                     f.write(' ')

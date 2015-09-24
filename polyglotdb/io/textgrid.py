@@ -5,7 +5,7 @@ import re
 from textgrid import TextGrid, IntervalTier
 from textgrid.textgrid import readFile, Interval, Point, PointTier, _getMark
 
-from polyglotdb.exceptions import TextGridTierError
+from polyglotdb.exceptions import TextGridTierError, TextGridError
 
 
 from .helper import (compile_digraphs, parse_transcription, DiscourseData,
@@ -120,8 +120,6 @@ def inspect_discourse_textgrid(path):
                 a.add((x.mark for x in ti), save = False)
                 anno_types.append(a)
         else:
-            if len(anno_types) != len(interval_tiers):
-                raise(TextGridTierError("The TextGrids must have the same number of tiers."))
             for i, ti in enumerate(interval_tiers):
                 anno_types[i].add((x.mark for x in ti), save = False)
 
@@ -160,6 +158,9 @@ def guess_tiers(tg):
 def textgrid_to_data(path, annotation_types, stop_check = None,
                             call_back = None):
     tg = load_textgrid(path)
+    interval_tiers = [x for x in tg.tiers if isinstance(x, IntervalTier)]
+    if len(interval_tiers) != len(annotation_types):
+        raise(TextGridError("The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(path)))
     name = os.path.splitext(os.path.split(path)[1])[0]
 
     for a in annotation_types:
@@ -311,6 +312,6 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
         root, filename = t
         name = os.path.splitext(filename)[0]
         load_discourse_textgrid(corpus_context, os.path.join(root,filename),
-                                    annotation_types, None,
+                                    annotation_types,
                                     None,
                                     stop_check, call_back)

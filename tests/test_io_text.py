@@ -16,17 +16,6 @@ from polyglotdb.exceptions import DelimiterError
 from polyglotdb.corpus import CorpusContext
 
 @pytest.mark.xfail
-def test_export_spelling(export_test_dir, unspecified_test_corpus):
-    d = generate_discourse(unspecified_test_corpus)
-    export_path = os.path.join(export_test_dir, 'export_spelling.txt')
-    export_discourse_spelling(d, export_path, single_line = False)
-
-    d2 = load_discourse_spelling('test', export_path)
-    for k in unspecified_test_corpus.keys():
-        assert(d2.lexicon[k].spelling == unspecified_test_corpus[k].spelling)
-        assert(d2.lexicon[k].frequency == unspecified_test_corpus[k].frequency)
-
-@pytest.mark.xfail
 def test_export_transcription(graph_db, export_test_dir, unspecified_test_corpus):
     d = generate_discourse(unspecified_test_corpus)
     export_path = os.path.join(export_test_dir, 'export_transcription.txt')
@@ -50,6 +39,15 @@ def test_load_spelling_no_ignore(graph_db, text_test_dir):
         load_discourse_spelling(c,spelling_path)
 
     assert(c.lexicon['ab'].frequency == 2)
+
+def test_export_spelling(graph_db, export_test_dir):
+
+    export_path = os.path.join(export_test_dir, 'export_spelling.txt')
+    with CorpusContext(corpus_name = 'spelling_no_ignore', **graph_db) as c:
+        export_discourse_spelling(c, 'text_spelling', export_path, single_line = False)
+
+    with open(export_path,'r') as f:
+        assert(f.read() == 'ab cab\'d ad ab ab.')
 
 
 def test_load_spelling_ignore(graph_db, text_test_dir):

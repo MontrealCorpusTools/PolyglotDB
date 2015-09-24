@@ -18,9 +18,9 @@ def call_back(*args):
         print(' '.join(args))
 
 with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
-    g.reset_graph()
+    g.reset()
     beg = time.time()
-    aio.load_directory_multiple_files(g, path_to_buckeye, 'buckeye',
+    aio.load_directory_buckeye(g, path_to_buckeye,
                                             call_back = call_back)
     end = time.time()
     print('Time taken: {}'.format(end - beg))

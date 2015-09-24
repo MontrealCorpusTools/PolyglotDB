@@ -12,3 +12,6 @@ class Lexicon(object):
             q = session.query(Word).filter(Word.orthography == key)
             word = q.first()
         return word
+
+class Inventory(object):
+    pass

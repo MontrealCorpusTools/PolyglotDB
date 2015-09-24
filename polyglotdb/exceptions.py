@@ -91,6 +91,9 @@ class ILGLinesMismatchError(PGError):
             else:
                 self.details += str(line) + '\n'
 
+class TextGridError(PGError):
+    pass
+
 class TextGridTierError(PGError):
     """
     Exception for when a specified tier was not found in a TextGrid.

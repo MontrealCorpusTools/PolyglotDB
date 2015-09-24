@@ -13,11 +13,11 @@ graph_db = {'host':'localhost', 'port': 7474,
 with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
-    q = q.filter_contained_by(g.spelling.label == 'dog')
+    q = q.filter_contained_by(g.word.label == 'dog')
 
     results = q.count()
     end = time.time()
-    print('Duration of \'aa\' before stops (overall):')
+    print('Count of \'aa\' phones in \'dog\':')
     print(results)
     print('Time taken: {}'.format(end - beg))
 
@@ -35,7 +35,7 @@ with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
-    q = q.filter_right_aligned(g.spelling)
+    q = q.filter_right_aligned(g.word)
     q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
     results = q.aggregate(Average(g.surface_transcription.duration), Count())
     end = time.time()
@@ -47,7 +47,7 @@ with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
-    q = q.filter(g.surface_transcription.end == g.spelling.end)
+    q = q.filter(g.surface_transcription.end == g.word.end)
     q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
     results = q.aggregate(Average(g.surface_transcription.duration), Count())
     end = time.time()
@@ -59,7 +59,7 @@ with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
-    q = q.filter(g.surface_transcription.end != g.spelling.end)
+    q = q.filter(g.surface_transcription.end != g.word.end)
     q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
 
     results = q.aggregate(Average(g.surface_transcription.duration), Count())
@@ -81,7 +81,7 @@ with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
 
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'iy')
-    q = q.filter_left_aligned(g.spelling)
+    q = q.filter_left_aligned(g.word)
     results = q.all()
     end = time.time()
     print('Number of iy\'s at the left edge of words:')

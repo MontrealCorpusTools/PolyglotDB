@@ -1,4 +1,4 @@
-spelling,transcription,frequency,vowel_tier
-tusi,t.u.s.i,13.0,u.i
-tuni,t.u.n.i,33.0,o.i
-shashi,ʃ.ɑ.ʃ.i,43.0,ɑ.i
+﻿spelling,transcription,frequency,vowel_tier,neighborhood_density,part_of_speech
+tusi,t.u.s.i,13.0,u.i,1,'V'
+tuni,t.u.n.i,33.0,o.i,1,'N'
+shashi,ʃ.ɑ.ʃ.i,43.0,ɑ.i,0,'V'

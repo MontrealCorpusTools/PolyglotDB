@@ -287,6 +287,42 @@ class DiscourseData(object):
     def types(self):
         return self.keys()
 
+    @property
+    def output_types(self):
+        labels = []
+        for x in self.types:
+            if self[x].anchor:
+                labels.append('word')
+            else:
+                labels.append(x)
+        return labels
+
+    @property
+    def word_properties(self):
+        labels = []
+        for x in self.types:
+            if self[x].anchor:
+                continue
+            if self[x].base:
+                continue
+            if self[x].token:
+                continue
+            labels.append(x)
+        return labels
+
+    @property
+    def token_properties(self):
+        labels = []
+        for x in self.types:
+            if self[x].anchor:
+                continue
+            if self[x].base:
+                continue
+            if not self[x].token:
+                continue
+            labels.append(x)
+        return labels
+
     def keys(self):
         return self.data.keys()
 

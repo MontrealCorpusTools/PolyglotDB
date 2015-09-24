@@ -142,7 +142,7 @@ def load_directory_buckeye(corpus_context, path,
         for filename in files:
             if stop_check is not None and stop_check():
                 return
-            if not (filename.lower().endswith('.words') or filename.lower().endswith('.wrd')):
+            if not filename.lower().endswith('.words'):
                 continue
             file_tuples.append((root, filename))
     if call_back is not None:
