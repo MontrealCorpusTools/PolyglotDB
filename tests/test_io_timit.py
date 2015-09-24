@@ -4,7 +4,11 @@ import os
 
 from polyglotdb.io.standards.timit import (read_phones, read_words,
                             BaseAnnotation,
-                            timit_to_data)
+                            timit_to_data,
+                            load_discourse_timit,
+                            load_directory_timit)
+
+from polyglotdb.corpus import CorpusContext
 
 def test_load_phones(timit_test_dir):
     expected_phones = [BaseAnnotation('h#',0, 2400 / 16000),
@@ -71,8 +75,19 @@ def test_load_words(timit_test_dir):
     for i,w in enumerate(expected_words):
         assert(w == words[i])
 
-def test_files_to_data(timit_test_dir):
-    words = timit_to_data(os.path.join(timit_test_dir,'test.WRD'),
+def test_load_discourse_timit(graph_db, timit_test_dir):
+    with CorpusContext(corpus_name = 'discourse_timit', **graph_db) as c:
+        c.reset()
+        load_discourse_timit(c,os.path.join(timit_test_dir,'test.WRD'),
                             os.path.join(timit_test_dir,'test.PHN'))
 
+        q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 'dcl')
+        assert(q.count() == 2)
 
+def test_load_directory_timit(graph_db, timit_test_dir):
+    with CorpusContext(corpus_name = 'directory_timit', **graph_db) as c:
+        c.reset()
+        load_directory_timit(c, timit_test_dir)
+
+        q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 'dcl')
+        assert(q.count() == 2)

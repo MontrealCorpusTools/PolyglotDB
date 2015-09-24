@@ -163,7 +163,7 @@ def load_directory_buckeye(corpus_context, path,
             phone_ext = '.phn'
         word_path = os.path.join(root,filename)
         phone_path = os.path.splitext(word_path)[0] + phone_ext
-        data = multiple_files_to_data(word_path,phone_path,
+        data = buckeye_to_data(word_path,phone_path,
                                         annotation_types,
                                         call_back, stop_check)
         data.wav_path = find_wav_path(word_path)
@@ -198,7 +198,7 @@ def load_discourse_buckeye(corpus_context, word_path, phone_path,
     call_back : callable or None
         Optional function to supply progress information during the loading
     """
-    data = multiple_files_to_data(word_path,phone_path, dialect,
+    data = buckeye_to_data(word_path,phone_path,
                                     annotation_types,
                                     call_back, stop_check)
     data.wav_path = find_wav_path(word_path)

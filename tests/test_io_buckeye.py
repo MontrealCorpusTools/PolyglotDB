@@ -4,7 +4,11 @@ import os
 
 from polyglotdb.io.standards.buckeye import (read_phones, read_words,
                             BaseAnnotation,
-                            buckeye_to_data)
+                            buckeye_to_data,
+                            load_discourse_buckeye,
+                            load_directory_buckeye)
+
+from polyglotdb.corpus import CorpusContext
 
 def test_load_phones(buckeye_test_dir):
     expected_phones = [BaseAnnotation('{B_TRANS}',0.0, 2.609000),
@@ -53,7 +57,19 @@ def test_load_words(buckeye_test_dir):
     for i,w in enumerate(expected_words):
         assert(w == words[i])
 
-def test_files_to_data(buckeye_test_dir):
-    words = buckeye_to_data(os.path.join(buckeye_test_dir,'test.words'),os.path.join(buckeye_test_dir,'test.phones'))
+def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
+    with CorpusContext(corpus_name = 'discourse_buckeye', **graph_db) as c:
+        c.reset()
+        load_discourse_buckeye(c,os.path.join(buckeye_test_dir,'test.words'),
+                            os.path.join(buckeye_test_dir,'test.phones'))
 
+        q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 's')
+        assert(q.count() == 3)
 
+def test_load_directory_buckeye(graph_db, buckeye_test_dir):
+    with CorpusContext(corpus_name = 'directory_buckeye', **graph_db) as c:
+        c.reset()
+        load_directory_buckeye(c, buckeye_test_dir)
+
+        q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 's')
+        assert(q.count() == 3)
