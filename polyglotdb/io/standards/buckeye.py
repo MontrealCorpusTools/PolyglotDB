@@ -159,15 +159,11 @@ def load_directory_buckeye(corpus_context, path,
         name,ext = os.path.splitext(filename)
         if ext == '.words':
             phone_ext = '.phones'
-        else:
-            phone_ext = '.phn'
+        elif ext == '.WORDS':
+            phone_ext = '.PHONES'
         word_path = os.path.join(root,filename)
         phone_path = os.path.splitext(word_path)[0] + phone_ext
-        data = buckeye_to_data(word_path,phone_path,
-                                        annotation_types,
-                                        call_back, stop_check)
-        data.wav_path = find_wav_path(word_path)
-        corpus_context.add_discourse(data)
+        load_discourse_buckeye(corpus_context, word_path, phone_path, annotation_types)
 
     #if feature_system_path is not None:
     #    feature_matrix = load_binary(feature_system_path)

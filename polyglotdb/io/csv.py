@@ -204,16 +204,16 @@ def load_corpus_csv(corpus_context, path, delimiter,
                             session.add(seg)
                             inventory[(s,k.attribute.name)] = seg
                     prop = WordProperty(word = word,
-                            property = property_types[k.attribute.name],
+                            property_type = property_types[k.attribute.name],
                             value = '.'.join(d[k.attribute.name]))
 
                 elif k.attribute.att_type == 'numeric':
                     prop = WordNumericProperty(word = word,
-                            property = property_types[k.attribute.name],
+                            property_type = property_types[k.attribute.name],
                             value = float(d[k.attribute.name]))
                 else:
                     prop = WordProperty(word = word,
-                            property = property_types[k.attribute.name],
+                            property_type = property_types[k.attribute.name],
                             value = str(d[k.attribute.name]))
                 session.add(prop)
         if not trans_check:

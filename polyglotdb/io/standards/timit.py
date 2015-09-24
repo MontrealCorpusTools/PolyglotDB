@@ -113,7 +113,7 @@ def load_directory_timit(corpus_context, path,
         for filename in files:
             if stop_check is not None and stop_check():
                 return
-            if not (filename.lower().endswith('.words') or filename.lower().endswith('.wrd')):
+            if not filename.lower().endswith('.wrd'):
                 continue
             file_tuples.append((root, filename))
     if call_back is not None:
@@ -128,17 +128,13 @@ def load_directory_timit(corpus_context, path,
             call_back(i)
         root, filename = t
         name,ext = os.path.splitext(filename)
-        if ext == '.words':
-            phone_ext = '.phones'
-        else:
+        if ext == '.WRD':
+            phone_ext = '.PHN'
+        elif ext == '.wrd':
             phone_ext = '.phn'
         word_path = os.path.join(root,filename)
         phone_path = os.path.splitext(word_path)[0] + phone_ext
-        data = timit_to_data(word_path,phone_path,
-                                        annotation_types,
-                                        call_back, stop_check)
-        data.wav_path = find_wav_path(word_path)
-        corpus_context.add_discourse(data)
+        load_discourse_timit(corpus_context, word_path, phone_path, annotation_types)
 
     #if feature_system_path is not None:
     #    feature_matrix = load_binary(feature_system_path)

@@ -24,15 +24,13 @@ def test_inspect_example(csv_test_dir):
             assert(a.attribute.att_type == 'spelling')
 
 
-def test_corpus_csv(graph_db, csv_test_dir, unspecified_test_corpus):
+def test_corpus_csv(graph_db, csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'example.txt')
 
     with CorpusContext(corpus_name = 'basic_csv', **graph_db) as c:
         c.reset()
         with pytest.raises(DelimiterError):
             load_corpus_csv(c, example_path,delimiter='\t')
-    #with pytest.raises(DelimiterError):
-    #    load_corpus_csv('example',example_path,delimiter=',')
 
     with CorpusContext(corpus_name = 'basic_csv', **graph_db) as c:
         load_corpus_csv(c,example_path,delimiter=',')
@@ -40,6 +38,17 @@ def test_corpus_csv(graph_db, csv_test_dir, unspecified_test_corpus):
         assert(c.lexicon['mata'].frequency == 2)
         assert(c.lexicon['mata'].transcription == 'm.ɑ.t.ɑ')
 
+
+def test_corpus_csv_tiered(graph_db, csv_test_dir):
+    example_path = os.path.join(csv_test_dir, 'tiered.txt')
+
+    with CorpusContext(corpus_name = 'tiered_csv', **graph_db) as c:
+        c.reset()
+        load_corpus_csv(c,example_path,delimiter=',')
+
+        assert(c.lexicon['tusi'].frequency == 13)
+        assert(c.lexicon['tusi'].transcription == 't.u.s.i')
+        #assert(c.lexicon['tusi'].vowel_tier == 'u.i')
 
 @pytest.mark.xfail
 def test_load_with_fm(self):
