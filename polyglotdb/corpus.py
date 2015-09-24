@@ -122,7 +122,8 @@ discourse: csvLine.discourse })'''
             self.graph.cypher.execute(rel_import_statement % (rel_path,at))
             self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
             if at == 'word':
-                self.graph.cypher.execute('CREATE INDEX ON :%s(transcription)' % at)
+                for x in token_properties:
+                    self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at,x))
         self.graph.cypher.execute('DROP CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
         self.graph.cypher.execute('''MATCH (n)
                                     WHERE n:Anchor
