@@ -9,6 +9,8 @@ FILLERS = set(['uh','um','okay','yes','yeah','oh','heh','yknow','um-huh',
 from ..helper import (DiscourseData, AnnotationType,
                             Annotation, BaseAnnotation, find_wav_path)
 
+from polyglotdb.exceptions import BuckeyeParseError
+
 def phone_match(one,two):
     if one != two and one not in two:
         return False
@@ -46,7 +48,12 @@ def buckeye_to_data(word_path, phone_path, annotation_types = None,
     if call_back is not None:
         call_back('Reading files...')
         call_back(0,0)
-    words = read_words(word_path)
+    try:
+
+        words = read_words(word_path)
+    except Exception as e:
+        print(e)
+        return
     phones = read_phones(phone_path)
 
     data = DiscourseData(name, annotation_types)
@@ -78,10 +85,10 @@ def buckeye_to_data(word_path, phone_path, annotation_types = None,
                         if phone_match(cur_phone.label,expected[len(found)]) \
                             and cur_phone.end >= beg and cur_phone.begin <= end:
                                 found.append(cur_phone)
+
                         if not len(phones) and i < len(words)-1:
-                            print(name)
-                            print(w)
-                            raise(Exception)
+                            print(BuckeyeParseError(word_path, [w]))
+                            return
             else:
                 if w[n] is None:
                     found = [BaseAnnotation('?')]
@@ -125,7 +132,7 @@ def load_directory_buckeye(corpus_context, path,
     path : str
         Path to directory of text files
     annotation_types : list of AnnotationType, optional
-        List of AnnotationType specifying how to parse the glosses.
+        List of AnnotationType specifying how to parse the files.
         Auto-generated based on dialect.
     feature_system_path : str, optional
         File path of FeatureMatrix binary to specify segments
@@ -139,7 +146,8 @@ def load_directory_buckeye(corpus_context, path,
         call_back(0, 0)
     file_tuples = []
     for root, subdirs, files in os.walk(path):
-        for filename in files:
+        subdirs.sort()
+        for filename in sorted(files):
             if stop_check is not None and stop_check():
                 return
             if not filename.lower().endswith('.words'):
@@ -147,16 +155,16 @@ def load_directory_buckeye(corpus_context, path,
             file_tuples.append((root, filename))
     if call_back is not None:
         call_back('Parsing files...')
-        call_back(0,len(file_tuples))
+        call_back(0, len(file_tuples))
         cur = 0
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
-        if call_back is not None:
-            call_back('Parsing file {} of {}...'.format(i+1, len(file_tuples)))
-            call_back(i)
         root, filename = t
         name,ext = os.path.splitext(filename)
+        if call_back is not None:
+            call_back('Parsing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
+            call_back(i)
         if ext == '.words':
             phone_ext = '.phones'
         elif ext == '.WORDS':
@@ -185,7 +193,7 @@ def load_discourse_buckeye(corpus_context, word_path, phone_path,
     phone_path : str
         Full path to phones text file
     annotation_types : list of AnnotationType, optional
-        List of AnnotationType specifying how to parse the glosses.
+        List of AnnotationType specifying how to parse the files.
         Auto-generated based on dialect.
     feature_system_path : str
         Full path to pickled FeatureMatrix to use with the Corpus
@@ -197,6 +205,8 @@ def load_discourse_buckeye(corpus_context, word_path, phone_path,
     data = buckeye_to_data(word_path,phone_path,
                                     annotation_types,
                                     call_back, stop_check)
+    if data is None:
+        return
     data.wav_path = find_wav_path(word_path)
     corpus_context.add_discourse(data)
 
@@ -211,14 +221,19 @@ def read_phones(path):
         begin = 0.0
         for l in flist:
             line = line_pattern.split(l.strip())
-            end = float(line[0])
+            try:
+                end = float(line[0])
+            except ValueError: # Missing phone label
+                print('Warning: no label found in line: \'{}\''.format(l))
+                continue
             label = sys.intern(label_pattern.split(line[1])[0])
             output.append(BaseAnnotation(label, begin, end))
             begin = end
     return output
 
 def read_words(path):
-    output = list()
+    output = []
+    misparsed_lines = []
     with open(path,'r') as file_handle:
         f = re.split(r"#\r{0,1}\n",file_handle.read())[1]
         line_pattern = re.compile("; | \d{3} ")
@@ -226,21 +241,30 @@ def read_words(path):
         flist = f.splitlines()
         for l in flist:
             line = line_pattern.split(l.strip())
-            end = float(line[0])
-            word = sys.intern(line[1])
-            if word[0] != "<" and word[0] != "{":
-                citation = line[2].split(' ')
-                phonetic = line[3].split(' ')
-                category = line[4]
-            else:
-                citation = None
-                phonetic = None
-                category = None
-            if word in FILLERS:
-                category = 'UH'
+            try:
+                end = float(line[0])
+                word = sys.intern(line[1])
+                if word[0] != "<" and word[0] != "{":
+                    citation = line[2].split(' ')
+                    phonetic = line[3].split(' ')
+                    if len(line) > 4:
+                        category = line[4]
+                        if word in FILLERS:
+                            category = 'UH'
+                    else:
+                        category = None
+                else:
+                    citation = None
+                    phonetic = None
+                    category = None
+            except IndexError:
+                misparsed_lines.append(l)
+                continue
             line = {'spelling':word,'begin':begin,'end':end,
                     'transcription':citation,'surface_transcription':phonetic,
                     'category':category}
             output.append(line)
             begin = end
+    if misparsed_lines:
+        raise(BuckeyeParseError(path, misparsed_lines))
     return output

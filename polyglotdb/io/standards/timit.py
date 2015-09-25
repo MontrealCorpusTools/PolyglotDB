@@ -6,11 +6,6 @@ import sys
 from ..helper import (DiscourseData, AnnotationType,
                             Annotation, BaseAnnotation, find_wav_path)
 
-def phone_match(one,two):
-    if one != two and one not in two:
-        return False
-    return True
-
 def inspect_discourse_timit(word_path):
     """
     Generate a list of AnnotationTypes for TIMIT
@@ -95,7 +90,7 @@ def load_directory_timit(corpus_context, path,
     path : str
         Path to directory of text files
     annotation_types : list of AnnotationType, optional
-        List of AnnotationType specifying how to parse the glosses.
+        List of AnnotationType specifying how to parse the files.
         Auto-generated based on dialect.
     feature_system_path : str, optional
         File path of FeatureMatrix binary to specify segments
@@ -156,7 +151,7 @@ def load_discourse_timit(corpus_context, word_path, phone_path,
     phone_path : str
         Full path to phones text file
     annotation_types : list of AnnotationType, optional
-        List of AnnotationType specifying how to parse the glosses.
+        List of AnnotationType specifying how to parse the files.
         Auto-generated based on dialect.
     feature_system_path : str
         Full path to pickled FeatureMatrix to use with the corpus
