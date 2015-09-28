@@ -8,7 +8,8 @@ class PGError(Exception):
     """
     Base class for all exceptions explicitly raised in corpustools.
     """
-    pass
+    def __str__(self):
+        return self.value
 
 ## Context Manager exceptions
 
@@ -114,3 +115,16 @@ class TextGridTierError(PGError):
         self.details += 'The following tiers were found:\n\n'
         for t in tiers:
             self.details += '{}\n'.format(t.name)
+
+class BuckeyeParseError(PGError):
+    def __init__(self, path, misparsed_lines):
+        if len(misparsed_lines) == 1:
+            self.main = 'One line in \'{}\' was not parsed correctly.'.format(path)
+        else:
+            self.main = '{} lines in \'{}\' were not parsed correctly.'.format(len(misparsed_lines),path)
+        self.information = 'The lines did not have enough fields to be parsed correctly.'
+        self.details = 'The following lines were missing entries:\n\n'
+        for t in misparsed_lines:
+            self.details += '{}\n'.format(t)
+
+        self.value = '\n'.join([self.main, self.details])
