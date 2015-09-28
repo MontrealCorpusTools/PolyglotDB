@@ -5,37 +5,56 @@ from .query import GraphQuery
 
 from .elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
-                        InClauseElement, ContainsClauseElement)
+                        InClauseElement, ContainsClauseElement, RegexClauseElement)
 
 class Attribute(object):
+    """
+    Class for information about the attributes of annotations in a graph
+    query
+
+    Parameters
+    ----------
+    annotation : AnnotationAttribute
+        Annotation that this attribute refers to
+    label : str
+        Label of the attribute
+
+    Attributes
+    ----------
+    annotation : AnnotationAttribute
+        Annotation that this attribute refers to
+    label : str
+        Label of the attribute
+    output_label : str or None
+        User-specified label to use in query results
+    """
     def __init__(self, annotation, label):
         self.annotation = annotation
-        self.name = label
-
+        self.label = label
         self.output_label = None
 
     def __hash__(self):
-        return hash((self.annotation, self.name))
+        return hash((self.annotation, self.label))
 
     def for_cypher(self):
-        if self.name == 'begin':
+        if self.label == 'begin':
             b_node = self.annotation.begin_alias
             return '{}.time'.format(b_node)
-        elif self.name == 'end':
+        elif self.label == 'end':
             e_node = self.annotation.end_alias
             return '{}.time'.format(e_node)
-        elif self.name == 'duration':
+        elif self.label == 'duration':
             b_node = self.annotation.begin_alias
             e_node = self.annotation.end_alias
             return '{}.time - {}.time'.format(e_node, b_node)
-        elif self.name == 'discourse':
+        elif self.label == 'discourse':
             b_node = self.annotation.begin_alias
             return '{}.discourse'.format(b_node)
-        return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.name))
+        return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
 
     @property
     def alias(self):
-        return '{}_{}'.format(self.annotation.alias, self.name)
+        return '{}_{}'.format(self.annotation.alias, self.label)
 
     def aliased_for_cypher(self):
         return '{} AS {}'.format(self.for_cypher(), self.alias)
@@ -80,12 +99,36 @@ class Attribute(object):
             results = other.all()
             t = []
             for x in results:
-                t.append(getattr(x, other.to_find.alias).properties[self.name])
+                t.append(getattr(x, other.to_find.alias).properties[self.label])
         else:
             t = other
         return InClauseElement(self, t)
 
+    def regex(self, pattern):
+        return RegexClauseElement(self, pattern)
+
 class AnnotationAttribute(Attribute):
+    """
+    Class for annotations referenced in graph queries
+
+    Parameters
+    ----------
+    type : str
+        Annotation type
+    pos : int
+        Position in the query, defaults to 0
+
+    Attributes
+    ----------
+    type : str
+        Annotation type
+    pos : int
+        Position in the query
+    previous : AnnotationAttribute
+        Returns the Annotation of the same type with the previous position
+    following : AnnotationAttribute
+        Returns the Annotation of the same type with the following position
+    """
     begin_template = '{}_b{}'
     end_template = '{}_e{}'
     def __init__(self, type, pos = 0):

@@ -30,7 +30,33 @@ def inspect_discourse_timit(word_path):
     return annotation_types
 
 def timit_to_data(word_path, phone_path, annotation_types = None,
-                           call_back = None, stop_check = None):
+                            stop_check = None, call_back = None):
+    """
+    This function creates a DiscourseData object from a words/phones
+    file pair for TIMIT.
+
+    In general, this function should not be called by users; loading
+    of TIMIT should be done through the `load_directory_timit` function
+
+    Parameters
+    ----------
+    word_path : str
+        Fully specified path to the words text file
+    phone_path : str
+        Fully specified path to the phones text file
+    annotation_types : list, optional
+        List of annotation types to use, will be auto constructed if
+        not given
+    stop_check : callable or None
+        Optional function to check whether to gracefully terminate early
+    call_back : callable or None
+        Optional function to supply progress information during the loading
+
+    Returns
+    -------
+    DiscourseData
+        Object containing the data for for the file pair
+    """
     if annotation_types is None:
         annotation_types = inspect_discourse_timit(word_path)
     for a in annotation_types:
@@ -167,7 +193,7 @@ def load_discourse_timit(corpus_context, word_path, phone_path,
     """
     data = timit_to_data(word_path, phone_path,
                                     annotation_types,
-                                    call_back, stop_check)
+                                    stop_check, call_back)
     data.wav_path = find_wav_path(word_path)
     corpus_context.add_discourse(data)
 

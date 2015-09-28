@@ -4,6 +4,9 @@ from .config import session_scope
 from .models import Word
 
 class Lexicon(object):
+    """
+    The primary way of querying Word entrieis in a relational database.
+    """
     def __init__(self):
         pass
 

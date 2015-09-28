@@ -1,5 +1,7 @@
 
-from polyglotdb.io.helper import parse_transcription, AnnotationType
+from polyglotdb.io.helper import (parse_transcription, AnnotationType,
+                                compile_digraphs,
+                                inspect_directory)
 
 
 def test_parse_transcription():
@@ -25,3 +27,18 @@ def test_parse_transcription():
     ignored.ignored_characters = set('.')
     assert(parse_transcription('aet', ignored) == ['a','e','t'])
     assert(parse_transcription('a.et', ignored) == ['a','e','t'])
+
+def test_compile_digraphs():
+    digraph_list = ['aa', 'aab']
+    pattern = compile_digraphs(digraph_list)
+    assert(pattern.pattern == 'aab|aa|\d+|\S')
+
+def test_inspect_directory(textgrid_test_dir, buckeye_test_dir, timit_test_dir):
+    likely, _ = inspect_directory(textgrid_test_dir)
+    assert(likely == 'textgrid')
+
+    likely, _ = inspect_directory(buckeye_test_dir)
+    assert(likely == 'buckeye')
+
+    likely, _ = inspect_directory(timit_test_dir)
+    assert(likely == 'timit')

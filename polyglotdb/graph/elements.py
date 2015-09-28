@@ -37,9 +37,11 @@ class NotEqualClauseElement(ClauseElement):
 class InClauseElement(ClauseElement):
     sign = 'IN'
 
+class RegexClauseElement(ClauseElement):
+    sign = '=~'
 
 class ContainsClauseElement(ClauseElement):
     def for_cypher(self):
         return "{} in extract(x in {}| x.{})".format(value_for_cypher(self.value),
                                                 self.attribute.annotation.alias,
-                                                key_for_cypher(self.attribute.name))
+                                                key_for_cypher(self.attribute.label))

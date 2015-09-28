@@ -115,6 +115,32 @@ class Attribute(object):
         return self.name.title()
 
 class BaseAnnotation(object):
+    """
+    Class for storing information about annotations tied directly to the
+    signal (i.e., phones, surface representations)
+
+    Parameters
+    ----------
+    label : str
+        Label of the annotation
+    begin : float or None
+        Beginning timepoint
+    end : float or None
+        End timepoint
+
+    Attributes
+    ----------
+    label : str
+        Label of the annotation
+    begin : float or None
+        Beginning timepoint
+    end : float or None
+        End timepoint
+    stress : str or None
+        Stress level of the annotation
+    tone : str or None
+        Tone of the annotation
+    """
     def __init__(self, label, begin = None, end = None):
         self.label = label
         self.begin = begin
@@ -139,6 +165,38 @@ class BaseAnnotation(object):
         return False
 
 class Annotation(BaseAnnotation):
+    """
+    Class for information about annotations that are indirectly tied
+    to a signal (e.g., words, morphemes, syllables, etc.)
+
+    In addition to the label of the annotation, other properties of the
+    annotation can be specified through keyword arguments in construction.
+    If a keyword argument value is a tuple of integers, then it is interpreted
+    as referring to indices of :class:`BaseAnnotation` objects.  All other types will be
+    coerced to strings. Lists of segments, such as for underlying/canonical
+    transcriptions will use the segment delimiter '.' when creating the
+    string.
+
+    Parameters
+    ----------
+    label : str
+        Label of the annotation
+
+    Attributes
+    ----------
+    label : str
+        Label of the annotation
+    references : list
+        List of BaseAnnotation types that `begins` and `ends` reference
+    begins : list
+        List of beginning indices
+    ends : list
+        List of ending indices
+    token_properties : dict
+        Dictionary of properties that are of the token, not the word type
+    type_properties : dict
+        Dictionary of properties that are of the word type, not the token
+    """
     def __init__(self, label, **kwargs):
         self.label = label
         self.begins = []
@@ -151,8 +209,8 @@ class Annotation(BaseAnnotation):
                 self.ends.append(v[1])
             else:
                 setattr(self, k, v)
-        self.token = {}
-        self.additional = {}
+        self.token_properties = {}
+        self.type_properties = {}
 
     def __eq__(self, other):
         return self.label == other.label and self.begins == other.begins \
@@ -168,6 +226,44 @@ class Annotation(BaseAnnotation):
         return '<Annotation "{}">'.format(self.label)
 
 class AnnotationType(object):
+    """
+    Class containing information about annotation types.
+
+    Parameters
+    ----------
+    name : str
+        Name of the annotation type
+    subtype : str or None
+        Name of the annotation type that falls below this annotation type
+    supertype : str or None
+        Name of the annotation type that is above this annotation type
+    attribute : :class:`Attribute`, optional
+        Details of parsing the annotations, such as the type (string, float, tier)
+    anchor : bool, optional
+        Flag for if this annotation type is the anchor, defaults to False
+    token : bool, optional
+        Flag for if this annotation type is a properties of the token,
+        defaults to False
+    base : bool, optional
+        Flag for if this annotation is directly related to the signal,
+        default is False
+
+    Attributes
+    ----------
+    characters : set
+        Set of characters for the annotation type
+    ignored_characters : set
+        Characters to be ignored during import
+    digraphs : set
+        Sequences of characters that should be considered single segments
+    trans_delimiter : str or None
+        Character to use for parsing transcriptions
+    morph_delimiters : set
+        Characters to use for parsing into morphemes
+    number_behavior : str or None
+        Specifies how to treat numeric characters in parsing transcriptions,
+        either 'stress', 'tone' or None
+    """
     def __init__(self, name, subtype, supertype, attribute = None, anchor = False,
                     token = False, base = False, speaker = None):
         self.characters = set()
@@ -272,9 +368,31 @@ class AnnotationType(object):
         return not self.token and self.base
 
 class DiscourseData(object):
-    def __init__(self, name, levels):
+    """
+    Class for collecting information about a discourse to be loaded
+
+    Parameters
+    ----------
+    name : str
+        Identifier for the discourse
+    annotation_types : list
+        List of :class:`AnnotationType` objects
+
+
+    Attributes
+    ----------
+    name : str
+        Identifier for the discourse
+    data : dict
+        Dictionary containing :class:`AnnotationType` objects indexed by
+        their name
+    wav_path : str or None
+        Path to sound file if it exists
+
+    """
+    def __init__(self, name, annotation_types):
         self.name = name
-        self.data = {x.name: x for x in levels}
+        self.data = {x.name: x for x in annotation_types}
         self.wav_path = None
 
     def __getitem__(self, key):
@@ -436,7 +554,26 @@ def compile_digraphs(digraph_list):
     return re.compile(pattern)
 
 def inspect_directory(directory):
-    types = ['textgrid', 'text', 'multiple']
+    """
+    Function to inspect a directory and return the most likely type of
+    files within it.
+
+    Searches currently for 'textgrid', 'text', 'buckeye' and 'timit' file
+    types.
+
+    Parameters
+    ----------
+    directory : str
+        Full path to the directory
+
+    Returns
+    -------
+    str
+        Most likely type of files
+    dict
+        Dictionary of the found files separated by the types searched for
+    """
+    types = ['textgrid', 'text', 'buckeye', 'timit']
     counter = {x: 0 for x in types}
     relevant_files = {x: [] for x in types}
     for root, subdirs, files in os.walk(directory):
@@ -446,14 +583,16 @@ def inspect_directory(directory):
                 t = 'textgrid'
             elif ext == '.txt':
                 t = 'text'
-            elif ext in ['.words','.wrds']:
-                t = 'multiple'
+            elif ext == '.words':
+                t = 'buckeye'
+            elif ext == '.wrd':
+                t = 'timit'
             else:
                 continue
             counter[t] += 1
             relevant_files[t].append(f)
     max_value = max(counter.values())
-    for t in ['textgrid', 'multiple', 'text']:
+    for t in ['textgrid', 'buckeye', 'timit', 'text']:
         if counter[t] == max_value:
             likely_type = t
             break
@@ -463,6 +602,23 @@ def inspect_directory(directory):
 parse_numbers = re.compile('\d+|\S')
 
 def parse_transcription(string, annotation_type):
+    """
+    Parse a string into a transcription (list of segments) given an
+    :class:`AnnotationType`
+
+    Parameters
+    ----------
+    string : str
+        String to be parsed
+    annotation_type : :class:`AnnotationType`
+        :class:`AnnotationType` that contains specification for how to parse the
+        string
+
+    Returns
+    -------
+    list of str
+        Parsed string of segments in a list
+    """
     md = annotation_type.morph_delimiters
     if len(md) and any(x in string for x in md):
         morphs = re.split("|".join(md),string)
@@ -506,6 +662,19 @@ def parse_transcription(string, annotation_type):
     return final_string
 
 def text_to_lines(path):
+    """
+    Parse a text file into lines.
+
+    Parameters
+    ----------
+    path : str
+        Fully specified path to text file
+
+    Returns
+    -------
+    list
+        Non-empty lines in the text file
+    """
     delimiter = None
     with open(path, encoding='utf-8-sig', mode='r') as f:
         text = f.read()
@@ -516,6 +685,20 @@ def text_to_lines(path):
     return lines
 
 def find_wav_path(path):
+    """
+    Find a sound file for a given file, by looking for a .wav file with the
+    same base name as the given path
+
+    Parameters
+    ----------
+    path : str
+        Full path to an annotation file
+
+    Returns
+    -------
+    str or None
+        Full path of the wav file if it exists or None if it does not
+    """
     name, ext = os.path.splitext(path)
     wav_path = name + '.wav'
     if os.path.exists(wav_path):

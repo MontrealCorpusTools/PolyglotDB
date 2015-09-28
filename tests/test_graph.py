@@ -96,4 +96,8 @@ def test_query_aggregate_count(graph_db):
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa').count()
         assert(q == 3)
 
+def test_regex_query(graph_db):
+    with CorpusContext(corpus_name = 'timed', **graph_db) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label.regex('a.')).count()
+        assert(q == 5)
 

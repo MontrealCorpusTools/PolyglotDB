@@ -36,7 +36,33 @@ def inspect_discourse_buckeye(word_path):
     return annotation_types
 
 def buckeye_to_data(word_path, phone_path, annotation_types = None,
-                           call_back = None, stop_check = None):
+                           stop_check = None, call_back = None):
+    """
+    This function creates a DiscourseData object from a words/phones
+    file pair for the Buckeye corpus.
+
+    In general, this function should not be called by users; loading
+    of Buckeye should be done through the `load_directory_buckeye` function
+
+    Parameters
+    ----------
+    word_path : str
+        Fully specified path to the words text file
+    phone_path : str
+        Fully specified path to the phones text file
+    annotation_types : list, optional
+        List of annotation types to use, will be auto constructed if
+        not given
+    stop_check : callable or None
+        Optional function to check whether to gracefully terminate early
+    call_back : callable or None
+        Optional function to supply progress information during the loading
+
+    Returns
+    -------
+    DiscourseData
+        Object containing the data for for the file pair
+    """
     if annotation_types is None:
         annotation_types = inspect_discourse_buckeye(word_path)
     for a in annotation_types:
@@ -103,9 +129,9 @@ def buckeye_to_data(word_path, phone_path, annotation_types = None,
             if at.delimited:
                 value = [BaseAnnotation(x) for x in parse_transcription(value)]
             if at.token:
-                word.token[at.name] = value
+                word.token_properties[at.name] = value
             else:
-                word.additional[at.name] = value
+                word.type_properties[at.name] = value
         annotations[data.word_levels[0]] = [word]
         data.add_annotations(**annotations)
     return data
@@ -196,7 +222,7 @@ def load_discourse_buckeye(corpus_context, word_path, phone_path,
     """
     data = buckeye_to_data(word_path,phone_path,
                                     annotation_types,
-                                    call_back, stop_check)
+                                    stop_check, call_back)
     data.wav_path = find_wav_path(word_path)
     corpus_context.add_discourse(data)
 

@@ -9,7 +9,7 @@ class AggregateFunction(object):
         template = '{function}({property}) AS {readable_function}_{name}'
         if self.attribute is not None:
             element = self.attribute.for_cypher()
-            name = self.attribute.name
+            name = self.attribute.label
         else:
             element = '*'
             name = 'all'

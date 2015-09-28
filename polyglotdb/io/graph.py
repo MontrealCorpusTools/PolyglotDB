@@ -3,6 +3,17 @@ import os
 from uuid import uuid1
 
 def data_to_graph_csvs(data, directory):
+    """
+    Convert a DiscourseData object into CSV files for efficient loading
+    of graph nodes and relationships
+
+    Parameters
+    ----------
+    data : DiscourseData
+        Data to load into a graph
+    directory: str
+        Full path to a directory to store CSV files
+    """
     node_path = os.path.join(directory,'{}_nodes.csv'.format(data.name))
     rel_paths = {}
     for x in data.types:
@@ -89,9 +100,9 @@ def data_to_graph_csvs(data, directory):
                             end_node = nodes[end]
                 if data[level].anchor:
                     label = 'word'
-                    additional = d.token
-                    if 'transcription' in d.additional:
-                        t = d.additional['transcription']
+                    additional = d.token_properties
+                    if 'transcription' in d.type_properties:
+                        t = d.type_properties['transcription']
                         if isinstance(t, list):
                             t = '.'.join(t)
                         additional['transcription'] = t

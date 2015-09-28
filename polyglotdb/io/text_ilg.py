@@ -182,9 +182,9 @@ def ilg_to_data(path, annotation_types,
                     if data[line_type].anchor:
                         continue
                     if data[line_type].token:
-                        word.token[line_type] = cur_line[line_type][i]
+                        word.token_properties[line_type] = cur_line[line_type][i]
                     else:
-                        word.additional[line_type] = cur_line[line_type][i]
+                        word.type_properties[line_type] = cur_line[line_type][i]
                 annotations[word_name] = [word]
                 data.add_annotations(**annotations)
         index += len(annotation_types)

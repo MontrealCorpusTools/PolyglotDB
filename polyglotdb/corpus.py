@@ -123,7 +123,7 @@ discourse: csvLine.discourse })'''
             self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
             if at == 'word':
                 for x in token_properties:
-                    self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at,x))
+                    self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at, x))
         self.graph.cypher.execute('DROP CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
         self.graph.cypher.execute('''MATCH (n)
                                     WHERE n:Anchor
@@ -165,8 +165,8 @@ discourse: csvLine.discourse })'''
                             if first.label not in inventory_items[b]:
                                 p, _ = get_or_create(session, InventoryItem, label = first.label, annotation_type = base_type)
                                 inventory_items[b][first.label] = p
-                        if 'transcription' in d.additional:
-                            trans = d.additional['transcription']
+                        if 'transcription' in d.type_properties:
+                            trans = d.type_properties['transcription']
                         elif not data[b].token:
                             trans = [x.label for x in base_sequence]
                     if trans is None:
@@ -186,7 +186,7 @@ discourse: csvLine.discourse })'''
                     else:
                         word = words[(d.label, trans)]
                     word.frequency += 1
-                    for k,v in d.additional.items():
+                    for k,v in d.type_properties.items():
                         if v is None:
                             continue
                         if k not in word_property_types:
