@@ -26,6 +26,10 @@ def buckeye_test_dir(test_dir):
     return os.path.join(test_dir, 'buckeye')
 
 @pytest.fixture(scope='session')
+def globalphone_test_dir(test_dir):
+    return os.path.join(test_dir, 'globalphone')
+
+@pytest.fixture(scope='session')
 def timit_test_dir(test_dir):
     return os.path.join(test_dir, 'timit')
 
