@@ -43,7 +43,7 @@ def inspect_discourse_spelling(path, support_corpus_path = None):
                 a.add(trial, save = False)
     annotation_types = [a]
     if support_corpus_path is not None:
-        annotation_types += [AnnotationType('transcription', None, None, base = True)]
+        annotation_types += [AnnotationType('transcription', None, None)]
     return annotation_types
 
 def spelling_text_to_data(path, annotation_types = None,

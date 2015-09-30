@@ -28,16 +28,17 @@ def test_export_transcription(graph_db, export_test_dir):
         assert(w.frequency == w2.frequency)
 
 
-def text_delim_error(graph_db, text_transcription_test_dir):
+def test_delim_error(graph_db, text_transcription_test_dir):
     transcription_path = os.path.join(text_transcription_test_dir, 'text_transcription.txt')
+    ats = inspect_discourse_transcription(transcription_path)
+    ats[0].trans_delimiter = ','
     with CorpusContext(corpus_name = 'transcription_test_raises', **graph_db) as c:
         with pytest.raises(DelimiterError):
             load_discourse_transcription(c,
-                                transcription_path," ",[],
-                                trans_delimiter = ',')
+                                transcription_path, ats)
 
 
-def text_transcription_directory(graph_db, text_transcription_test_dir):
+def test_transcription_directory(graph_db, text_transcription_test_dir):
     annotation_types = inspect_discourse_transcription(text_transcription_test_dir)
     with CorpusContext(corpus_name = 'transcription_test_directory', **graph_db) as c:
         load_directory_transcription(c, text_transcription_test_dir)

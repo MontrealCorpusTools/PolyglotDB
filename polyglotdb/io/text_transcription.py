@@ -99,8 +99,8 @@ def transcription_text_to_data(path, annotation_types = None,
         for word in line:
             annotations = dict()
             trans = parse_transcription(word, data[n])
-            #if not trans_check and data[n].delimiter is not None and len(trans) > 1:
-            #    trans_check = True
+            if not trans_check and data[n].delimiter is not None and len(trans) > 1:
+                trans_check = True
             spell = ''.join(x.label for x in trans)
             if spell == '':
                 continue
@@ -115,8 +115,8 @@ def transcription_text_to_data(path, annotation_types = None,
             annotations[n] = tier_elements
             annotations['spelling'] = [word]
             data.add_annotations(**annotations)
-    #if data[n].delimiter and not trans_check:
-    #    raise(DelimiterError('The transcription delimiter specified does not create multiple segments. Please specify another delimiter.'))
+    if data[n].delimiter and not trans_check:
+        raise(DelimiterError('The transcription delimiter specified does not create multiple segments. Please specify another delimiter.'))
 
     return data
 

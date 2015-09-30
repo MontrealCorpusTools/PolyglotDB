@@ -22,6 +22,7 @@ def test_load_spelling_no_ignore(graph_db, text_spelling_test_dir):
     assert(c.lexicon['ab'].frequency == 2)
 
 def test_load_spelling_directory(graph_db, text_spelling_test_dir):
+    a = inspect_discourse_spelling(text_spelling_test_dir)
 
     with CorpusContext(corpus_name = 'spelling_directory', **graph_db) as c:
         load_directory_spelling(c, text_spelling_test_dir)
