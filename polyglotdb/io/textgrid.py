@@ -193,18 +193,12 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
                         phoneBegin = si.minTime
                     if phoneEnd > si.maxTime:
                         phoneEnd = si.maxTime
-                    if data[n].delimited:
-                        parsed = parse_transcription(ti.mark, data[n])
-                        if len(parsed) > 0:
-                            parsed[0].begin = phoneBegin
-                            parsed[-1].end = phoneEnd
-                            tier_elements.extend(parsed)
-                    else:
-                        if ti.mark == '':
-                            ti.mark = '#'
-                        a = BaseAnnotation(ti.mark,
-                                    begin = phoneBegin, end = phoneEnd)
-                        tier_elements.append(a)
+
+                    if ti.mark == '':
+                        ti.mark = '?'
+                    a = BaseAnnotation(ti.mark,
+                                begin = phoneBegin, end = phoneEnd)
+                    tier_elements.append(a)
                 level_count = data.level_length(n)
                 word.references.append(n)
                 word.begins.append(level_count)

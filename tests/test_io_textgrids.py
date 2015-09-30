@@ -48,10 +48,10 @@ def test_basic(textgrid_test_dir):
     expected_words.append(a)
     assert(data['word']._list == expected_words)
 
-    assert(data['phone']._list == [BaseAnnotation('#', 0, 0.25),
+    assert(data['phone']._list == [BaseAnnotation('?', 0, 0.25),
                         BaseAnnotation('a', 0.25, 0.5),
                         BaseAnnotation('b', 0.5, 0.75),
-                        BaseAnnotation('#', 0.75, 1)])
+                        BaseAnnotation('?', 0.75, 1)])
 
 def test_load(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
