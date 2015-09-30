@@ -227,13 +227,13 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
                 else:
                     value = ti.mark
                     if at.delimited:
-                        value = parse_transcription(ti.mark, at)
+                        value = [x.label for x in parse_transcription(ti.mark, at)]
                     elif at.ignored:
                         value = ''.join(x for x in value if x not in at.ignored)
                 if at.token:
-                    word.token[at.name] = value
+                    word.token_properties[at.name] = value
                 else:
-                    word.additional[at.name] = value
+                    word.type_properties[at.name] = value
 
             annotations[word_name] = [word]
             data.add_annotations(**annotations)

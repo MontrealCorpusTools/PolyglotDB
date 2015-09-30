@@ -363,14 +363,6 @@ class AnnotationType(object):
     def is_word_anchor(self):
         return not self.token and self.anchor
 
-    @property
-    def is_token_base(self):
-        return self.token and self.base
-
-    @property
-    def is_type_base(self):
-        return not self.token and self.base
-
 class DiscourseData(object):
     """
     Class for collecting information about a discourse to be loaded
@@ -457,53 +449,6 @@ class DiscourseData(object):
     def mapping(self):
         return { x.name: x.attribute for x in self.data.values() if not x.ignored}
 
-    def collapse_speakers(self):
-        newdata = {}
-        shifts = {self.data[x].output_name: 0 for x in self.base_levels}
-        #Sort keys by speaker, then non-base levels, then base levels
-
-        keys = list()
-        speakers = sorted(set(x.speaker for x in self.data.values() if x.speaker is not None))
-        for s in speakers:
-            base = []
-            for k,v in self.data.items():
-                if v.speaker != s:
-                    continue
-                if v.base:
-                    base.append(k)
-                else:
-                    keys.append(k)
-            keys.extend(base)
-        for k in keys:
-            v = self.data[k]
-            name = v.output_name
-            if name not in newdata:
-                subtype = v.subtype
-                supertype = v.supertype
-                if subtype is not None:
-                    subtype = self.data[subtype].output_name
-                if supertype is not None:
-                    supertype = self.data[supertype].output_name
-                newdata[v.output_name] = AnnotationType(v.output_name, subtype, supertype,
-                    anchor = v.anchor,token = v.token, base = v.base,
-                    delimited = v.delimited)
-            for ann in v:
-                newann = dict()
-                for k2,v2 in ann.items():
-                    try:
-                        newk2 = self.data[k2].output_name
-                        newv2 = (v2[0]+shifts[newk2],v2[1]+shifts[newk2])
-
-                    except KeyError:
-                        newk2 = k2
-                        newv2 = v2
-                    newann[newk2] = newv2
-
-                newdata[v.output_name].add([newann])
-            if v.base:
-                shifts[v.output_name] += len(v)
-        self.data = newdata
-
     @property
     def process_order(self):
         order = self.word_levels
@@ -542,14 +487,6 @@ class DiscourseData(object):
 
     def level_length(self, key):
         return len(self.data[key])
-
-def get_corpora_list(storage_directory):
-    corpus_dir = os.path.join(storage_directory,'CORPUS')
-    corpora = [x.split('.')[0] for x in os.listdir(corpus_dir)]
-    return corpora
-
-def corpus_name_to_path(storage_directory,name):
-    return os.path.join(storage_directory,'CORPUS',name+'.corpus')
 
 def compile_digraphs(digraph_list):
     digraph_list = sorted(digraph_list, key = lambda x: len(x), reverse=True)

@@ -67,28 +67,20 @@ def test_directory(textgrid_test_dir, graph_db):
             annotation_types = inspect_discourse_textgrid(path)
             load_directory_textgrid(c, textgrid_test_dir, annotation_types)
 
-@pytest.mark.xfail
+def test_inspect_textgrid_directory(textgrid_test_dir):
+    annotation_types = inspect_discourse_textgrid(textgrid_test_dir)
+    assert(len(annotation_types) == 4)
+
 def test_two_speakers(textgrid_test_dir):
     path = os.path.join(textgrid_test_dir,'2speakers.TextGrid')
     data = textgrid_to_data(path, [AnnotationType('Speaker 1 - word','Speaker 1 - phone',None, anchor=True, speaker = 'Speaker 1'),
                                 AnnotationType('Speaker 1 - phone',None,None, base=True, speaker = 'Speaker 1'),
                                 AnnotationType('Speaker 2 - word','Speaker 2 - phone',None, anchor=True, speaker = 'Speaker 2'),
                                 AnnotationType('Speaker 2 - phone',None,None, base=True, speaker = 'Speaker 2')])
-    data.collapse_speakers()
-    print(data['word']._list)
-    assert(data['word']._list == [{'label': '','token':{}, 'phone':(0,1)},
-                        {'label': 'a','token':{}, 'phone':(1,3)},
-                        {'label': 'b','token':{}, 'phone':(3,5)},
-                        {'label': 'a','token':{}, 'phone':(5,7)},
-                        {'label': 'c','token':{}, 'phone':(7,9)},
-                        {'label': '','token':{}, 'phone':(9,10)}])
-    assert(data['phone']._list == [{'label':'', 'begin': 0, 'end': 0.1},
-                        {'label':'a', 'begin': 0.1, 'end': 0.2},
-                        {'label':'b', 'begin': 0.2, 'end': 0.3},
-                        {'label':'c', 'begin': 0.3, 'end': 0.4},
-                        {'label':'d', 'begin': 0.4, 'end': 0.5},
-                        {'label':'a', 'begin': 0.5, 'end': 0.6},
-                        {'label':'b', 'begin': 0.6, 'end': 0.7},
-                        {'label':'d', 'begin': 0.7, 'end': 0.8},
-                        {'label':'e', 'begin': 0.8, 'end': 0.9},
-                        {'label':'', 'begin': 0.9, 'end': 1}])
+
+def test_load_pronunciation(textgrid_test_dir, graph_db):
+    path = os.path.join(textgrid_test_dir, 'pronunc_variants_corpus.TextGrid')
+    with CorpusContext(corpus_name = 'test_pronunc', **graph_db) as c:
+        annotation_types = inspect_discourse_textgrid(path)
+        print(annotation_types)
+        load_discourse_textgrid(c, path, annotation_types)
