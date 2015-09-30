@@ -148,13 +148,10 @@ def load_directory_spelling(corpus_context, path, annotation_types = None,
         root, filename = t
         path = os.path.join(root, filename)
         name = os.path.splitext(filename)[0]
-        data = spelling_text_to_data(path, annotation_types,
-                    support_corpus_path, ignore_case,
-                        stop_check, call_back)
-        corpus_context.add_discourse(data)
+        load_discourse_spelling(corpus_context, path, annotation_types,
+                            support_corpus_path, ignore_case)
 
 def load_discourse_spelling(corpus_context, path, annotation_types = None,
-                            lexicon = None,
                             support_corpus_path = None, ignore_case = False,
                             stop_check = None, call_back = None):
     """

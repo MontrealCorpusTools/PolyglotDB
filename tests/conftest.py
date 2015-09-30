@@ -38,8 +38,12 @@ def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
 
 @pytest.fixture(scope='session')
-def text_test_dir(test_dir):
-    return os.path.join(test_dir, 'text')
+def text_transcription_test_dir(test_dir):
+    return os.path.join(test_dir, 'text_transcription')
+
+@pytest.fixture(scope='session')
+def text_spelling_test_dir(test_dir):
+    return os.path.join(test_dir, 'text_spelling')
 
 @pytest.fixture(scope='session')
 def ilg_test_dir(test_dir):

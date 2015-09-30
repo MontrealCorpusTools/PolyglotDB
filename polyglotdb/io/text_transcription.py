@@ -164,13 +164,12 @@ def load_directory_transcription(corpus_context, path, annotation_types = None,
         root, filename = t
         path = os.path.join(root, filename)
         name = os.path.splitext(filename)[0]
-        data = transcription_text_to_data(path, annotation_types,
-                                stop_check, call_back)
-        corpus_context.add_discourse(d)
+        load_discourse_transcription(corpus_context, path, annotation_types,
+                    feature_system_path)
 
 
 def load_discourse_transcription(corpus_context, path, annotation_types = None,
-                    lexicon = None, feature_system_path = None,
+                    feature_system_path = None,
                     stop_check = None, call_back = None):
     """
     Load a discourse from a text file containing running transcribed text
