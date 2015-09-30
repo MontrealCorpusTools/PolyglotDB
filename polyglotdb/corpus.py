@@ -177,9 +177,6 @@ discourse: csvLine.discourse })'''
                                 p, _ = get_or_create(session, InventoryItem, label = seg, annotation_type = transcription_type)
                                 inventory_items['transcription'][seg] = p
                         trans = '.'.join(trans)
-                    else:
-                        print(trans)
-                        raise(ValueError)
                     if (d.label, trans) not in words:
                         word,_ = get_or_create(session, Word, defaults = {'frequency':0}, orthography = d.label, transcription = trans)
                         words[(d.label, trans)] = word

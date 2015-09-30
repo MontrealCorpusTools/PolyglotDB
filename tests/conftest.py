@@ -111,6 +111,7 @@ def corpus_data_timed():
 @pytest.fixture(scope='session')
 def corpus_data_untimed():
     levels = [AnnotationType('phone', None, 'word', base = True, token = True),
+                AnnotationType('transcription', None, None, token = False),
                 AnnotationType('morpheme', 'phone', 'word'),
                 AnnotationType('word','phone','line', anchor = True),
                 AnnotationType('line', 'word', None)]
@@ -150,14 +151,14 @@ def corpus_data_untimed():
                             Annotation('guess', phone = (18,21)),
                             ],
                     'word':[
-                            Annotation('cats', phone = (0,4), transcription = 'k.ae.t.s'),
-                            Annotation('are', phone = (4,6), transcription = 'aa.r'),
-                            Annotation('cute', phone = (6,9), transcription = 'k.uw.t'),
-                            Annotation('dogs', phone =  (9,13), transcription = 'd.aa.g.z'),
-                            Annotation('are', phone =  (13,15), transcription = 'aa.r'),
-                            Annotation('too', phone =  (15,17), transcription = 't.uw'),
-                            Annotation('i', phone =  (17,18), transcription = 'ay'),
-                            Annotation('guess', phone = (18,21), transcription = 'g.eh.s'),
+                            Annotation('cats', phone = (0,4), type_properties = {'transcription': 'k.ae.t.s'}),
+                            Annotation('are', phone = (4,6), type_properties = {'transcription': 'aa.r'}),
+                            Annotation('cute', phone = (6,9), type_properties = {'transcription': 'k.uw.t'}),
+                            Annotation('dogs', phone =  (9,13), type_properties = {'transcription': 'd.aa.g.z'}),
+                            Annotation('are', phone =  (13,15), type_properties = {'transcription': 'aa.r'}),
+                            Annotation('too', phone =  (15,17), type_properties = {'transcription': 't.uw'}),
+                            Annotation('i', phone =  (17,18), type_properties = {'transcription': 'ay'}),
+                            Annotation('guess', phone = (18,21), type_properties = {'transcription': 'g.eh.s'}),
                             ],
                     'line': [
                             Annotation('', phone = (0,9)),
@@ -173,6 +174,7 @@ def corpus_data_untimed():
 def corpus_data_ur_sr():
     levels = [AnnotationType('sr', None, 'word', base = True, token = True),
                 AnnotationType('word','sr','line', anchor = True),
+                AnnotationType('ur', None, None, token = False),
                 AnnotationType('line', 'word', None, anchor = False)]
     data = DiscourseData('test',levels)
     annotations = {'sr':[BaseAnnotation('k', 0.0, 0.1),
@@ -197,14 +199,14 @@ def corpus_data_ur_sr():
                             BaseAnnotation('s', 3.5, 3.6),
                             ],
                     'word':[
-                            Annotation('cats', ur = ['k','ae','t','s'], sr =  (0,3)),
-                            Annotation('are', ur = ['aa','r'], sr =  (3,5)),
-                            Annotation('cute', ur = ['k','uw','t'], sr =  (5,7)),
-                            Annotation('dogs', ur =  ['d','aa','g','z'], sr =  (7,12)),
-                            Annotation('are', ur =  ['aa','r'], sr =  (12,14)),
-                            Annotation('too', ur =  ['t','uw'], sr =  (14,16)),
-                            Annotation('i', ur =  ['ay'], sr =  (16,17)),
-                            Annotation('guess', ur = ['g','eh','s'], sr =  (17,20)),
+                            Annotation('cats', type_properties = {'ur':['k','ae','t','s']}, sr =  (0,3)),
+                            Annotation('are', type_properties = {'ur':['aa','r']}, sr =  (3,5)),
+                            Annotation('cute', type_properties = {'ur':['k','uw','t']}, sr =  (5,7)),
+                            Annotation('dogs', type_properties = {'ur':['d','aa','g','z']}, sr =  (7,12)),
+                            Annotation('are', type_properties = {'ur':['aa','r']}, sr =  (12,14)),
+                            Annotation('too', type_properties = {'ur':['t','uw']}, sr =  (14,16)),
+                            Annotation('i', type_properties = {'ur':['ay']}, sr =  (16,17)),
+                            Annotation('guess', type_properties = {'ur':['g','eh','s']}, sr =  (17,20)),
                             ],
                     'line': [
                             Annotation('', sr = (0,7)),

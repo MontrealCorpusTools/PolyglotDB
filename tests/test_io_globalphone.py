@@ -25,3 +25,5 @@ def test_read_rmn(globalphone_test_dir):
     assert(data['1'] == 'nihongo de hanashiteimasu')
     assert(data['2'] == 'nihongo wa tanoshii desu yo')
 
+def test_load_speaker(globalphone_test_dir):
+    pass

@@ -44,7 +44,7 @@ def test_export_spelling(graph_db, export_test_dir):
 
     export_path = os.path.join(export_test_dir, 'export_spelling.txt')
     with CorpusContext(corpus_name = 'spelling_no_ignore', **graph_db) as c:
-        export_discourse_spelling(c, 'text_spelling', export_path, single_line = False)
+        export_discourse_spelling(c, 'text_spelling', export_path, words_per_line = 10)
 
     with open(export_path,'r') as f:
         assert(f.read() == 'ab cab\'d ad ab ab.')

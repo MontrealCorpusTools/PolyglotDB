@@ -277,7 +277,8 @@ def load_directory_ilg(corpus_context, path, annotation_types,
     #    feature_matrix = load_binary(feature_system_path)
     #    corpus.lexicon.set_feature_matrix(feature_matrix)
 
-def export_discourse_ilg(discourse, path, trans_delim = '.'):
+def export_discourse_ilg(corpus_context, discourse, path,
+                    trans_delim = '.', annotations = None, words_per_line = 10):
     """
     Export a discourse to an interlinear gloss text file, with a maximal
     line size of 10 words
@@ -291,22 +292,27 @@ def export_discourse_ilg(discourse, path, trans_delim = '.'):
     trans_delim : str, optional
         Delimiter for segments, defaults to ``.``
     """
+    if annotations is None:
+        raise(Exception('Must specify annotations to output'))
+    q = corpus_context.query_graph(corpus_context.word)
+    q = q.filter(corpus_context.word.discourse == discourse)
+    discourse = q.all()
     with open(path, encoding='utf-8', mode='w') as f:
-        spellings = list()
-        transcriptions = list()
-        for wt in discourse:
-            spellings.append(wt.spelling)
-            transcriptions.append(trans_delim.join(wt.transcription))
-            if len(spellings) > 10:
-                f.write(' '.join(spellings))
-                f.write('\n')
-                f.write(' '.join(transcriptions))
-                f.write('\n')
-                spellings = list()
-                transcriptions = list()
-        if spellings:
-            f.write(' '.join(spellings))
-            f.write('\n')
-            f.write(' '.join(transcriptions))
-            f.write('\n')
+        line = {x: [] for x in annotations}
+        count = 0
+        for i, wt in enumerate(discourse):
+            count += 1
+            for a in annotations:
+                line[a].append(wt.r_word.properties[a])
+            if i != len(discourse) -1:
+                if words_per_line > 0 and count == words_per_line:
+                    for a in annotations:
+                        f.write(' '.join(line[a]) + '\n')
+                    count = 0
+                    line = {x: [] for x in annotations}
+        if count != 0:
+            for a in annotations:
+                f.write(' '.join(line[a]) + '\n')
+            count = 0
+            line = {x: [] for x in annotations}
 

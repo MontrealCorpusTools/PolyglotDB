@@ -18,19 +18,25 @@ def test_inspect_ilg(ilg_test_dir):
     assert(len(annotypes) == 2)
     assert(annotypes[1].delimiter == '.')
 
-@pytest.mark.xfail
-def test_export_ilg(graph_db, export_test_dir, unspecified_test_corpus):
-    d = generate_discourse(unspecified_test_corpus)
+def test_inspect_ilg_directory(ilg_test_dir):
+    annotypes = inspect_discourse_ilg(ilg_test_dir)
+    assert(len(annotypes) == 2)
+
+
+def test_export_ilg(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'export_ilg.txt')
-    export_discourse_ilg(d, export_path)
-
-    d2 = load_discourse_ilg('test', export_path)
-
-    for k in unspecified_test_corpus.keys():
-        assert(d2.lexicon[k].spelling == unspecified_test_corpus[k].spelling)
-        assert(d2.lexicon[k].transcription == unspecified_test_corpus[k].transcription)
-        assert(d2.lexicon[k].frequency == unspecified_test_corpus[k].frequency)
-    assert(d2.lexicon == unspecified_test_corpus)
+    with CorpusContext(corpus_name = 'untimed', **graph_db) as c:
+        export_discourse_ilg(c, 'test', export_path,
+                annotations = ['label','transcription'], words_per_line = 3)
+    expected_lines = ['cats are cute',
+                        'k.ae.t.s aa.r k.uw.t',
+                        'dogs are too',
+                        'd.aa.g.z aa.r t.uw',
+                        'i guess',
+                        'ay g.eh.s']
+    with open(export_path, 'r') as f:
+        for i, line in enumerate(f):
+            assert(line.strip() == expected_lines[i])
 
 def test_ilg_data(ilg_test_dir):
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')

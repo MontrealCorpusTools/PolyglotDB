@@ -202,15 +202,19 @@ class Annotation(BaseAnnotation):
         self.begins = []
         self.ends = []
         self.references = []
+        self.token_properties = {}
+        self.type_properties = {}
         for k,v in kwargs.items():
             if isinstance(v, tuple):
                 self.references.append(k)
                 self.begins.append(v[0])
                 self.ends.append(v[1])
+            elif k == 'type_properties':
+                self.type_properties.update(v)
+            elif k == 'token_properties':
+                self.token_properties.update(v)
             else:
                 setattr(self, k, v)
-        self.token_properties = {}
-        self.type_properties = {}
 
     def __eq__(self, other):
         return self.label == other.label and self.begins == other.begins \
