@@ -37,7 +37,8 @@ def text_delim_error(graph_db, text_transcription_test_dir):
                                 trans_delimiter = ',')
 
 
-def text_delim_error(graph_db, text_transcription_test_dir):
+def text_transcription_directory(graph_db, text_transcription_test_dir):
+    annotation_types = inspect_discourse_transcription(text_transcription_test_dir)
     with CorpusContext(corpus_name = 'transcription_test_directory', **graph_db) as c:
         load_directory_transcription(c, text_transcription_test_dir)
 
