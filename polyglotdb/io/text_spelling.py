@@ -129,7 +129,7 @@ def load_directory_spelling(corpus_context, path, annotation_types = None,
         call_back('Finding  files...')
         call_back(0, 0)
     file_tuples = []
-    for root, subdirs, files in os.walk(path):
+    for root, subdirs, files in os.walk(path, followlinks = True):
         for filename in files:
             if not filename.lower().endswith('.txt'):
                 continue

@@ -171,7 +171,7 @@ def load_directory_buckeye(corpus_context, path,
         call_back('Finding  files...')
         call_back(0, 0)
     file_tuples = []
-    for root, subdirs, files in os.walk(path):
+    for root, subdirs, files in os.walk(path, followlinks = True):
         subdirs.sort()
         for filename in sorted(files):
             if stop_check is not None and stop_check():

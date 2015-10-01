@@ -286,7 +286,7 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
         call_back('Finding  files...')
         call_back(0, 0)
     file_tuples = []
-    for root, subdirs, files in os.walk(path):
+    for root, subdirs, files in os.walk(path, followlinks = True):
         for filename in files:
             if stop_check is not None and stop_check():
                 return
