@@ -31,6 +31,8 @@ The idea of using multiple languages or technologies that suit individual
 problems has been known, particularly in the realm of merging SQL and NoSQL
 databases, as "polyglot persistence."
 
+Further documentation, including installation, can be found at http://polyglotdb.readthedocs.org/en/latest/.
+
 References
 ----------
 
