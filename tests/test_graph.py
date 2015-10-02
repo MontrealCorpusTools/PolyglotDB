@@ -6,7 +6,7 @@ from polyglotdb.corpus import CorpusContext
 def test_basic_query(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
-        assert(all(x.r_word['label'] == 'are' for x in q.all()))
+        assert(all(x.label == 'are' for x in q.all()))
 
 def test_order_by(graph_db):
     with CorpusContext(corpus_name = 'timed', **graph_db) as g:
@@ -90,11 +90,6 @@ def test_query_frequency(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
         q = g.query_graph(g.word).filter(g.word.frequency > 1)
     assert(False)
-
-def test_query_aggregate_count(graph_db):
-    with CorpusContext(corpus_name = 'timed', **graph_db) as g:
-        q = g.query_graph(g.phone).filter(g.phone.label == 'aa').count()
-        assert(q == 3)
 
 def test_regex_query(graph_db):
     with CorpusContext(corpus_name = 'timed', **graph_db) as g:

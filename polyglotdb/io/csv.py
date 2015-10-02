@@ -13,6 +13,25 @@ from polyglotdb.sql.models import (Word, WordPropertyType, WordNumericProperty,
                                 WordProperty, InventoryItem, AnnotationType as SQLAnnotationType,
                                 InventoryProperty)
 
+def save_results(results, path, header = None):
+    if len(results) == 0:
+        raise(IndexError)
+    if header is None:
+        try:
+            header = results.columns
+        except AttributeError:
+            try:
+                header = results[0].__producer__.columns
+            except AttributeError:
+                raise(Exception('Could not get the column header from the list, please specify the header.'))
+    print(header)
+    print(results)
+    with open(path, 'w') as f:
+        writer = DictWriter(f, header)
+        writer.writeheader()
+        for line in results:
+            writer.writerow({k: getattr(line, k) for k in header})
+
 def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
     """
     Generate a list of AnnotationTypes for a specified text file for parsing

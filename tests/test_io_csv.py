@@ -10,6 +10,30 @@ from polyglotdb.io.helper import BaseAnnotation, Annotation, AnnotationType, Att
 from polyglotdb.exceptions import DelimiterError
 from polyglotdb.corpus import CorpusContext
 
+def test_to_csv(graph_db, export_test_dir):
+    export_path = os.path.join(export_test_dir, 'results_export.csv')
+    with CorpusContext(corpus_name = 'acoustic', **graph_db) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.order_by(g.phone.begin.column_name('begin')).duration()
+        q.to_csv(export_path)
+
+    #ignore ids
+    expected = [['label','duration','begin'],
+                ['aa','0.0783100000000001','2.70424'],
+                ['aa','0.12199999999999989','9.32077'],
+                ['aa','0.03981000000000279','24.56029']]
+    with open(export_path, 'r') as f:
+        i = 0
+        for line in f.readlines():
+            line = line.strip()
+            if line == '':
+                continue
+            line = line.split(',')
+            print(line)
+            assert(line[1:] == expected[i])
+            i += 1
+
+
 def test_inspect_example(csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'example.txt')
     atts, coldelim = inspect_csv(example_path)

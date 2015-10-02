@@ -3,6 +3,8 @@ from .elements import ContainsClauseElement
 
 from .func import Count
 
+from polyglotdb.io.csv import save_results
+
 class GraphQuery(object):
     def __init__(self, graph, to_find):
         self.graph = graph
@@ -12,6 +14,8 @@ class GraphQuery(object):
         self._contains_annotations = set()
         self._left_aligned_criterion = []
         self._right_aligned_criterion = []
+        self._columns = [self.to_find.id.column_name('id'),
+                                    self.to_find.label.column_name('label')]
         self._additional_columns = []
         self._order_by = []
         self._group_by = []
@@ -32,6 +36,13 @@ class GraphQuery(object):
         self._criterion.extend(args)
         annotation_set = set(x.attribute.annotation for x in args)
         self._contained_by_annotations.update(annotation_set)
+        return self
+
+    def columns(self, *args):
+        column_set = set(self._additional_columns)
+        column_set.update(self._columns)
+        args = [x for x in args if x not in column_set]
+        self._additional_columns.extend(args)
         return self
 
     def filter_left_aligned(self, annotation_type):
@@ -79,7 +90,13 @@ class GraphQuery(object):
                     {additional_where}
                     WITH {with}
                     {additional_match}
-                    RETURN DISTINCT {relationship_alias}{additional_columns}{order_by}'''
+                    RETURN DISTINCT {columns}{additional_columns}{order_by}'''
+            kwargs['columns'] = ''
+            properties = []
+            for c in self._columns:
+                properties.append(c.aliased_for_output())
+            if properties:
+                kwargs['columns'] = ', '.join(properties)
             kwargs['relationship_alias'] = self.to_find.alias
 
         with_properties = [self.to_find.alias, self.to_find.begin_alias,
@@ -286,6 +303,9 @@ class GraphQuery(object):
     def all(self):
         return self.graph.graph.cypher.execute(self.cypher())
 
+    def to_csv(self, path):
+        save_results(self.graph.graph.cypher.execute(self.cypher()), path)
+
     def count(self):
         self._aggregate = [Count()]
         cypher = self.cypher()
@@ -296,4 +316,7 @@ class GraphQuery(object):
         self._aggregate = args
         cypher = self.cypher()
         value = self.graph.graph.cypher.execute(cypher)
-        return value
+        if self._group_by:
+            return value
+        else:
+            return value.one

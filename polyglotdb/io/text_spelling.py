@@ -210,7 +210,7 @@ def export_discourse_spelling(corpus_context, discourse,
         count = 0
         for i, wt in enumerate(discourse):
             count += 1
-            f.write(wt.r_word.properties['label'])
+            f.write(wt.label)
             if i != len(discourse) -1:
                 if words_per_line > 0 and count <= words_per_line:
                     f.write(' ')

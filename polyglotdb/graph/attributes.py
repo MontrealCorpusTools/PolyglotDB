@@ -99,7 +99,7 @@ class Attribute(object):
             results = other.all()
             t = []
             for x in results:
-                t.append(getattr(x, other.to_find.alias).properties[self.label])
+                t.append(getattr(x, self.label))
         else:
             t = other
         return InClauseElement(self, t)

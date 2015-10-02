@@ -295,7 +295,9 @@ def export_discourse_ilg(corpus_context, discourse, path,
     if annotations is None:
         raise(Exception('Must specify annotations to output'))
     q = corpus_context.query_graph(corpus_context.word)
+    q = q.columns(*[getattr(corpus_context.word, a).column_name(a) for a in annotations])
     q = q.filter(corpus_context.word.discourse == discourse)
+    print(q.cypher())
     discourse = q.all()
     with open(path, encoding='utf-8', mode='w') as f:
         line = {x: [] for x in annotations}
@@ -303,7 +305,7 @@ def export_discourse_ilg(corpus_context, discourse, path,
         for i, wt in enumerate(discourse):
             count += 1
             for a in annotations:
-                line[a].append(wt.r_word.properties[a])
+                line[a].append(getattr(wt,a))
             if i != len(discourse) -1:
                 if words_per_line > 0 and count == words_per_line:
                     for a in annotations:
