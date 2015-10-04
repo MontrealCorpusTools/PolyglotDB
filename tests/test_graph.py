@@ -6,12 +6,14 @@ from polyglotdb.corpus import CorpusContext
 def test_basic_query(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
+        print(q.cypher())
         assert(all(x.label == 'are' for x in q.all()))
 
 def test_order_by(graph_db):
     with CorpusContext(corpus_name = 'timed', **graph_db) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are').order_by(g.word.begin.column_name('begin')).times('begin','end')
         prev = 0
+        print(q.cypher())
         for x in q.all():
             assert(x.begin > prev)
             prev = x.begin
@@ -47,20 +49,28 @@ def test_query_contains(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
         q = g.query_graph(g.word).filter_contains(g.phone.label == 'aa')
         print(q.cypher())
-        print(list(q.all()))
         assert(len(list(q.all())) == 3)
 
 def test_query_contained_by(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.filter_contained_by(g.word.label == 'dogs')
+        print(q.cypher())
         assert(len(list(q.all())) == 1)
 
 def test_query_left_aligned_line(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_left_aligned(g.line)
+        print(q.cypher())
         assert(len(list(q.all())) == 1)
+
+def test_query_previous_left_aligned_line(graph_db):
+    with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ae')
+        q = q.filter(g.phone.previous.begin == g.line.begin)
+        print(q.cypher())
+        assert(q.count() == 1)
 
 def test_query_phone_in_line_initial_word(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
@@ -89,10 +99,12 @@ def test_query_coda_phone(graph_db):
 def test_query_frequency(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
         q = g.query_graph(g.word).filter(g.word.frequency > 1)
+        print(q.cypher())
     assert(False)
 
 def test_regex_query(graph_db):
     with CorpusContext(corpus_name = 'timed', **graph_db) as g:
-        q = g.query_graph(g.phone).filter(g.phone.label.regex('a.')).count()
-        assert(q == 5)
+        q = g.query_graph(g.phone).filter(g.phone.label.regex('a.'))
+        print(q.cypher())
+        assert(q.count() == 5)
 

@@ -5,7 +5,8 @@ from .query import GraphQuery
 
 from .elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
-                        InClauseElement, ContainsClauseElement, RegexClauseElement)
+                        InClauseElement, ContainsClauseElement, RegexClauseElement,
+                        RightAlignedClauseElement, LeftAlignedClauseElement)
 
 class Attribute(object):
     """
@@ -77,6 +78,13 @@ class Attribute(object):
         return self
 
     def __eq__(self, other):
+        try:
+            if self.label == 'begin' and other.label == 'begin':
+                return LeftAlignedClauseElement(self.annotation, other.annotation)
+            elif self.label == 'end' and other.label == 'end':
+                return RightAlignedClauseElement(self.annotation, other.annotation)
+        except AttributeError:
+            pass
         return EqualClauseElement(self, other)
 
     def __ne__(self, other):
@@ -138,6 +146,9 @@ class AnnotationAttribute(Attribute):
     def __hash__(self):
         return hash((self.type, self.pos))
 
+    def __repr__(self):
+        return '<AnnotationAttribute object with \'{}\' type and {} position'.format(self.type, self.pos)
+
     @property
     def rel_alias(self):
         if self.pos == 0:
@@ -173,6 +184,12 @@ class AnnotationAttribute(Attribute):
             return self.end_template.format(self.type, self.pos)
         elif self.pos < 0:
             return self.begin_template.format(self.type, -1 * (self.pos + 1))
+
+    def right_aligned(self, other):
+        return RightAlignedClauseElement(self, other)
+
+    def left_aligned(self, other):
+        return LeftAlignedClauseElement(self, other)
 
     def __getattr__(self, key):
         if key in ['previous', 'following']:

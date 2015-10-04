@@ -11,6 +11,19 @@ graph_db = {'host':'localhost', 'port': 7474,
             'user': 'neo4j', 'password': 'testtest'}
 
 with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
+    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
+    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
+
+    q = q.filter(g.surface_transcription.end == g.word.end)
+    print(q.cypher())
+    print(q.count())
+    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
+    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
+
+    q = q.filter(g.surface_transcription.following.end == g.word.end)
+
+    print(q.count())
+
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter_contained_by(g.word.label == 'dog')

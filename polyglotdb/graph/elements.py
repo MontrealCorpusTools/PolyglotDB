@@ -3,16 +3,26 @@ from .helper import key_for_cypher, value_for_cypher
 
 class ClauseElement(object):
     sign = ''
+    template = "{} {} {}"
     def __init__(self, attribute, value):
         self.attribute = attribute
         self.value = value
+
+    @property
+    def annotations(self):
+        annotations = [self.attribute.annotation]
+        try:
+            annotations.append(self.value.annotation)
+        except AttributeError:
+            pass
+        return annotations
 
     def for_cypher(self):
         try:
             value = self.value.for_cypher()
         except AttributeError:
             value = value_for_cypher(self.value)
-        return "{} {} {}".format(self.attribute.for_cypher(),
+        return self.template.format(self.attribute.for_cypher(),
                                 self.sign,
                                 value)
 
@@ -41,7 +51,37 @@ class RegexClauseElement(ClauseElement):
     sign = '=~'
 
 class ContainsClauseElement(ClauseElement):
+    template = "{} in extract(x in {}| x.{})"
     def for_cypher(self):
-        return "{} in extract(x in {}| x.{})".format(value_for_cypher(self.value),
+        return self.template.format(value_for_cypher(self.value),
                                                 self.attribute.annotation.alias,
                                                 key_for_cypher(self.attribute.label))
+
+class AlignmentClauseElement(ClauseElement):
+    template = "{first}.label = {second}.label"
+    side = ''
+    def __init__(self, first, second):
+        self.first = first
+        self.second = second
+
+    @property
+    def annotations(self):
+        return [self.first, self.second]
+
+    def for_cypher(self):
+        if self.side == 'left':
+            first = self.first.begin_alias
+            second = self.second.begin_alias
+        elif self.side == 'right':
+            first = self.first.end_alias
+            second = self.second.end_alias
+        else:
+            raise(NotImplementedError)
+        return self.template.format(first = first,
+                                second = second)
+
+class RightAlignedClauseElement(AlignmentClauseElement):
+    side = 'right'
+
+class LeftAlignedClauseElement(AlignmentClauseElement):
+    side = 'left'
