@@ -8,7 +8,7 @@ from polyglotdb.corpus import CorpusContext
 from polyglotdb.graph.func import Count, Average
 
 graph_db = {'host':'localhost', 'port': 7474,
-            'user': 'neo4j', 'password': 'testtest'}
+            'user': 'neo4j', 'password': 'test'}
 
 with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')

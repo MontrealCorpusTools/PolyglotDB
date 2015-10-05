@@ -10,7 +10,7 @@ from polyglotdb.corpus import CorpusContext
 path_to_buckeye = r'D:\Data\VIC\Speakers'
 
 graph_db = {'host':'localhost', 'port': 7474,
-            'user': 'neo4j', 'password': 'testtest'}
+            'user': 'neo4j', 'password': 'test'}
 
 def call_back(*args):
     args = [x for x in args if isinstance(x, str)]

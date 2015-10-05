@@ -71,6 +71,11 @@ def test_query_previous_left_aligned_line(graph_db):
         q = q.filter(g.phone.previous.begin == g.line.begin)
         print(q.cypher())
         assert(q.count() == 1)
+    with CorpusContext(corpus_name = 'timed', **graph_db) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ae')
+        q = q.filter(g.phone.previous.begin == g.line.begin)
+        print(q.cypher())
+        assert(q.count() == 1)
 
 def test_query_phone_in_line_initial_word(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:

@@ -9,14 +9,15 @@ from .cypher import query_to_cypher
 from polyglotdb.io.csv import save_results
 
 class GraphQuery(object):
-    def __init__(self, graph, to_find):
+    def __init__(self, graph, to_find, is_timed):
+        self.is_timed = is_timed
         self.graph = graph
         self.to_find = to_find
         self._criterion = []
         self._contained_by_annotations = set()
         self._contains_annotations = set()
         self._columns = [self.to_find.id.column_name('id'),
-                                    self.to_find.label.column_name('label')]
+                        self.to_find.label.column_name('label')]
         self._additional_columns = []
         self._order_by = []
         self._group_by = []

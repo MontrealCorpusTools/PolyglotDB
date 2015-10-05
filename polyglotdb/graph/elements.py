@@ -51,7 +51,7 @@ class RegexClauseElement(ClauseElement):
     sign = '=~'
 
 class ContainsClauseElement(ClauseElement):
-    template = "{} in extract(x in {}| x.{})"
+    template = "{} in extract(x in nodes({})| x.{})"
     def for_cypher(self):
         return self.template.format(value_for_cypher(self.value),
                                                 self.attribute.annotation.alias,

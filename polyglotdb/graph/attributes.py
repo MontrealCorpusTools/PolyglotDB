@@ -139,6 +139,8 @@ class AnnotationAttribute(Attribute):
     """
     begin_template = '{}_b{}'
     end_template = '{}_e{}'
+    alias_template = '{prefix}node_{t}'
+    rel_type_template = 'r_{t}'
     def __init__(self, type, pos = 0):
         self.type = type
         self.pos = pos
@@ -151,21 +153,21 @@ class AnnotationAttribute(Attribute):
 
     @property
     def rel_alias(self):
-        if self.pos == 0:
-            return 'r_{t}:{t}'.format(t=self.type)
-        elif self.pos < 0:
-            return 'prevr{p}_{t}:{t}'.format(t=self.type, p = -1 * self.pos)
-        elif self.pos > 0:
-            return 'follr{p}_{t}:{t}'.format(t=self.type, p = self.pos)
+        return '-[:r_{t}]->({alias}:{t})-[:r_{t}]->'.format(t=self.type, alias = self.alias)
+
+    @property
+    def rel_type_alias(self):
+        return self.rel_type_template.format(t=self.type)
 
     @property
     def alias(self):
         if self.pos == 0:
-            return 'r_{t}'.format(t=self.type)
+            pre = ''
         elif self.pos < 0:
-            return 'prevr{p}_{t}'.format(t=self.type, p = -1 * self.pos)
+            pre = 'prev_{}_'.format(-1 * self.pos)
         elif self.pos > 0:
-            return 'follr{p}_{t}'.format(t=self.type, p = self.pos)
+            pre = 'foll_{}_'.format(self.pos)
+        return self.alias_template.format(t=self.type, prefix = pre)
 
     @property
     def begin_alias(self):

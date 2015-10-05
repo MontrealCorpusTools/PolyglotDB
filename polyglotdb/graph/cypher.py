@@ -9,15 +9,20 @@ WITH {}'''
 #p = shortestPath(({end_node_alias})-[:{annotation_type}*0..5]->({containing_end})),
 #p2 = shortestPath(({containing_begin})-[:{annotation_type}*0..5]->({begin_node_alias}))
 #'''
-contained_by_template = '''({begin_node_alias})<-[:{annotation_type}*0..10]-({containing_begin})-[{relationship_type_alias}]->({containing_end})<-[:{annotation_type}*0..10]-({end_node_alias})'''
+contained_by_template = '''({begin_node_alias}:Anchor)<-[:{annotation_type}*0..20]-({containing_begin}:Anchor){relationship_type_alias}({containing_end}:Anchor)<-[:{annotation_type}*0..20]-({end_node_alias}:Anchor)'''
 
-prec_template = '''({b_name})-[{name}]->'''
-foll_template = '''-[{name}]->({e_name})'''
+time_contained_by_match_template = '''({containing_begin}:Anchor){relationship_type_alias}({containing_end}:Anchor)'''
+time_contained_by_where_template = '''{containing_begin}.time <= {begin_node_alias}.time
+AND {containing_end}.time >= {end_node_alias}.time'''
 
-contains_template = '''({begin_node_alias})-[{relationship_type_alias}*0..30]->({end_node_alias})'''
+prec_template = '''({b_name}){name}'''
+foll_template = '''{name}({e_name})'''
 
-left_align_template = '''()<-[:{align_type}]-({begin_node_alias})'''
-right_align_template = '''()-[:{align_type}]->({end_node_alias})'''
+contains_template = '''{alias} = ({begin_node_alias}:Anchor)-[:{relationship_type_alias}*0..30]->({end_node_alias}:Anchor)'''
+
+
+left_align_template = '''()<-[:{align_type}]-({begin_node_alias}:Anchor)'''
+right_align_template = '''()-[:{align_type}]->({end_node_alias}:Anchor)'''
 
 def create_annotation_set(query):
     annotation_set = set()
@@ -74,10 +79,21 @@ def generate_preceding_following(query, annotation_set):
 def generate_contained_by_subqueries(query, criterion_ignored, withs, allowed_types):
     contained_by_withs = []
     matches = []
+    properties = []
 
     for a in query._contained_by_annotations:
-
-        match_string = contained_by_template.format(annotation_type = query.to_find.type,
+        if query.is_timed:
+            match_string = time_contained_by_match_template.format(
+                                containing_begin = a.begin_alias,
+                                containing_end = a.end_alias,
+                                relationship_type_alias = a.rel_alias)
+            properties.append(time_contained_by_where_template.format(
+                                    containing_begin = a.begin_alias,
+                                    containing_end = a.end_alias,
+                                    begin_node_alias = query.to_find.begin_alias,
+                                    end_node_alias = query.to_find.end_alias))
+        else:
+            match_string = contained_by_template.format(annotation_type = query.to_find.rel_type_alias,
                                             relationship_type_alias = a.rel_alias,
                                             containing_begin = a.begin_alias,
                                             containing_end = a.end_alias,
@@ -86,14 +102,13 @@ def generate_contained_by_subqueries(query, criterion_ignored, withs, allowed_ty
         matches.append(match_string)
         contained_by_withs.extend(generate_relationship_with(a))
     criterion_still_ignored = []
-    properties = []
     for c in criterion_ignored:
         if any(x.type not in allowed_types for x in c.annotations):
             criterion_still_ignored.append(c)
             continue
         properties.append(c.for_cypher())
     if properties:
-        where_string = 'WHERE ' + '\nAND'.join(properties)
+        where_string = 'WHERE ' + '\nAND '.join(properties)
     else:
         where_string = ''
     withs.update(contained_by_withs)
@@ -110,7 +125,8 @@ def generate_contains_subqueries(query, criterion_ignored, withs, allowed_types)
     matches = []
     contains_withs = []
     for a in query._contains_annotations:
-        match_string = contains_template.format(relationship_type_alias = a.rel_alias,
+        match_string = contains_template.format(alias = a.alias,
+                            relationship_type_alias = a.rel_type_alias,
                             begin_node_alias = query.to_find.begin_alias,
                             end_node_alias = query.to_find.end_alias)
         matches.append(match_string)
@@ -153,7 +169,7 @@ def query_to_cypher(query):
                 'additional_columns': '',
                 'order_by': ''}
     if query._aggregate:
-        template = '''MATCH {preceding_condition}({begin_node_alias})-[{relationship_type_alias}]->({end_node_alias}){following_condition}
+        template = '''MATCH {preceding_condition}({begin_node_alias}:Anchor){relationship_type_alias}({end_node_alias}:Anchor){following_condition}
                 WHERE {begin_node_alias}.corpus = '{corpus_name}'
                 {additional_where}
                 WITH {with}
@@ -169,12 +185,12 @@ def query_to_cypher(query):
         kwargs['aggregates'] = ', '.join(properties)
 
     else:
-        template = '''MATCH {preceding_condition}({begin_node_alias})-[{relationship_type_alias}]->({end_node_alias}){following_condition}
+        template = '''MATCH {preceding_condition}({begin_node_alias}:Anchor){relationship_type_alias}({end_node_alias}:Anchor){following_condition}
                 WHERE {begin_node_alias}.corpus = '{corpus_name}'
                 {additional_where}
                 WITH {with}
                 {additional_match}
-                RETURN DISTINCT {columns}{additional_columns}{order_by}'''
+                RETURN {columns}{additional_columns}{order_by}'''
         kwargs['columns'] = ''
         properties = []
         for c in query._columns:
@@ -242,3 +258,39 @@ def query_to_cypher(query):
         kwargs['additional_columns'] += ', ' + ', '.join(properties)
     cypher = template.format(**kwargs)
     return cypher
+
+class Record(object):
+    pass
+
+def discourse_query(corpus_context, discourse, annotations):
+    if annotations is None:
+        annotations = ['label']
+    template = '''MATCH (discourse_b0:Anchor)
+                WHERE discourse_b0.corpus = '{corpus}'
+AND discourse_b0.discourse = '{discourse}'
+AND discourse_b0.time = 0
+WITH discourse_b0
+MATCH p = (discourse_b0)-[:{word_rel_type}*0..]->()
+WITH COLLECT(p) AS paths, MAX(length(p)) AS maxLength
+WITH FILTER(path IN paths
+  WHERE length(path)= maxLength) AS longestPath
+WITH filter(n in nodes(head(longestPath)) WHERE n:{word_node_type}) as np
+RETURN {extracts}'''
+    extract_template = '''extract(n in np | n.{annotation}) as {annotation}'''
+    extracts = []
+    word = corpus_context.word
+    for a in annotations:
+        extract_string = extract_template.format(annotation = a)
+        extracts.append(extract_string)
+    query = template.format(discourse = discourse, corpus = corpus_context.corpus_name,
+                            word_rel_type = word.rel_type_alias,
+                            word_node_type = word.type,
+                            extracts = ', '.join(extracts))
+    results = corpus_context.graph.cypher.execute(query)
+    mod_results = []
+    for t in zip(*[results[0][a] for a in annotations]):
+        r = Record()
+        for i, a in enumerate(annotations):
+            setattr(r, a, t[i])
+        mod_results.append(r)
+    return mod_results

@@ -15,6 +15,7 @@ def data_to_graph_csvs(data, directory):
         Full path to a directory to store CSV files
     """
     node_path = os.path.join(directory,'{}_nodes.csv'.format(data.name))
+    contains_path = os.path.join(directory,'{}_contians.csv'.format(data.name))
     rel_paths = {}
     for x in data.types:
         level = x
@@ -77,7 +78,7 @@ def data_to_graph_csvs(data, directory):
                             nodes.append(node)
                             first_begin_node = -2
                             rel_writers[base_levels[0]].writerow(dict(from_id=nodes[first_begin_node]['id'],
-                                                to_id=node['id'], label=first.label, id = uuid1()))
+                                                to_id=node['id'], label=first.label, id = first.id))
                         end_node = nodes[-1]
                     elif len(base_levels) == 0:
                         node_ind += 1
@@ -105,12 +106,18 @@ def data_to_graph_csvs(data, directory):
                         t = d.type_properties['transcription']
                         if isinstance(t, list):
                             t = '.'.join(t)
+
                         additional['transcription'] = t
+                    for k,v in additional.items():
+                        if not v:
+                            additional[k] = 'NULL'
                 else:
                     label = level
                     additional = {}
+                if d.label == '':
+                    d.label = label
                 rel_writers[label].writerow(dict(from_id=begin_node['id'],
-                                to_id=end_node['id'], label=d.label, id = uuid1(),
+                                to_id=end_node['id'], label=d.label, id = d.id,
                                 **additional))
     for x in rfs.values():
         x.close()

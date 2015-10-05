@@ -24,8 +24,6 @@ def save_results(results, path, header = None):
                 header = results[0].__producer__.columns
             except AttributeError:
                 raise(Exception('Could not get the column header from the list, please specify the header.'))
-    print(header)
-    print(results)
     with open(path, 'w') as f:
         writer = DictWriter(f, header)
         writer.writeheader()

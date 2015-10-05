@@ -203,9 +203,7 @@ def export_discourse_spelling(corpus_context, discourse,
         Max number of words per line, set to -1 for a single line
     """
 
-    q = corpus_context.query_graph(corpus_context.word)
-    q = q.filter(corpus_context.word.discourse == discourse)
-    discourse = q.all()
+    discourse = corpus_context.discourse(discourse)
     with open(path, encoding='utf-8', mode='w') as f:
         count = 0
         for i, wt in enumerate(discourse):

@@ -3,6 +3,7 @@ import os
 import string
 import logging
 import operator
+from uuid import uuid1
 
 from polyglotdb.exceptions import DelimiterError
 
@@ -142,6 +143,7 @@ class BaseAnnotation(object):
         Tone of the annotation
     """
     def __init__(self, label, begin = None, end = None):
+        self.id = uuid1()
         self.label = label
         self.begin = begin
         self.end = end
@@ -198,6 +200,7 @@ class Annotation(BaseAnnotation):
         Dictionary of properties that are of the word type, not the token
     """
     def __init__(self, label, **kwargs):
+        self.id = uuid1()
         self.label = label
         self.begins = []
         self.ends = []
@@ -390,6 +393,7 @@ class DiscourseData(object):
         self.name = name
         self.data = {x.name: x for x in annotation_types}
         self.wav_path = None
+        self.is_timed = False
 
     def __getitem__(self, key):
         return self.data[key]
@@ -483,6 +487,8 @@ class DiscourseData(object):
 
     def add_annotations(self,**kwargs):
         for k,v in kwargs.items():
+            if not self.is_timed and self.data[k].base:
+                self.is_timed = v[-1].begin is not None
             self.data[k].add(v)
 
     def level_length(self, key):

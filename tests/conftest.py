@@ -147,7 +147,7 @@ def corpus_data_untimed():
                             Annotation('PL', phone = (3,4)),
                             Annotation('are', phone = (4,6)),
                             Annotation('cute', phone = (6,9)),
-                            Annotation('dogs', phone =  (9,12)),
+                            Annotation('dog', phone =  (9,12)),
                             Annotation('PL', phone =  (12,13)),
                             Annotation('are', phone =  (13,15)),
                             Annotation('too', phone =  (15,17)),
@@ -392,7 +392,7 @@ def graph_user():
 
 @pytest.fixture(scope='session')
 def graph_pw():
-    return 'testtest'
+    return 'test'
 
 @pytest.fixture(scope='session')
 def graph_host():
