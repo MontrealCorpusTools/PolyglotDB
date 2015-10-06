@@ -150,6 +150,7 @@ class BaseAnnotation(object):
         self.stress = None
         self.tone = None
         self.group = None
+        self.super_id = None
 
     def __iter__(self):
         return iter(self.label)
@@ -207,6 +208,7 @@ class Annotation(BaseAnnotation):
         self.references = []
         self.token_properties = {}
         self.type_properties = {}
+        self.super_id = None
         for k,v in kwargs.items():
             if isinstance(v, tuple):
                 self.references.append(k)

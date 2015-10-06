@@ -51,6 +51,9 @@ class Attribute(object):
         elif self.label == 'discourse':
             b_node = self.annotation.begin_alias
             return '{}.discourse'.format(b_node)
+        elif self.label == 'corpus':
+            b_node = self.annotation.begin_alias
+            return '{}.corpus'.format(b_node)
         return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
 
     @property
@@ -158,6 +161,18 @@ class AnnotationAttribute(Attribute):
     @property
     def rel_type_alias(self):
         return self.rel_type_template.format(t=self.type)
+
+    @property
+    def define_alias(self):
+        return '{}:{}'.format(self.alias, self.type)
+
+    @property
+    def define_begin_alias(self):
+        return '{}:Anchor'.format(self.begin_alias)
+
+    @property
+    def define_end_alias(self):
+        return '{}:Anchor'.format(self.end_alias)
 
     @property
     def alias(self):

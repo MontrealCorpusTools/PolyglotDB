@@ -30,8 +30,14 @@ def data_to_graph_csvs(data, directory):
             header += data.token_properties
             if 'transcription' in data.types and not data['transcription'].base:
                 header.append('transcription')
+            supertype = data[data.word_levels[0]].supertype
+            if supertype is not None:
+                header.append(supertype)
+        else:
+            supertype = data[k].supertype
+            if supertype is not None:
+                header.append(supertype)
         rel_writers[k] = csv.DictWriter(v, header, delimiter = ',')
-
     for x in rel_writers.values():
         x.writeheader()
     with open(node_path,'w') as nf:
@@ -77,8 +83,11 @@ def data_to_graph_csvs(data, directory):
                             node_writer.writerow(node)
                             nodes.append(node)
                             first_begin_node = -2
-                            rel_writers[base_levels[0]].writerow(dict(from_id=nodes[first_begin_node]['id'],
-                                                to_id=node['id'], label=first.label, id = first.id))
+                            row = dict(from_id=nodes[first_begin_node]['id'],
+                                                to_id=node['id'], label=first.label, id = first.id)
+
+                            row[data[b].supertype] = first.super_id
+                            rel_writers[base_levels[0]].writerow(row)
                         end_node = nodes[-1]
                     elif len(base_levels) == 0:
                         node_ind += 1
@@ -105,7 +114,7 @@ def data_to_graph_csvs(data, directory):
                     if 'transcription' in d.type_properties:
                         t = d.type_properties['transcription']
                         if isinstance(t, list):
-                            t = '.'.join(t)
+                            t = '.'.join(map(str,t))
 
                         additional['transcription'] = t
                     for k,v in additional.items():
@@ -116,6 +125,8 @@ def data_to_graph_csvs(data, directory):
                     additional = {}
                 if d.label == '':
                     d.label = label
+                if d.super_id is not None:
+                    additional[data[level].supertype] = d.super_id
                 rel_writers[label].writerow(dict(from_id=begin_node['id'],
                                 to_id=end_node['id'], label=d.label, id = d.id,
                                 **additional))

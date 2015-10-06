@@ -87,6 +87,7 @@ def timit_to_data(word_path, phone_path, annotation_types = None,
             p = phones.pop(0)
             if p.begin < beg:
                 continue
+            p.super_id = word.id
             found.append(p)
             if p.end == end:
                 found_all = True

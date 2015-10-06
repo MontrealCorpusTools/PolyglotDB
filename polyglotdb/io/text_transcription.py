@@ -26,7 +26,7 @@ def inspect_discourse_transcription(path):
     trans_delimiters = ['.', ';', ',']
 
     att = Attribute('transcription','tier','Transcription')
-    a = AnnotationType('transcription', None, None, attribute = att,
+    a = AnnotationType('transcription', None, 'spelling', attribute = att,
                                             base = True)
 
     if os.path.isdir(path):
@@ -59,6 +59,9 @@ def inspect_discourse_transcription(path):
 
                 a.add(trial, save = False)
     annotation_types = [a]
+    annotation_types.append(AnnotationType('spelling', None, None,
+                attribute = Attribute('spelling','spelling','Spelling'),
+                                            anchor = True))
     return annotation_types
 
 def transcription_text_to_data(path, annotation_types = None,
@@ -72,9 +75,6 @@ def transcription_text_to_data(path, annotation_types = None,
 
     for a in annotation_types:
         a.reset()
-    a = AnnotationType('spelling', None, None,
-                attribute = Attribute('spelling','spelling','Spelling'),
-                                            anchor = True)
     annotation_types.append(a)
 
     data = DiscourseData(name, annotation_types)
@@ -97,7 +97,7 @@ def transcription_text_to_data(path, annotation_types = None,
         if not line or line == '\n':
             continue
         for word in line:
-            annotations = dict()
+            annotations = {}
             trans = parse_transcription(word, data[n])
             if not trans_check and data[n].delimiter is not None and len(trans) > 1:
                 trans_check = True
@@ -106,7 +106,8 @@ def transcription_text_to_data(path, annotation_types = None,
                 continue
 
             word = Annotation(spell)
-
+            for x in trans:
+                x.super_id = word.id
             tier_elements = trans
             level_count = data.level_length(n)
             word.references.append(n)

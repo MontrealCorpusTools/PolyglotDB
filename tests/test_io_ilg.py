@@ -83,8 +83,8 @@ def test_ilg_basic(graph_db, ilg_test_dir):
     tier_att.delimiter = '.'
     ats = [AnnotationType('spelling', 'transcription',
                                         None, token = False, anchor = True),
-                                    AnnotationType('transcription', None, None,
-                                        token = False, base = True,
+                                    AnnotationType('transcription', None, 'spelling',
+                                        token = False, base = False,
                                         attribute = tier_att)]
     ats[1].trans_delimiter = '.'
     with CorpusContext(corpus_name = 'basic_ilg', **graph_db) as c:

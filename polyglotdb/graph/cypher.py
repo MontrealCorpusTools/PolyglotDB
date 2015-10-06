@@ -4,19 +4,20 @@ match_template = '''MATCH {}
 {}
 WITH {}'''
 
+anchor_template = '''({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})'''
 
 #contained_by_template = '''({containing_begin})-[{relationship_type_alias}]->({containing_end}),
 #p = shortestPath(({end_node_alias})-[:{annotation_type}*0..5]->({containing_end})),
 #p2 = shortestPath(({containing_begin})-[:{annotation_type}*0..5]->({begin_node_alias}))
 #'''
-contained_by_template = '''({begin_node_alias}:Anchor)<-[:{annotation_type}*0..20]-({containing_begin}:Anchor){relationship_type_alias}({containing_end}:Anchor)<-[:{annotation_type}*0..20]-({end_node_alias}:Anchor)'''
+contained_by_template = '''({begin_node_alias})<-[:{annotation_type}*0..20]-({containing_begin})-[:{rel_type}]->({containing_alias})-[:{rel_type}]->({containing_end})<-[:{annotation_type}*0..20]-({end_node_alias})'''
 
-time_contained_by_match_template = '''({containing_begin}:Anchor){relationship_type_alias}({containing_end}:Anchor)'''
+time_contained_by_match_template = '''({containing_begin})-[:{rel_type}]->({containing_alias})-[:{rel_type}]->({containing_end})'''
 time_contained_by_where_template = '''{containing_begin}.time <= {begin_node_alias}.time
 AND {containing_end}.time >= {end_node_alias}.time'''
 
-prec_template = '''({b_name}){name}'''
-foll_template = '''{name}({e_name})'''
+prec_template = '''({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->'''
+foll_template = '''-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})'''
 
 contains_template = '''{alias} = ({begin_node_alias}:Anchor)-[:{relationship_type_alias}*0..30]->({end_node_alias}:Anchor)'''
 
@@ -24,28 +25,8 @@ contains_template = '''{alias} = ({begin_node_alias}:Anchor)-[:{relationship_typ
 left_align_template = '''()<-[:{align_type}]-({begin_node_alias}:Anchor)'''
 right_align_template = '''()-[:{align_type}]->({end_node_alias}:Anchor)'''
 
-def create_annotation_set(query):
-    annotation_set = set()
-    for c in query._criterion:
-        annotation_set.update(c.annotations)
-    return annotation_set
-
-
-def generate_additional_where(query, criterion_ignored):
-    properties = []
-    for c in query._criterion:
-        if any(x.type != query.to_find.type for x in c.annotations):
-            criterion_ignored.append(c)
-            continue
-        properties.append(c.for_cypher())
-    if properties:
-        additional_where = '\nAND ' + '\nAND '.join(properties)
-    else:
-        additional_where = ''
-    return additional_where, criterion_ignored
-
-def generate_preceding_following(query, annotation_set):
-    to_add = sorted((x for x in annotation_set if x.type == query.to_find.type), key = lambda x: x.pos)
+def generate_preceding_following(query, withs):
+    to_add = sorted((x for x in query.annotation_set if x.type == query.to_find.type), key = lambda x: x.pos)
     prec_condition = ''
     foll_condition = ''
     with_properties = []
@@ -57,30 +38,74 @@ def generate_preceding_following(query, annotation_set):
                 continue
             if a.pos < 0:
                 while a.pos != current:
-                    b_name = query.to_find.begin_template.format(query.to_find.type,current)
-                    prec_condition += prec_template.format(name = ':{}'.format(query.to_find.type),
-                                                        b_name = b_name)
+                    kwargs = {}
+                    temp_a = AnnotationAttribute(query.to_find.type, current)
+                    kwargs['node_alias'] = figure_property(temp_a, 'alias', withs)
+                    kwargs['begin_alias'] = figure_property(temp_a, 'begin_alias', withs)
+                    kwargs['rel_type'] = temp_a.rel_type_alias
+                    prec_condition += prec_template.format(**kwargs)
                     current += 1
 
-                prec_condition += prec_template.format(name = a.rel_alias,
-                                                    b_name = a.begin_alias)
+                kwargs = {}
+                kwargs['node_alias'] = figure_property(a, 'alias', withs)
+                kwargs['begin_alias'] = figure_property(a, 'begin_alias', withs)
+                kwargs['rel_type'] = a.rel_type_alias
+                prec_condition += prec_template.format(**kwargs)
             elif a.pos > 0:
                 while a.pos != current:
-                    e_name = query.to_find.end_template.format(query.to_find.type, current)
-                    foll_condition += foll_template.format(name = ':{}'.format(query.to_find.type),
-                                                        e_name = e_name)
+                    kwargs = {}
+                    temp_a = AnnotationAttribute(query.to_find.type, current)
+                    kwargs['node_alias'] = figure_property(temp_a, 'alias', withs)
+                    kwargs['end_alias'] = figure_property(temp_a, 'end_alias', withs)
+                    kwargs['rel_type'] = temp_a.rel_type_alias
+                    foll_condition += foll_template.format(**kwargs)
                     current += 1
-                foll_condition += foll_template.format(name = a.rel_alias,
-                                                        e_name = a.end_alias)
-            current += 1
-            with_properties.extend(generate_relationship_with(a))
-    return prec_condition, foll_condition, with_properties
 
-def generate_contained_by_subqueries(query, criterion_ignored, withs, allowed_types):
+                kwargs = {}
+                kwargs['node_alias'] = figure_property(a, 'alias', withs)
+                kwargs['end_alias'] = figure_property(a, 'end_alias', withs)
+                kwargs['rel_type'] = a.rel_type_alias
+                foll_condition += foll_template.format(**kwargs)
+
+            current += 1
+            withs.update(generate_annotation_with(a))
+
+    kwargs = {}
+    kwargs['begin_alias'] = figure_property(query.to_find, 'begin_alias', withs)
+    kwargs['end_alias'] = figure_property(query.to_find, 'end_alias', withs)
+    kwargs['node_alias'] = figure_property(query.to_find, 'alias', withs)
+    kwargs['rel_type'] = query.to_find.rel_type_alias
+    anchor_string = anchor_template.format(**kwargs)
+
+    anchor_queries = query.anchor_subqueries()
+    criterion = []
+    withs.update(generate_annotation_with(query.to_find))
+    for k,v in anchor_queries.items():
+        criterion.extend(v)
+        withs.update(generate_annotation_with(k))
+    withs_string = ', '.join(withs)
+    where_string = criterion_to_where(criterion)
+    statement = match_template.format(prec_condition+anchor_string+foll_condition, where_string, withs_string)
+    return statement, withs
+
+
+def format_anchor_subquery(annotation, criterion, withs):
+    kwargs = {}
+    kwargs['begin_alias'] = figure_property(annotation, 'begin_alias', withs)
+    kwargs['end_alias'] = figure_property(annotation, 'end_alias', withs)
+    kwargs['node_alias'] = figure_property(annotation, 'alias', withs)
+    kwargs['rel_type'] = annotation.rel_type_alias
+    anchor_string = anchor_template.format(**kwargs)
+    where_string = criterion_to_where(criterion)
+    withs.update(generate_annotation_with(annotation))
+    with_string = ', '.join(withs)
+
+def generate_contained_by_subqueries(query, withs):
     contained_by_withs = []
     matches = []
     properties = []
 
+    query.is_timed = False
     for a in query._contained_by_annotations:
         if query.is_timed:
             match_string = time_contained_by_match_template.format(
@@ -93,35 +118,41 @@ def generate_contained_by_subqueries(query, criterion_ignored, withs, allowed_ty
                                     begin_node_alias = query.to_find.begin_alias,
                                     end_node_alias = query.to_find.end_alias))
         else:
-            match_string = contained_by_template.format(annotation_type = query.to_find.rel_type_alias,
-                                            relationship_type_alias = a.rel_alias,
-                                            containing_begin = a.begin_alias,
-                                            containing_end = a.end_alias,
-                                            begin_node_alias = query.to_find.begin_alias,
-                                            end_node_alias = query.to_find.end_alias)
+            kwargs = {}
+            kwargs['containing_begin'] = figure_property(a, 'begin_alias', withs)
+            kwargs['containing_end'] = figure_property(a, 'end_alias', withs)
+            kwargs['containing_alias'] = figure_property(a, 'alias', withs)
+            kwargs['annotation_type'] = query.to_find.rel_type_alias
+            kwargs['begin_node_alias'] = figure_property(query.to_find, 'begin_alias', withs)
+            kwargs['end_node_alias'] = figure_property(query.to_find, 'end_alias', withs)
+            kwargs['rel_type'] = a.rel_type_alias
+            match_string = contained_by_template.format(**kwargs)
         matches.append(match_string)
-        contained_by_withs.extend(generate_relationship_with(a))
-    criterion_still_ignored = []
-    for c in criterion_ignored:
-        if any(x.type not in allowed_types for x in c.annotations):
-            criterion_still_ignored.append(c)
-            continue
-        properties.append(c.for_cypher())
-    if properties:
-        where_string = 'WHERE ' + '\nAND '.join(properties)
-    else:
-        where_string = ''
+        contained_by_withs.extend(generate_annotation_with(a))
     withs.update(contained_by_withs)
     withs_string = ', '.join(withs)
+    properties = []
+    for x in query._criterion:
+        try:
+            if x.attribute.annotation in query._contained_by_annotations:
+                properties.append(x.for_cypher())
+        except AttributeError:
+            if x.first in query._contained_by_annotations or \
+                x.second in query._contained_by_annotations:
+                properties.append(x.for_cypher())
+
+    where_string = ''
+    if properties:
+        where_string = 'WHERE ' + 'AND '.join(properties)
     if matches:
         match_string = match_template.format(',\n'.join(matches),
                                                         where_string,
                                                         withs_string)
     else:
         match_string = ''
-    return match_string, withs, criterion_still_ignored
+    return match_string, withs
 
-def generate_contains_subqueries(query, criterion_ignored, withs, allowed_types):
+def generate_contains_subqueries(query, withs):
     matches = []
     contains_withs = []
     for a in query._contains_annotations:
@@ -131,50 +162,75 @@ def generate_contains_subqueries(query, criterion_ignored, withs, allowed_types)
                             end_node_alias = query.to_find.end_alias)
         matches.append(match_string)
         contains_withs.extend([a.alias])
-    criterion_still_ignored = []
-    properties = []
-    for c in criterion_ignored:
-        if any(x.type not in allowed_types for x in c.annotations):
-            criterion_still_ignored.append(c)
-            continue
-        properties.append(c.for_cypher())
-    if properties:
-        where_string = 'WHERE ' + '\nAND'.join(properties)
-    else:
-        where_string = ''
     withs.update(contains_withs)
     withs_string = ', '.join(withs)
+    properties = []
+    for x in query._criterion:
+        try:
+            if x.attribute.annotation in query._contains_annotations:
+                properties.append(x.for_cypher())
+        except AttributeError:
+            if x.first in query._contains_annotations or \
+                x.second in query._contains_annotations:
+                properties.append(x.for_cypher())
+    where_string = ''
+    if properties:
+        where_string = 'WHERE ' + 'AND '.join(properties)
     if matches:
         match_string = match_template.format(',\n'.join(matches),
                                                         where_string,
                                                         withs_string)
     else:
         match_string = ''
-    return match_string, withs, criterion_still_ignored
+    return match_string, withs
 
 
-def generate_relationship_with(relationship):
-    return [relationship.alias, relationship.begin_alias, relationship.end_alias]
+def generate_annotation_with(annotation):
+    return [annotation.alias, annotation.begin_alias, annotation.end_alias]
 
-def query_to_cypher(query):
-    kwargs = {'corpus_name': query.graph.corpus_name,
-                'preceding_condition': '',
-                'relationship_type_alias':query.to_find.rel_alias,
-                'begin_node_alias': query.to_find.begin_alias,
-                'end_node_alias': query.to_find.end_alias,
-                'following_condition': '',
-                'additional_match': '',
-                'with': '',
-                'additional_where': '',
-                'additional_columns': '',
-                'order_by': ''}
+def criterion_to_where(criterion):
+    properties = []
+    for c in criterion:
+        properties.append(c.for_cypher())
+    where_string = ''
+    if properties:
+        where_string += 'WHERE ' + 'AND '.join(properties)
+    return where_string
+
+def format_property_subquery(annotation, criterion, withs):
+    node_pattern = '''({})'''
+    node_string = node_pattern.format(annotation.define_alias)
+    where_string = criterion_to_where(criterion)
+    withs.add(annotation.alias)
+    with_string = ', '.join(withs)
+
+    return match_template.format(node_string, where_string, with_string), withs
+
+def figure_property(annotation, property_string, withs):
+    if getattr(annotation, property_string) in withs:
+        return getattr(annotation, property_string)
+    else:
+        return getattr(annotation, 'define_'+property_string)
+
+    return match_template.format(anchor_string, where_string, with_string), withs
+
+def create_relationship_subqueries(query, withs):
+    prec_foll_statement, withs = generate_preceding_following(query, withs)
+
+    contained_by_statement, withs = generate_contained_by_subqueries(query, withs)
+
+    contains_statement, withs = generate_contains_subqueries(query, withs)
+
+    return '\n'.join([prec_foll_statement, contained_by_statement, contains_statement]), withs
+
+aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
+
+distinct_template = '''RETURN {columns}{additional_columns}{order_by}'''
+
+def create_return_statement(query):
+    kwargs = {'order_by': '', 'additional_columns':''}
     if query._aggregate:
-        template = '''MATCH {preceding_condition}({begin_node_alias}:Anchor){relationship_type_alias}({end_node_alias}:Anchor){following_condition}
-                WHERE {begin_node_alias}.corpus = '{corpus_name}'
-                {additional_where}
-                WITH {with}
-                {additional_match}
-                RETURN {aggregates}{additional_columns}{order_by}'''
+        template = aggregate_template
         properties = []
         for g in query._group_by:
             properties.append(g.aliased_for_output())
@@ -183,60 +239,13 @@ def query_to_cypher(query):
         for a in query._aggregate:
             properties.append(a.for_cypher())
         kwargs['aggregates'] = ', '.join(properties)
-
     else:
-        template = '''MATCH {preceding_condition}({begin_node_alias}:Anchor){relationship_type_alias}({end_node_alias}:Anchor){following_condition}
-                WHERE {begin_node_alias}.corpus = '{corpus_name}'
-                {additional_where}
-                WITH {with}
-                {additional_match}
-                RETURN {columns}{additional_columns}{order_by}'''
-        kwargs['columns'] = ''
+        template = distinct_template
         properties = []
         for c in query._columns:
             properties.append(c.aliased_for_output())
         if properties:
             kwargs['columns'] = ', '.join(properties)
-        kwargs['relationship_alias'] = query.to_find.alias
-
-    withs = set(generate_relationship_with(query.to_find))
-    annotation_set = create_annotation_set(query)
-
-    criterion_ignored = []
-    where, criterion_ignored = generate_additional_where(query, criterion_ignored)
-    kwargs['additional_where'] += where
-
-    (kwargs['preceding_condition'],
-        kwargs['following_condition'],
-        precfoll_with) = generate_preceding_following(query, annotation_set)
-
-    withs.update(precfoll_with)
-    kwargs['with'] = ', '.join(withs)
-
-    other_to_finds = [x for x in annotation_set if x.type != query.to_find.type]
-    for o in other_to_finds:
-        if o.pos == 0:
-            if o.type in [x.type for x in query._contained_by_annotations]:
-                continue
-            if o.type in [x.type for x in query._contains_annotations]:
-                continue
-            query._contained_by_annotations.add(o) # FIXME
-
-    allowed_types = [query.to_find.type]+[x.type for x in query._contained_by_annotations]
-
-    match_string, withs, criterion_ignored = generate_contained_by_subqueries(query, criterion_ignored, withs, allowed_types)
-
-    if match_string:
-        kwargs['additional_match'] += '\n' + match_string
-
-    matches = []
-    allowed_types += [x.type for x in query._contains_annotations]
-
-    match_string, withs, criterion_ignored = generate_contains_subqueries(query, criterion_ignored, withs, allowed_types)
-
-    if match_string:
-        kwargs['additional_match'] += '\n' + match_string
-
 
     properties = []
     for c in query._order_by:
@@ -256,6 +265,28 @@ def query_to_cypher(query):
         properties.append(c.aliased_for_output())
     if properties:
         kwargs['additional_columns'] += ', ' + ', '.join(properties)
+    return template.format(**kwargs)
+
+def query_to_cypher(query):
+    kwargs = {'property_queries': '',
+            'anchor_queries': ''}
+    template = '''{property_queries}
+    {anchor_queries}
+    {relationship_queries}
+    {return_statement}'''
+    property_queries = query.property_subqueries()
+    anchor_queries = query.anchor_subqueries()
+    withs = set()
+    statements = []
+    for k, v in property_queries.items():
+        s, withs = format_property_subquery(k, v, withs)
+        statements.append(s)
+    if statements:
+        kwargs['property_queries'] = '\n'.join(statements)
+
+    kwargs['relationship_queries'], withs = create_relationship_subqueries(query, withs)
+
+    kwargs['return_statement'] = create_return_statement(query)
     cypher = template.format(**kwargs)
     return cypher
 

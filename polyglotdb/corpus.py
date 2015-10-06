@@ -105,7 +105,11 @@ class CorpusContext(object):
             raise(AttributeError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.relationship_types)))))
         return GraphQuery(self, annotation_type, self.is_timed)
 
-    def import_csvs(self, name, annotation_types, token_properties):
+    def import_csvs(self, data):
+        name, annotation_types = data.name, data.output_types
+        token_properties = data.token_properties
+        if 'transcription' in data and not data['transcription'].base:
+            token_properties.append('transcription')
         node_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
 
         node_import_statement = '''LOAD CSV WITH HEADERS FROM "%s" AS csvLine
@@ -122,30 +126,27 @@ discourse: csvLine.discourse })'''
             rel_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
 
             self.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
+            token_temp = '''{name}: csvLine.{name}'''
+            properties = []
             if at == 'word':
-                token_temp = '''{name}: csvLine.{name}'''
-                properties = []
                 for x in token_properties:
                     properties.append(token_temp.format(name=x))
-                if properties:
-                    prop_string = ', ' + ', '.join(properties)
-                else:
-                    prop_string = ''
-                rel_import_statement = '''USING PERIODIC COMMIT 5000
-    LOAD CSV WITH HEADERS FROM "%%s" AS csvLine
-    MERGE (n:%%s { label: csvLine.label%s , id: csvLine.id})
-    WITH n, csvLine
-    MATCH (begin_node:Anchor { id: toInt(csvLine.from_id)}),
-        (end_node:Anchor { id: toInt(csvLine.to_id)})
-    CREATE (begin_node)-[:r_%%s]->(n)-[:r_%%s]->(end_node)''' % prop_string
+                st = data[data.word_levels[0]].supertype
             else:
-                rel_import_statement = '''USING PERIODIC COMMIT 5000
-    LOAD CSV WITH HEADERS FROM "%s" AS csvLine
-    MERGE (n:%s { label: csvLine.label, id: csvLine.id})
-    WITH n, csvLine
-    MATCH (begin_node:Anchor { id: toInt(csvLine.from_id)}),
-        (end_node:Anchor { id: toInt(csvLine.to_id)})
-    CREATE (begin_node)-[:r_%s]->(n)-[:r_%s]->(end_node)'''
+                st = data[at].supertype
+            if st is not None:
+                properties.append(token_temp.format(name = st))
+            if properties:
+                prop_string = ', ' + ', '.join(properties)
+            else:
+                prop_string = ''
+            rel_import_statement = '''USING PERIODIC COMMIT 5000
+LOAD CSV WITH HEADERS FROM "%%s" AS csvLine
+MERGE (n:%%s { label: csvLine.label%s , id: csvLine.id})
+WITH n, csvLine
+MATCH (begin_node:Anchor { id: toInt(csvLine.from_id)}),
+    (end_node:Anchor { id: toInt(csvLine.to_id)})
+CREATE (begin_node)-[:r_%%s]->(n)-[:r_%%s]->(end_node)''' % prop_string
             self.graph.cypher.execute(rel_import_statement % (rel_path, at, at, at))
             self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
             self.graph.cypher.execute('CREATE INDEX ON :r_%s(label)' % at)
@@ -160,10 +161,7 @@ discourse: csvLine.discourse })'''
     def add_discourse(self, data):
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(data, self.temp_dir)
-        token_properties = data.token_properties
-        if 'transcription' in data and not data['transcription'].base:
-            token_properties.append('transcription')
-        self.import_csvs(data.name, data.output_types, token_properties)
+        self.import_csvs(data)
         self.relationship_types.update(data.output_types)
         if data.is_timed:
             self.is_timed = True
@@ -227,7 +225,7 @@ discourse: csvLine.discourse })'''
                         if isinstance(v, (int,float)):
                             prop, _ = get_or_create(session, WordNumericProperty, word = word, property_type = prop_type, value = v)
                         elif isinstance(v, (list, tuple)):
-                            prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = '.'.join(v))
+                            prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = '.'.join(map(str,v)))
                         else:
                             prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = v)
             session.commit()

@@ -27,7 +27,7 @@ with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter_contained_by(g.word.label == 'dog')
-
+    print(q.cypher())
     results = q.count()
     end = time.time()
     print('Count of \'aa\' phones in \'dog\':')

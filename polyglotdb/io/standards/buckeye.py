@@ -101,15 +101,18 @@ def buckeye_to_data(word_path, phone_path, annotation_types = None,
         end = w['end']
         for n in data.base_levels:
             if data[n].token:
+                found = []
                 if w[n] is None:
-                    found = [BaseAnnotation('?',w['begin'], w['end'])]
+                    ba = BaseAnnotation('?',w['begin'], w['end'])
+                    ba.super_id = word.id
+                    found.append(ba)
                 else:
                     expected = w[n]
-                    found = []
                     while len(found) < len(expected):
                         cur_phone = phones.pop(0)
                         if phone_match(cur_phone.label,expected[len(found)]) \
                             and cur_phone.end >= beg and cur_phone.begin <= end:
+                                cur_phone.super_id = word.id
                                 found.append(cur_phone)
 
                         if not len(phones) and i < len(words)-1:
@@ -117,9 +120,14 @@ def buckeye_to_data(word_path, phone_path, annotation_types = None,
                             return
             else:
                 if w[n] is None:
-                    found = [BaseAnnotation('?')]
+                    ba = BaseAnnotation('?')
+                    ba.super_id = word.id
+                    found.append(ba)
                 else:
-                    found = [BaseAnnotation(x) for x in w[n]]
+                    for x in w[n]:
+                        ba = BaseAnnotation(x)
+                        ba.super_id = word.id
+                        found.append(ba)
             level_count = data.level_length(n)
             word.references.append(n)
             word.begins.append(level_count)

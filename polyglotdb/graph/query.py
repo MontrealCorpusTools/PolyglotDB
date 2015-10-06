@@ -1,4 +1,6 @@
 
+from collections import defaultdict
+
 from .elements import (ContainsClauseElement,
                     RightAlignedClauseElement, LeftAlignedClauseElement)
 
@@ -8,10 +10,12 @@ from .cypher import query_to_cypher
 
 from polyglotdb.io.csv import save_results
 
+anchor_attributes = ['begin', 'end', 'duration', 'discourse']
+
 class GraphQuery(object):
-    def __init__(self, graph, to_find, is_timed):
+    def __init__(self, corpus, to_find, is_timed):
         self.is_timed = is_timed
-        self.graph = graph
+        self.corpus = corpus
         self.to_find = to_find
         self._criterion = []
         self._contained_by_annotations = set()
@@ -23,8 +27,45 @@ class GraphQuery(object):
         self._group_by = []
         self._aggregate = []
 
+    def property_subqueries(self):
+        queries = defaultdict(list)
+        for c in self._criterion:
+            if len(c.annotations) == 1:
+                a = c.annotations[0]
+                if a in self._contains_annotations:
+                    continue
+                if c.attribute.label not in anchor_attributes:
+                    queries[a].append(c)
+        return queries
+
+    def anchor_subqueries(self):
+        queries = defaultdict(list)
+        if self.corpus.corpus_name is not None:
+            queries[self.to_find].append(self.to_find.corpus == self.corpus.corpus_name)
+        for c in self._criterion:
+            if len(c.annotations) == 1:
+                a = c.annotations[0]
+                if c.attribute.label in anchor_attributes:
+                    queries[a].append(c)
+        return queries
+
+    @property
+    def annotation_set(self):
+        annotation_set = set()
+        for c in self._criterion:
+            annotation_set.update(c.annotations)
+        return annotation_set
+
     def filter(self, *args):
         self._criterion.extend(args)
+        other_to_finds = [x for x in self.annotation_set if x.type != self.to_find.type]
+        for o in other_to_finds:
+            if o.pos == 0:
+                if o.type in [x.type for x in self._contained_by_annotations]:
+                    continue
+                if o.type in [x.type for x in self._contains_annotations]:
+                    continue
+                self._contained_by_annotations.add(o) # FIXME
         return self
 
     def filter_contains(self, *args):
@@ -49,10 +90,12 @@ class GraphQuery(object):
 
     def filter_left_aligned(self, annotation_type):
         self._criterion.append(LeftAlignedClauseElement(self.to_find, annotation_type))
+        self._contained_by_annotations.add(annotation_type) # FIXME?
         return self
 
     def filter_right_aligned(self, annotation_type):
         self._criterion.append(RightAlignedClauseElement(self.to_find, annotation_type))
+        self._contained_by_annotations.add(annotation_type) # FIXME?
         return self
 
     def cypher(self):
@@ -82,21 +125,21 @@ class GraphQuery(object):
         return self
 
     def all(self):
-        return self.graph.graph.cypher.execute(self.cypher())
+        return self.corpus.graph.cypher.execute(self.cypher())
 
     def to_csv(self, path):
-        save_results(self.graph.graph.cypher.execute(self.cypher()), path)
+        save_results(self.corpus.graph.cypher.execute(self.cypher()), path)
 
     def count(self):
         self._aggregate = [Count()]
         cypher = self.cypher()
-        value = self.graph.graph.cypher.execute(cypher)
+        value = self.corpus.graph.cypher.execute(cypher)
         return value.one
 
     def aggregate(self, *args):
         self._aggregate = args
         cypher = self.cypher()
-        value = self.graph.graph.cypher.execute(cypher)
+        value = self.corpus.graph.cypher.execute(cypher)
         if self._group_by:
             return value
         else:

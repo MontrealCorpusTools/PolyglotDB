@@ -198,6 +198,7 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
                         ti.mark = '?'
                     a = BaseAnnotation(ti.mark,
                                 begin = phoneBegin, end = phoneEnd)
+                    a.super_id = word.id
                     tier_elements.append(a)
                 level_count = data.level_length(n)
                 word.references.append(n)

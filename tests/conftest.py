@@ -109,6 +109,37 @@ def corpus_data_timed():
                             Annotation('', phone =  (17,21))
                             ]
                     }
+
+    annotations['phone'][0].super_id = annotations['word'][0].id
+    annotations['phone'][1].super_id = annotations['word'][0].id
+    annotations['phone'][2].super_id = annotations['word'][0].id
+    annotations['phone'][3].super_id = annotations['word'][0].id
+    annotations['phone'][4].super_id = annotations['word'][1].id
+    annotations['phone'][5].super_id = annotations['word'][1].id
+    annotations['phone'][6].super_id = annotations['word'][2].id
+    annotations['phone'][7].super_id = annotations['word'][2].id
+    annotations['phone'][8].super_id = annotations['word'][2].id
+    annotations['phone'][9].super_id = annotations['word'][3].id
+    annotations['phone'][10].super_id = annotations['word'][3].id
+    annotations['phone'][11].super_id = annotations['word'][3].id
+    annotations['phone'][12].super_id = annotations['word'][3].id
+    annotations['phone'][13].super_id = annotations['word'][4].id
+    annotations['phone'][14].super_id = annotations['word'][4].id
+    annotations['phone'][15].super_id = annotations['word'][5].id
+    annotations['phone'][16].super_id = annotations['word'][5].id
+    annotations['phone'][17].super_id = annotations['word'][6].id
+    annotations['phone'][18].super_id = annotations['word'][7].id
+    annotations['phone'][19].super_id = annotations['word'][7].id
+    annotations['phone'][20].super_id = annotations['word'][7].id
+
+    annotations['word'][0].super_id = annotations['line'][0].id
+    annotations['word'][1].super_id = annotations['line'][0].id
+    annotations['word'][2].super_id = annotations['line'][0].id
+    annotations['word'][3].super_id = annotations['line'][1].id
+    annotations['word'][4].super_id = annotations['line'][1].id
+    annotations['word'][5].super_id = annotations['line'][1].id
+    annotations['word'][6].super_id = annotations['line'][2].id
+    annotations['word'][7].super_id = annotations['line'][2].id
     data.add_annotations(**annotations)
     return data
 
@@ -170,6 +201,49 @@ def corpus_data_untimed():
                             Annotation('', phone =  (17,21))
                             ]
                     }
+
+    annotations['phone'][0].super_id = annotations['word'][0].id
+    annotations['phone'][1].super_id = annotations['word'][0].id
+    annotations['phone'][2].super_id = annotations['word'][0].id
+    annotations['phone'][3].super_id = annotations['word'][0].id
+    annotations['phone'][4].super_id = annotations['word'][1].id
+    annotations['phone'][5].super_id = annotations['word'][1].id
+    annotations['phone'][6].super_id = annotations['word'][2].id
+    annotations['phone'][7].super_id = annotations['word'][2].id
+    annotations['phone'][8].super_id = annotations['word'][2].id
+    annotations['phone'][9].super_id = annotations['word'][3].id
+    annotations['phone'][10].super_id = annotations['word'][3].id
+    annotations['phone'][11].super_id = annotations['word'][3].id
+    annotations['phone'][12].super_id = annotations['word'][3].id
+    annotations['phone'][13].super_id = annotations['word'][4].id
+    annotations['phone'][14].super_id = annotations['word'][4].id
+    annotations['phone'][15].super_id = annotations['word'][5].id
+    annotations['phone'][16].super_id = annotations['word'][5].id
+    annotations['phone'][17].super_id = annotations['word'][6].id
+    annotations['phone'][18].super_id = annotations['word'][7].id
+    annotations['phone'][19].super_id = annotations['word'][7].id
+    annotations['phone'][20].super_id = annotations['word'][7].id
+
+    annotations['morpheme'][0].super_id = annotations['word'][0].id
+    annotations['morpheme'][1].super_id = annotations['word'][0].id
+    annotations['morpheme'][2].super_id = annotations['word'][1].id
+    annotations['morpheme'][3].super_id = annotations['word'][2].id
+    annotations['morpheme'][4].super_id = annotations['word'][3].id
+    annotations['morpheme'][5].super_id = annotations['word'][3].id
+    annotations['morpheme'][6].super_id = annotations['word'][4].id
+    annotations['morpheme'][7].super_id = annotations['word'][5].id
+    annotations['morpheme'][8].super_id = annotations['word'][6].id
+    annotations['morpheme'][9].super_id = annotations['word'][7].id
+
+    annotations['word'][0].super_id = annotations['line'][0].id
+    annotations['word'][1].super_id = annotations['line'][0].id
+    annotations['word'][2].super_id = annotations['line'][0].id
+    annotations['word'][3].super_id = annotations['line'][1].id
+    annotations['word'][4].super_id = annotations['line'][1].id
+    annotations['word'][5].super_id = annotations['line'][1].id
+    annotations['word'][6].super_id = annotations['line'][2].id
+    annotations['word'][7].super_id = annotations['line'][2].id
+
     data.add_annotations(**annotations)
     return data
 
@@ -218,6 +292,36 @@ def corpus_data_ur_sr():
                             Annotation('', sr =  (16,20))
                             ]
                     }
+
+    annotations['sr'][0].super_id = annotations['word'][0].id
+    annotations['sr'][1].super_id = annotations['word'][0].id
+    annotations['sr'][2].super_id = annotations['word'][0].id
+    annotations['sr'][3].super_id = annotations['word'][1].id
+    annotations['sr'][4].super_id = annotations['word'][1].id
+    annotations['sr'][5].super_id = annotations['word'][2].id
+    annotations['sr'][6].super_id = annotations['word'][2].id
+    annotations['sr'][7].super_id = annotations['word'][3].id
+    annotations['sr'][8].super_id = annotations['word'][3].id
+    annotations['sr'][9].super_id = annotations['word'][3].id
+    annotations['sr'][10].super_id = annotations['word'][3].id
+    annotations['sr'][11].super_id = annotations['word'][3].id
+    annotations['sr'][12].super_id = annotations['word'][4].id
+    annotations['sr'][13].super_id = annotations['word'][4].id
+    annotations['sr'][14].super_id = annotations['word'][5].id
+    annotations['sr'][15].super_id = annotations['word'][5].id
+    annotations['sr'][16].super_id = annotations['word'][6].id
+    annotations['sr'][17].super_id = annotations['word'][7].id
+    annotations['sr'][18].super_id = annotations['word'][7].id
+    annotations['sr'][19].super_id = annotations['word'][7].id
+
+    annotations['word'][0].super_id = annotations['line'][0].id
+    annotations['word'][1].super_id = annotations['line'][0].id
+    annotations['word'][2].super_id = annotations['line'][0].id
+    annotations['word'][3].super_id = annotations['line'][1].id
+    annotations['word'][4].super_id = annotations['line'][1].id
+    annotations['word'][5].super_id = annotations['line'][1].id
+    annotations['word'][6].super_id = annotations['line'][2].id
+    annotations['word'][7].super_id = annotations['line'][2].id
     data.add_annotations(**annotations)
     return data
 
@@ -314,8 +418,7 @@ def corpus_data_syllable_morpheme():
     levels = [AnnotationType('phone', None, 'word', base = True, token = True),
                 AnnotationType('syllable', 'phone', 'word'),
                 AnnotationType('morpheme', 'phone', 'word'),
-                AnnotationType('word','phone','line', anchor = True),
-                AnnotationType('line', 'word', None)]
+                AnnotationType('word','phone',None, anchor = True)]
     data = DiscourseData('test',levels)
     annotations = {'phone':[BaseAnnotation('b'),
                             BaseAnnotation('aa'),
@@ -357,6 +460,37 @@ def corpus_data_syllable_morpheme():
                             Annotation('packing', phone = (11,16)),
                             ]
                     }
+    annotations['phone'][0].super_id = annotations['word'][0].id
+    annotations['phone'][1].super_id = annotations['word'][0].id
+    annotations['phone'][2].super_id = annotations['word'][0].id
+    annotations['phone'][3].super_id = annotations['word'][0].id
+    annotations['phone'][4].super_id = annotations['word'][0].id
+    annotations['phone'][5].super_id = annotations['word'][0].id
+    annotations['phone'][6].super_id = annotations['word'][1].id
+    annotations['phone'][7].super_id = annotations['word'][1].id
+    annotations['phone'][8].super_id = annotations['word'][2].id
+    annotations['phone'][9].super_id = annotations['word'][2].id
+    annotations['phone'][10].super_id = annotations['word'][2].id
+    annotations['phone'][11].super_id = annotations['word'][3].id
+    annotations['phone'][12].super_id = annotations['word'][3].id
+    annotations['phone'][13].super_id = annotations['word'][3].id
+    annotations['phone'][14].super_id = annotations['word'][3].id
+    annotations['phone'][15].super_id = annotations['word'][3].id
+
+    annotations['syllable'][0].super_id = annotations['word'][0].id
+    annotations['syllable'][1].super_id = annotations['word'][0].id
+    annotations['syllable'][2].super_id = annotations['word'][1].id
+    annotations['syllable'][3].super_id = annotations['word'][2].id
+    annotations['syllable'][4].super_id = annotations['word'][3].id
+    annotations['syllable'][5].super_id = annotations['word'][3].id
+
+    annotations['morpheme'][0].super_id = annotations['word'][0].id
+    annotations['morpheme'][1].super_id = annotations['word'][0].id
+    annotations['morpheme'][2].super_id = annotations['word'][1].id
+    annotations['morpheme'][3].super_id = annotations['word'][2].id
+    annotations['morpheme'][4].super_id = annotations['word'][3].id
+    annotations['morpheme'][5].super_id = annotations['word'][3].id
+
     data.add_annotations(**annotations)
     return data
 
