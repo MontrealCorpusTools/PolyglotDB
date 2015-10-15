@@ -51,11 +51,14 @@ class RegexClauseElement(ClauseElement):
     sign = '=~'
 
 class ContainsClauseElement(ClauseElement):
-    template = "{} in extract(x in nodes({})| x.{})"
+    template = '''filter(x in nodes({path}) WHERE (x)-[:is_a]->({type} {{{label}: {value}}}))'''
+    #template = "{value} in extract(x in nodes({path})| x.{label})"
     def for_cypher(self):
-        return self.template.format(value_for_cypher(self.value),
-                                                self.attribute.annotation.alias,
-                                                key_for_cypher(self.attribute.label))
+        kwargs = {'path':self.attribute.annotation.alias,
+                'value':value_for_cypher(self.value),
+                'label': key_for_cypher(self.attribute.label),
+                'type': ':{}_type'.format(self.attribute.annotation.type)}
+        return self.template.format(**kwargs)
 
 class AlignmentClauseElement(ClauseElement):
     template = "{first}.label = {second}.label"

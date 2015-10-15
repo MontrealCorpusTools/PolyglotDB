@@ -34,14 +34,16 @@ class GraphQuery(object):
                 a = c.annotations[0]
                 if a in self._contains_annotations:
                     continue
+                if c.attribute.label == 'id':
+                    continue
                 if c.attribute.label not in anchor_attributes:
                     queries[a].append(c)
         return queries
 
     def anchor_subqueries(self):
         queries = defaultdict(list)
-        if self.corpus.corpus_name is not None:
-            queries[self.to_find].append(self.to_find.corpus == self.corpus.corpus_name)
+        #if self.corpus.corpus_name is not None:
+        #    queries[self.to_find].append(self.to_find.corpus == self.corpus.corpus_name)
         for c in self._criterion:
             if len(c.annotations) == 1:
                 a = c.annotations[0]
@@ -57,7 +59,7 @@ class GraphQuery(object):
         return annotation_set
 
     def filter(self, *args):
-        self._criterion.extend(args)
+        self._criterion.extend([x for x in args if x is not None])
         other_to_finds = [x for x in self.annotation_set if x.type != self.to_find.type]
         for o in other_to_finds:
             if o.pos == 0:

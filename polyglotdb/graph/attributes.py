@@ -48,13 +48,9 @@ class Attribute(object):
             b_node = self.annotation.begin_alias
             e_node = self.annotation.end_alias
             return '{}.time - {}.time'.format(e_node, b_node)
-        elif self.label == 'discourse':
-            b_node = self.annotation.begin_alias
-            return '{}.discourse'.format(b_node)
-        elif self.label == 'corpus':
-            b_node = self.annotation.begin_alias
-            return '{}.corpus'.format(b_node)
-        return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
+        elif self.label == 'id':
+            return '{}.id'.format(self.annotation.alias)
+        return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
 
     @property
     def alias(self):
@@ -88,6 +84,9 @@ class Attribute(object):
                 return RightAlignedClauseElement(self.annotation, other.annotation)
         except AttributeError:
             pass
+        if self.label == 'discourse':
+            self.annotation.discourse = other
+            return None
         return EqualClauseElement(self, other)
 
     def __ne__(self, other):
@@ -144,9 +143,11 @@ class AnnotationAttribute(Attribute):
     end_template = '{}_e{}'
     alias_template = '{prefix}node_{t}'
     rel_type_template = 'r_{t}'
-    def __init__(self, type, pos = 0):
+    def __init__(self, type, pos = 0, corpus = None):
         self.type = type
         self.pos = pos
+        self.corpus = corpus
+        self.discourse = None
 
     def __hash__(self):
         return hash((self.type, self.pos))
@@ -163,16 +164,45 @@ class AnnotationAttribute(Attribute):
         return self.rel_type_template.format(t=self.type)
 
     @property
+    def define_type_alias(self):
+        label_string = ':{}_type'.format(self.type)
+        return '{}{}'.format(self.type_alias, label_string)
+
+    @property
     def define_alias(self):
-        return '{}:{}'.format(self.alias, self.type)
+        label_string = ':{}'.format(self.type)
+        if self.corpus is not None:
+            label_string += ':{}'.format(self.corpus)
+        if self.discourse is not None:
+            label_string += ':{}'.format(self.discourse)
+        return '{}{}'.format(self.alias, label_string)
 
     @property
     def define_begin_alias(self):
-        return '{}:Anchor'.format(self.begin_alias)
+        label_string = ':Anchor'
+        if self.corpus is not None:
+            label_string += ':{}'.format(self.corpus)
+        if self.discourse is not None:
+            label_string += ':{}'.format(self.discourse)
+        return '{}{}'.format(self.begin_alias, label_string)
 
     @property
     def define_end_alias(self):
+        label_string = ':Anchor'
+        if self.corpus is not None:
+            label_string += ':{}'.format(self.corpus)
+        if self.discourse is not None:
+            label_string += ':{}'.format(self.discourse)
         return '{}:Anchor'.format(self.end_alias)
+
+    @property
+    def type_alias(self):
+        pre = 'type_'
+        if self.pos < 0:
+            pre += 'prev_{}_'.format(-1 * self.pos)
+        elif self.pos > 0:
+            pre += 'foll_{}_'.format(self.pos)
+        return self.alias_template.format(t=self.type, prefix = pre)
 
     @property
     def alias(self):
@@ -214,6 +244,6 @@ class AnnotationAttribute(Attribute):
                 pos = self.pos - 1
             else:
                 pos = self.pos + 1
-            return AnnotationAttribute(self.type, pos)
+            return AnnotationAttribute(self.type, pos, corpus = self.corpus)
         else:
             return Attribute(self, key)

@@ -49,6 +49,7 @@ class CorpusContext(object):
 
         self.relationship_types = set()
         self.is_timed = False
+        self.hierarchy = {}
 
     def load_variables(self):
         try:
@@ -56,13 +57,17 @@ class CorpusContext(object):
                 var = pickle.load(f)
             self.relationship_types = var['relationship_types']
             self.is_timed = var['is_timed']
+            self.hierarchy = var['hierarchy']
         except FileNotFoundError:
             self.relationship_types = set()
+            self.is_timed = False
+            self.hierarchy = {}
 
     def save_variables(self):
         with open(os.path.join(self.data_dir, 'variables'), 'wb') as f:
             pickle.dump({'relationship_types':self.relationship_types,
-                        'is_timed': self.is_timed}, f)
+                        'is_timed': self.is_timed,
+                        'hierarchy': self.hierarchy}, f)
 
     def __enter__(self):
         self.load_variables()
@@ -76,7 +81,7 @@ class CorpusContext(object):
 
     def __getattr__(self, key):
         if key in self.relationship_types:
-            return AnnotationAttribute(key)
+            return AnnotationAttribute(key, corpus = self.corpus_name)
         if key == 'lexicon':
             return Lexicon()
         elif key == 'inventory':
@@ -84,7 +89,9 @@ class CorpusContext(object):
         raise(AttributeError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.relationship_types)))))
 
     def reset_graph(self):
-        self.graph.cypher.execute('''MATCH (n {corpus: '%s'})-[r]->()-[r2]->({corpus: '%s'}) DELETE n, r, r2''' % (self.corpus_name, self.corpus_name))
+        self.graph.cypher.execute('''MATCH (:%s)-[r:is_a]->() DELETE r''' % (self.corpus_name))
+
+        self.graph.cypher.execute('''MATCH (n:%s)-[r]->()-[r2]->(:%s) DELETE n, r, r2''' % (self.corpus_name, self.corpus_name))
 
         self.relationship_types = set()
 
@@ -94,7 +101,7 @@ class CorpusContext(object):
         Base.metadata.create_all(self.engine)
 
     def remove_discourse(self, name):
-        self.graph.cypher.execute('''MATCH (n {corpus: '%s', discourse: '%s'})-[r]->() DELETE n, r'''
+        self.graph.cypher.execute('''MATCH (n:%s:%s)-[r]->() DELETE n, r'''
                                     % (self.corpus_name, name))
 
     def discourse(self, name, annotations = None):
@@ -113,12 +120,9 @@ class CorpusContext(object):
         node_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
 
         node_import_statement = '''LOAD CSV WITH HEADERS FROM "%s" AS csvLine
-CREATE (n:Anchor { id: toInt(csvLine.id), label: csvLine.label,
-time: toFloat(csvLine.time), corpus: csvLine.corpus,
-discourse: csvLine.discourse })'''
-        self.graph.cypher.execute(node_import_statement % node_path)
-        self.graph.cypher.execute('CREATE INDEX ON :Anchor(corpus)')
-        self.graph.cypher.execute('CREATE INDEX ON :Anchor(discourse)')
+CREATE (n:Anchor:%s:%s { id: toInt(csvLine.id), label: csvLine.label,
+time: toFloat(csvLine.time)})'''
+        self.graph.cypher.execute(node_import_statement % (node_path, self.corpus_name, data.name))
         self.graph.cypher.execute('CREATE INDEX ON :Anchor(time)')
         self.graph.cypher.execute('CREATE CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
 
@@ -135,21 +139,33 @@ discourse: csvLine.discourse })'''
             else:
                 st = data[at].supertype
             if st is not None:
-                properties.append(token_temp.format(name = st))
+                if data[st].anchor:
+                    st = 'word'
+                #properties.append(token_temp.format(name = st))
             if properties:
                 prop_string = ', ' + ', '.join(properties)
             else:
                 prop_string = ''
             rel_import_statement = '''USING PERIODIC COMMIT 5000
-LOAD CSV WITH HEADERS FROM "%%s" AS csvLine
-MERGE (n:%%s { label: csvLine.label%s , id: csvLine.id})
+LOAD CSV WITH HEADERS FROM "%s" AS csvLine
+MERGE (n:%s_type { label: csvLine.label%s })
 WITH n, csvLine
-MATCH (begin_node:Anchor { id: toInt(csvLine.from_id)}),
-    (end_node:Anchor { id: toInt(csvLine.to_id)})
-CREATE (begin_node)-[:r_%%s]->(n)-[:r_%%s]->(end_node)''' % prop_string
-            self.graph.cypher.execute(rel_import_statement % (rel_path, at, at, at))
+MERGE (t:%s:%s:%s {id: csvLine.id})
+with n, t, csvLine
+MATCH (begin_node:Anchor:%s:%s { id: toInt(csvLine.from_id)}),
+    (end_node:Anchor:%s:%s { id: toInt(csvLine.to_id)})
+CREATE (begin_node)-[:r_%s]->(t)-[:r_%s]->(end_node)
+CREATE (t)-[:is_a]->(n)'''
+            self.graph.cypher.execute(rel_import_statement % (rel_path, at,
+                                                    prop_string,
+                                                    at, self.corpus_name, data.name,
+                                                    self.corpus_name, data.name,
+                                                    self.corpus_name, data.name,
+                                                    at, at))
             self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
             self.graph.cypher.execute('CREATE INDEX ON :r_%s(label)' % at)
+            if st is not None:
+                self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at,st))
             if at == 'word':
                 for x in token_properties:
                     self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at, x))
@@ -167,7 +183,16 @@ CREATE (begin_node)-[:r_%%s]->(n)-[:r_%%s]->(end_node)''' % prop_string
             self.is_timed = True
         else:
             self.is_timed = False
-        self.update_sql_database(data)
+        #self.update_sql_database(data)
+        self.hierarchy = {}
+        for x in data.output_types:
+            if x == 'word':
+                self.hierarchy[x] = data[data.word_levels[0]].supertype
+            else:
+                supertype = data[x].supertype
+                if supertype is not None and data[supertype].anchor:
+                    supertype = 'word'
+                self.hierarchy[x] = supertype
 
     def update_sql_database(self, data):
         word_property_types = {}
