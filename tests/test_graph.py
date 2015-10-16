@@ -101,7 +101,17 @@ def test_query_coda_phone(graph_db):
         assert(len(list(q.all())) == 1)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.end == g.syllable.end)
+        print(q.cypher())
+        assert(len(list(q.all())) == 1)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_not_right_aligned(g.syllable)
+        print(q.cypher())
+        assert(len(list(q.all())) == 1)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.end != g.syllable.end)
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
@@ -113,7 +123,17 @@ def test_query_onset_phone(graph_db):
         assert(len(list(q.all())) == 1)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.begin == g.syllable.begin)
+        print(q.cypher())
+        assert(len(list(q.all())) == 1)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_not_left_aligned(g.syllable)
+        print(q.cypher())
+        assert(len(list(q.all())) == 1)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.begin != g.syllable.begin)
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
