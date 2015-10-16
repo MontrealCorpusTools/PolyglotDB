@@ -36,7 +36,9 @@ def data_to_graph_csvs(data, directory):
         else:
             supertype = data[k].supertype
             if supertype is not None:
-                header.append(supertype)
+                if data[supertype].anchor:
+                    supertype = 'word'
+                #header.append(supertype)
         rel_writers[k] = csv.DictWriter(v, header, delimiter = ',')
     for x in rel_writers.values():
         x.writeheader()
@@ -85,8 +87,11 @@ def data_to_graph_csvs(data, directory):
                             first_begin_node = -2
                             row = dict(from_id=nodes[first_begin_node]['id'],
                                                 to_id=node['id'], label=first.label, id = first.id)
+                            supertype = data[b].supertype
+                            if data[supertype].anchor:
+                                supertype = 'word'
 
-                            row[data[b].supertype] = first.super_id
+                            #row[supertype] = first.super_id
                             rel_writers[base_levels[0]].writerow(row)
                         end_node = nodes[-1]
                     elif len(base_levels) == 0:
@@ -125,8 +130,8 @@ def data_to_graph_csvs(data, directory):
                     additional = {}
                 if d.label == '':
                     d.label = label
-                if d.super_id is not None:
-                    additional[data[level].supertype] = d.super_id
+                #if d.super_id is not None:
+                #    additional[data[level].supertype] = d.super_id
                 rel_writers[label].writerow(dict(from_id=begin_node['id'],
                                 to_id=end_node['id'], label=d.label, id = d.id,
                                 **additional))

@@ -11,6 +11,8 @@ graph_db = {'host':'localhost', 'port': 7474,
             'user': 'neo4j', 'password': 'test'}
 
 with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
+    print(g.hierarchy)
+
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
 

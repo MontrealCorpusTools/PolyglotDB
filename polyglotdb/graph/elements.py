@@ -51,11 +51,14 @@ class RegexClauseElement(ClauseElement):
     sign = '=~'
 
 class ContainsClauseElement(ClauseElement):
-    template = "{} in extract(x in nodes({})| x.{})"
+    template = '''filter(x in nodes({path}) WHERE (x)-[:is_a]->({type} {{{label}: {value}}}))'''
+    #template = "{value} in extract(x in nodes({path})| x.{label})"
     def for_cypher(self):
-        return self.template.format(value_for_cypher(self.value),
-                                                self.attribute.annotation.alias,
-                                                key_for_cypher(self.attribute.label))
+        kwargs = {'path':self.attribute.annotation.alias,
+                'value':value_for_cypher(self.value),
+                'label': key_for_cypher(self.attribute.label),
+                'type': ':{}_type'.format(self.attribute.annotation.type)}
+        return self.template.format(**kwargs)
 
 class AlignmentClauseElement(ClauseElement):
     template = "{first}.label = {second}.label"
@@ -66,22 +69,25 @@ class AlignmentClauseElement(ClauseElement):
 
     @property
     def annotations(self):
-        return [self.first, self.second]
+        return [self.first]
 
     def for_cypher(self):
-        if self.side == 'left':
-            first = self.first.begin_alias
-            second = self.second.begin_alias
-        elif self.side == 'right':
-            first = self.first.end_alias
-            second = self.second.end_alias
-        else:
-            raise(NotImplementedError)
-        return self.template.format(first = first,
-                                second = second)
+        kwargs = {'first_rel_type': self.first.rel_type_alias,
+                'second_rel_type': self.second.rel_type_alias,
+                'node_alias': getattr(self.first, self.alias_to_use)}
+        return self.template.format(**kwargs)
 
 class RightAlignedClauseElement(AlignmentClauseElement):
-    side = 'right'
+    template = '''()-[:{first_rel_type}]->({node_alias})<-[:{second_rel_type}]-()'''
+    alias_to_use = 'end_alias'
 
 class LeftAlignedClauseElement(AlignmentClauseElement):
-    side = 'left'
+    template = '''()<-[:{first_rel_type}]-({node_alias})-[:{second_rel_type}]->()'''
+    alias_to_use = 'begin_alias'
+
+class NotRightAlignedClauseElement(RightAlignedClauseElement):
+    template = '''not ()-[:{first_rel_type}]->({node_alias})<-[:{second_rel_type}]-()'''
+
+class NotLeftAlignedClauseElement(LeftAlignedClauseElement):
+    template = '''not ()<-[:{first_rel_type}]-({node_alias})-[:{second_rel_type}]->()'''
+

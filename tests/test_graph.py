@@ -100,6 +100,23 @@ def test_query_coda_phone(graph_db):
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter_not_right_aligned(g.syllable)
+        print(q.cypher())
+        assert(len(list(q.all())) == 1)
+
+def test_query_onset_phone(graph_db):
+    with CorpusContext(corpus_name = 'syllable_morpheme', **graph_db) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter_left_aligned(g.syllable)
+        print(q.cypher())
+        assert(len(list(q.all())) == 1)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter_not_left_aligned(g.syllable)
+        print(q.cypher())
+        assert(len(list(q.all())) == 1)
+
 @pytest.mark.xfail
 def test_query_frequency(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
