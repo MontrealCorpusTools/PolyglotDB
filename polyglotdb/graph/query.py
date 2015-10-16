@@ -2,7 +2,9 @@
 from collections import defaultdict
 
 from .elements import (ContainsClauseElement,
-                    RightAlignedClauseElement, LeftAlignedClauseElement)
+                    AlignmentClauseElement,
+                    RightAlignedClauseElement, LeftAlignedClauseElement,
+                    NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
 from .func import Count
 
@@ -34,6 +36,8 @@ class GraphQuery(object):
                 a = c.annotations[0]
                 if a in self._contains_annotations:
                     continue
+                if isinstance(c, AlignmentClauseElement):
+                    continue
                 if c.attribute.label == 'id':
                     continue
                 if c.attribute.label not in anchor_attributes:
@@ -42,11 +46,12 @@ class GraphQuery(object):
 
     def anchor_subqueries(self):
         queries = defaultdict(list)
-        #if self.corpus.corpus_name is not None:
-        #    queries[self.to_find].append(self.to_find.corpus == self.corpus.corpus_name)
         for c in self._criterion:
             if len(c.annotations) == 1:
                 a = c.annotations[0]
+                if isinstance(c, AlignmentClauseElement):
+                    queries[a].append(c)
+                    continue
                 if c.attribute.label in anchor_attributes:
                     queries[a].append(c)
         return queries
@@ -92,12 +97,18 @@ class GraphQuery(object):
 
     def filter_left_aligned(self, annotation_type):
         self._criterion.append(LeftAlignedClauseElement(self.to_find, annotation_type))
-        self._contained_by_annotations.add(annotation_type) # FIXME?
         return self
 
     def filter_right_aligned(self, annotation_type):
         self._criterion.append(RightAlignedClauseElement(self.to_find, annotation_type))
-        self._contained_by_annotations.add(annotation_type) # FIXME?
+        return self
+
+    def filter_not_left_aligned(self, annotation_type):
+        self._criterion.append(NotLeftAlignedClauseElement(self.to_find, annotation_type))
+        return self
+
+    def filter_not_right_aligned(self, annotation_type):
+        self._criterion.append(NotRightAlignedClauseElement(self.to_find, annotation_type))
         return self
 
     def cypher(self):

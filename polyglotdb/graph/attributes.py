@@ -6,7 +6,8 @@ from .query import GraphQuery
 from .elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
                         InClauseElement, ContainsClauseElement, RegexClauseElement,
-                        RightAlignedClauseElement, LeftAlignedClauseElement)
+                        RightAlignedClauseElement, LeftAlignedClauseElement,
+                        NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
 class Attribute(object):
     """
@@ -90,6 +91,13 @@ class Attribute(object):
         return EqualClauseElement(self, other)
 
     def __ne__(self, other):
+        try:
+            if self.label == 'begin' and other.label == 'begin':
+                return NotLeftAlignedClauseElement(self.annotation, other.annotation)
+            elif self.label == 'end' and other.label == 'end':
+                return NotRightAlignedClauseElement(self.annotation, other.annotation)
+        except AttributeError:
+            pass
         return NotEqualClauseElement(self, other)
 
     def __gt__(self, other):

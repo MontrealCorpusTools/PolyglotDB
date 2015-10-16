@@ -146,7 +146,14 @@ time: toFloat(csvLine.time)})'''
                 prop_string = ', ' + ', '.join(properties)
             else:
                 prop_string = ''
-            rel_import_statement = '''USING PERIODIC COMMIT 5000
+            self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
+            self.graph.cypher.execute('CREATE INDEX ON :r_%s(label)' % at)
+            if st is not None:
+                self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at,st))
+            if at == 'word':
+                for x in token_properties:
+                    self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at, x))
+            rel_import_statement = '''USING PERIODIC COMMIT 1000
 LOAD CSV WITH HEADERS FROM "%s" AS csvLine
 MERGE (n:%s_type { label: csvLine.label%s })
 WITH n, csvLine
@@ -162,13 +169,6 @@ CREATE (t)-[:is_a]->(n)'''
                                                     self.corpus_name, data.name,
                                                     self.corpus_name, data.name,
                                                     at, at))
-            self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
-            self.graph.cypher.execute('CREATE INDEX ON :r_%s(label)' % at)
-            if st is not None:
-                self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at,st))
-            if at == 'word':
-                for x in token_properties:
-                    self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at, x))
         self.graph.cypher.execute('DROP CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
         self.graph.cypher.execute('''MATCH (n)
                                     WHERE n:Anchor
@@ -183,7 +183,7 @@ CREATE (t)-[:is_a]->(n)'''
             self.is_timed = True
         else:
             self.is_timed = False
-        #self.update_sql_database(data)
+        self.update_sql_database(data)
         self.hierarchy = {}
         for x in data.output_types:
             if x == 'word':

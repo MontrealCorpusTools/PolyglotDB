@@ -12,7 +12,7 @@ anchor_template = '''({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]
 #p = shortestPath(({end_node_alias})-[:{annotation_type}*0..5]->({containing_end})),
 #p2 = shortestPath(({containing_begin})-[:{annotation_type}*0..5]->({begin_node_alias}))
 #'''
-contained_by_template = '''({begin_node_alias})<-[:{annotation_type}*0..20]-({containing_begin})-[:{rel_type}]->({containing_alias})-[:{rel_type}]->({containing_end})<-[:{annotation_type}*0..20]-({end_node_alias})'''
+contained_by_template = '''({begin_node_alias})<-[:{annotation_type}*0..30]-({containing_begin})-[:{rel_type}]->({containing_alias})-[:{rel_type}]->({containing_end})<-[:{annotation_type}*0..30]-({end_node_alias})'''
 
 id_contained_by_template = '''({containing_alias})'''
 id_contained_by_where = '''{containing_alias}.id = {alias}.{containing_type}'''
