@@ -9,7 +9,7 @@ if [ ! -d "$HOME/miniconda/envs/test-environment" ]; then
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
-  conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION setuptools=18.1 atlas numpy sqlalchemy pytest
+  conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION setuptools=18.1 atlas numpy sqlalchemy pytest scipy scikit-learn networkx
   source activate test-environment
   which python
   pip install -q coveralls coverage py2neo textgrid acousticsim

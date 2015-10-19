@@ -37,3 +37,8 @@ script:
 # Calculate coverage
 after_success:
   - coveralls
+
+cache:
+  pip: true
+  directories:
+    - $HOME/miniconda
