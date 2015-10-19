@@ -13,17 +13,26 @@ from .io.graph import data_to_graph_csvs
 from .graph.query import GraphQuery
 from .graph.attributes import AnnotationAttribute
 
-from .sql.models import Base, Word, WordProperty, WordPropertyType, InventoryItem, AnnotationType, SoundFile
+from .sql.models import (Base, Word, WordProperty, WordPropertyType,
+                    InventoryItem, AnnotationType, SoundFile, Discourse)
 
 from sqlalchemy import create_engine
 
-from .sql.config import Session, session_scope
+from .sql.config import Session
 
 from .sql.helper import get_or_create
 
 from .sql.query import Lexicon
 
 from .graph.cypher import discourse_query
+
+from .acoustics.io import add_acoustic_info
+
+from .acoustics import acoustic_analysis
+
+from .acoustics.query import AcousticQuery
+
+from .exceptions import NoSoundFileError
 
 class CorpusContext(object):
     def __init__(self, user, password, corpus_name, host = 'localhost', port = 7474):
@@ -50,6 +59,19 @@ class CorpusContext(object):
         self.relationship_types = set()
         self.is_timed = False
         self.hierarchy = {}
+        self._has_sound_files = None
+
+    @property
+    def discourses(self):
+        q = self.sql_session.query(Discourse)
+        results = [d.name for d in q.all()]
+        return results
+
+    def discourse_sound_file(self, discourse):
+        q = self.sql_session.query(SoundFile).join(SoundFile.discourse)
+        q = q.filter(Discourse.name == discourse)
+        sound_file = q.first()
+        return sound_file
 
     def load_variables(self):
         try:
@@ -71,22 +93,28 @@ class CorpusContext(object):
 
     def __enter__(self):
         self.load_variables()
+        self.sql_session = Session()
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):
         self.save_variables()
         if exc_type is None:
             shutil.rmtree(self.temp_dir)
+            self.sql_session.commit()
             return True
+        else:
+            self.sql_session.rollback()
+        self.sql_session.expunge_all()
+        self.sql_session.close()
 
     def __getattr__(self, key):
         if key in self.relationship_types:
             return AnnotationAttribute(key, corpus = self.corpus_name)
         if key == 'lexicon':
-            return Lexicon()
+            return Lexicon(self)
         elif key == 'inventory':
-            return {}
-        raise(AttributeError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.relationship_types)))))
+            return Inventory(self)
+        raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.relationship_types)))))
 
     def reset_graph(self):
         self.graph.cypher.execute('''MATCH (:%s)-[r:is_a]->() DELETE r''' % (self.corpus_name))
@@ -109,20 +137,37 @@ class CorpusContext(object):
 
     def query_graph(self, annotation_type):
         if annotation_type.type not in self.relationship_types:
-            raise(AttributeError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.relationship_types)))))
+            raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.relationship_types)))))
         return GraphQuery(self, annotation_type, self.is_timed)
+
+    @property
+    def has_sound_files(self):
+        if self._has_sound_files is None:
+            self._has_sound_files = self.sql_session.query(SoundFile).first() is not None
+        return self._has_sound_files
+
+    def query_acoustics(self, graph_query):
+        if not self.has_sound_files:
+            raise(NoSoundFileError)
+        return AcousticQuery(self, graph_query)
+
+    def analyze_acoustics(self):
+        if not self.has_sound_files:
+            raise(NoSoundFileError)
+        acoustic_analysis(self)
 
     def import_csvs(self, data):
         name, annotation_types = data.name, data.output_types
         token_properties = data.token_properties
-        if 'transcription' in data and not data['transcription'].base:
-            token_properties.append('transcription')
+        type_properties = data.type_properties
         node_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
 
-        node_import_statement = '''LOAD CSV WITH HEADERS FROM "%s" AS csvLine
-CREATE (n:Anchor:%s:%s { id: toInt(csvLine.id), label: csvLine.label,
-time: toFloat(csvLine.time)})'''
-        self.graph.cypher.execute(node_import_statement % (node_path, self.corpus_name, data.name))
+        node_import_statement = '''LOAD CSV WITH HEADERS FROM "{node_path}" AS csvLine
+CREATE (n:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.id), label: csvLine.label,
+time: toFloat(csvLine.time)}})'''
+        kwargs = {'node_path': node_path, 'corpus_name': self.corpus_name,
+                    'discourse_name': data.name}
+        self.graph.cypher.execute(node_import_statement.format(**kwargs))
         self.graph.cypher.execute('CREATE INDEX ON :Anchor(time)')
         self.graph.cypher.execute('CREATE CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
 
@@ -130,11 +175,12 @@ time: toFloat(csvLine.time)})'''
             rel_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
 
             self.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
-            token_temp = '''{name}: csvLine.{name}'''
+            prop_temp = '''{name}: csvLine.{name}'''
             properties = []
             if at == 'word':
                 for x in token_properties:
-                    properties.append(token_temp.format(name=x))
+                    properties.append(prop_temp.format(name=x))
+                    self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at, x))
                 st = data[data.word_levels[0]].supertype
             else:
                 st = data[at].supertype
@@ -143,32 +189,40 @@ time: toFloat(csvLine.time)})'''
                     st = 'word'
                 #properties.append(token_temp.format(name = st))
             if properties:
-                prop_string = ', ' + ', '.join(properties)
+                token_prop_string = ', ' + ', '.join(properties)
             else:
-                prop_string = ''
+                token_prop_string = ''
+
+            properties = []
+            if at == 'word':
+                for x in type_properties:
+                    properties.append(prop_temp.format(name=x))
+                    self.graph.cypher.execute('CREATE INDEX ON :%s_type(%s)' % (at, x))
+            if properties:
+                type_prop_string = ', ' + ', '.join(properties)
+            else:
+                type_prop_string = ''
             self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
             self.graph.cypher.execute('CREATE INDEX ON :r_%s(label)' % at)
             if st is not None:
                 self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at,st))
-            if at == 'word':
-                for x in token_properties:
-                    self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at, x))
             rel_import_statement = '''USING PERIODIC COMMIT 1000
-LOAD CSV WITH HEADERS FROM "%s" AS csvLine
-MERGE (n:%s_type { label: csvLine.label%s })
+LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+MERGE (n:{annotation_type}_type:{corpus_name} {{ label: csvLine.label{type_property_string} }})
 WITH n, csvLine
-MERGE (t:%s:%s:%s {id: csvLine.id})
+MERGE (t:{annotation_type}:{corpus_name}:{discourse_name} {{id: csvLine.id, discourse: '{discourse_name}'{token_property_string} }})
 with n, t, csvLine
-MATCH (begin_node:Anchor:%s:%s { id: toInt(csvLine.from_id)}),
-    (end_node:Anchor:%s:%s { id: toInt(csvLine.to_id)})
-CREATE (begin_node)-[:r_%s]->(t)-[:r_%s]->(end_node)
+MATCH (begin_node:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.from_id)}}),
+    (end_node:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.to_id)}})
+CREATE (begin_node)-[:r_{annotation_type}]->(t)-[:r_{annotation_type}]->(end_node)
 CREATE (t)-[:is_a]->(n)'''
-            self.graph.cypher.execute(rel_import_statement % (rel_path, at,
-                                                    prop_string,
-                                                    at, self.corpus_name, data.name,
-                                                    self.corpus_name, data.name,
-                                                    self.corpus_name, data.name,
-                                                    at, at))
+            kwargs = {'path': rel_path, 'annotation_type': at,
+                        'type_property_string': type_prop_string,
+                        'token_property_string': token_prop_string,
+                        'corpus_name': self.corpus_name,
+                        'discourse_name': data.name}
+            statement = rel_import_statement.format(**kwargs)
+            self.graph.cypher.execute(statement)
         self.graph.cypher.execute('DROP CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
         self.graph.cypher.execute('''MATCH (n)
                                     WHERE n:Anchor
@@ -184,6 +238,7 @@ CREATE (t)-[:is_a]->(n)'''
         else:
             self.is_timed = False
         self.update_sql_database(data)
+        add_acoustic_info(self, data)
         self.hierarchy = {}
         for x in data.output_types:
             if x == 'word':
@@ -199,60 +254,61 @@ CREATE (t)-[:is_a]->(n)'''
         annotation_types = {}
         inventory_items = defaultdict(dict)
         words = {}
-        with session_scope() as session:
-            transcription_type, _ =  get_or_create(session, AnnotationType, label = 'transcription')
-            base_levels = data.base_levels
-            for i, level in enumerate(data.process_order):
-                for d in data[level]:
-                    if i != 0:
-                        continue
-                    trans = None
-                    if len(base_levels) > 0:
-                        b = base_levels[0]
-                        if b not in annotation_types:
-                            base_type, _ = get_or_create(session, AnnotationType, label = b)
-                            annotation_types[b] = base_type
-                        else:
-                            base_type = annotation_types[b]
-                        begin, end = d[b]
-                        base_sequence = data[b][begin:end]
-                        for j, first in enumerate(base_sequence):
-                            if first.label not in inventory_items[b]:
-                                p, _ = get_or_create(session, InventoryItem, label = first.label, annotation_type = base_type)
-                                inventory_items[b][first.label] = p
-                        if 'transcription' in d.type_properties:
-                            trans = d.type_properties['transcription']
-                        elif not data[b].token:
-                            trans = [x.label for x in base_sequence]
-                    if trans is None:
-                        trans = ''
-                    elif isinstance(trans, list):
-                        for seg in trans:
-                            if seg not in inventory_items['transcription']:
-                                p, _ = get_or_create(session, InventoryItem, label = seg, annotation_type = transcription_type)
-                                inventory_items['transcription'][seg] = p
-                        trans = '.'.join(trans)
-                    if (d.label, trans) not in words:
-                        word,_ = get_or_create(session, Word, defaults = {'frequency':0}, orthography = d.label, transcription = trans)
-                        words[(d.label, trans)] = word
-                    else:
-                        word = words[(d.label, trans)]
-                    word.frequency += 1
-                    for k,v in d.type_properties.items():
-                        if v is None:
-                            continue
-                        if k not in word_property_types:
 
-                            prop_type, _ = get_or_create(session, WordPropertyType, label = k)
-                            word_property_types[k] = prop_type
-                        else:
-                            prop_type = word_property_types[k]
-                        if isinstance(v, (int,float)):
-                            prop, _ = get_or_create(session, WordNumericProperty, word = word, property_type = prop_type, value = v)
-                        elif isinstance(v, (list, tuple)):
-                            prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = '.'.join(map(str,v)))
-                        else:
-                            prop, _ = get_or_create(session, WordProperty, word = word, property_type = prop_type, value = v)
-            session.commit()
+        discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
+        transcription_type, _ =  get_or_create(self.sql_session, AnnotationType, label = 'transcription')
+        base_levels = data.base_levels
+        for i, level in enumerate(data.process_order):
+            for d in data[level]:
+                if i != 0:
+                    continue
+                trans = None
+                if len(base_levels) > 0:
+                    b = base_levels[0]
+                    if b not in annotation_types:
+                        base_type, _ = get_or_create(self.sql_session, AnnotationType, label = b)
+                        annotation_types[b] = base_type
+                    else:
+                        base_type = annotation_types[b]
+                    begin, end = d[b]
+                    base_sequence = data[b][begin:end]
+                    for j, first in enumerate(base_sequence):
+                        if first.label not in inventory_items[b]:
+                            p, _ = get_or_create(self.sql_session, InventoryItem, label = first.label, annotation_type = base_type)
+                            inventory_items[b][first.label] = p
+                    if 'transcription' in d.type_properties:
+                        trans = d.type_properties['transcription']
+                    elif not data[b].token:
+                        trans = [x.label for x in base_sequence]
+                if trans is None:
+                    trans = ''
+                elif isinstance(trans, list):
+                    for seg in trans:
+                        if seg not in inventory_items['transcription']:
+                            p, _ = get_or_create(self.sql_session, InventoryItem, label = seg, annotation_type = transcription_type)
+                            inventory_items['transcription'][seg] = p
+                    trans = '.'.join(trans)
+                if (d.label, trans) not in words:
+                    word,_ = get_or_create(self.sql_session, Word, defaults = {'frequency':0}, orthography = d.label, transcription = trans)
+                    words[(d.label, trans)] = word
+                else:
+                    word = words[(d.label, trans)]
+                word.frequency += 1
+                for k,v in d.type_properties.items():
+                    if v is None:
+                        continue
+                    if k not in word_property_types:
+
+                        prop_type, _ = get_or_create(self.sql_session, WordPropertyType, label = k)
+                        word_property_types[k] = prop_type
+                    else:
+                        prop_type = word_property_types[k]
+                    if isinstance(v, (int,float)):
+                        prop, _ = get_or_create(self.sql_session, WordNumericProperty, word = word, property_type = prop_type, value = v)
+                    elif isinstance(v, (list, tuple)):
+                        prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = '.'.join(map(str,v)))
+                    else:
+                        prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = v)
+
 
 

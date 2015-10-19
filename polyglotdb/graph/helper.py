@@ -1,6 +1,9 @@
 import json
 
 
+anchor_attributes = ['begin', 'end', 'duration']
+type_attributes = ['label', 'transcription']
+
 def value_for_cypher(value):
     if isinstance(value, str):
         return "'{}'".format(value)

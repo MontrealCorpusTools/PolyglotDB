@@ -1,6 +1,6 @@
 from functools import partial
 
-from sqlalchemy import (Table, Column, Integer, String, MetaData, ForeignKey,
+from sqlalchemy import (Table, Column, Integer, SmallInteger, String, MetaData, ForeignKey,
                         Boolean,Float, PickleType, types, select )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, aliased
@@ -80,6 +80,13 @@ class InventoryProperty(Base):
 
     value = Column(String(250), nullable = False)
 
+class Discourse(Base):
+    __tablename__ = 'discourse'
+
+    id = Column(Integer, primary_key = True)
+
+    name = Column(String(250), nullable = False)
+
 class SoundFile(Base):
     __tablename__ = 'sound_file'
 
@@ -90,6 +97,11 @@ class SoundFile(Base):
     duration = Column(Float, nullable = False)
 
     sampling_rate = Column(Integer, nullable = False)
+
+    n_channels = Column(SmallInteger, nullable = False)
+
+    discourse_id = Column(Integer, ForeignKey('discourse.id'), nullable = False)
+    discourse = relationship(Discourse)
 
 class Formant(Base):
     __tablename__ = 'formant'

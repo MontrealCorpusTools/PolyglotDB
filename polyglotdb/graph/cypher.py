@@ -273,13 +273,16 @@ def create_return_statement(query):
         kwargs['additional_columns'] += ', ' + ', '.join(properties)
     return template.format(**kwargs)
 
-def generate_isa(annotation, withs):
+def generate_isa(annotation, withs, token_criterion = None):
     kwargs = {'node_alias':figure_property(annotation, 'alias', withs),
             'node_type_alias': figure_property(annotation, 'type_alias', withs)}
     isa_string = is_a_template.format(**kwargs)
     withs.update([annotation.alias,annotation.type_alias])
     withs_string = ', '.join(withs)
-    statement = match_template.format(isa_string, '', withs_string)
+    where_string = ''
+    if token_criterion is not None:
+        where_string = criterion_to_where(token_criterion)
+    statement = match_template.format(isa_string, where_string, withs_string)
 
     return statement, withs
 
@@ -292,13 +295,18 @@ def query_to_cypher(query):
     {relationship_queries}
     {type_fallback}
     {return_statement}'''
-    property_queries = query.property_subqueries()
+    type_property_queries = query.type_property_subqueries()
+    token_property_queries = query.token_property_subqueries()
     anchor_queries = query.anchor_subqueries()
     withs = set()
     statements = []
-    for k, v in property_queries.items():
+    for k, v in type_property_queries.items():
         s, withs = format_property_subquery(k, v, withs)
-        isa, withs = generate_isa(k, withs)
+        if k in token_property_queries:
+            criterion = token_property_queries[k]
+        else:
+            criterion = None
+        isa, withs = generate_isa(k, withs, criterion)
         statements.append('\n'.join([s,isa]))
     if statements:
         kwargs['property_queries'] = '\n'.join(statements)
@@ -311,9 +319,6 @@ def query_to_cypher(query):
     kwargs['return_statement'] = create_return_statement(query)
     cypher = template.format(**kwargs)
     return cypher
-
-class Record(object):
-    pass
 
 def discourse_query(corpus_context, discourse, annotations):
     if annotations is None:

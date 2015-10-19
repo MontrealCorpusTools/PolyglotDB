@@ -1,5 +1,5 @@
 
-from .helper import key_for_cypher
+from .helper import key_for_cypher, anchor_attributes, type_attributes
 
 from .query import GraphQuery
 
@@ -38,6 +38,12 @@ class Attribute(object):
     def __hash__(self):
         return hash((self.annotation, self.label))
 
+    def __str__(self):
+        return '{}.{}'.format(self.annotation.alias, self.label)
+
+    def __repr__(self):
+        return '<Attribute \'{}\'>'.format(str(self))
+
     def for_cypher(self):
         if self.label == 'begin':
             b_node = self.annotation.begin_alias
@@ -49,8 +55,9 @@ class Attribute(object):
             b_node = self.annotation.begin_alias
             e_node = self.annotation.end_alias
             return '{}.time - {}.time'.format(e_node, b_node)
-        elif self.label == 'id':
-            return '{}.id'.format(self.annotation.alias)
+
+        if self.label not in type_attributes:
+            return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
 
     @property
@@ -155,7 +162,7 @@ class AnnotationAttribute(Attribute):
         self.type = type
         self.pos = pos
         self.corpus = corpus
-        self.discourse = None
+        self.discourse_label = None
 
     def __hash__(self):
         return hash((self.type, self.pos))
@@ -174,6 +181,8 @@ class AnnotationAttribute(Attribute):
     @property
     def define_type_alias(self):
         label_string = ':{}_type'.format(self.type)
+        if self.corpus is not None:
+            label_string += ':{}'.format(self.corpus)
         return '{}{}'.format(self.type_alias, label_string)
 
     @property
@@ -181,7 +190,7 @@ class AnnotationAttribute(Attribute):
         label_string = ':{}'.format(self.type)
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
-        if self.discourse is not None:
+        if self.discourse_label is not None:
             label_string += ':{}'.format(self.discourse)
         return '{}{}'.format(self.alias, label_string)
 
@@ -190,7 +199,7 @@ class AnnotationAttribute(Attribute):
         label_string = ':Anchor'
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
-        if self.discourse is not None:
+        if self.discourse_label is not None:
             label_string += ':{}'.format(self.discourse)
         return '{}{}'.format(self.begin_alias, label_string)
 
@@ -199,9 +208,9 @@ class AnnotationAttribute(Attribute):
         label_string = ':Anchor'
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
-        if self.discourse is not None:
+        if self.discourse_label is not None:
             label_string += ':{}'.format(self.discourse)
-        return '{}:Anchor'.format(self.end_alias)
+        return '{}{}'.format(self.end_alias, label_string)
 
     @property
     def type_alias(self):

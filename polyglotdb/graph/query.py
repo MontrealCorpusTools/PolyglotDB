@@ -8,11 +8,12 @@ from .elements import (ContainsClauseElement,
 
 from .func import Count
 
+from .helper import anchor_attributes, type_attributes
+
 from .cypher import query_to_cypher
 
 from polyglotdb.io.csv import save_results
 
-anchor_attributes = ['begin', 'end', 'duration', 'discourse']
 
 class GraphQuery(object):
     def __init__(self, corpus, to_find, is_timed):
@@ -29,18 +30,30 @@ class GraphQuery(object):
         self._group_by = []
         self._aggregate = []
 
-    def property_subqueries(self):
+    def type_property_subqueries(self):
         queries = defaultdict(list)
         for c in self._criterion:
             if len(c.annotations) == 1:
+                if isinstance(c, AlignmentClauseElement):
+                    continue
                 a = c.annotations[0]
                 if a in self._contains_annotations:
                     continue
+                if c.attribute.label in type_attributes:
+                    queries[a].append(c)
+        return queries
+
+    def token_property_subqueries(self):
+        queries = defaultdict(list)
+        for c in self._criterion:
+            if len(c.annotations) == 1:
                 if isinstance(c, AlignmentClauseElement):
                     continue
-                if c.attribute.label == 'id':
+                a = c.annotations[0]
+                if a in self._contains_annotations:
                     continue
-                if c.attribute.label not in anchor_attributes:
+                if c.attribute.label not in type_attributes and \
+                    c.attribute.label not in anchor_attributes:
                     queries[a].append(c)
         return queries
 
@@ -122,15 +135,20 @@ class GraphQuery(object):
         self._order_by.append((field, descending))
         return self
 
+    def discourses(self, output_name = None):
+        if output_name is None:
+            output_name = 'discourse'
+        self = self.columns(self.to_find.discourse.column_name(output_name))
+        return self
+
+
     def times(self, begin_name = None, end_name = None):
-        if begin_name is not None:
-            self._additional_columns.append(self.to_find.begin.column_name('begin'))
-        else:
-            self._additional_columns.append(self.to_find.begin)
-        if end_name is not None:
-            self._additional_columns.append(self.to_find.end.column_name('end'))
-        else:
-            self._additional_columns.append(self.to_find.end)
+        if begin_name is None:
+            begin_name = 'begin'
+        if end_name is None:
+            end_name = 'end'
+        self = self.columns(self.to_find.begin.column_name(begin_name))
+        self = self.columns(self.to_find.end.column_name(end_name))
         return self
 
     def duration(self):

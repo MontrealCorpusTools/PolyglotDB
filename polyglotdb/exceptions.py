@@ -128,3 +128,12 @@ class BuckeyeParseError(PGError):
             self.details += '{}\n'.format(t)
 
         self.value = '\n'.join([self.main, self.details])
+
+
+## Acoustic exceptions
+
+class NoSoundFileError(PGError):
+    pass
+
+class GraphQueryError(PGError):
+    pass

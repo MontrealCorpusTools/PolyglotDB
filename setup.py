@@ -43,6 +43,7 @@ setup(name='polyglotdb',
       install_requires=[
           'sqlalchemy',
           'textgrid',
+          'acousticsim',
           'py2neo'
       ],
     cmdclass={'test': PyTest},

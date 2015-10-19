@@ -28,8 +28,7 @@ def data_to_graph_csvs(data, directory):
         header = ['from_id', 'to_id','label', 'id']
         if k == 'word':
             header += data.token_properties
-            if 'transcription' in data.types and not data['transcription'].base:
-                header.append('transcription')
+            header += data.type_properties
             supertype = data[data.word_levels[0]].supertype
             if supertype is not None:
                 header.append(supertype)
@@ -116,15 +115,15 @@ def data_to_graph_csvs(data, directory):
                 if data[level].anchor:
                     label = 'word'
                     additional = d.token_properties
-                    if 'transcription' in d.type_properties:
-                        t = d.type_properties['transcription']
-                        if isinstance(t, list):
-                            t = '.'.join(map(str,t))
-
-                        additional['transcription'] = t
+                    for k,v in d.type_properties.items():
+                        additional[k] = v
                     for k,v in additional.items():
+                        if isinstance(v, list):
+                            v = '.'.join(map(str,v))
                         if not v:
-                            additional[k] = 'NULL'
+                            v = 'NULL'
+                        additional[k] = v
+
                 else:
                     label = level
                     additional = {}

@@ -9,14 +9,26 @@ def test_basic_query(graph_db):
         print(q.cypher())
         assert(all(x.label == 'are' for x in q.all()))
 
+def test_discourse_query(graph_db):
+    with CorpusContext(corpus_name = 'untimed', **graph_db) as g:
+        q = g.query_graph(g.word).columns(g.word.discourse.column_name('discourse'))
+        print(q.cypher())
+        assert(all(x.discourse == 'test' for x in q.all()))
+
+
 def test_order_by(graph_db):
     with CorpusContext(corpus_name = 'timed', **graph_db) as g:
-        q = g.query_graph(g.word).filter(g.word.label == 'are').order_by(g.word.begin.column_name('begin')).times('begin','end')
+        q = g.query_graph(g.word).filter(g.word.label == 'are').order_by(g.word.begin.column_name('begin'))#.times('begin','end')
         prev = 0
         print(q.cypher())
+        print(q.all())
         for x in q.all():
             assert(x.begin > prev)
             prev = x.begin
+
+def test_basic_discourses_prop(graph_db):
+    with CorpusContext(corpus_name = 'timed', **graph_db) as g:
+        assert(g.discourses == ['test'])
 
 def test_query_previous(graph_db):
     with CorpusContext(corpus_name = 'untimed', **graph_db) as g:

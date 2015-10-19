@@ -418,30 +418,21 @@ class DiscourseData(object):
         return labels
 
     @property
-    def word_properties(self):
+    def type_properties(self):
         labels = []
         for x in self.types:
-            if self[x].anchor:
+            if not self[x].anchor:
                 continue
-            if self[x].base:
-                continue
-            if self[x].token:
-                continue
-            labels.append(x)
-        return labels
+            return list(self[x][0].type_properties.keys())
+
 
     @property
     def token_properties(self):
         labels = []
         for x in self.types:
-            if self[x].anchor:
+            if not self[x].anchor:
                 continue
-            if self[x].base:
-                continue
-            if not self[x].token:
-                continue
-            labels.append(x)
-        return labels
+            return list(self[x][0].token_properties.keys())
 
     def keys(self):
         return self.data.keys()

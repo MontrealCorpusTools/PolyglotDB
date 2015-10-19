@@ -7,8 +7,6 @@ from .helper import parse_transcription, AnnotationType, Attribute
 
 from polyglotdb.exceptions import DelimiterError, CorpusIntegrityError
 
-from polyglotdb.sql.config import session_scope
-
 from polyglotdb.sql.models import (Word, WordPropertyType, WordNumericProperty,
                                 WordProperty, InventoryItem, AnnotationType as SQLAnnotationType,
                                 InventoryProperty)
@@ -155,7 +153,7 @@ def load_corpus_csv(corpus_context, path, delimiter,
                                             'preview to the right.').format(a.name)))
     for a in annotation_types:
         a.reset()
-    with session_scope() as session, open(path, encoding='utf-8') as f:
+    with open(path, encoding='utf-8') as f:
         headers = f.readline()
         headers = headers.split(delimiter)
         if len(headers)==1:
@@ -166,16 +164,16 @@ def load_corpus_csv(corpus_context, path, delimiter,
         headers = annotation_types
         property_types = {}
         sql_annotation_types = {'transcription':SQLAnnotationType(label = 'transcription')}
-        session.add(sql_annotation_types['transcription'])
+        corpus_context.sql_session.add(sql_annotation_types['transcription'])
         for k in headers:
             if k.attribute.name in ['spelling','transcription','frequency']:
                 continue
             if k.attribute.att_type == 'tier':
                 at = SQLAnnotationType(label = k.attribute.display_name)
-                session.add(at)
+                corpus_context.sql_session.add(at)
                 sql_annotation_types[k.attribute.name] = at
             pt = WordPropertyType(label = k.attribute.display_name)
-            session.add(pt)
+            corpus_context.sql_session.add(pt)
             property_types[k.attribute.name] = pt
         inventory = {}
 
@@ -203,12 +201,12 @@ def load_corpus_csv(corpus_context, path, delimiter,
                 if (s, 'transcription') not in inventory:
                     seg = InventoryItem(label = s,
                         annotation_type = sql_annotation_types['transcription'])
-                    session.add(seg)
+                    corpus_context.sql_session.add(seg)
                     inventory[(s,'transcription')] = seg
 
             word = Word(orthography=d['spelling'], transcription = '.'.join(d['transcription']),
                         frequency = d.get('frequency',0))
-            session.add(word)
+            corpus_context.sql_session.add(word)
             for k in headers:
                 if k.attribute.name in ['spelling','transcription','frequency']:
                     continue
@@ -218,7 +216,7 @@ def load_corpus_csv(corpus_context, path, delimiter,
                         if (s, k.attribute.name) not in inventory:
                             seg = InventoryItem(label = s,
                                 annotation_type = sql_annotation_types[k.attribute.name])
-                            session.add(seg)
+                            corpus_context.sql_session.add(seg)
                             inventory[(s,k.attribute.name)] = seg
                     prop = WordProperty(word = word,
                             property_type = property_types[k.attribute.name],
@@ -232,13 +230,12 @@ def load_corpus_csv(corpus_context, path, delimiter,
                     prop = WordProperty(word = word,
                             property_type = property_types[k.attribute.name],
                             value = str(d[k.attribute.name]))
-                session.add(prop)
+                corpus_context.sql_session.add(prop)
         if not trans_check:
             e = DelimiterError(('Could not parse transcriptions with that delimiter. '
                                 '\n\Check that the transcription delimiter you typed '
                                 'in matches the one used in the file.'))
             raise(e)
-        session.commit()
 
 
 def load_feature_matrix_csv(name, path, delimiter, stop_check = None, call_back = None):

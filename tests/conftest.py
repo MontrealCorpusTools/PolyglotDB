@@ -566,4 +566,5 @@ def graph_db(graph_host, graph_port, graph_user, graph_pw,
         c.reset()
         annotation_types = inspect_discourse_textgrid(acoustic_path)
         load_discourse_textgrid(c, acoustic_path, annotation_types)
+        c.analyze_acoustics()
     return {'host':graph_host, 'port': graph_port, 'user': graph_user, 'password': graph_pw}
