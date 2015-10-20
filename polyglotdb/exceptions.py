@@ -137,3 +137,6 @@ class NoSoundFileError(PGError):
 
 class GraphQueryError(PGError):
     pass
+
+class CorpusConfigError(PGError):
+    pass

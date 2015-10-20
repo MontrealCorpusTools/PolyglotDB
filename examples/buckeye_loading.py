@@ -17,7 +17,7 @@ def call_back(*args):
     if args:
         print(' '.join(args))
 
-with CorpusContext(corpus_name = 'buckeye', **graph_db) as g:
+with CorpusContext('buckeye', **graph_db) as g:
     g.reset()
     beg = time.time()
     aio.load_directory_buckeye(g, path_to_buckeye,

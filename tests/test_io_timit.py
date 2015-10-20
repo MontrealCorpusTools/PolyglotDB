@@ -76,7 +76,7 @@ def test_load_words(timit_test_dir):
         assert(w == words[i])
 
 def test_load_discourse_timit(graph_db, timit_test_dir):
-    with CorpusContext(corpus_name = 'discourse_timit', **graph_db) as c:
+    with CorpusContext('discourse_timit', **graph_db) as c:
         c.reset()
         load_discourse_timit(c,os.path.join(timit_test_dir,'test.WRD'),
                             os.path.join(timit_test_dir,'test.PHN'))
@@ -85,7 +85,7 @@ def test_load_discourse_timit(graph_db, timit_test_dir):
         assert(q.count() == 2)
 
 def test_load_directory_timit(graph_db, timit_test_dir):
-    with CorpusContext(corpus_name = 'directory_timit', **graph_db) as c:
+    with CorpusContext('directory_timit', **graph_db) as c:
         c.reset()
         load_directory_timit(c, timit_test_dir)
 

@@ -2,11 +2,15 @@ import os
 import re
 import shutil
 import pickle
+import logging
+import time
+from collections import defaultdict
+
 from py2neo import Graph
 from py2neo.packages.httpstream import http
 http.socket_timeout = 9999
-from collections import defaultdict
 
+from .config import CorpusConfig
 
 from .io.graph import data_to_graph_csvs
 
@@ -22,7 +26,7 @@ from .sql.config import Session
 
 from .sql.helper import get_or_create
 
-from .sql.query import Lexicon
+from .sql.query import Lexicon, Inventory
 
 from .graph.cypher import discourse_query
 
@@ -32,34 +36,33 @@ from .acoustics import acoustic_analysis
 
 from .acoustics.query import AcousticQuery
 
-from .exceptions import NoSoundFileError
+from .exceptions import NoSoundFileError, CorpusConfigError, GraphQueryError
 
 class CorpusContext(object):
-    def __init__(self, user, password, corpus_name, host = 'localhost', port = 7474):
-        self.graph = Graph("http://{}:{}@{}:{}/db/data/".format(user, password, host, port))
-        self.corpus_name = corpus_name
-        self.base_dir = os.path.join(os.path.expanduser('~/Documents/SCT'), self.corpus_name)
+    def __init__(self, *args, **kwargs):
+        if len(args) == 0:
+            raise(CorpusConfigError('Need to specify a corpus name or CorpusConfig.'))
+        if isinstance(args[0], CorpusConfig):
+            self.config = args[0]
+        else:
+            self.config = CorpusConfig(*args, **kwargs)
+        self.config.init()
+        self.graph = Graph(self.config.graph_connection_string)
+        self.corpus_name = self.config.corpus_name
 
-        self.log_dir = os.path.join(self.base_dir, 'logs')
-        os.makedirs(self.log_dir, exist_ok = True)
-
-        self.temp_dir = os.path.join(self.base_dir, 'temp')
-        os.makedirs(self.temp_dir, exist_ok = True)
-
-        self.data_dir = os.path.join(self.base_dir, 'data')
-        os.makedirs(self.data_dir, exist_ok = True)
-
-        db_path = os.path.join(self.data_dir, self.corpus_name)
-        engine_string = 'sqlite:///{}.db'.format(db_path)
-        self.engine = create_engine(engine_string)
+        self.engine = create_engine(self.config.sql_connection_string)
         Session.configure(bind=self.engine)
-        if not os.path.exists(db_path):
+        if not os.path.exists(self.config.db_path):
             Base.metadata.create_all(self.engine)
 
         self.relationship_types = set()
         self.is_timed = False
         self.hierarchy = {}
         self._has_sound_files = None
+
+        self.lexicon = Lexicon(self)
+
+        self.inventory = Inventory(self)
 
     @property
     def discourses(self):
@@ -75,7 +78,7 @@ class CorpusContext(object):
 
     def load_variables(self):
         try:
-            with open(os.path.join(self.data_dir, 'variables'), 'rb') as f:
+            with open(os.path.join(self.config.data_dir, 'variables'), 'rb') as f:
                 var = pickle.load(f)
             self.relationship_types = var['relationship_types']
             self.is_timed = var['is_timed']
@@ -86,7 +89,7 @@ class CorpusContext(object):
             self.hierarchy = {}
 
     def save_variables(self):
-        with open(os.path.join(self.data_dir, 'variables'), 'wb') as f:
+        with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
             pickle.dump({'relationship_types':self.relationship_types,
                         'is_timed': self.is_timed,
                         'hierarchy': self.hierarchy}, f)
@@ -99,7 +102,10 @@ class CorpusContext(object):
     def __exit__(self, exc_type, exc, exc_tb):
         self.save_variables()
         if exc_type is None:
-            shutil.rmtree(self.temp_dir)
+            try:
+                shutil.rmtree(self.config.temp_dir)
+            except FileNotFoundError:
+                pass
             self.sql_session.commit()
             return True
         else:
@@ -110,10 +116,6 @@ class CorpusContext(object):
     def __getattr__(self, key):
         if key in self.relationship_types:
             return AnnotationAttribute(key, corpus = self.corpus_name)
-        if key == 'lexicon':
-            return Lexicon(self)
-        elif key == 'inventory':
-            return Inventory(self)
         raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.relationship_types)))))
 
     def reset_graph(self):
@@ -157,22 +159,29 @@ class CorpusContext(object):
         acoustic_analysis(self)
 
     def import_csvs(self, data):
+        log = logging.getLogger('{}_loading'.format(self.corpus_name))
+        log.info('Beginning to import {} into the graph database...'.format(data.name))
+        initial_begin = time.time()
         name, annotation_types = data.name, data.output_types
         token_properties = data.token_properties
         type_properties = data.type_properties
-        node_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
+        node_path = 'file:{}'.format(os.path.join(self.config.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
 
+        self.graph.cypher.execute('CREATE INDEX ON :Anchor(time)')
+        self.graph.cypher.execute('CREATE CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
         node_import_statement = '''LOAD CSV WITH HEADERS FROM "{node_path}" AS csvLine
 CREATE (n:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.id), label: csvLine.label,
 time: toFloat(csvLine.time)}})'''
         kwargs = {'node_path': node_path, 'corpus_name': self.corpus_name,
                     'discourse_name': data.name}
+        log.info('Begin loading anchor nodes...')
+        begin = time.time()
         self.graph.cypher.execute(node_import_statement.format(**kwargs))
-        self.graph.cypher.execute('CREATE INDEX ON :Anchor(time)')
-        self.graph.cypher.execute('CREATE CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
+        log.info('Finished loading anchor nodes!')
+        log.debug('Anchor node loading took {} seconds'.format(time.time()-begin))
 
         for at in annotation_types:
-            rel_path = 'file:{}'.format(os.path.join(self.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
+            rel_path = 'file:{}'.format(os.path.join(self.config.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
 
             self.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
             prop_temp = '''{name}: csvLine.{name}'''
@@ -222,15 +231,25 @@ CREATE (t)-[:is_a]->(n)'''
                         'corpus_name': self.corpus_name,
                         'discourse_name': data.name}
             statement = rel_import_statement.format(**kwargs)
+            log.info('Loading {} annotations...'.format(at))
+            begin = time.time()
             self.graph.cypher.execute(statement)
+            log.info('Finished loading {} annotations!'.format(at))
+            log.debug('{} annotation loading took: {} seconds.'.format(at, time.time() - begin))
+        log.info('Cleaning up...')
         self.graph.cypher.execute('DROP CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
         self.graph.cypher.execute('''MATCH (n)
                                     WHERE n:Anchor
                                     REMOVE n.id''')
+        log.info('Finished importing {} into the graph database!'.format(data.name))
+        log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
 
     def add_discourse(self, data):
+        log = logging.getLogger('{}_loading'.format(self.corpus_name))
+        log.info('Begin adding discourse {}...'.format(data.name))
+        begin = time.time()
         data.corpus_name = self.corpus_name
-        data_to_graph_csvs(data, self.temp_dir)
+        data_to_graph_csvs(data, self.config.temp_dir)
         self.import_csvs(data)
         self.relationship_types.update(data.output_types)
         if data.is_timed:
@@ -248,34 +267,41 @@ CREATE (t)-[:is_a]->(n)'''
                 if supertype is not None and data[supertype].anchor:
                     supertype = 'word'
                 self.hierarchy[x] = supertype
+        log.info('Finished adding discourse {}!'.format(data.name))
+        log.debug('Total time taken: {} seconds'.format(time.time() - begin))
 
     def update_sql_database(self, data):
-        word_property_types = {}
-        annotation_types = {}
-        inventory_items = defaultdict(dict)
-        words = {}
+        log = logging.getLogger('{}_loading'.format(self.corpus_name))
+        log.info('Beginning to import {} into the SQL database...'.format(data.name))
+        initial_begin = time.time()
 
         discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
-        transcription_type, _ =  get_or_create(self.sql_session, AnnotationType, label = 'transcription')
+        try:
+            transcription_type = self.inventory.get_annotation_type('transcription')
+        except:
+            transcription_type = AnnotationType(label = 'transcription')
+            self.sql_session.add(transcription_type)
+            self.inventory.type_cache['transcription'] = transcription_type
         base_levels = data.base_levels
-        for i, level in enumerate(data.process_order):
+        for level in data.output_types:
+            if not data[level].anchor:
+                continue
+            log.info('Beginning to import annotations...'.format(level))
+            begin = time.time()
             for d in data[level]:
-                if i != 0:
-                    continue
                 trans = None
                 if len(base_levels) > 0:
                     b = base_levels[0]
-                    if b not in annotation_types:
-                        base_type, _ = get_or_create(self.sql_session, AnnotationType, label = b)
-                        annotation_types[b] = base_type
-                    else:
-                        base_type = annotation_types[b]
+                    try:
+                        base_type = self.inventory.get_annotation_type(b)
+                    except:
+                        base_type = AnnotationType(label = b)
+                        self.sql_session.add(base_type)
+                        self.inventory.type_cache[b] = base_type
                     begin, end = d[b]
                     base_sequence = data[b][begin:end]
                     for j, first in enumerate(base_sequence):
-                        if first.label not in inventory_items[b]:
-                            p, _ = get_or_create(self.sql_session, InventoryItem, label = first.label, annotation_type = base_type)
-                            inventory_items[b][first.label] = p
+                        p = self.inventory.get_or_create_item(first.label, base_type)
                     if 'transcription' in d.type_properties:
                         trans = d.type_properties['transcription']
                     elif not data[b].token:
@@ -284,25 +310,19 @@ CREATE (t)-[:is_a]->(n)'''
                     trans = ''
                 elif isinstance(trans, list):
                     for seg in trans:
-                        if seg not in inventory_items['transcription']:
-                            p, _ = get_or_create(self.sql_session, InventoryItem, label = seg, annotation_type = transcription_type)
-                            inventory_items['transcription'][seg] = p
+                        p = self.inventory.get_or_create_item(first.label, transcription_type)
                     trans = '.'.join(trans)
-                if (d.label, trans) not in words:
-                    word,_ = get_or_create(self.sql_session, Word, defaults = {'frequency':0}, orthography = d.label, transcription = trans)
-                    words[(d.label, trans)] = word
-                else:
-                    word = words[(d.label, trans)]
+                word = self.lexicon.get_or_create_word(d.label, trans)
                 word.frequency += 1
                 for k,v in d.type_properties.items():
                     if v is None:
                         continue
-                    if k not in word_property_types:
-
-                        prop_type, _ = get_or_create(self.sql_session, WordPropertyType, label = k)
-                        word_property_types[k] = prop_type
-                    else:
-                        prop_type = word_property_types[k]
+                    try:
+                        prop_type = self.lexicon.get_property_type(k)
+                    except:
+                        prop_type = WordPropertyType(label = k)
+                        self.sql_session.add(prop_type)
+                        self.lexicon.prop_type_cache[k] = prop_type
                     if isinstance(v, (int,float)):
                         prop, _ = get_or_create(self.sql_session, WordNumericProperty, word = word, property_type = prop_type, value = v)
                     elif isinstance(v, (list, tuple)):
@@ -310,5 +330,8 @@ CREATE (t)-[:is_a]->(n)'''
                     else:
                         prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = v)
 
-
+            log.info('Finished importing {} annotations!'.format(level))
+            log.debug('Importing {} annotations took: {} seconds.'.format(level, time.time()-begin))
+        log.info('Finished importing {} to the SQL database!'.format(data.name))
+        log.debug('SQL importing took: {} seconds'.format(time.time() - initial_begin))
 

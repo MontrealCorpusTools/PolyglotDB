@@ -6,6 +6,7 @@ from polyglotdb.io.helper import BaseAnnotation, Annotation, AnnotationType, Dis
 from polyglotdb.io.textgrid import inspect_discourse_textgrid, load_discourse_textgrid
 
 from polyglotdb.corpus import CorpusContext
+from polyglotdb.config import CorpusConfig
 
 
 @pytest.fixture(scope='session')
@@ -536,35 +537,58 @@ def graph_host():
 def graph_port():
     return 7474
 
+@pytest.fixture(scope='session')
+def graph_db(graph_host, graph_port, graph_user, graph_pw):
+    return dict(graph_host = graph_host,
+                                    graph_port = graph_port,
+                                    graph_user = graph_user,
+                                    graph_pw = graph_pw)
+
 
 @pytest.fixture(scope='session')
-def graph_db(graph_host, graph_port, graph_user, graph_pw,
-            corpus_data_untimed, corpus_data_timed, corpus_data_syllable_morpheme,
-            corpus_data_syllable_morpheme_srur, corpus_data_ur_sr,
-            textgrid_test_dir):
-    with CorpusContext(graph_user, graph_pw, 'untimed', graph_host, graph_port) as c:
+def untimed_config(graph_db,corpus_data_untimed):
+    config = CorpusConfig('untimed', **graph_db)
+    with CorpusContext(config) as c:
         c.reset()
         c.add_discourse(corpus_data_untimed)
+    return config
 
-    with CorpusContext(graph_user, graph_pw, 'timed', graph_host, graph_port) as c:
+@pytest.fixture(scope='session')
+def timed_config(graph_db, corpus_data_timed):
+    config = CorpusConfig('timed', **graph_db)
+    with CorpusContext(config) as c:
         c.reset()
         c.add_discourse(corpus_data_timed)
+    return config
 
-    with CorpusContext(graph_user, graph_pw, 'syllable_morpheme', graph_host, graph_port) as c:
+@pytest.fixture(scope='session')
+def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme):
+    config = CorpusConfig('syllable_morpheme', **graph_db)
+    with CorpusContext(config) as c:
         c.reset()
         c.add_discourse(corpus_data_syllable_morpheme)
+    return config
+
 
     #with CorpusContext(graph_user, graph_pw, 'syllable_morpheme_srur', graph_host, graph_port) as c:
     #    c.add_discourse(corpus_data_syllable_morpheme_srur)
 
-    with CorpusContext(graph_user, graph_pw, 'ur_sr', graph_host, graph_port) as c:
+@pytest.fixture(scope='session')
+def ursr_config(graph_db, corpus_data_ur_sr):
+    config = CorpusConfig('ur_sr', **graph_db)
+    with CorpusContext(config) as c:
         c.reset()
         c.add_discourse(corpus_data_ur_sr)
+    return config
+
+@pytest.fixture(scope='session')
+def acoustic_config(graph_db, textgrid_test_dir):
+    config = CorpusConfig('acoustic', **graph_db)
 
     acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
-    with CorpusContext(graph_user, graph_pw, 'acoustic', graph_host, graph_port) as c:
+    with CorpusContext(config) as c:
         c.reset()
         annotation_types = inspect_discourse_textgrid(acoustic_path)
         load_discourse_textgrid(c, acoustic_path, annotation_types)
         c.analyze_acoustics()
-    return {'host':graph_host, 'port': graph_port, 'user': graph_user, 'password': graph_pw}
+    return config

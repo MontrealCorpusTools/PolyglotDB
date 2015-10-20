@@ -58,7 +58,7 @@ def test_load_words(buckeye_test_dir):
         assert(w == words[i])
 
 def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
-    with CorpusContext(corpus_name = 'discourse_buckeye', **graph_db) as c:
+    with CorpusContext('discourse_buckeye', **graph_db) as c:
         c.reset()
         load_discourse_buckeye(c,os.path.join(buckeye_test_dir,'test.words'),
                             os.path.join(buckeye_test_dir,'test.phones'))
@@ -67,7 +67,7 @@ def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
         assert(q.count() == 3)
 
 def test_load_directory_buckeye(graph_db, buckeye_test_dir):
-    with CorpusContext(corpus_name = 'directory_buckeye', **graph_db) as c:
+    with CorpusContext('directory_buckeye', **graph_db) as c:
         c.reset()
         load_directory_buckeye(c, buckeye_test_dir)
 

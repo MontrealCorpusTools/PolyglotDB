@@ -12,7 +12,7 @@ from polyglotdb.corpus import CorpusContext
 
 def test_to_csv(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export.csv')
-    with CorpusContext(corpus_name = 'acoustic', **graph_db) as g:
+    with CorpusContext('acoustic', **graph_db) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.order_by(g.phone.begin.column_name('begin')).duration()
         q.to_csv(export_path)
@@ -51,12 +51,12 @@ def test_inspect_example(csv_test_dir):
 def test_corpus_csv(graph_db, csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'example.txt')
 
-    with CorpusContext(corpus_name = 'basic_csv', **graph_db) as c:
+    with CorpusContext('basic_csv', **graph_db) as c:
         c.reset()
         with pytest.raises(DelimiterError):
             load_corpus_csv(c, example_path,delimiter='\t')
 
-    with CorpusContext(corpus_name = 'basic_csv', **graph_db) as c:
+    with CorpusContext('basic_csv', **graph_db) as c:
         load_corpus_csv(c,example_path,delimiter=',')
 
         assert(c.lexicon['mata'].frequency == 2)
@@ -66,7 +66,7 @@ def test_corpus_csv(graph_db, csv_test_dir):
 def test_corpus_csv_tiered(graph_db, csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'tiered.txt')
 
-    with CorpusContext(corpus_name = 'tiered_csv', **graph_db) as c:
+    with CorpusContext('tiered_csv', **graph_db) as c:
         c.reset()
         load_corpus_csv(c,example_path,delimiter=',')
 

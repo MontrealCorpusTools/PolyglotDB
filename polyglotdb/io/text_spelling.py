@@ -80,7 +80,7 @@ def spelling_text_to_data(path, annotation_types = None,
         annotations = {}
         for word in line:
             spell = word.strip()
-            spell = ''.join(x for x in spell if not x in data['spelling'].ignored_characters)
+            spell = ''.join(x for x in spell if not x in data['word'].ignored_characters)
             if spell == '':
                 continue
             word = Annotation(spell)
@@ -97,7 +97,7 @@ def spelling_text_to_data(path, annotation_types = None,
                 word.begins.append(level_count)
                 word.ends.append(level_count + len(tier_elements))
                 annotations[n] = tier_elements
-            annotations['spelling'] = [word]
+            annotations['word'] = [word]
             data.add_annotations(**annotations)
 
     return data

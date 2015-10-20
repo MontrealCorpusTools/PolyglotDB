@@ -25,7 +25,7 @@ def test_inspect_ilg_directory(ilg_test_dir):
 
 def test_export_ilg(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'export_ilg.txt')
-    with CorpusContext(corpus_name = 'untimed', **graph_db) as c:
+    with CorpusContext('untimed', **graph_db) as c:
         export_discourse_ilg(c, 'test', export_path,
                 annotations = ['label','transcription'], words_per_line = 3)
     expected_lines = ['cats are cute',
@@ -69,7 +69,7 @@ def test_ilg_data(ilg_test_dir):
     a.ends.append(6)
     expected_words.append(a)
 
-    assert(data['spelling']._list == expected_words)
+    assert(data['word']._list == expected_words)
     assert(data['transcription']._list == [BaseAnnotation('a'),
                                         BaseAnnotation('b'),
                                         BaseAnnotation('a'),
@@ -87,7 +87,7 @@ def test_ilg_basic(graph_db, ilg_test_dir):
                                         token = False, base = False,
                                         attribute = tier_att)]
     ats[1].trans_delimiter = '.'
-    with CorpusContext(corpus_name = 'basic_ilg', **graph_db) as c:
+    with CorpusContext('basic_ilg', **graph_db) as c:
         c.reset()
         load_discourse_ilg(c, basic_path, ats)
         assert(c.lexicon['a'].frequency == 2)
@@ -102,7 +102,7 @@ def test_ilg_mismatched(graph_db, ilg_test_dir):
                                         attribute = Attribute('transcription','tier'))]
     ats[1].trans_delimiter = '.'
 
-    with CorpusContext(corpus_name = 'mismatch', **graph_db) as c:
+    with CorpusContext('mismatch', **graph_db) as c:
         c.reset()
         with pytest.raises(ILGWordMismatchError):
             load_discourse_ilg(c, mismatched_path, ats)

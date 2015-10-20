@@ -1,7 +1,7 @@
 
-from polyglotdb.sql.models import Pitch, Formant, SoundFile, Discourse
+from polyglotdb.sql.models import Pitch, Formants, SoundFile, Discourse
 
-from .results import PitchResult
+from .results import PitchResult, FormantsResult
 
 class AcousticQuery(object):
     def __init__(self, corpus, graph_query):
@@ -41,7 +41,16 @@ class AcousticQuery(object):
         self.elements.columns.append('pitch')
         return self.elements
 
-    def formants(self, *args):
+    def formants(self, algorithm):
+
+        for i, element in enumerate(self.elements):
+            begin, end = element.begin, element.end
+            q = self.corpus.sql_session.query(Formants).join(SoundFile, Discourse)
+            q = q.filter(Formants.time >= begin, Formants.time <= end)
+            q = q.filter(Discourse.name == element.discourse)
+            q = q.filter(Formants.source == algorithm)
+            self.elements[i].formants = FormantsResult(q.all())
+        self.acoustic_elements.append('formants')
         return self
 
     def intensity(self, *args):

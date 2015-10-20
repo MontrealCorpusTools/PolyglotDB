@@ -103,8 +103,8 @@ class SoundFile(Base):
     discourse_id = Column(Integer, ForeignKey('discourse.id'), nullable = False)
     discourse = relationship(Discourse)
 
-class Formant(Base):
-    __tablename__ = 'formant'
+class Formants(Base):
+    __tablename__ = 'formants'
 
     id = Column(Integer, primary_key = True)
 

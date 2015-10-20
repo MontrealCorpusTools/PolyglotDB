@@ -55,14 +55,14 @@ def test_basic(textgrid_test_dir):
 
 def test_load(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
-    with CorpusContext(corpus_name = 'test_textgrid', **graph_db) as c:
+    with CorpusContext('test_textgrid', **graph_db) as c:
         annotation_types = inspect_discourse_textgrid(path)
         print(annotation_types)
         load_discourse_textgrid(c, path, annotation_types)
 
 def test_directory(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
-    with CorpusContext(corpus_name = 'test_textgrid_directory', **graph_db) as c:
+    with CorpusContext('test_textgrid_directory', **graph_db) as c:
         with pytest.raises(TextGridError):
             annotation_types = inspect_discourse_textgrid(path)
             load_directory_textgrid(c, textgrid_test_dir, annotation_types)
@@ -80,6 +80,6 @@ def test_two_speakers(textgrid_test_dir):
 
 def test_load_pronunciation(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'pronunc_variants_corpus.TextGrid')
-    with CorpusContext(corpus_name = 'test_pronunc', **graph_db) as c:
+    with CorpusContext('test_pronunc', **graph_db) as c:
         annotation_types = inspect_discourse_textgrid(path)
         load_discourse_textgrid(c, path, annotation_types)

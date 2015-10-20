@@ -17,7 +17,7 @@ def test_export_transcription(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'export_transcription.txt')
     export_discourse_transcription(d, export_path, single_line = False)
 
-    with CorpusContext(corpus_name = 'exported_transcription', **graph_db) as c:
+    with CorpusContext('exported_transcription', **graph_db) as c:
         c.reset()
         load_discourse_transcription(c, export_path)
     words = sorted([x for x in unspecified_test_corpus], key = lambda x: x.transcription)
@@ -32,7 +32,7 @@ def test_delim_error(graph_db, text_transcription_test_dir):
     transcription_path = os.path.join(text_transcription_test_dir, 'text_transcription.txt')
     ats = inspect_discourse_transcription(transcription_path)
     ats[0].trans_delimiter = ','
-    with CorpusContext(corpus_name = 'transcription_test_raises', **graph_db) as c:
+    with CorpusContext('transcription_test_raises', **graph_db) as c:
         with pytest.raises(DelimiterError):
             load_discourse_transcription(c,
                                 transcription_path, ats)
@@ -40,7 +40,7 @@ def test_delim_error(graph_db, text_transcription_test_dir):
 
 def test_transcription_directory(graph_db, text_transcription_test_dir):
     annotation_types = inspect_discourse_transcription(text_transcription_test_dir)
-    with CorpusContext(corpus_name = 'transcription_test_directory', **graph_db) as c:
+    with CorpusContext('transcription_test_directory', **graph_db) as c:
         load_directory_transcription(c, text_transcription_test_dir)
 
 def test_load_transcription_morpheme(graph_db, text_transcription_test_dir):
@@ -48,7 +48,7 @@ def test_load_transcription_morpheme(graph_db, text_transcription_test_dir):
                                 'text_transcription_morpheme_boundaries.txt')
     ats = inspect_discourse_transcription(transcription_morphemes_path)
     ats[0].morph_delimiters = set('-=')
-    with CorpusContext(corpus_name = 'transcription_morpheme', **graph_db) as c:
+    with CorpusContext('transcription_morpheme', **graph_db) as c:
         c.reset()
         load_discourse_transcription(c,transcription_morphemes_path, ats)
 

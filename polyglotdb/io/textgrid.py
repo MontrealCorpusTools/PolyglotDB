@@ -166,72 +166,71 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
     for a in annotation_types:
         a.reset()
     data = DiscourseData(name, annotation_types)
-    for word_name in data.word_levels:
-        spelling_tier = tg.getFirst(word_name)
+    spelling_tier = tg.getFirst(data['word'].name)
 
-        for si in spelling_tier:
-            annotations = dict()
-            word = Annotation(si.mark)
-            for n in data.base_levels:
-                if data[word_name].speaker != data[n].speaker \
-                            and data[n].speaker is not None:
+    for si in spelling_tier:
+        annotations = dict()
+        word = Annotation(si.mark)
+        for n in data.base_levels:
+            if data['word'].speaker != data[n].speaker \
+                        and data[n].speaker is not None:
+                continue
+            t = tg.getFirst(n)
+            tier_elements = list()
+            for ti in t:
+                if ti.maxTime <= si.minTime:
                     continue
-                t = tg.getFirst(n)
-                tier_elements = list()
-                for ti in t:
-                    if ti.maxTime <= si.minTime:
-                        continue
-                    if ti.minTime >= si.maxTime:
-                        break
-                    #if not ti.mark:
-                    #    continue
+                if ti.minTime >= si.maxTime:
+                    break
+                #if not ti.mark:
+                #    continue
 
-                    phoneBegin = ti.minTime
-                    phoneEnd = ti.maxTime
+                phoneBegin = ti.minTime
+                phoneEnd = ti.maxTime
 
-                    if phoneBegin < si.minTime:
-                        phoneBegin = si.minTime
-                    if phoneEnd > si.maxTime:
-                        phoneEnd = si.maxTime
+                if phoneBegin < si.minTime:
+                    phoneBegin = si.minTime
+                if phoneEnd > si.maxTime:
+                    phoneEnd = si.maxTime
 
-                    if ti.mark == '':
-                        ti.mark = '?'
-                    a = BaseAnnotation(ti.mark,
-                                begin = phoneBegin, end = phoneEnd)
-                    a.super_id = word.id
-                    tier_elements.append(a)
-                level_count = data.level_length(n)
-                word.references.append(n)
-                word.begins.append(level_count)
-                word.ends.append(level_count + len(tier_elements))
-                annotations[n] = tier_elements
+                if ti.mark == '':
+                    ti.mark = '?'
+                a = BaseAnnotation(ti.mark,
+                            begin = phoneBegin, end = phoneEnd)
+                a.super_id = word.id
+                tier_elements.append(a)
+            level_count = data.level_length(n)
+            word.references.append(n)
+            word.begins.append(level_count)
+            word.ends.append(level_count + len(tier_elements))
+            annotations[n] = tier_elements
 
-            mid_point = si.minTime + (si.maxTime - si.minTime)
-            for at in annotation_types:
-                if at.ignored:
-                    continue
-                if at.base:
-                    continue
-                if at.anchor:
-                    continue
-                t = tg.getFirst(at.name)
-                ti = t.intervalContaining(mid_point)
+        mid_point = si.minTime + (si.maxTime - si.minTime)
+        for at in annotation_types:
+            if at.ignored:
+                continue
+            if at.base:
+                continue
+            if at.anchor:
+                continue
+            t = tg.getFirst(at.name)
+            ti = t.intervalContaining(mid_point)
 
-                if ti is None:
-                    value = None
-                else:
-                    value = ti.mark
-                    if at.delimited:
-                        value = [x.label for x in parse_transcription(ti.mark, at)]
-                    elif at.ignored:
-                        value = ''.join(x for x in value if x not in at.ignored)
-                if at.token:
-                    word.token_properties[at.name] = value
-                else:
-                    word.type_properties[at.name] = value
+            if ti is None:
+                value = None
+            else:
+                value = ti.mark
+                if at.delimited:
+                    value = [x.label for x in parse_transcription(ti.mark, at)]
+                elif at.ignored:
+                    value = ''.join(x for x in value if x not in at.ignored)
+            if at.token:
+                word.token_properties[at.name] = value
+            else:
+                word.type_properties[at.name] = value
 
-            annotations[word_name] = [word]
-            data.add_annotations(**annotations)
+        annotations['word'] = [word]
+        data.add_annotations(**annotations)
     return data
 
 

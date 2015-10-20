@@ -393,7 +393,21 @@ class DiscourseData(object):
     """
     def __init__(self, name, annotation_types):
         self.name = name
-        self.data = {x.name: x for x in annotation_types}
+        self.data = {}
+        self.ordering = []
+        for x in annotation_types:
+            label = x.name
+            if x.anchor:
+                anchor_name = x.name
+                label = 'word'
+            self.data[label] = x
+            self.ordering.append(label)
+        for k,v in self.data.items():
+            if v.supertype == anchor_name:
+                self.data[k].supertype = 'word'
+            if v.subtype == anchor_name:
+                self.data[k].subtype = 'word'
+
         self.wav_path = None
         self.is_timed = False
 
@@ -411,6 +425,8 @@ class DiscourseData(object):
     def output_types(self):
         labels = []
         for x in self.types:
+            if len(self[x]) == 0:
+                continue
             if self[x].anchor:
                 labels.append('word')
             else:
@@ -435,13 +451,13 @@ class DiscourseData(object):
             return list(self[x][0].token_properties.keys())
 
     def keys(self):
-        return self.data.keys()
+        return self.ordering
 
     def values(self):
-        return self.data.values()
+        return (self.data[x] for x in self.ordering)
 
     def items(self):
-        return self.data.items()
+        return ((x, self.data[x]) for x in self.ordering)
 
     def mapping(self):
         return { x.name: x.attribute for x in self.data.values() if not x.ignored}

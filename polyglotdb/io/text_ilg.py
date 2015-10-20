@@ -145,7 +145,7 @@ def ilg_to_data(path, annotation_types,
     while index < len(lines):
         cur_line = {}
         mismatch = False
-        for line_ind, annotation_type in enumerate(annotation_types):
+        for line_ind, (k, annotation_type) in enumerate(data.items()):
             if annotation_type.name == 'ignore':
                 continue
             actual_line_ind, line = lines[index+line_ind]
@@ -154,7 +154,7 @@ def ilg_to_data(path, annotation_types,
 
             if annotation_type.delimited:
                 line = [parse_transcription(x, annotation_type) for x in line]
-            cur_line[annotation_type.name] = line
+            cur_line[k] = line
         if mismatch:
             start_line = lines[index][0]
             end_line = start_line + len(annotation_types)
@@ -162,31 +162,30 @@ def ilg_to_data(path, annotation_types,
         if len(mismatching_lines) > 0:
             index += len(annotation_types)
             continue
-        for word_name in data.word_levels:
-            for i, s in enumerate(cur_line[word_name]):
-                annotations = {}
-                word = Annotation(s)
+        for i, s in enumerate(cur_line['word']):
+            annotations = {}
+            word = Annotation(s)
 
-                for n in data.base_levels:
-                    tier_elements = cur_line[n][i]
-                    level_count = data.level_length(n)
-                    word.references.append(n)
-                    word.begins.append(level_count)
-                    word.ends.append(level_count + len(tier_elements))
-                    annotations[n] = tier_elements
-                for line_type in cur_line.keys():
-                    if data[line_type].ignored:
-                        continue
-                    if data[line_type].base:
-                        continue
-                    if data[line_type].anchor:
-                        continue
-                    if data[line_type].token:
-                        word.token_properties[line_type] = cur_line[line_type][i]
-                    else:
-                        word.type_properties[line_type] = cur_line[line_type][i]
-                annotations[word_name] = [word]
-                data.add_annotations(**annotations)
+            for n in data.base_levels:
+                tier_elements = cur_line[n][i]
+                level_count = data.level_length(n)
+                word.references.append(n)
+                word.begins.append(level_count)
+                word.ends.append(level_count + len(tier_elements))
+                annotations[n] = tier_elements
+            for line_type in cur_line.keys():
+                if data[line_type].ignored:
+                    continue
+                if data[line_type].base:
+                    continue
+                if data[line_type].anchor:
+                    continue
+                if data[line_type].token:
+                    word.token_properties[line_type] = cur_line[line_type][i]
+                else:
+                    word.type_properties[line_type] = cur_line[line_type][i]
+            annotations['word'] = [word]
+            data.add_annotations(**annotations)
         index += len(annotation_types)
 
     if len(mismatching_lines) > 0:

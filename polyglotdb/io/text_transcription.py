@@ -75,7 +75,6 @@ def transcription_text_to_data(path, annotation_types = None,
 
     for a in annotation_types:
         a.reset()
-    annotation_types.append(a)
 
     data = DiscourseData(name, annotation_types)
 
@@ -114,7 +113,7 @@ def transcription_text_to_data(path, annotation_types = None,
             word.begins.append(level_count)
             word.ends.append(level_count + len(tier_elements))
             annotations[n] = tier_elements
-            annotations['spelling'] = [word]
+            annotations['word'] = [word]
             data.add_annotations(**annotations)
     if data[n].delimiter and not trans_check:
         raise(DelimiterError('The transcription delimiter specified does not create multiple segments. Please specify another delimiter.'))
