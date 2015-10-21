@@ -22,10 +22,10 @@ def test_query_duration(acoustic_config):
 def test_get_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0)
-        assert(len(utterances) == 11)
+        assert(len(utterances) == 10)
         utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0.5)
         print(utterances)
-        assert(len(utterances) == 6)
+        assert(len(utterances) == 5)
 
 def test_discourses_prop(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -66,6 +66,10 @@ def test_query_formants_aggregate_group_by(acoustic_config):
         aq = g.query_acoustics(q).group_by(g.phone.label).formants('acousticsim')
         #results = aq.aggregate(Average())
 
+
+def test_analyze_utterances(graph_db):
+    with CorpusContext('acoustic', pause_words = ['sil'], **graph_db) as g:
+        g.analyze_acoustics()
 
 @pytest.mark.xfail
 def test_query_speaking_rate(acoustic_config):

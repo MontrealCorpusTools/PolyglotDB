@@ -162,7 +162,19 @@ class CorpusContext(object):
         q = self.query_graph(self.word).filter(self.word.label.in_(pause_words))
         q = q.filter(self.word.duration >= min_pause_length)
         q = q.clear_columns().times().duration().order_by(self.word.begin)
-        return q.all()
+        results = q.all()
+        utterances = []
+        if results[0].begin != 0:
+            current = 0
+        else:
+            current = None
+        for r in results:
+            if current is None:
+                current = r.end
+                continue
+            utterances.append((current, r.begin))
+            current = r.end
+        return utterances
 
     def add_discourse(self, data):
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
