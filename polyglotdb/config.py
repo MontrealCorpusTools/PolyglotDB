@@ -21,7 +21,7 @@ class CorpusConfig(object):
     def __init__(self, corpus_name, **kwargs):
         self.corpus_name = corpus_name
         self.graph_user = 'neo4j'
-        self.graph_pw = 'test'
+        self.graph_password = 'test'
         self.graph_host = 'localhost'
         self.graph_port = 7474
 
@@ -51,7 +51,7 @@ class CorpusConfig(object):
 
     @property
     def graph_connection_string(self):
-        return "http://{}:{}@{}:{}/db/data/".format(self.graph_user, self.graph_pw, self.graph_host, self.graph_port)
+        return "http://{}:{}@{}:{}/db/data/".format(self.graph_user, self.graph_password, self.graph_host, self.graph_port)
 
     @property
     def sql_connection_string(self):

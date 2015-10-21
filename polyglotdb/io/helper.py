@@ -9,6 +9,17 @@ from polyglotdb.exceptions import DelimiterError
 
 NUMBER_CHARACTERS = set(string.digits)
 
+
+def normalize_values_for_neo4j(dictionary):
+    out = {}
+    for k,v in dictionary.items():
+        if isinstance(v, list):
+            v = '.'.join(map(str,v))
+        if not v:
+            v = 'NULL'
+        out[k] = v
+    return out
+
 class Attribute(object):
     """
     Attributes are for collecting summary information about attributes of
@@ -152,6 +163,9 @@ class BaseAnnotation(object):
         self.group = None
         self.super_id = None
 
+    def __hash__(self):
+        return hash((self.label,))
+
     def __iter__(self):
         return iter(self.label)
 
@@ -220,6 +234,20 @@ class Annotation(BaseAnnotation):
                 self.token_properties.update(v)
             else:
                 setattr(self, k, v)
+
+    def type_keys(self):
+        return sorted(list(self.type_properties.keys()) + ['label'])
+
+    def type_values(self):
+        normalized = normalize_values_for_neo4j(self.type_properties)
+        for k in self.type_keys():
+            if k == 'label':
+                yield self.label
+            else:
+                yield normalized[k]
+
+    def __hash__(self):
+        return hash(tuple(self.type_values()))
 
     def __eq__(self, other):
         return self.label == other.label and self.begins == other.begins \

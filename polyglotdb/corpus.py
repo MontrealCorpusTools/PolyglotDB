@@ -12,7 +12,7 @@ http.socket_timeout = 9999
 
 from .config import CorpusConfig
 
-from .io.graph import data_to_graph_csvs
+from .io.graph import data_to_graph_csvs, import_csvs
 
 from .graph.query import GraphQuery
 from .graph.attributes import AnnotationAttribute
@@ -158,91 +158,8 @@ class CorpusContext(object):
             raise(NoSoundFileError)
         acoustic_analysis(self)
 
-    def import_csvs(self, data):
-        log = logging.getLogger('{}_loading'.format(self.corpus_name))
-        log.info('Beginning to import {} into the graph database...'.format(data.name))
-        initial_begin = time.time()
-        name, annotation_types = data.name, data.output_types
-        token_properties = data.token_properties
-        type_properties = data.type_properties
-        node_path = 'file:{}'.format(os.path.join(self.config.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
-
-        self.graph.cypher.execute('CREATE INDEX ON :Anchor(time)')
-        self.graph.cypher.execute('CREATE CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
-        node_import_statement = '''LOAD CSV WITH HEADERS FROM "{node_path}" AS csvLine
-CREATE (n:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.id), label: csvLine.label,
-time: toFloat(csvLine.time)}})'''
-        kwargs = {'node_path': node_path, 'corpus_name': self.corpus_name,
-                    'discourse_name': data.name}
-        log.info('Begin loading anchor nodes...')
-        begin = time.time()
-        self.graph.cypher.execute(node_import_statement.format(**kwargs))
-        log.info('Finished loading anchor nodes!')
-        log.debug('Anchor node loading took {} seconds'.format(time.time()-begin))
-
-        for at in annotation_types:
-            rel_path = 'file:{}'.format(os.path.join(self.config.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
-
-            self.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
-            prop_temp = '''{name}: csvLine.{name}'''
-            properties = []
-            if at == 'word':
-                for x in token_properties:
-                    properties.append(prop_temp.format(name=x))
-                    self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at, x))
-                st = data[data.word_levels[0]].supertype
-            else:
-                st = data[at].supertype
-            if st is not None:
-                if data[st].anchor:
-                    st = 'word'
-                #properties.append(token_temp.format(name = st))
-            if properties:
-                token_prop_string = ', ' + ', '.join(properties)
-            else:
-                token_prop_string = ''
-
-            properties = []
-            if at == 'word':
-                for x in type_properties:
-                    properties.append(prop_temp.format(name=x))
-                    self.graph.cypher.execute('CREATE INDEX ON :%s_type(%s)' % (at, x))
-            if properties:
-                type_prop_string = ', ' + ', '.join(properties)
-            else:
-                type_prop_string = ''
-            self.graph.cypher.execute('CREATE INDEX ON :%s(label)' % at)
-            self.graph.cypher.execute('CREATE INDEX ON :r_%s(label)' % at)
-            if st is not None:
-                self.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at,st))
-            rel_import_statement = '''USING PERIODIC COMMIT 1000
-LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-MERGE (n:{annotation_type}_type:{corpus_name} {{ label: csvLine.label{type_property_string} }})
-WITH n, csvLine
-MERGE (t:{annotation_type}:{corpus_name}:{discourse_name} {{id: csvLine.id, discourse: '{discourse_name}'{token_property_string} }})
-with n, t, csvLine
-MATCH (begin_node:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.from_id)}}),
-    (end_node:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.to_id)}})
-CREATE (begin_node)-[:r_{annotation_type}]->(t)-[:r_{annotation_type}]->(end_node)
-CREATE (t)-[:is_a]->(n)'''
-            kwargs = {'path': rel_path, 'annotation_type': at,
-                        'type_property_string': type_prop_string,
-                        'token_property_string': token_prop_string,
-                        'corpus_name': self.corpus_name,
-                        'discourse_name': data.name}
-            statement = rel_import_statement.format(**kwargs)
-            log.info('Loading {} annotations...'.format(at))
-            begin = time.time()
-            self.graph.cypher.execute(statement)
-            log.info('Finished loading {} annotations!'.format(at))
-            log.debug('{} annotation loading took: {} seconds.'.format(at, time.time() - begin))
-        log.info('Cleaning up...')
-        self.graph.cypher.execute('DROP CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
-        self.graph.cypher.execute('''MATCH (n)
-                                    WHERE n:Anchor
-                                    REMOVE n.id''')
-        log.info('Finished importing {} into the graph database!'.format(data.name))
-        log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
+    def get_utterances(self, discourse):
+        pass
 
     def add_discourse(self, data):
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
@@ -250,7 +167,7 @@ CREATE (t)-[:is_a]->(n)'''
         begin = time.time()
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(data, self.config.temp_dir)
-        self.import_csvs(data)
+        import_csvs(self, data)
         self.relationship_types.update(data.output_types)
         if data.is_timed:
             self.is_timed = True

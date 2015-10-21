@@ -181,8 +181,8 @@ class AnnotationAttribute(Attribute):
     @property
     def define_type_alias(self):
         label_string = ':{}_type'.format(self.type)
-        if self.corpus is not None:
-            label_string += ':{}'.format(self.corpus)
+        #if self.corpus is not None:
+        #    label_string += ':{}'.format(self.corpus)
         return '{}{}'.format(self.type_alias, label_string)
 
     @property
