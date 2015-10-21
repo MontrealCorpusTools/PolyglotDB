@@ -30,6 +30,10 @@ class GraphQuery(object):
         self._group_by = []
         self._aggregate = []
 
+    def clear_columns(self):
+        self._columns = []
+        return self
+
     def type_property_subqueries(self):
         queries = defaultdict(list)
         for c in self._criterion:

@@ -110,13 +110,13 @@ class Attribute(object):
     def __gt__(self, other):
         return GtClauseElement(self, other)
 
-    def __gte__(self, other):
+    def __ge__(self, other):
         return GteClauseElement(self, other)
 
     def __lt__(self, other):
         return LtClauseElement(self, other)
 
-    def __lte__(self, other):
+    def __le__(self, other):
         return LteClauseElement(self, other)
 
     def in_(self, other):

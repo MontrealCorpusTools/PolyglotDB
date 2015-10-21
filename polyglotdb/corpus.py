@@ -158,8 +158,11 @@ class CorpusContext(object):
             raise(NoSoundFileError)
         acoustic_analysis(self)
 
-    def get_utterances(self, discourse):
-        pass
+    def get_utterances(self, discourse, pause_words, min_pause_length = 0.5):
+        q = self.query_graph(self.word).filter(self.word.label.in_(pause_words))
+        q = q.filter(self.word.duration >= min_pause_length)
+        q = q.clear_columns().times().duration().order_by(self.word.begin)
+        return q.all()
 
     def add_discourse(self, data):
         log = logging.getLogger('{}_loading'.format(self.corpus_name))

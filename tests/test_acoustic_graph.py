@@ -19,6 +19,14 @@ def test_query_duration(acoustic_config):
         assert(abs(results[2].begin - 24.560) < 0.001)
         assert(abs(results[2].duration - 0.039) < 0.001)
 
+def test_get_utterances(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0)
+        assert(len(utterances) == 11)
+        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0.5)
+        print(utterances)
+        assert(len(utterances) == 6)
+
 def test_discourses_prop(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         assert(g.discourses == ['acoustic_corpus'])

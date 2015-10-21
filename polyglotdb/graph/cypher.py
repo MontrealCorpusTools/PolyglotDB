@@ -234,7 +234,7 @@ aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
 distinct_template = '''RETURN {columns}{additional_columns}{order_by}'''
 
 def create_return_statement(query):
-    kwargs = {'order_by': '', 'additional_columns':''}
+    kwargs = {'order_by': '', 'additional_columns':'', 'columns':''}
     if query._aggregate:
         template = aggregate_template
         properties = []
@@ -255,10 +255,21 @@ def create_return_statement(query):
 
     properties = []
     for c in query._order_by:
-        if c[0] not in set(query._additional_columns) and \
-                c[0] not in set(query._group_by):
-            query._additional_columns.append(c[0])
-        element = c[0].output_alias
+        ac_set = set(query._additional_columns)
+        gb_set = set(query._group_by)
+        h_c = hash(c[0])
+        for col in ac_set:
+            if h_c == hash(col):
+                element = col.output_alias
+                break
+        else:
+            for col in gb_set:
+                if h_c == hash(col):
+                    element = col.output_alias
+                    break
+            else:
+                query._additional_columns.append(c[0])
+                element = c[0].output_alias
         if c[1]:
             element += ' DESC'
         properties.append(element)
@@ -270,7 +281,10 @@ def create_return_statement(query):
     for c in query._additional_columns:
         properties.append(c.aliased_for_output())
     if properties:
-        kwargs['additional_columns'] += ', ' + ', '.join(properties)
+        string = ', '.join(properties)
+        if kwargs['columns']:
+            string = ', ' + string
+        kwargs['additional_columns'] += string
     return template.format(**kwargs)
 
 def generate_isa(annotation, withs, token_criterion = None):
