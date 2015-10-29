@@ -279,10 +279,12 @@ def create_return_statement(query):
 
     properties = []
     for c in query._additional_columns:
+        if c in query._group_by:
+            continue
         properties.append(c.aliased_for_output())
     if properties:
         string = ', '.join(properties)
-        if kwargs['columns']:
+        if kwargs['columns'] or ('aggregates' in kwargs and kwargs['aggregates']):
             string = ', ' + string
         kwargs['additional_columns'] += string
     return template.format(**kwargs)

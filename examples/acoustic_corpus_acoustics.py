@@ -14,15 +14,9 @@ graph_db = {'graph_host':'localhost', 'graph_port': 7474,
 
 praat = r'C:\Users\michael\Documents\Praat\praatcon.exe'
 
-reaper = r'D:\Dev\Tools\REAPER-master\reaper.exe'
+config = CorpusConfig('acoustic', **graph_db)
 
-config = CorpusConfig('buckeye', **graph_db)
-
-config.reaper_path = reaper
-config.praat_path = praat
-
-config.pause_words = '^[{<].*'
-config.min_pause_length = 0.25
+config.pause_words = ['sil']
 
 def call_back(*args):
     args = [x for x in args if isinstance(x, str)]
@@ -30,7 +24,7 @@ def call_back(*args):
         print(' '.join(args))
 if __name__ == '__main__':
     with CorpusContext(config) as g:
-        #utterances = g.get_utterances('s1901b', config.pause_words)
-        #print(len(utterances))
-        #print(utterances[-10:])
+        utterances = g.get_utterances('acoustic_corpus', config.pause_words)
+        print(len(utterances))
+        print(utterances[:10])
         g.analyze_acoustics()

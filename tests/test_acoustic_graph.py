@@ -21,11 +21,45 @@ def test_query_duration(acoustic_config):
 
 def test_get_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0)
-        assert(len(utterances) == 10)
+        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0, min_utterance_length = 0)
+
+        expected_utterances = [(1.059223, 7.541484), (8.016164, 11.807666),
+                                (12.167356, 13.898228), (14.509726, 17.207370),
+                                (18.359807, 19.434003), (19.599747, 21.017242),
+                                (21.208318, 22.331874), (22.865036, 23.554014),
+                                (24.174348, 24.706663), (24.980290, 25.251656)]
+        assert(len(utterances) == len(expected_utterances))
+        for i, u in enumerate(utterances):
+            assert(round(u[0],5) == round(expected_utterances[i][0],5))
+            assert(round(u[1],5) == round(expected_utterances[i][1],5))
         utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0.5)
-        print(utterances)
-        assert(len(utterances) == 5)
+
+        expected_utterances = [(1.059223, 13.898228), (14.509726, 17.207370),
+                                (18.359807, 22.331874), (22.865036, 23.554014),
+                                (24.174348, 25.251656)]
+        assert(len(utterances) == len(expected_utterances))
+        for i, u in enumerate(utterances):
+            assert(round(u[0],5) == round(expected_utterances[i][0],5))
+            assert(round(u[1],5) == round(expected_utterances[i][1],5))
+
+        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0.5, min_utterance_length = 1.0)
+
+        expected_utterances = [(1.059223, 13.898228), (14.509726, 17.207370),
+                                (18.359807, 23.554014),
+                                (24.174348, 25.251656)]
+        assert(len(utterances) == len(expected_utterances))
+        for i, u in enumerate(utterances):
+            assert(round(u[0],5) == round(expected_utterances[i][0],5))
+            assert(round(u[1],5) == round(expected_utterances[i][1],5))
+
+        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0.5, min_utterance_length = 1.1)
+
+        expected_utterances = [(1.059223, 13.898228), (14.509726, 17.207370),
+                                (18.359807, 25.251656)]
+        assert(len(utterances) == len(expected_utterances))
+        for i, u in enumerate(utterances):
+            assert(round(u[0],5) == round(expected_utterances[i][0],5))
+            assert(round(u[1],5) == round(expected_utterances[i][1],5))
 
 def test_discourses_prop(acoustic_config):
     with CorpusContext(acoustic_config) as g:

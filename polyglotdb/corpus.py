@@ -104,7 +104,7 @@ class CorpusContext(object):
         if exc_type is None:
             try:
                 shutil.rmtree(self.config.temp_dir)
-            except FileNotFoundError:
+            except:
                 pass
             self.sql_session.commit()
             return True
@@ -158,21 +158,44 @@ class CorpusContext(object):
             raise(NoSoundFileError)
         acoustic_analysis(self)
 
-    def get_utterances(self, discourse, pause_words, min_pause_length = 0.5):
-        q = self.query_graph(self.word).filter(self.word.label.in_(pause_words))
+    def get_utterances(self, discourse, pause_words,
+                min_pause_length = 0.5, min_utterance_length = 0):
+
+        q = self.query_graph(self.word).filter(self.word.discourse == discourse)
+        if isinstance(pause_words, (list, tuple, set)):
+            q = q.filter(self.word.label.in_(pause_words))
+        elif isinstance(pause_words, str):
+            q = q.filter(self.word.label.regex(pause_words))
+        else:
+            raise(NotImplementedError)
         q = q.filter(self.word.duration >= min_pause_length)
         q = q.clear_columns().times().duration().order_by(self.word.begin)
         results = q.all()
+        collapsed_results = []
+        for i, r in enumerate(results):
+            if len(collapsed_results) == 0:
+                collapsed_results.append(r)
+                continue
+            if r.begin == collapsed_results[-1].end:
+                collapsed_results[-1].end = r.end
+            else:
+                collapsed_results.append(r)
         utterances = []
         if results[0].begin != 0:
             current = 0
         else:
             current = None
-        for r in results:
-            if current is None:
-                current = r.end
-                continue
-            utterances.append((current, r.begin))
+        for i, r in enumerate(collapsed_results):
+            if current is not None:
+                if r.begin - current > min_utterance_length:
+                    utterances.append((current, r.begin))
+                elif i == len(results) - 1:
+                    utterances[-1] = (utterances[-1][0], r.begin)
+                elif len(utterances) != 0:
+                    dist_to_prev = current - utterances[-1][1]
+                    dist_to_foll = r.end - r.begin
+                    if dist_to_prev <= dist_to_foll:
+                        utterances[-1] = (utterances[-1][0], r.begin)
             current = r.end
         return utterances
 

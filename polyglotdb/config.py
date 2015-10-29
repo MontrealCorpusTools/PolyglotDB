@@ -43,6 +43,11 @@ class CorpusConfig(object):
         for k,v in kwargs.items():
             setattr(self, k, v)
 
+    def temporary_directory(self, name):
+        temp = os.path.join(self.temp_dir, name)
+        os.makedirs(temp, exist_ok = True)
+        return temp
+
     def init(self):
         os.makedirs(self.log_dir, exist_ok = True)
         setup_logger('{}_loading'.format(self.corpus_name), os.path.join(self.log_dir, 'load.log'), level = self.log_level)

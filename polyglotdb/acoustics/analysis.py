@@ -8,34 +8,20 @@ from functools import partial
 
 from polyglotdb.sql.models import SoundFile, Pitch, Formants, Discourse
 
-from acousticsim.representations.pitch import Pitch as ASPitch
+from acousticsim.utils import extract_audio
+
+from acousticsim.representations.pitch import ACPitch as ASPitch
 from acousticsim.representations.formants import LpcFormants as ASFormants
 
 from acousticsim.praat import (to_pitch_praat as PraatPitch,
                                 to_intensity_praat as PraatIntensity,
                                 to_formants_praat as PraatFormants)
 
-import wave
+from acousticsim.representations.reaper import to_pitch_reaper as ReaperPitch
 
-def extract_audio(filepath, outpath, begin, end):
-    padding = 0.1
-    begin -= padding
-    if begin < 0:
-        begin = 0
-    end += padding
-    with wave.open(filepath,'rb') as inf, wave.open(outpath, 'wb') as outf:
-        params = inf.getparams()
-        sample_rate = inf.getframerate()
-        duration = inf.getnframes() / sample_rate
-        if end > duration:
-            end = duration
-        outf.setparams(params)
-        outf.setnframes(0)
-        begin_sample = int(begin * sample_rate)
-        end_sample = int(end * sample_rate)
-        inf.readframes(begin_sample)
-        data = inf.readframes(end_sample - begin_sample)
-        outf.writeframes(data)
+from acousticsim.multiprocessing import generate_cache, default_njobs
+
+padding = 0.1
 
 def acoustic_analysis(corpus_context):
 
@@ -45,56 +31,119 @@ def acoustic_analysis(corpus_context):
     log.info('Beginning acoustic analysis for {} corpus...'.format(corpus_context.corpus_name))
     initial_begin = time.time()
     for sf in sound_files:
+        log.info('Begin acoustic analysis for {}...'.format(sf.filepath))
+        log_begin = time.time()
         if pauses is None:
-            log.info('Processing {}...'.format(sf.filepath))
-            analyze_pitch(corpus_context, sf, sf.filepath)
-            analyze_formants(corpus_context, sf, sf.filepath)
+            path = sf.filepath
         else:
-            utterances = corpus_context.get_utterances(sf.discourse, pauses,
+            utterances = corpus_context.get_utterances(sf.discourse.name, pauses,
                 min_pause_length = getattr(corpus_context.config, 'min_pause_length', 0.5))
 
+            outdir = corpus_context.config.temporary_directory(sf.discourse.name)
             for i, u in enumerate(utterances):
-                outpath = os.path.join(corpus_context.config.temp_dir, 'temp.wav')
-                extract_audio(sf.filepath, outpath, u[0], u[1])
-                analyze_pitch(corpus_context, sf, outpath)
-                analyze_formants(corpus_context, sf, outpath)
+                outpath = os.path.join(outdir, 'temp-{}-{}.wav'.format(u[0], u[1]))
+                extract_audio(sf.filepath, outpath, u[0], u[1], padding = padding)
+            path = outdir
+
+        analyze_pitch(corpus_context, sf, path)
+        analyze_formants(corpus_context, sf, path)
+        log.info('Acoustic analysis finished!')
+        log.debug('Acoustic analysis took: {} seconds'.format(time.time() - log_begin))
+
 
 
     log.info('Finished acoustic analysis for {} corpus!'.format(corpus_context.corpus_name))
     log.debug('Total time taken: {} seconds'.format(time.time() - initial_begin))
 
 def analyze_pitch(corpus_context, sound_file, sound_file_path):
-    if getattr(corpus_context.config, 'praat_path', None) is not None:
-        pitch_function = partial(PraatPitch, praatpath = corpus_context.config.praat_path)
+    if getattr(corpus_context.config, 'reaper_path', None) is not None:
+        pitch_function = partial(ReaperPitch, reaper = corpus_context.config.reaper_path,
+                                time_step = 0.01, freq_lims = (75,500))
+        algorithm = 'reaper'
+    elif getattr(corpus_context.config, 'praat_path', None) is not None:
+        pitch_function = partial(PraatPitch, praatpath = corpus_context.config.praat_path,
+                                time_step = 0.01, freq_lims = (75,500))
         algorithm = 'praat'
     else:
-        pitch_function = ASPitch
+        pitch_function = partial(ASPitch, time_step = 0.01, freq_lims = (75,500))
         algorithm = 'acousticsim'
-    log = logging.getLogger('{}_acoustics'.format(corpus_context.corpus_name))
-    log.info('Begin pitch analysis ({})...'.format(algorithm))
-    log_begin = time.time()
-    pitch = pitch_function(sound_file_path, time_step = 0.01, freq_lims = (75,500))
-    pitch.process()
-    for timepoint, value in pitch.items():
-        p = Pitch(sound_file = sound_file, time = timepoint, F0 = value[0], source = algorithm)
-        corpus_context.sql_session.add(p)
-    log.info('Pitch analysis finished!')
-    log.debug('Pitch analysis took: {} seconds'.format(time.time() - log_begin))
+    if os.path.isdir(sound_file_path):
+        path_mapping = [(os.path.join(sound_file_path, x),) for x in os.listdir(sound_file_path)]
+
+        cache = generate_cache(path_mapping, pitch_function, None, default_njobs(), None, None)
+        for k, v in cache.items():
+            name = os.path.basename(k)
+            name = os.path.splitext(name)[0]
+            _, begin, end = name.split('-')
+            begin = float(begin) - padding
+            if begin < 0:
+                begin = 0
+            end = float(end)
+            for timepoint, value in v.items():
+                timepoint += begin # true timepoint
+                try:
+                    value = value[0]
+                except TypeError:
+                    pass
+                p = Pitch(sound_file = sound_file, time = timepoint, F0 = value, source = algorithm)
+                corpus_context.sql_session.add(p)
+    else:
+        pitch = pitch_function(sound_file_path)
+        pitch.process()
+        for timepoint, value in pitch.items():
+            try:
+                value = value[0]
+            except TypeError:
+                pass
+            p = Pitch(sound_file = sound_file, time = timepoint, F0 = value, source = algorithm)
+            corpus_context.sql_session.add(p)
 
 def analyze_formants(corpus_context, sound_file, sound_file_path):
     if getattr(corpus_context.config, 'praat_path', None) is not None:
-        formant_function = partial(PraatFormants, praatpath = corpus_context.config.praat_path)
+        formant_function = partial(PraatFormants,
+                            praatpath = corpus_context.config.praat_path,
+                            max_freq = 5500, num_formants = 5, win_len = 0.025,
+                            time_step = 0.01)
         algorithm = 'praat'
     else:
-        formant_function = ASFormants
+        formant_function = partial(ASFormants, max_freq = 5500,
+                            num_formants = 5, win_len = 0.025,
+                            time_step = 0.01)
         algorithm = 'acousticsim'
-    log = logging.getLogger('{}_acoustics'.format(corpus_context.corpus_name))
-    log.info('Begin formant analysis ({})...'.format(algorithm))
-    log_begin = time.time()
-    formants = formant_function(sound_file_path, max_freq = 5500, num_formants = 5, win_len = 0.025, time_step = 0.01)
-    for timepoint, value in formants.items():
-        f = Formants(sound_file = sound_file, time = timepoint, F1 = value[0][0],
-                F2 = value[1][0], F3 = value[2][0], source = algorithm)
-        corpus_context.sql_session.add(f)
-    log.info('Formant analysis finished!')
-    log.debug('Formant analysis took: {} seconds'.format(time.time() - log_begin))
+    if os.path.isdir(sound_file_path):
+        path_mapping = [(os.path.join(sound_file_path, x),) for x in os.listdir(sound_file_path)]
+
+        cache = generate_cache(path_mapping, formant_function, None, default_njobs(), None, None)
+        for k, v in cache.items():
+            name = os.path.basename(k)
+            name = os.path.splitext(name)[0]
+            _, begin, end = name.split('-')
+            begin = float(begin) - padding
+            if begin < 0:
+                begin = 0
+            end = float(end)
+            for timepoint, value in v.items():
+                timepoint += begin # true timepoint
+                f1, f2, f3 = sanitize_formants(value)
+                f = Formants(sound_file = sound_file, time = timepoint, F1 = f1,
+                        F2 = f2, F3 = f3, source = algorithm)
+                corpus_context.sql_session.add(f)
+    else:
+        formants = formant_function(sound_file_path)
+        for timepoint, value in formants.items():
+            f1, f2, f3 = sanitize_formants(value)
+            f = Formants(sound_file = sound_file, time = timepoint, F1 = f1,
+                    F2 = f2, F3 = f3, source = algorithm)
+            corpus_context.sql_session.add(f)
+
+def sanitize_formants(value):
+    f1 = value[0][0]
+    if f1 is None:
+        f1 = 0
+    f2 = value[1][0]
+    if f2 is None:
+        f2 = 0
+    f3 = value[2][0]
+    if f3 is None:
+        f3 = 0
+    return f1, f2, f3

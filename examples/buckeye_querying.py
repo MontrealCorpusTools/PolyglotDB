@@ -10,6 +10,8 @@ from polyglotdb.graph.func import Count, Average
 graph_db = {'host':'localhost', 'port': 7474,
             'user': 'neo4j', 'password': 'test'}
 
+debug = False
+
 with CorpusContext('buckeye', **graph_db) as g:
     print(g.hierarchy)
 
@@ -17,7 +19,8 @@ with CorpusContext('buckeye', **graph_db) as g:
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
 
     q = q.filter(g.surface_transcription.end == g.word.end)
-    print(q.cypher())
+    if debug:
+        print(q.cypher())
     print(q.count())
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
@@ -29,7 +32,8 @@ with CorpusContext('buckeye', **graph_db) as g:
     beg = time.time()
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter_contained_by(g.word.label == 'dog')
-    print(q.cypher())
+    if debug:
+        print(q.cypher())
     results = q.count()
     end = time.time()
     print('Count of \'aa\' phones in \'dog\':')
@@ -75,9 +79,16 @@ with CorpusContext('buckeye', **graph_db) as g:
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
     q = q.filter(g.surface_transcription.end != g.word.end)
+    q = q.filter(g.word.label != '').times().duration().columns(g.word.duration,
+        g.surface_transcription.following.label.column_name('following_consonant'))
+
+    if debug:
+        print(q.cypher())
+    q.to_csv('test.csv')
     q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
 
     results = q.aggregate(Average(g.surface_transcription.duration), Count())
+
     end = time.time()
     print('Duration of \'aa\' before stops (within words):')
     print(results)

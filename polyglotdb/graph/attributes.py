@@ -92,9 +92,6 @@ class Attribute(object):
                 return RightAlignedClauseElement(self.annotation, other.annotation)
         except AttributeError:
             pass
-        if self.label == 'discourse':
-            self.annotation.discourse = other
-            return None
         return EqualClauseElement(self, other)
 
     def __ne__(self, other):
