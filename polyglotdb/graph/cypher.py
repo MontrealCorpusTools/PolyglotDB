@@ -149,7 +149,7 @@ def generate_contained_by_subqueries(query, withs):
 
     where_string = ''
     if properties:
-        where_string = 'WHERE ' + ' AND '.join(properties)
+        where_string = 'WHERE ' + ' AND'.join(properties)
     if matches:
         match_string = match_template.format(',\n'.join(matches),
                                                         where_string,
@@ -181,7 +181,7 @@ def generate_contains_subqueries(query, withs):
                 properties.append(x.for_cypher())
     where_string = ''
     if properties:
-        where_string = 'WHERE ' + 'AND '.join(properties)
+        where_string = 'WHERE ' + ' AND'.join(properties)
     if matches:
         match_string = match_template.format(',\n'.join(matches),
                                                         where_string,
@@ -200,7 +200,7 @@ def criterion_to_where(criterion):
         properties.append(c.for_cypher())
     where_string = ''
     if properties:
-        where_string += 'WHERE ' + 'AND '.join(properties)
+        where_string += 'WHERE ' + ' AND'.join(properties)
     return where_string
 
 def format_property_subquery(annotation, criterion, withs):
