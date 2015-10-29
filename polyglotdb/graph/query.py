@@ -132,7 +132,7 @@ class GraphQuery(object):
         return query_to_cypher(self)
 
     def group_by(self, *args):
-        self._group_by.extend(*args)
+        self._group_by.extend(args)
         return self
 
     def order_by(self, field, descending = False):
