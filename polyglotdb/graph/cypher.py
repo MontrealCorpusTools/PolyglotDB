@@ -13,6 +13,7 @@ anchor_template = '''({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]
 
 template = '''{match}
 {where}
+{with}
 {return}'''
 
 def generate_annotation_with(annotation):
@@ -147,7 +148,7 @@ def generate_token_match(annotation_type, annotation_list):
         current += 1
         defined.update(generate_annotation_with(a))
 
-    return statements
+    return statements, defined
 
 hierarchy_template = '''({contained_alias})-[:contained_by*1..]->({containing_alias})'''
 
@@ -172,6 +173,7 @@ type_match_template = '''({token_alias})-[:is_a]->({type_alias})'''
 
 def generate_type_matches(query):
     analyzed = defaultdict(set)
+    defined = set()
     for c in query._criterion:
         for a in c.attributes:
             type_token =  'type' if a.label in type_attributes else 'token'
@@ -185,26 +187,41 @@ def generate_type_matches(query):
         if 'type' in v:
             matches.append(type_match_template.format(token_alias = k.alias,
                                         type_alias = k.define_type_alias))
-    return matches
+            defined.add(k.type_alias)
+    return matches, defined
+
+def withs_to_string(withs):
+    return 'WITH ' + ', '.join(withs)
 
 def query_to_cypher(query):
     kwargs = {'match': '',
             'where': '',
+            'with': '',
             'return':''}
     annotation_levels = query.annotation_levels()
 
     match_strings = []
     where_strings = []
 
-    for k,v in annotation_levels.items():
-        match_strings.extend(generate_token_match(k,v))
-    match_strings.extend(generate_hierarchical_match(annotation_levels, query.corpus.hierarchy))
+    all_withs = set()
 
-    match_strings.extend(generate_type_matches(query))
+    for k,v in annotation_levels.items():
+        statements, withs = generate_token_match(k,v)
+        all_withs.update(withs)
+        match_strings.extend(statements)
+
+    statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
+    match_strings.extend(statements)
+
+    statements, withs = generate_type_matches(query)
+    all_withs.update(withs)
+    match_strings.extend(statements)
 
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
 
     kwargs['where'] = criterion_to_where(query._criterion)
+
+    kwargs['with'] = withs_to_string(all_withs)
 
     kwargs['return'] = create_return_statement(query)
     cypher = template.format(**kwargs)

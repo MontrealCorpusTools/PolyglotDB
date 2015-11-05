@@ -53,7 +53,8 @@ class Attribute(object):
             b_node = self.annotation.begin_alias
             e_node = self.annotation.end_alias
             return '{}.time - {}.time'.format(e_node, b_node)
-
+        elif self.annotation.contains is not None and self.label in self.annotation.contains:
+            return ''
         if self.label not in type_attributes:
             return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
@@ -153,10 +154,11 @@ class AnnotationAttribute(Attribute):
     end_template = '{}_e{}'
     alias_template = '{prefix}node_{t}'
     rel_type_template = 'r_{t}'
-    def __init__(self, type, pos = 0, corpus = None):
+    def __init__(self, type, pos = 0, corpus = None, contains = None):
         self.type = type
         self.pos = pos
         self.corpus = corpus
+        self.contains = contains
         self.discourse_label = None
 
     def __hash__(self):
@@ -176,8 +178,6 @@ class AnnotationAttribute(Attribute):
     @property
     def define_type_alias(self):
         label_string = ':{}_type'.format(self.type)
-        #if self.corpus is not None:
-        #    label_string += ':{}'.format(self.corpus)
         return '{}{}'.format(self.type_alias, label_string)
 
     @property
@@ -256,6 +256,6 @@ class AnnotationAttribute(Attribute):
                 pos = self.pos - 1
             else:
                 pos = self.pos + 1
-            return AnnotationAttribute(self.type, pos, corpus = self.corpus)
+            return AnnotationAttribute(self.type, pos, corpus = self.corpus, contains = self.contains)
         else:
             return Attribute(self, key)

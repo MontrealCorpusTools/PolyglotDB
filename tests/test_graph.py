@@ -13,9 +13,12 @@ def test_strings(untimed_config):
     return
     with CorpusContext(untimed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
-        q = q .columns()
+        q = q .columns(g.word.phone)
         print(q.cypher())
-        assert(all(x.label == 'are' for x in q.all()))
+        results = q.all()
+        print(results)
+        assert(False)
+        assert(all(x.label == 'are' for x in results))
 
 def test_columns(untimed_config):
     with CorpusContext(untimed_config) as g:
