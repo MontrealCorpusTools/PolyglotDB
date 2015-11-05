@@ -20,7 +20,7 @@ fi
 
 
 if [ ! -d "$HOME/neo4j/neo4j" ]; then
-
+  mkdir -p $HOME/neo4j
   wget http://dist.neo4j.org/neo4j-community-2.3.0-unix.tar.gz
   tar -xzf neo4j-community-2.3.0-unix.tar.gz -C $HOME/neo4j
   mv $HOME/neo4j/neo4j-community-2.3.0 $HOME/neo4j/neo4j
