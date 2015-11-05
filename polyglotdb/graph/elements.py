@@ -8,6 +8,15 @@ class ClauseElement(object):
         self.attribute = attribute
         self.value = value
 
+    def __repr__(self):
+        return '<ClauseElement \'{}\'>'.format(self.for_cypher())
+
+    def __hash__(self):
+        return hash((self.attribute, self.sign, self.value))
+
+    def cypher_value_string(self):
+        return '{%s}' % self.attribute.alias
+
     @property
     def annotations(self):
         annotations = [self.attribute.annotation]
@@ -17,11 +26,19 @@ class ClauseElement(object):
             pass
         return annotations
 
+    @property
+    def attributes(self):
+        attributes = [self.attribute]
+        if hasattr(self.value, 'annotation'):
+            attributes.append(self.value)
+        return attributes
+
     def for_cypher(self):
         try:
             value = self.value.for_cypher()
         except AttributeError:
-            value = value_for_cypher(self.value)
+            value = self.cypher_value_string()
+            print(value)
         return self.template.format(self.attribute.for_cypher(),
                                 self.sign,
                                 value)
@@ -51,13 +68,14 @@ class RegexClauseElement(ClauseElement):
     sign = '=~'
 
 class ContainsClauseElement(ClauseElement):
-    template = '''filter(x in nodes({path}) WHERE (x)-[:is_a]->({type} {{{label}: {value}}}))'''
-    #template = "{value} in extract(x in nodes({path})| x.{label})"
+    sign = 'contains'
+    template = '''({alias})<-[:contained_by]-({token})-[:is_a]->({type} {{{label}: {value}}})'''
     def for_cypher(self):
-        kwargs = {'path':self.attribute.annotation.alias,
+        kwargs = {'alias':self.attribute.annotation.alias,
                 'value':value_for_cypher(self.value),
                 'label': key_for_cypher(self.attribute.label),
-                'type': ':{}_type'.format(self.attribute.annotation.type)}
+                'type': ':{}_type'.format(self.attribute.annotation.type),
+                'token': ':{}'.format(self.attribute.annotation.type)}
         return self.template.format(**kwargs)
 
 class AlignmentClauseElement(ClauseElement):
@@ -67,9 +85,16 @@ class AlignmentClauseElement(ClauseElement):
         self.first = first
         self.second = second
 
+    def __hash__(self):
+        return hash((self.first, self.template, self.second))
+
     @property
     def annotations(self):
         return [self.first]
+
+    @property
+    def attributes(self):
+        return [self.first.id]
 
     def for_cypher(self):
         kwargs = {'first_rel_type': self.first.rel_type_alias,

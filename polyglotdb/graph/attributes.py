@@ -1,8 +1,6 @@
 
 from .helper import key_for_cypher, anchor_attributes, type_attributes
 
-from .query import GraphQuery
-
 from .elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
                         InClauseElement, ContainsClauseElement, RegexClauseElement,
@@ -117,7 +115,7 @@ class Attribute(object):
         return LteClauseElement(self, other)
 
     def in_(self, other):
-        if isinstance(other, GraphQuery):
+        if hasattr(other, 'cypher'):
             results = other.all()
             t = []
             for x in results:

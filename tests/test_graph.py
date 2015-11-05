@@ -9,6 +9,16 @@ def test_basic_query(untimed_config):
         print(q.cypher())
         assert(all(x.label == 'are' for x in q.all()))
 
+def test_analyze(untimed_config):
+    return
+    with CorpusContext(untimed_config) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        #q = q.columns(g.word.label, g.line.id)
+        print(q.analyze())
+        print(q.cypher())
+        #assert(False)
+        assert(all(x.label == 'are' for x in q.all()))
+
 def test_discourse_query(untimed_config):
     with CorpusContext(untimed_config) as g:
         q = g.query_graph(g.word).columns(g.word.discourse.column_name('discourse'))
@@ -69,6 +79,13 @@ def test_query_contained_by(untimed_config):
         q = q.filter_contained_by(g.word.label == 'dogs')
         print(q.cypher())
         assert(len(list(q.all())) == 1)
+
+def test_query_columns_contained(untimed_config):
+    with CorpusContext(untimed_config) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.columns(g.word.label)
+        print(q.cypher())
+        assert(len(list(q.all())) == 3)
 
 def test_query_left_aligned_line(untimed_config):
     with CorpusContext(untimed_config) as g:

@@ -39,8 +39,8 @@ def data_to_graph_csvs(data, directory):
                 token_header.append(supertype)
         else:
             supertype = data[k].supertype
-            #if supertype is not None:
-                #header.append(supertype)
+            if supertype is not None:
+                token_header.append(supertype)
         rel_writers[k] = csv.DictWriter(v, token_header, delimiter = ',')
         type_writers[k] = csv.DictWriter(tfs[k], type_header, delimiter = ',')
     for x in rel_writers.values():
@@ -53,7 +53,8 @@ def data_to_graph_csvs(data, directory):
         node_writer.writeheader()
         nodes = []
         node_ind = 0
-        begin_node = dict(id = node_ind, label = uuid1(), time = 0, corpus = data.corpus_name, discourse = data.name)
+        begin_node = dict(id = node_ind, label = uuid1(),
+            time = 0, corpus = data.corpus_name, discourse = data.name)
         node_writer.writerow(begin_node)
         base_ind_to_node = {}
         base_levels = data.base_levels
@@ -88,8 +89,8 @@ def data_to_graph_csvs(data, directory):
                                                 type_id = hash(seg),
                                                 to_id=node['id'], id = seg.id)
                             supertype = data[b].supertype
-
-                            #row[supertype] = first.super_id
+                            if seg.super_id is not None:
+                                row[supertype] = seg.super_id
                             rel_writers[base_levels[0]].writerow(row)
                             type_writers[base_levels[0]].writerow(type_row)
                         end_node = nodes[-1]
@@ -110,11 +111,11 @@ def data_to_graph_csvs(data, directory):
                             end_node = nodes[end]
                 token_additional = normalize_values_for_neo4j(d.token_properties)
                 type_additional = normalize_values_for_neo4j(d.type_properties)
+                if d.super_id is not None:
+                    token_additional[data[level].supertype] = d.super_id
 
                 if d.label == '':
                     d.label = level
-                #if d.super_id is not None:
-                #    additional[data[level].supertype] = d.super_id
                 type_writers[level].writerow(dict(label=d.label, id = hash(d),
                                 **type_additional))
                 rel_writers[level].writerow(dict(from_id=begin_node['id'],
@@ -132,7 +133,7 @@ def import_csvs(corpus_context, data):
         name, annotation_types = data.name, data.output_types
         token_properties = data.token_properties
         type_properties = data.type_properties
-        node_path = 'file:{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
+        node_path = 'file:/{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
 
         corpus_context.graph.cypher.execute('CREATE INDEX ON :Anchor(time)')
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
@@ -149,8 +150,8 @@ time: toFloat(csvLine.time)}})'''
         prop_temp = '''{name}: csvLine.{name}'''
 
         for at in annotation_types:
-            rel_path = 'file:{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_r_{}.csv'.format(name, at)).replace('\\','/'))
-            type_path = 'file:{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
+            rel_path = 'file:/{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_r_{}.csv'.format(name, at)).replace('\\','/'))
+            type_path = 'file:/{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
 
             corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
@@ -187,9 +188,7 @@ MERGE (n:{annotation_type}_type {{ label: csvLine.label, id: csvLine.id{type_pro
             else:
                 st = data[at].supertype
             if st is not None:
-                if data[st].anchor:
-                    st = 'word'
-                #properties.append(token_temp.format(name = st))
+                properties.append(prop_temp.format(name = st))
             if properties:
                 token_prop_string = ', ' + ', '.join(properties)
             else:
@@ -220,5 +219,18 @@ CREATE (t)-[:is_a]->(n)'''
         corpus_context.graph.cypher.execute('''MATCH (n)
                                     WHERE n:Anchor
                                     REMOVE n.id''')
+        for at in annotation_types:
+            st = data[at].supertype
+            if st is None:
+                continue
+
+            statement = '''MATCH (a:{atype}:{corpus}:{discourse_name})
+                                    WITH a
+                                    MATCH (s:{stype}:{corpus}:{discourse_name} {{id: a.{stype}}})
+                                    WITH a, s
+                                    CREATE (a)-[:contained_by]->(s)'''.format(atype = at,
+                                        stype = st, corpus = corpus_context.corpus_name,
+                                        discourse_name = data.name)
+            corpus_context.graph.cypher.execute(statement)
         log.info('Finished importing {} into the graph database!'.format(data.name))
         log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))

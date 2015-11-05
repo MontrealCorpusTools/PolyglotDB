@@ -10,7 +10,7 @@ from .func import Count
 
 from .helper import anchor_attributes, type_attributes
 
-from .cypher import query_to_cypher
+from .cypher import query_to_cypher, query_to_params
 
 from polyglotdb.io.csv import save_results
 
@@ -21,8 +21,6 @@ class GraphQuery(object):
         self.corpus = corpus
         self.to_find = to_find
         self._criterion = []
-        self._contained_by_annotations = set()
-        self._contains_annotations = set()
         self._columns = [self.to_find.id.column_name('id'),
                         self.to_find.label.column_name('label')]
         self._additional_columns = []
@@ -33,45 +31,6 @@ class GraphQuery(object):
     def clear_columns(self):
         self._columns = []
         return self
-
-    def type_property_subqueries(self):
-        queries = defaultdict(list)
-        for c in self._criterion:
-            if len(c.annotations) == 1:
-                if isinstance(c, AlignmentClauseElement):
-                    continue
-                a = c.annotations[0]
-                if a in self._contains_annotations:
-                    continue
-                if c.attribute.label in type_attributes:
-                    queries[a].append(c)
-        return queries
-
-    def token_property_subqueries(self):
-        queries = defaultdict(list)
-        for c in self._criterion:
-            if len(c.annotations) == 1:
-                if isinstance(c, AlignmentClauseElement):
-                    continue
-                a = c.annotations[0]
-                if a in self._contains_annotations:
-                    continue
-                if c.attribute.label not in type_attributes and \
-                    c.attribute.label not in anchor_attributes:
-                    queries[a].append(c)
-        return queries
-
-    def anchor_subqueries(self):
-        queries = defaultdict(list)
-        for c in self._criterion:
-            if len(c.annotations) == 1:
-                a = c.annotations[0]
-                if isinstance(c, AlignmentClauseElement):
-                    queries[a].append(c)
-                    continue
-                if c.attribute.label in anchor_attributes:
-                    queries[a].append(c)
-        return queries
 
     @property
     def annotation_set(self):
@@ -93,16 +52,11 @@ class GraphQuery(object):
         return self
 
     def filter_contains(self, *args):
-        args = [ContainsClauseElement(x.attribute, x.value) for x in args]
         self._criterion.extend(args)
-        annotation_set = set(x.attribute.annotation for x in args)
-        self._contains_annotations.update(annotation_set)
         return self
 
     def filter_contained_by(self, *args):
         self._criterion.extend(args)
-        annotation_set = set(x.attribute.annotation for x in args)
-        self._contained_by_annotations.update(annotation_set)
         return self
 
     def columns(self, *args):
@@ -131,6 +85,9 @@ class GraphQuery(object):
     def cypher(self):
         return query_to_cypher(self)
 
+    def cypher_params(self):
+        return query_to_params(self)
+
     def group_by(self, *args):
         self._group_by.extend(args)
         return self
@@ -145,6 +102,17 @@ class GraphQuery(object):
         self = self.columns(self.to_find.discourse.column_name(output_name))
         return self
 
+    def annotation_levels(self):
+        annotation_levels = defaultdict(set)
+        for c in self._criterion:
+            for a in c.attributes:
+                t = a.annotation
+                annotation_levels[t.type].add(t)
+        for a in self._columns + self._group_by + self._additional_columns:
+            t = a.annotation
+            annotation_levels[t.type].add(t)
+
+        return annotation_levels
 
     def times(self, begin_name = None, end_name = None):
         if begin_name is None:
@@ -160,21 +128,21 @@ class GraphQuery(object):
         return self
 
     def all(self):
-        return self.corpus.graph.cypher.execute(self.cypher())
+        return self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
 
     def to_csv(self, path):
-        save_results(self.corpus.graph.cypher.execute(self.cypher()), path)
+        save_results(self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params()), path)
 
     def count(self):
         self._aggregate = [Count()]
         cypher = self.cypher()
-        value = self.corpus.graph.cypher.execute(cypher)
+        value = self.corpus.graph.cypher.execute(cypher, **self.cypher_params())
         return value.one
 
     def aggregate(self, *args):
         self._aggregate = args
         cypher = self.cypher()
-        value = self.corpus.graph.cypher.execute(cypher)
+        value = self.corpus.graph.cypher.execute(cypher, **self.cypher_params())
         if self._group_by:
             return value
         else:

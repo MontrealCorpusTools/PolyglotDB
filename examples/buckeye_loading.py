@@ -8,6 +8,7 @@ import polyglotdb.io as aio
 from polyglotdb.corpus import CorpusContext
 
 path_to_buckeye = r'D:\Data\VIC\Speakers'
+#path_to_buckeye = r'D:\Data\BuckeyeSubset'
 
 graph_db = {'host':'localhost', 'port': 7474,
             'user': 'neo4j', 'password': 'test'}
