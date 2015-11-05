@@ -161,7 +161,7 @@ def generate_hierarchical_match(annotation_levels, hierarchy):
                     break
                 supertype = hierarchy[supertype]
             if supertype is None:
-                break
+                continue
             sub = AnnotationAttribute(k, 0)
             sup = AnnotationAttribute(supertype, 0)
             statements.append(hierarchy_template.format(contained_alias = sub.alias,

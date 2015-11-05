@@ -9,15 +9,21 @@ def test_basic_query(untimed_config):
         print(q.cypher())
         assert(all(x.label == 'are' for x in q.all()))
 
-def test_analyze(untimed_config):
+def test_strings(untimed_config):
     return
     with CorpusContext(untimed_config) as g:
-        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
-        #q = q.columns(g.word.label, g.line.id)
-        print(q.analyze())
+        q = g.query_graph(g.word).filter(g.word.label == 'are')
+        q = q .columns()
         print(q.cypher())
-        #assert(False)
         assert(all(x.label == 'are' for x in q.all()))
+
+def test_columns(untimed_config):
+    with CorpusContext(untimed_config) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.columns(g.word.label.column_name('word_label'), g.line.id)
+        print(q.cypher())
+        results = q.all()
+        assert(all(x.word_label in ['are', 'dogs'] for x in results))
 
 def test_discourse_query(untimed_config):
     with CorpusContext(untimed_config) as g:
