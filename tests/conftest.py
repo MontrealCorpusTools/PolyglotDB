@@ -539,8 +539,7 @@ def graph_port():
 
 @pytest.fixture(scope='session')
 def graph_db(graph_host, graph_port, graph_user, graph_pw):
-    return dict(graph_host = graph_host, graph_port = graph_port,
-                graph_user = graph_user, graph_password = graph_pw)
+    return dict(graph_host = graph_host, graph_port = graph_port)
 
 
 @pytest.fixture(scope='session')

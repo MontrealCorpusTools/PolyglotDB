@@ -20,8 +20,8 @@ def setup_logger(logger_name, log_file, level=logging.INFO):
 class CorpusConfig(object):
     def __init__(self, corpus_name, **kwargs):
         self.corpus_name = corpus_name
-        self.graph_user = 'neo4j'
-        self.graph_password = 'test'
+        self.graph_user = None
+        self.graph_password = None
         self.graph_host = 'localhost'
         self.graph_port = 7474
 
@@ -56,7 +56,12 @@ class CorpusConfig(object):
 
     @property
     def graph_connection_string(self):
-        return "http://{}:{}@{}:{}/db/data/".format(self.graph_user, self.graph_password, self.graph_host, self.graph_port)
+
+        host_string = '{}:{}'.format(self.graph_host, self.graph_port)
+        user_string = ''
+        if self.graph_user is not None and self.graph_password is not None:
+            user_string = '{}:{}@'.format(self.graph_user, self.graph_password)
+        return "http://{}{}/db/data/".format(user_string, host_string)
 
     @property
     def sql_connection_string(self):
