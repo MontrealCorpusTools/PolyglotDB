@@ -38,7 +38,6 @@ class ClauseElement(object):
             value = self.value.for_cypher()
         except AttributeError:
             value = self.cypher_value_string()
-            print(value)
         return self.template.format(self.attribute.for_cypher(),
                                 self.sign,
                                 value)
