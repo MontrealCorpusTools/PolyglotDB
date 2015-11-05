@@ -17,6 +17,7 @@ jdk:
 before_install:
   # install Neo4j locally:
   - bash continuous-integration/travis/install.sh
+  - ls $HOME/neo4j/neo4j
 
 # Install packages
 install:
@@ -27,7 +28,7 @@ install:
 
 # Run test
 script:
-  - $HOME/neo4j/bin/neo4j start
+  - $HOME/neo4j/neo4j/bin/neo4j start
   - "coverage run --source=polyglotdb setup.py test"
 
 # Calculate coverage
