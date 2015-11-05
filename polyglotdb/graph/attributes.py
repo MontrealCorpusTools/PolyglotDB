@@ -164,20 +164,20 @@ class PathAttribute(Attribute):
     def for_subquery(self, withs):
         input_with = ', '.join(withs)
         output_with = input_with + ', ' + self.for_with()
-        template = '''MATCH p = ({begin_alias})-[:r_{sub_type}*]->({end_alias})
+        template = '''MATCH p = shortestPath(({begin_alias})-[:r_{sub_type}*]->({end_alias}))
         WITH {input_with_string}, p
         UNWIND nodes(p) as n
         MATCH (n)-[:is_a]->({sub_type_alias})
         WITH {output_with_string}'''
         return template.format(begin_alias = self.annotation.begin_alias, end_alias = self.annotation.end_alias,
                         input_with_string = input_with, output_with_string = output_with, sub_type = self.sub.type,
-                        sub_type_alias = self.sub.define_type_alias)
+                        sub_type_alias = 'path_' + self.sub.define_type_alias)
 
     def for_match(self):
         return self.match_template.format(alias = self.annotation.alias, sub_type = self.sub.type, corpus = self.sub.corpus, sub_type_alias = self.sub.define_type_alias)
 
     def for_with(self):
-        return self.with_template.format(sub_type_alias = self.sub.type_alias, type = self.sub.type)
+        return self.with_template.format(sub_type_alias = 'path_'+self.sub.type_alias, type = self.sub.type)
 
     @property
     def output_alias(self):
