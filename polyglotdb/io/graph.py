@@ -133,7 +133,7 @@ def import_csvs(corpus_context, data):
         name, annotation_types = data.name, data.output_types
         token_properties = data.token_properties
         type_properties = data.type_properties
-        node_path = 'file:/{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
+        node_path = 'file:///{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_nodes.csv'.format(name)).replace('\\','/'))
 
         corpus_context.graph.cypher.execute('CREATE INDEX ON :Anchor(time)')
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:Anchor) ASSERT node.id IS UNIQUE')
@@ -150,8 +150,8 @@ time: toFloat(csvLine.time)}})'''
         prop_temp = '''{name}: csvLine.{name}'''
 
         for at in annotation_types:
-            rel_path = 'file:/{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_r_{}.csv'.format(name, at)).replace('\\','/'))
-            type_path = 'file:/{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
+            rel_path = 'file:///{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_r_{}.csv'.format(name, at)).replace('\\','/'))
+            type_path = 'file:///{}'.format(os.path.join(corpus_context.config.temp_dir, '{}_{}.csv'.format(name, at)).replace('\\','/'))
 
             corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
