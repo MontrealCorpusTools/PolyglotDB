@@ -2,6 +2,7 @@ import os
 import pytest
 
 from polyglotdb.corpus import CorpusContext
+from polyglotdb.graph.func import Count
 
 def test_basic_query(untimed_config):
     with CorpusContext(untimed_config) as g:
@@ -9,16 +10,24 @@ def test_basic_query(untimed_config):
         print(q.cypher())
         assert(all(x.label == 'are' for x in q.all()))
 
+@pytest.mark.xfail
+def test_aggregate_element(untimed_config):
+    with CorpusContext(untimed_config) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.filter(Count(g.word.label) >= 2).columns(g.word.label.column_name('word_label'))
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 2)
+        assert(all(x.word_label == 'are' for x in results))
+
 def test_strings(untimed_config):
-    return
     with CorpusContext(untimed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
         q = q .columns(g.word.phone)
         print(q.cypher())
         results = q.all()
-        print(results)
-        assert(False)
         assert(all(x.label == 'are' for x in results))
+        assert(all(x.phones == ['aa','r'] for x in results))
 
 def test_columns(untimed_config):
     with CorpusContext(untimed_config) as g:

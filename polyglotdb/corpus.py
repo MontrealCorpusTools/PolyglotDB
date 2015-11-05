@@ -119,14 +119,14 @@ class CorpusContext(object):
 
 
             contains = sorted(self.hierarchy.keys())
+            supertypes = [supertype, key]
             if supertype is not None:
-                supertypes = [supertype]
                 while True:
                     supertype = self.hierarchy[supertype]
                     if supertype is None:
                         break
                     supertypes.append(supertype)
-                contains = [x for x in contains if x not in supertypes]
+            contains = [x for x in contains if x not in supertypes]
             return AnnotationAttribute(key, corpus = self.corpus_name, contains = contains)
         raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.relationship_types)))))
 

@@ -1,4 +1,8 @@
 
+from .elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
+                        LtClauseElement, LteClauseElement, NotEqualClauseElement)
+
+from .attributes import AggregateAttribute
 
 class AggregateFunction(object):
     function = ''
@@ -24,6 +28,24 @@ class AggregateFunction(object):
         return self.template.format(function = self.function,
                                 property = element,
                                 output_name = self.aliased_for_output())
+
+    def __eq__(self, other):
+        return EqualClauseElement(AggregateAttribute(self), other)
+
+    def __ne__(self, other):
+        return NotEqualClauseElement(AggregateAttribute(self), other)
+
+    def __gt__(self, other):
+        return GtClauseElement(AggregateAttribute(self), other)
+
+    def __ge__(self, other):
+        return GteClauseElement(AggregateAttribute(self), other)
+
+    def __lt__(self, other):
+        return LtClauseElement(AggregateAttribute(self), other)
+
+    def __le__(self, other):
+        return LteClauseElement(AggregateAttribute(self), other)
 
 class Average(AggregateFunction):
     function = 'avg'

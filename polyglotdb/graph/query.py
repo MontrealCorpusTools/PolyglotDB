@@ -40,15 +40,7 @@ class GraphQuery(object):
         return annotation_set
 
     def filter(self, *args):
-        self._criterion.extend([x for x in args if x is not None])
-        other_to_finds = [x for x in self.annotation_set if x.type != self.to_find.type]
-        for o in other_to_finds:
-            if o.pos == 0:
-                if o.type in [x.type for x in self._contained_by_annotations]:
-                    continue
-                if o.type in [x.type for x in self._contains_annotations]:
-                    continue
-                self._contained_by_annotations.add(o) # FIXME
+        self._criterion.extend(args)
         return self
 
     def filter_contains(self, *args):

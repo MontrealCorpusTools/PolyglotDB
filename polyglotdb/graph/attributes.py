@@ -53,8 +53,6 @@ class Attribute(object):
             b_node = self.annotation.begin_alias
             e_node = self.annotation.end_alias
             return '{}.time - {}.time'.format(e_node, b_node)
-        elif self.annotation.contains is not None and self.label in self.annotation.contains:
-            return ''
         if self.label not in type_attributes:
             return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
@@ -67,11 +65,7 @@ class Attribute(object):
         return '{} AS {}'.format(self.for_cypher(), self.alias)
 
     def aliased_for_output(self):
-        if self.output_label is not None:
-            a = self.output_label
-        else:
-            a = self.alias
-        return '{} AS {}'.format(self.for_cypher(), a)
+        return '{} AS {}'.format(self.for_cypher(), self.output_alias)
 
     @property
     def output_alias(self):
@@ -127,6 +121,73 @@ class Attribute(object):
 
     def regex(self, pattern):
         return RegexClauseElement(self, pattern)
+
+class AggregateAttribute(Attribute):
+    def __init__(self, aggregate):
+        self.aggregate = aggregate
+
+    @property
+    def alias(self):
+        return '{}_{}_{}'.format(self.annotation.alias, self.label, self.aggregate.function)
+
+    @property
+    def annotation(self):
+        return self.aggregate.attribute.annotation
+
+    @property
+    def label(self):
+        return self.aggregate.attribute.label
+
+    @property
+    def output_label(self):
+        return self.aggregate.aliased_for_output()
+
+    def for_with(self):
+        return self.aggregate.for_cypher()
+
+    def for_cypher(self):
+        return self.output_label
+
+class PathAttribute(Attribute):
+    match_template = '({alias})<-[:contained_by]-(:{sub_type}:{corpus})-[:is_a]->({sub_type_alias})'
+    with_template = 'collect({sub_type_alias}) AS {type}'
+    return_template = 'extract(n in {type}|n.label)'
+    def __init__(self, super_annotation, sub_annotation):
+        self.annotation = super_annotation
+        self.sub = sub_annotation
+        self.output_label = None
+
+    @property
+    def label(self):
+        return self.sub.type
+
+    def for_subquery(self, withs):
+        input_with = ', '.join(withs)
+        output_with = input_with + ', ' + self.for_with()
+        template = '''MATCH p = ({begin_alias})-[:r_{sub_type}*]->({end_alias})
+        WITH {input_with_string}, p
+        UNWIND nodes(p) as n
+        MATCH (n)-[:is_a]->({sub_type_alias})
+        WITH {output_with_string}'''
+        return template.format(begin_alias = self.annotation.begin_alias, end_alias = self.annotation.end_alias,
+                        input_with_string = input_with, output_with_string = output_with, sub_type = self.sub.type,
+                        sub_type_alias = self.sub.define_type_alias)
+
+    def for_match(self):
+        return self.match_template.format(alias = self.annotation.alias, sub_type = self.sub.type, corpus = self.sub.corpus, sub_type_alias = self.sub.define_type_alias)
+
+    def for_with(self):
+        return self.with_template.format(sub_type_alias = self.sub.type_alias, type = self.sub.type)
+
+    @property
+    def output_alias(self):
+        if self.output_label is not None:
+            return self.output_label
+        return self.sub.type + 's'
+
+    def for_cypher(self):
+        return self.return_template.format(type = self.sub.type)
+
 
 class AnnotationAttribute(Attribute):
     """
@@ -257,5 +318,8 @@ class AnnotationAttribute(Attribute):
             else:
                 pos = self.pos + 1
             return AnnotationAttribute(self.type, pos, corpus = self.corpus, contains = self.contains)
+        elif self.contains is not None and key in self.contains:
+            return PathAttribute(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
+
         else:
             return Attribute(self, key)

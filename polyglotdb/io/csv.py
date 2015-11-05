@@ -26,7 +26,7 @@ def save_results(results, path, header = None):
         writer = DictWriter(f, header)
         writer.writeheader()
         for line in results:
-            writer.writerow({k: getattr(line, k) for k in header})
+            writer.writerow({k: make_safe(getattr(line, k), '.') for k in header})
 
 def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
     """

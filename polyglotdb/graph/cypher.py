@@ -190,6 +190,41 @@ def generate_type_matches(query):
             defined.add(k.type_alias)
     return matches, defined
 
+def generate_additional_withs(query):
+    defined = set()
+    for c in query._criterion:
+        for a in c.attributes:
+            if hasattr(a, 'for_with'):
+                defined.add(a.for_with())
+    for a in query._columns + query._group_by + query._additional_columns:
+        if hasattr(a, 'for_with'):
+            defined.add(a.for_with())
+    return defined
+
+def generate_additional_matches(query):
+    matches = []
+    for c in query._criterion:
+        for a in c.attributes:
+            if hasattr(a, 'for_match'):
+                matches.append(a.for_match())
+    for a in query._columns + query._group_by + query._additional_columns:
+        if hasattr(a, 'for_match'):
+            matches.append(a.for_match())
+    return matches
+
+def generate_withs(query, all_withs):
+    statements = [withs_to_string(all_withs)]
+    for c in query._criterion:
+        for a in c.attributes:
+            if hasattr(a, 'for_subquery'):
+                statements.append(a.for_subquery(all_withs))
+                all_withs.add(a.output_alias)
+    for a in query._columns + query._group_by + query._additional_columns:
+        if hasattr(a, 'for_subquery'):
+            statements.append(a.for_subquery(all_withs))
+            all_withs.add(a.output_alias)
+    return '\n'.join(statements)
+
 def withs_to_string(withs):
     return 'WITH ' + ', '.join(withs)
 
@@ -221,7 +256,8 @@ def query_to_cypher(query):
 
     kwargs['where'] = criterion_to_where(query._criterion)
 
-    kwargs['with'] = withs_to_string(all_withs)
+    kwargs['with'] = generate_withs(query, all_withs)
+
 
     kwargs['return'] = create_return_statement(query)
     cypher = template.format(**kwargs)
