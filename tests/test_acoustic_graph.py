@@ -4,20 +4,11 @@ import pytest
 
 from polyglotdb.corpus import CorpusContext
 
-def test_query_duration(acoustic_config):
+def test_encode_pause(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        q = g.query_graph(g.phone).filter(g.phone.label == 'aa').order_by(g.phone.begin.column_name('begin')).duration()
-        print(q.cypher())
-        results = q.all()
-        assert(len(results) == 3)
-        assert(abs(results[0].begin - 2.704) < 0.001)
-        assert(abs(results[0].duration - 0.078) < 0.001)
-
-        assert(abs(results[1].begin - 9.320) < 0.001)
-        assert(abs(results[1].duration - 0.122) < 0.001)
-
-        assert(abs(results[2].begin - 24.560) < 0.001)
-        assert(abs(results[2].duration - 0.039) < 0.001)
+        g.encode_pauses(['sil'])
+        q = g.query_graph(g.pause)
+        assert(len(q.all()) > 0)
 
 def test_get_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -60,6 +51,56 @@ def test_get_utterances(acoustic_config):
         for i, u in enumerate(utterances):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
             assert(round(u[1],5) == round(expected_utterances[i][1],5))
+
+def test_query_with_pause(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['uh','um'])
+        q = g.query_graph(g.word).filter(g.word.label == 'cares')
+        q = q.columns(g.word.following.label.column_name('following'),
+                    g.pause.following.label.column_name('following_pause'),
+                    g.pause.following.duration.column_name('following_pause_duration')).order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(results[0].following == 'this')
+        assert(results[0].following_pause == ['sil', 'um'])
+        assert(abs(results[0].following_pause_duration - 1.035027) < 0.001)
+
+        q = g.query_graph(g.word).filter(g.word.label == 'this')
+        q = q.columns(g.word.previous.label.column_name('previous'),
+                    g.pause.previous.label.column_name('previous_pause'),
+                    g.pause.previous.duration.column_name('previous_pause_duration'),
+                    g.pause.previous.begin,
+                    g.pause.previous.end).order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(results[0].previous == 'cares')
+        assert(results[0].previous_pause == ['sil', 'um'])
+        assert(abs(results[0].previous_pause_duration - 1.035027) < 0.001)
+
+def test_encode_utterances(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        g.encode_utterances()
+        q = g.query_graph(g.utterance).duration().order_by(g.utterance.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(abs(results[0].duration - 6.482261) < 0.001)
+
+
+def test_query_duration(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa').order_by(g.phone.begin.column_name('begin')).duration()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 3)
+        assert(abs(results[0].begin - 2.704) < 0.001)
+        assert(abs(results[0].duration - 0.078) < 0.001)
+
+        assert(abs(results[1].begin - 9.320) < 0.001)
+        assert(abs(results[1].duration - 0.122) < 0.001)
+
+        assert(abs(results[2].begin - 24.560) < 0.001)
+        assert(abs(results[2].duration - 0.039) < 0.001)
+
 
 def test_discourses_prop(acoustic_config):
     with CorpusContext(acoustic_config) as g:

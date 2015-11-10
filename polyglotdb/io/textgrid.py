@@ -117,11 +117,11 @@ def inspect_discourse_textgrid(path):
                                     break
                             if a.trans_delimiter is not None:
                                 break
-                a.add((x.mark for x in ti), save = False)
+                a.add((x.mark.strip() for x in ti), save = False)
                 anno_types.append(a)
         else:
             for i, ti in enumerate(interval_tiers):
-                anno_types[i].add((x.mark for x in ti), save = False)
+                anno_types[i].add((x.mark.strip() for x in ti), save = False)
 
     return anno_types
 
@@ -170,7 +170,7 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
 
     for si in spelling_tier:
         annotations = dict()
-        word = Annotation(si.mark)
+        word = Annotation(si.mark.strip())
         for n in data.base_levels:
             if data['word'].speaker != data[n].speaker \
                         and data[n].speaker is not None:
@@ -193,9 +193,10 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
                 if phoneEnd > si.maxTime:
                     phoneEnd = si.maxTime
 
-                if ti.mark == '':
-                    ti.mark = '?'
-                a = BaseAnnotation(ti.mark,
+                mark = ti.mark.strip()
+                if mark == '':
+                    mark = '?'
+                a = BaseAnnotation(mark,
                             begin = phoneBegin, end = phoneEnd)
                 a.super_id = word.id
                 tier_elements.append(a)
@@ -219,9 +220,9 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
             if ti is None:
                 value = None
             else:
-                value = ti.mark
+                value = ti.mark.strip()
                 if at.delimited:
-                    value = [x.label for x in parse_transcription(ti.mark, at)]
+                    value = [x.label for x in parse_transcription(value, at)]
                 elif at.ignored:
                     value = ''.join(x for x in value if x not in at.ignored)
             if at.token:

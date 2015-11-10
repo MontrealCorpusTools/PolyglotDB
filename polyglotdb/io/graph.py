@@ -202,7 +202,7 @@ LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MATCH (n:{annotation_type}_type {{id: csvLine.type_id}}),
     (begin_node:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.from_id)}}),
     (end_node:Anchor:{corpus_name}:{discourse_name} {{ id: toInt(csvLine.to_id)}})
-CREATE (begin_node)-[:r_{annotation_type}]->(t:{annotation_type}:{corpus_name}:{discourse_name} {{id: csvLine.id, discourse: '{discourse_name}'{token_property_string} }})-[:r_{annotation_type}]->(end_node)
+CREATE (begin_node)-[:r_{annotation_type}]->(t:{annotation_type}:{corpus_name}:{discourse_name}:speech {{id: csvLine.id, discourse: '{discourse_name}'{token_property_string} }})-[:r_{annotation_type}]->(end_node)
 CREATE (t)-[:is_a]->(n)'''
             kwargs = {'path': rel_path, 'annotation_type': at,
                         'token_property_string': token_prop_string,

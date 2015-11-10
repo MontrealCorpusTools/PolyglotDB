@@ -15,7 +15,7 @@ from .config import CorpusConfig
 from .io.graph import data_to_graph_csvs, import_csvs
 
 from .graph.query import GraphQuery
-from .graph.attributes import AnnotationAttribute
+from .graph.attributes import AnnotationAttribute, PauseAnnotation
 
 from .sql.models import (Base, Word, WordProperty, WordPropertyType,
                     InventoryItem, AnnotationType, SoundFile, Discourse)
@@ -87,6 +87,7 @@ class CorpusContext(object):
             self.relationship_types = set()
             self.is_timed = False
             self.hierarchy = {}
+        self.relationship_types.add('pause')
 
     def save_variables(self):
         with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
@@ -114,6 +115,8 @@ class CorpusContext(object):
         self.sql_session.close()
 
     def __getattr__(self, key):
+        if key == 'pause':
+            return PauseAnnotation(corpus = self.corpus_name)
         if key in self.relationship_types:
             supertype = self.hierarchy[key]
 
@@ -170,18 +173,47 @@ class CorpusContext(object):
             raise(NoSoundFileError)
         acoustic_analysis(self)
 
-    def get_utterances(self, discourse, pause_words,
-                min_pause_length = 0.5, min_utterance_length = 0):
-
-        q = self.query_graph(self.word).filter(self.word.discourse == discourse)
+    def encode_pauses(self, pause_words):
+        q = self.query_graph(self.word)
         if isinstance(pause_words, (list, tuple, set)):
             q = q.filter(self.word.label.in_(pause_words))
         elif isinstance(pause_words, str):
             q = q.filter(self.word.label.regex(pause_words))
         else:
             raise(NotImplementedError)
-        q = q.filter(self.word.duration >= min_pause_length)
-        q = q.clear_columns().times().duration().order_by(self.word.begin)
+        q.set(pause = True)
+
+    def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0):
+        for d in self.discourses:
+            utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
+            statement = '''MATCH (begin:Anchor:{corpus}:{discourse} {{time: {{begin_time}}}}),
+            (end:Anchor:{corpus}:{discourse} {{time: {{end_time}}}})
+            MERGE (begin)-[:r_utterance]->(utt:utterance:{corpus}:{discourse}:speech)-[:r_utterance]->(end)
+            MERGE (utt)-[:is_a]->(u_type:utterance_type)
+            WITH utt, begin, end
+            MATCH path = (begin)-[:r_word*]->(end)
+            WITH utt, begin, end, filter(n in nodes(path) where n.time is null) as words
+            UNWIND words as w
+            MERGE (w)-[:contained_by]->(utt)'''
+            for u in utterances:
+                self.graph.cypher.execute(statement.format(corpus = self.corpus_name, discourse = d), begin_time = u[0], end_time = u[1])
+        self.hierarchy['word'] = 'utterance'
+        self.hierarchy['utterance'] = None
+        self.relationship_types.add('utterance')
+    #       statement = '''MATCH path = (begin:Anchor:{corpus}:{discourse})-[:r_word*]->(end:Anchor:{corpus}:{discourse})
+#           WHERE ()-[:r_pause]->(begin)
+#       and size(filter(n in nodes(path) where (n)-[:r_pause]-> ())) = 1
+#       CREATE (begin)-[:r_utterance]->(:utterance:{corpus}:{discourse})-[:r_utterance]->(end)'''.format(corpus = self.corpus_name,
+#                                                                                                        discourse = d)
+            #print(statement)
+
+
+    def get_utterances(self, discourse, pause_words,
+                min_pause_length = 0.5, min_utterance_length = 0):
+
+        q = self.query_graph(self.pause).filter(self.pause.discourse == discourse)
+        q = q.filter(self.pause.duration >= min_pause_length)
+        q = q.clear_columns().times().duration().order_by(self.pause.begin)
         results = q.all()
         collapsed_results = []
         for i, r in enumerate(results):

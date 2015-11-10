@@ -28,6 +28,11 @@ class GraphQuery(object):
         self._group_by = []
         self._aggregate = []
 
+        self._set_labels = []
+        self._remove_labels = []
+
+        self._set = {}
+
     def clear_columns(self):
         self._columns = []
         return self
@@ -99,10 +104,12 @@ class GraphQuery(object):
         for c in self._criterion:
             for a in c.attributes:
                 t = a.annotation
-                annotation_levels[t.type].add(t)
+                key = getattr(self.corpus, t.key)
+                annotation_levels[key].add(t)
         for a in self._columns + self._group_by + self._additional_columns:
             t = a.annotation
-            annotation_levels[t.type].add(t)
+            key = getattr(self.corpus, t.key)
+            annotation_levels[key].add(t)
 
         return annotation_levels
 
@@ -139,3 +146,9 @@ class GraphQuery(object):
             return value
         else:
             return value.one
+
+    def set(self, **kwargs):
+        for k,v in kwargs.items():
+            self._set[k] = v
+        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+

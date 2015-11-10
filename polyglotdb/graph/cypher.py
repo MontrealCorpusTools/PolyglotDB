@@ -9,7 +9,37 @@ aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
 
 distinct_template = '''RETURN {columns}{additional_columns}{order_by}'''
 
+set_pause_template = '''SET {alias} :pause
+REMOVE {alias}:speech
+WITH {alias}
+MATCH ({begin_alias})-[:{rel_type}]->({alias})-[:{rel_type}]->({end_alias})
+CREATE ({begin_alias})-[:r_pause]->({alias})-[:r_pause]->({end_alias})'''
+
+unset_pause_template = '''SET {alias} :speech
+REMOVE {alias}:pause
+WITH {alias}
+MATCH ({begin_alias})-[r1:r_pause]->({alias})-[r2:r_pause]->({end_alias})
+DELETE r1, r2'''
+
+change_label_template = '''SET {alias} {value}
+REMOVE {alias}{alt_value}
+WITH {alias}
+MATCH (a:Anchor)-[:{rel_type}]->({alias})-[:{rel_type}]->(b:Anchor)
+CREATE (a:Anchor)-[:{rel_value}]->({alias})-[:{rel_value}]->(b:Anchor)'''
+
+set_label_template = '''SET {alias} {value}
+WITH {alias}
+MATCH (a:Anchor)-[:{rel_type}]->({alias})-[:{rel_type}]->(b:Anchor)
+CREATE (a:Anchor)-[:{rel_value}]->({alias})-[:{rel_value}]->(b:Anchor)'''
+
+remove_label_template = '''REMOVE {alias}{value}'''
+
+set_property_template = '''SET {alias}.{attribute} = {value}'''
+
 anchor_template = '''({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})'''
+
+prec_template = '''{path_alias} = ({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})-[:r_pause*0..]->({main_begin_alias})'''
+foll_template = '''{path_alias} = ({main_end_alias})-[:r_pause*0..]->({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})'''
 
 template = '''{match}
 {where}
@@ -38,7 +68,36 @@ def figure_property(annotation, property_string, withs):
 
 def create_return_statement(query):
     kwargs = {'order_by': '', 'additional_columns':'', 'columns':''}
-    if query._aggregate:
+    if query._set or query._set_labels or query._remove_labels:
+        for k,v in query._set.items():
+            if k == 'pause':
+                kwargs = {}
+                kwargs['alias'] = query.to_find.alias
+                kwargs['begin_alias'] = query.to_find.begin_alias
+                kwargs['end_alias'] = query.to_find.end_alias
+                if v:
+                    kwargs['rel_type'] = query.to_find.rel_type_alias
+                    return_statement = set_pause_template.format(**kwargs)
+                else:
+                    return_statement = unset_pause_template.format(**kwargs)
+        return return_statement
+        return_statement = ''
+        if query._set_labels:
+            kwargs = {}
+            kwargs['alias'] = query.to_find.alias
+            kwargs['value'] = ':' + ':'.join(query._set_labels) #FIXME
+            kwargs['alt_value'] = ':' + ':'.join(query._remove_labels) #FIXME
+            kwargs['rel_type'] = query.to_find.rel_type_alias
+            kwargs['rel_value'] = ':' + ':'.join(map(lambda x: 'r_'+ x,query._set_labels)) #FIXME
+            kwargs['alt_rel_value'] = ':' + ':'.join(map(lambda x: 'r_'+ x,query._remove_labels)) #FIXME
+            return_statement += set_label_template.format(alias = query.to_find.alias, value = value)
+        if query._remove_labels:
+            if return_statement:
+                return_statement += '\nWITH {alias}\n'.format(alias = query.to_find.alias)
+            value = ':' + ':'.join(query._remove_labels) #FIXME
+            return_statement += remove_label_template.format(alias = query.to_find.alias, value = value)
+        return return_statement
+    elif query._aggregate:
         template = aggregate_template
         properties = []
         for g in query._group_by:
@@ -94,59 +153,48 @@ def create_return_statement(query):
 
 
 def generate_token_match(annotation_type, annotation_list):
-    if all(x.pos != 0 for x in annotation_list):
-        annotation_list.add(AnnotationAttribute(annotation_type, 0))
     annotation_list = sorted(annotation_list, key = lambda x: x.pos)
     prec_condition = ''
     foll_condition = ''
     defined = set()
 
-    current = annotation_list[0].pos
-    anchor_string = '()'
     statements = []
+    kwargs = {}
+    kwargs['begin_alias'] = annotation_type.define_begin_alias
+    kwargs['end_alias'] = annotation_type.define_end_alias
+    kwargs['node_alias'] = annotation_type.define_alias
+    kwargs['rel_type'] = annotation_type.rel_type_alias
+    anchor_string = anchor_template.format(**kwargs)
+    statements.append(anchor_string)
+    defined.update(generate_annotation_with(annotation_type))
+    current = annotation_list[0].pos
+
     for a in annotation_list:
         if a.pos == 0:
-            kwargs = {}
-            kwargs['begin_alias'] = figure_property(a, 'begin_alias', defined)
-            kwargs['end_alias'] = figure_property(a, 'end_alias', defined)
-            kwargs['node_alias'] = a.define_alias
-            kwargs['rel_type'] = a.rel_type_alias
-            anchor_string = anchor_template.format(**kwargs)
+            continue
         elif a.pos < 0:
-            while a.pos != current:
-                kwargs = {}
-                temp_a = AnnotationAttribute(annotation_type, current)
-                kwargs['node_alias'] = temp_a.define_alias
-                kwargs['begin_alias'] = temp_a.define_begin_alias
-                kwargs['rel_type'] = temp_a.rel_type_alias
-                prec_condition += prec_template.format(**kwargs)
-                current += 1
 
             kwargs = {}
             kwargs['begin_alias'] = figure_property(a, 'begin_alias', defined)
+            kwargs['main_begin_alias'] = annotation_type.begin_alias
             kwargs['end_alias'] = figure_property(a, 'end_alias', defined)
             kwargs['node_alias'] = a.define_alias
             kwargs['rel_type'] = a.rel_type_alias
-            anchor_string = anchor_template.format(**kwargs)
+            kwargs['path_alias'] = 'path_' + a.alias
+            anchor_string = prec_template.format(**kwargs)
         elif a.pos > 0:
-            while a.pos != current:
-                kwargs = {}
-                temp_a = AnnotationAttribute(annotation_type, current)
-                kwargs['node_alias'] = temp_a.define_alias
-                kwargs['end_alias'] = temp_a.define_end_alias
-                kwargs['rel_type'] = temp_a.rel_type_alias
-                foll_condition += foll_template.format(**kwargs)
-                current += 1
 
             kwargs = {}
             kwargs['begin_alias'] = figure_property(a, 'begin_alias', defined)
+            kwargs['main_end_alias'] = annotation_type.end_alias
             kwargs['end_alias'] = figure_property(a, 'end_alias', defined)
             kwargs['node_alias'] = a.define_alias
             kwargs['rel_type'] = a.rel_type_alias
-            anchor_string = anchor_template.format(**kwargs)
+            kwargs['path_alias'] = 'path_' + a.alias
+            anchor_string = foll_template.format(**kwargs)
         statements.append(anchor_string)
-        current += 1
         defined.update(generate_annotation_with(a))
+        defined.add(kwargs['path_alias'])
 
     return statements, defined
 
@@ -154,10 +202,11 @@ hierarchy_template = '''({contained_alias})-[:contained_by*1..]->({containing_al
 
 def generate_hierarchical_match(annotation_levels, hierarchy):
     statements = []
-    for k in sorted(annotation_levels.keys()):
+    annotation_types = [x.type for x in annotation_levels.keys()]
+    for k in sorted(annotation_types):
         if k in hierarchy:
             supertype = hierarchy[k]
-            while supertype not in annotation_levels.keys():
+            while supertype not in annotation_types:
                 if supertype is None:
                     break
                 supertype = hierarchy[supertype]
@@ -218,11 +267,18 @@ def generate_withs(query, all_withs):
         for a in c.attributes:
             if hasattr(a, 'for_subquery'):
                 statements.append(a.for_subquery(all_withs))
-                all_withs.add(a.output_alias)
+
+                if not hasattr(a, 'with_alias'):
+                    all_withs.add(a.output_alias)
+                else:
+                    all_withs.add(a.with_alias)
     for a in query._columns + query._group_by + query._additional_columns:
         if hasattr(a, 'for_subquery'):
             statements.append(a.for_subquery(all_withs))
-            all_withs.add(a.output_alias)
+            if not hasattr(a, 'with_alias'):
+                all_withs.add(a.output_alias)
+            else:
+                all_withs.add(a.with_alias)
     return '\n'.join(statements)
 
 def withs_to_string(withs):
