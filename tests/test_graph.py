@@ -23,7 +23,7 @@ def test_aggregate_element(untimed_config):
 def test_strings(untimed_config):
     with CorpusContext(untimed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
-        q = q .columns(g.word.phone)
+        q = q .columns(g.word.phone.label.column_name('phones'))
         print(q.cypher())
         results = q.all()
         assert(all(x.label == 'are' for x in results))

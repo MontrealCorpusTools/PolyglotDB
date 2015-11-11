@@ -103,11 +103,11 @@ class GraphQuery(object):
         annotation_levels = defaultdict(set)
         for c in self._criterion:
             for a in c.attributes:
-                t = a.annotation
+                t = a.base_annotation
                 key = getattr(self.corpus, t.key)
                 annotation_levels[key].add(t)
         for a in self._columns + self._group_by + self._additional_columns:
-            t = a.annotation
+            t = a.base_annotation
             key = getattr(self.corpus, t.key)
             annotation_levels[key].add(t)
 

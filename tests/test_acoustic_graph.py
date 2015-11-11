@@ -85,6 +85,14 @@ def test_encode_utterances(acoustic_config):
         results = q.all()
         assert(abs(results[0].duration - 6.482261) < 0.001)
 
+def test_speech_rate(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        q = g.query_graph(g.utterance)
+        q = q.columns(g.utterance.word.rate.column_name('words_per_second'), g.utterance.word.label)
+        q = q.order_by(g.utterance.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(abs(results[0].words_per_second - (26 / 6.482261)) < 0.001)
 
 def test_query_duration(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -146,10 +154,11 @@ def test_analyze_utterances(graph_db):
     with CorpusContext('acoustic', pause_words = ['sil'], **graph_db) as g:
         g.analyze_acoustics()
 
-@pytest.mark.xfail
 def test_query_speaking_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        q = g.query_graph(g.word).filter(g.word.label == 'are')
-        q = q.preceding_speaking_rate().following_speaking_rate()
-
-    assert(False)
+        q = g.query_graph(g.word).filter(g.word.label == 'talking')
+        q = q.columns(g.utterance.word.rate.column_name('words_per_second'))
+        q = q.order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(abs(results[0].words_per_second - (26 / 6.482261)) < 0.001)

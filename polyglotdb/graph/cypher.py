@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from .helper import type_attributes
 
-from .attributes import AnnotationAttribute, Attribute
+from .attributes import AnnotationAttribute, PathAnnotation, Attribute
 
 aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
 
@@ -180,7 +180,7 @@ def generate_token_match(annotation_type, annotation_list):
             kwargs['end_alias'] = figure_property(a, 'end_alias', defined)
             kwargs['node_alias'] = a.define_alias
             kwargs['rel_type'] = a.rel_type_alias
-            kwargs['path_alias'] = 'path_' + a.alias
+            kwargs['path_alias'] = a.path_alias
             anchor_string = prec_template.format(**kwargs)
         elif a.pos > 0:
 
@@ -190,7 +190,7 @@ def generate_token_match(annotation_type, annotation_list):
             kwargs['end_alias'] = figure_property(a, 'end_alias', defined)
             kwargs['node_alias'] = a.define_alias
             kwargs['rel_type'] = a.rel_type_alias
-            kwargs['path_alias'] = 'path_' + a.alias
+            kwargs['path_alias'] = a.path_alias
             anchor_string = foll_template.format(**kwargs)
         statements.append(anchor_string)
         defined.update(generate_annotation_with(a))
@@ -225,9 +225,13 @@ def generate_type_matches(query):
     defined = set()
     for c in query._criterion:
         for a in c.attributes:
+            if a.annotation.has_subquery:
+                continue
             type_token =  'type' if a.label in type_attributes else 'token'
             analyzed[a.annotation].add(type_token)
     for a in query._columns + query._group_by + query._additional_columns:
+        if a.annotation.has_subquery:
+            continue
         type_token =  'type' if a.label in type_attributes else 'token'
         analyzed[a.annotation].add(type_token)
 
@@ -265,20 +269,24 @@ def generate_withs(query, all_withs):
     statements = [withs_to_string(all_withs)]
     for c in query._criterion:
         for a in c.attributes:
-            if hasattr(a, 'for_subquery'):
-                statements.append(a.for_subquery(all_withs))
-
-                if not hasattr(a, 'with_alias'):
-                    all_withs.add(a.output_alias)
+            print(a, a.with_alias)
+            if a.with_alias not in all_withs:
+                if a.is_type_attribute:
+                    statement = a.annotation.type_subquery(all_withs)
                 else:
-                    all_withs.add(a.with_alias)
-    for a in query._columns + query._group_by + query._additional_columns:
-        if hasattr(a, 'for_subquery'):
-            statements.append(a.for_subquery(all_withs))
-            if not hasattr(a, 'with_alias'):
-                all_withs.add(a.output_alias)
-            else:
+                    statement = a.annotation.times_subquery(all_withs)
+                statements.append(statement)
+
                 all_withs.add(a.with_alias)
+    for a in query._columns + query._group_by + query._additional_columns:
+        if a.with_alias not in all_withs:
+            if a.is_type_attribute:
+                statement = a.annotation.type_subquery(all_withs)
+            else:
+                statement = a.annotation.times_subquery(all_withs)
+            statements.append(statement)
+
+            all_withs.add(a.with_alias)
     return '\n'.join(statements)
 
 def withs_to_string(withs):
@@ -297,6 +305,8 @@ def query_to_cypher(query):
     all_withs = set()
 
     for k,v in annotation_levels.items():
+        if k.has_subquery:
+            continue
         statements, withs = generate_token_match(k,v)
         all_withs.update(withs)
         match_strings.extend(statements)

@@ -58,6 +58,10 @@ class Attribute(object):
         return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
 
     @property
+    def base_annotation(self):
+        return self.annotation
+
+    @property
     def alias(self):
         return '{}_{}'.format(self.annotation.alias, self.label)
 
@@ -72,6 +76,19 @@ class Attribute(object):
         if self.output_label is not None:
             return self.output_label
         return self.alias
+
+    @property
+    def is_type_attribute(self):
+        if self.label in type_attributes:
+            return True
+        return False
+
+    @property
+    def with_alias(self):
+        if self.label in type_attributes:
+            return self.annotation.type_alias
+        else:
+            return self.annotation.alias
 
     def column_name(self, label):
         self.output_label = label
@@ -122,74 +139,6 @@ class Attribute(object):
     def regex(self, pattern):
         return RegexClauseElement(self, pattern)
 
-class AggregateAttribute(Attribute):
-    def __init__(self, aggregate):
-        self.aggregate = aggregate
-
-    @property
-    def alias(self):
-        return '{}_{}_{}'.format(self.annotation.alias, self.label, self.aggregate.function)
-
-    @property
-    def annotation(self):
-        return self.aggregate.attribute.annotation
-
-    @property
-    def label(self):
-        return self.aggregate.attribute.label
-
-    @property
-    def output_label(self):
-        return self.aggregate.aliased_for_output()
-
-    def for_with(self):
-        return self.aggregate.for_cypher()
-
-    def for_cypher(self):
-        return self.output_label
-
-
-class SubPathAttribute(Attribute):
-    match_template = '({alias})<-[:contained_by]-(:{sub_type}:{corpus})-[:is_a]->({sub_type_alias})'
-    with_template = 'collect({sub_type_alias}) AS {type}'
-    return_template = 'extract(n in {type}|n.label)'
-    def __init__(self, super_annotation, sub_annotation):
-        self.annotation = super_annotation
-        self.sub = sub_annotation
-        self.output_label = None
-
-    @property
-    def label(self):
-        return self.sub.type
-
-    def for_subquery(self, withs):
-        input_with = ', '.join(withs)
-        output_with = input_with + ', ' + self.for_with()
-        template = '''MATCH p = shortestPath(({begin_alias})-[:r_{sub_type}*]->({end_alias}))
-        WITH {input_with_string}, p
-        UNWIND nodes(p) as n
-        MATCH (n)-[:is_a]->({sub_type_alias})
-        WITH {output_with_string}'''
-        return template.format(begin_alias = self.annotation.begin_alias, end_alias = self.annotation.end_alias,
-                        input_with_string = input_with, output_with_string = output_with, sub_type = self.sub.type,
-                        sub_type_alias = 'path_' + self.sub.define_type_alias)
-
-    def for_match(self):
-        return self.match_template.format(alias = self.annotation.alias, sub_type = self.sub.type, corpus = self.sub.corpus, sub_type_alias = self.sub.define_type_alias)
-
-    def for_with(self):
-        return self.with_template.format(sub_type_alias = 'path_'+self.sub.type_alias, type = self.sub.type)
-
-    @property
-    def output_alias(self):
-        if self.output_label is not None:
-            return self.output_label
-        return self.sub.type + 's'
-
-    def for_cypher(self):
-        return self.return_template.format(type = self.sub.type)
-
-
 class AnnotationAttribute(Attribute):
     """
     Class for annotations referenced in graph queries
@@ -212,6 +161,8 @@ class AnnotationAttribute(Attribute):
     following : AnnotationAttribute
         Returns the Annotation of the same type with the following position
     """
+    has_subquery = False
+    alias_prefix = ''
     begin_template = '{}_{}_begin'
     end_template = '{}_{}_end'
     alias_template = '{prefix}node_{t}'
@@ -271,7 +222,7 @@ class AnnotationAttribute(Attribute):
 
     @property
     def type_alias(self):
-        pre = 'type_'
+        pre = self.alias_prefix + 'type_'
         if self.pos < 0:
             pre += 'prev_{}_'.format(-1 * self.pos)
         elif self.pos > 0:
@@ -280,13 +231,20 @@ class AnnotationAttribute(Attribute):
 
     @property
     def alias(self):
-        if self.pos == 0:
-            pre = ''
-        elif self.pos < 0:
-            pre = 'prev_{}_'.format(-1 * self.pos)
+        pre = self.alias_prefix
+        if self.pos < 0:
+            pre += 'prev_{}_'.format(-1 * self.pos)
         elif self.pos > 0:
-            pre = 'foll_{}_'.format(self.pos)
+            pre += 'foll_{}_'.format(self.pos)
         return self.alias_template.format(t=self.type, prefix = pre)
+
+    @property
+    def with_alias(self):
+        return self.alias
+
+    @property
+    def path_alias(self):
+        return 'path_'+self.alias
 
     @property
     def begin_alias(self):
@@ -313,6 +271,8 @@ class AnnotationAttribute(Attribute):
         return LeftAlignedClauseElement(self, other)
 
     def __getattr__(self, key):
+        if key == 'annotation':
+            raise(AttributeError('Annotations do not have annotation attributes.'))
         if key in ['previous', 'following']:
             if key == 'previous':
                 pos = self.pos - 1
@@ -322,7 +282,7 @@ class AnnotationAttribute(Attribute):
         elif key == 'pause':
             return PauseAnnotation(pos, corpus = self.corpus, contains = self.contains)
         elif self.contains is not None and key in self.contains:
-            return SubPathAttribute(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
+            return SubPathAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
 
         else:
             return Attribute(self, key)
@@ -330,6 +290,179 @@ class AnnotationAttribute(Attribute):
     @property
     def key(self):
         return self.type
+
+class AggregateAttribute(Attribute):
+    def __init__(self, aggregate):
+        self.aggregate = aggregate
+
+    @property
+    def alias(self):
+        return '{}_{}_{}'.format(self.annotation.alias, self.label, self.aggregate.function)
+
+    @property
+    def annotation(self):
+        return self.aggregate.attribute.annotation
+
+    @property
+    def label(self):
+        return self.aggregate.attribute.label
+
+    @property
+    def output_label(self):
+        return self.aggregate.aliased_for_output()
+
+    def for_with(self):
+        return self.aggregate.for_cypher()
+
+    def for_cypher(self):
+        return self.output_label
+
+class PathAnnotation(AnnotationAttribute):
+    has_subquery = True
+    path_prefix = 'path_'
+    with_type_template = 'collect({type_alias}) AS {type}'
+    with_times_template = 'extract(n in filter(n in nodes({path_alias}) where n.time is not null)| n.time) as {path_times_alias}'
+
+    subquery_template = '''UNWIND nodes({path_alias}) as n
+        MATCH ()-[:r_{key}]->(n)-[:is_a]->({path_type_alias})
+        WITH {output_with_string}'''
+
+    def type_subquery(self, withs):
+        input_with = ', '.join(withs)
+        output_with = input_with + ', ' + self.with_type()
+        return self.generate_type_subquery(output_with, input_with)
+
+    def times_subquery(self, withs):
+        input_with = ', '.join(withs)
+        output_with = input_with + ', ' + self.with_times()
+        return '''WITH {}'''.format(output_with)
+
+    def generate_type_subquery(self, output_with_string, input_with_string):
+        return self.subquery_template.format(path_alias = self.path_alias,
+                        output_with_string = output_with_string,
+                        key = self.key,
+                        path_type_alias = self.define_type_alias)
+
+    @property
+    def path_alias(self):
+        return self.path_prefix + self.alias
+
+    @property
+    def type_alias(self):
+        return self.path_alias + '_type'
+
+    @property
+    def path_type_alias(self):
+        return self.path_prefix + self.type_alias
+
+    @property
+    def times_alias(self):
+        return self.path_alias + '_times'
+
+    def with_times(self):
+        return self.with_times_template.format(path_alias = self.path_alias, path_times_alias = self.times_alias)
+
+    def with_type(self):
+        return self.with_type_template.format(type_alias = self.type_alias, type = self.path_type_alias)
+
+    @property
+    def key(self):
+        return 'pause'
+
+    def __getattr__(self, key):
+        if key == 'annotation':
+            raise(AttributeError('Annotations cannot have annotations.'))
+        return PathAttribute(self, key)
+
+class SubPathAnnotation(PathAnnotation):
+    subquery_template = '''MATCH p = shortestPath(({begin_alias})-[:r_{sub_type}*]->({end_alias}))
+        WITH {input_with_string}, p
+        UNWIND nodes(p) as n
+        MATCH (n)-[:is_a]->({path_type_alias})
+        WITH {output_with_string}'''
+
+    def __init__(self, super_annotation, sub_annotation):
+        self.annotation = super_annotation
+        self.sub = sub_annotation
+
+    def generate_type_subquery(self, output_with_string, input_with_string):
+        return self.subquery_template.format(begin_alias = self.annotation.begin_alias, end_alias = self.annotation.end_alias,
+                        input_with_string = input_with_string, output_with_string = output_with_string, sub_type = self.sub.type,
+                        path_type_alias = self.type_alias)
+
+    def __hash__(self):
+        return hash((self.annotation, self.sub))
+
+    @property
+    def alias(self):
+        return self.sub.alias
+
+    @property
+    def end_alias(self):
+        return self.annotation.end_alias
+
+    @property
+    def begin_alias(self):
+        return self.annotation.begin_alias
+
+    @property
+    def path_type_alias(self):
+        return 'path_'+self.sub.type_alias
+
+    @property
+    def key(self):
+        return self.sub.type
+
+
+
+class PathAttribute(Attribute):
+    type_return_template = 'extract(n in {alias}|n.{property})'
+    count_return_template = 'reduce(count = 0, n in {alias} | count + 1)'
+    rate_return_template = 'reduce(count = 0, n in {alias} | count + 1) / ({end_alias}.time - {begin_alias}.time)'
+
+    @property
+    def base_annotation(self):
+        if isinstance(self.annotation, SubPathAnnotation):
+            return self.annotation.annotation
+        else:
+            return self.annotation
+
+    def for_cypher(self):
+        if self.label in type_attributes:
+            return self.type_return_template.format(alias = self.annotation.path_type_alias, property = self.label)
+
+        if self.annotation.pos >= 0:
+            begpos = 0
+            endpos = -2
+        else:
+            begpos = 1
+            endpos = -1
+        if self.label == 'begin':
+            return '{}[{}]'.format(self.annotation.times_alias, begpos)
+        elif self.label == 'end':
+            return '{}[{}]'.format(self.annotation.times_alias, endpos)
+        elif self.label == 'duration':
+            return '{alias}[{endpos}] - {alias}[{begpos}]'.format(alias = self.annotation.times_alias, endpos = endpos, begpos = begpos)
+        elif self.label == 'count':
+            return self.count_return_template.format(alias = self.annotation.path_type_alias)
+        elif self.label == 'rate':
+            return self.rate_return_template.format(alias = self.annotation.path_type_alias,
+                                end_alias = self.annotation.end_alias,
+                                begin_alias = self.annotation.begin_alias)
+
+    @property
+    def is_type_attribute(self):
+        if self.label in type_attributes + ['rate', 'count']:
+            return True
+        return False
+
+    @property
+    def with_alias(self):
+        if self.label in type_attributes + ['rate', 'count']:
+            print(self.label, self.annotation.path_type_alias)
+            return self.annotation.path_type_alias
+        elif self.label in ['duration', 'begin', 'end']:
+            return self.annotation.times_alias
 
 class PauseAnnotation(AnnotationAttribute):
     def __init__(self, pos = 0, corpus = None, contains = None):
@@ -354,101 +487,11 @@ class PauseAnnotation(AnnotationAttribute):
                 pos = self.pos - 1
             else:
                 pos = self.pos + 1
-            return PauseAnnotation(pos, corpus = self.corpus, contains = self.contains)
+            return PathAnnotation(self.type, pos, corpus = self.corpus, contains = self.contains)
 
-        if self.pos != 0:
-            return PathAttribute(self, key)
-        else:
-            return Attribute(self, key)
+        return Attribute(self, key)
 
     @property
     def key(self):
         return 'pause'
-
-
-class PathAttribute(Attribute):
-    with_template = 'collect({type_alias}) AS {type}'
-    with_times_template = 'extract(n in filter(n in nodes({path_alias}) where n.time is not null)| n.time) as {path_times_alias}'
-    type_return_template = 'extract(n in {type}|n.{property})'
-
-    @property
-    def path_alias(self):
-        return 'path_' + self.annotation.alias
-
-    @property
-    def path_times_alias(self):
-        return self.path_alias + '_times'
-
-    @property
-    def path_type_alias(self):
-        return 'path_' + self.annotation.type_alias
-
-    @property
-    def define_path_type_alias(self):
-        return 'path_' + self.annotation.define_type_alias
-
-    def for_subquery(self, withs):
-        template = '''UNWIND nodes({path_alias}) as n
-        MATCH ()-[:r_{key}]->(n)-[:is_a]->({path_type_alias})
-        WITH {output_with_string}'''
-
-        if self.with_alias in withs:
-            return ''
-        input_with = ', '.join(withs)
-        if self.label not in type_attributes:
-            if self.label in ['duration', 'begin', 'end']:
-                output_with = input_with + ', ' + self.with_times()
-                return '''WITH {}'''.format(output_with)
-            return ''
-            output_with = input_with + ', ' + self.with_tokens()
-            return template.format(path_alias = self.path_alias,
-                        output_with_string = output_with,
-                        key = self.annotation.key,
-                        path_type_alias = self.define_path_type_alias)
-        output_with = input_with + ', ' + self.for_with()
-        return template.format(path_alias = self.path_alias,
-                        output_with_string = output_with,
-                        key = self.annotation.key,
-                        path_type_alias = self.define_path_type_alias)
-
-    @property
-    def with_alias(self):
-        if self.label in type_attributes:
-            return self.path_type_alias
-        elif self.label in ['duration', 'begin', 'end']:
-            return self.path_times_alias
-
-    def with_times(self):
-        return self.with_times_template.format(path_alias = self.path_alias, path_times_alias = self.path_times_alias)
-
-    def for_with(self):
-        return self.with_template.format(type_alias = self.path_type_alias, type = self.path_type_alias)
-
-    #def with_tokens(self):
-    #    return self.with_template.format(type_alias = 'n', type = self.annotation.key)
-
-    @property
-    def output_alias(self):
-        if self.output_label is not None:
-            return self.output_label
-        return self.annotation.key + '_' +self.label
-
-    def for_cypher(self):
-        if self.label in type_attributes:
-            return self.type_return_template.format(type = self.path_type_alias, property = self.label)
-
-        if self.annotation.pos >= 0:
-            begpos = 0
-            endpos = -2
-        else:
-            begpos = 1
-            endpos = -1
-        if self.label == 'begin':
-            return '{}[{}]'.format(self.path_times_alias, begpos)
-        elif self.label == 'end':
-            return '{}[{}]'.format(self.path_times_alias, endpos)
-        elif self.label == 'duration':
-            return '{alias}[{endpos}] - {alias}[{begpos}]'.format(alias = self.path_times_alias, endpos = endpos, begpos = begpos)
-        else:
-            return ''
 
