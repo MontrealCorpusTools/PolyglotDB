@@ -335,7 +335,11 @@ class PathAnnotation(AnnotationAttribute):
     def times_subquery(self, withs):
         input_with = ', '.join(withs)
         output_with = input_with + ', ' + self.with_times()
-        return '''WITH {}'''.format(output_with)
+        return self.generate_times_subquery(output_with, input_with)
+
+
+    def generate_times_subquery(self, output_with_string, input_with_string):
+        return '''WITH {}'''.format(output_with_string)
 
     def generate_type_subquery(self, output_with_string, input_with_string):
         return self.subquery_template.format(path_alias = self.path_alias,
@@ -380,6 +384,8 @@ class SubPathAnnotation(PathAnnotation):
         UNWIND nodes(p) as n
         MATCH (n)-[:is_a]->({path_type_alias})
         WITH {output_with_string}'''
+    times_subquery_template = '''MATCH {path_alias} = shortestPath(({begin_alias})-[:r_{sub_type}*1..100]->({end_alias}))
+        WITH {output_with_string}'''
 
     def __init__(self, super_annotation, sub_annotation):
         self.annotation = super_annotation
@@ -389,6 +395,11 @@ class SubPathAnnotation(PathAnnotation):
         return self.subquery_template.format(begin_alias = self.annotation.begin_alias, end_alias = self.annotation.end_alias,
                         input_with_string = input_with_string, output_with_string = output_with_string, sub_type = self.sub.type,
                         path_type_alias = self.type_alias)
+
+    def generate_times_subquery(self, output_with_string, input_with_string):
+        return self.times_subquery_template.format(begin_alias = self.annotation.begin_alias, end_alias = self.annotation.end_alias,
+                        output_with_string = output_with_string, sub_type = self.sub.type,
+                        path_alias = self.path_alias)
 
     def __hash__(self):
         return hash((self.annotation, self.sub))
@@ -419,6 +430,7 @@ class PathAttribute(Attribute):
     type_return_template = 'extract(n in {alias}|n.{property})'
     count_return_template = 'reduce(count = 0, n in {alias} | count + 1)'
     rate_return_template = 'reduce(count = 0, n in {alias} | count + 1) / ({end_alias}.time - {begin_alias}.time)'
+    position_return_template = 'reduce(count = 1, n in filter(x in {alias} where x < {node_alias}.time) | count + 1)'
 
     @property
     def base_annotation(self):
@@ -449,6 +461,9 @@ class PathAttribute(Attribute):
             return self.rate_return_template.format(alias = self.annotation.path_type_alias,
                                 end_alias = self.annotation.end_alias,
                                 begin_alias = self.annotation.begin_alias)
+        elif self.label == 'position':
+            return self.position_return_template.format(alias = self.annotation.times_alias,
+                                                    node_alias = self.annotation.sub.begin_alias)
 
     @property
     def is_type_attribute(self):
@@ -461,7 +476,7 @@ class PathAttribute(Attribute):
         if self.label in type_attributes + ['rate', 'count']:
             print(self.label, self.annotation.path_type_alias)
             return self.annotation.path_type_alias
-        elif self.label in ['duration', 'begin', 'end']:
+        elif self.label in ['duration', 'begin', 'end', 'position']:
             return self.annotation.times_alias
 
 class PauseAnnotation(AnnotationAttribute):

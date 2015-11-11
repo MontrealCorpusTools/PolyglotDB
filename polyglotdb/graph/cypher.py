@@ -269,7 +269,6 @@ def generate_withs(query, all_withs):
     statements = [withs_to_string(all_withs)]
     for c in query._criterion:
         for a in c.attributes:
-            print(a, a.with_alias)
             if a.with_alias not in all_withs:
                 if a.is_type_attribute:
                     statement = a.annotation.type_subquery(all_withs)

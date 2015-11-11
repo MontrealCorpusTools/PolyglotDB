@@ -94,6 +94,26 @@ def test_speech_rate(acoustic_config):
         results = q.all()
         assert(abs(results[0].words_per_second - (26 / 6.482261)) < 0.001)
 
+def test_utterance_position(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        q = g.query_graph(g.word)
+        q = q.filter(g.word.label == 'this')
+        q = q.order_by(g.word.begin)
+        q = q.columns(g.utterance.word.position.column_name('position'))
+        print(q.cypher())
+        results = q.all()
+        assert(results[0].position == 1)
+
+        q = g.query_graph(g.word)
+        q = q.filter(g.word.label == 'talking')
+        q = q.order_by(g.word.begin)
+        q = q.columns(g.utterance.word.position.column_name('position'))
+        print(q.cypher())
+        results = q.all()
+        assert(results[0].position == 7)
+        assert(results[1].position == 4)
+
+
 def test_query_duration(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa').order_by(g.phone.begin.column_name('begin')).duration()
