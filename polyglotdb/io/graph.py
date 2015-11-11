@@ -24,8 +24,8 @@ def data_to_graph_csvs(data, directory):
     for x in data.types:
         rel_paths[x] = os.path.join(directory,'{}_r_{}.csv'.format(data.name, x))
         type_paths[x] = os.path.join(directory,'{}_{}.csv'.format(data.name, x))
-    rfs = {k: open(v, 'w') for k,v in rel_paths.items()}
-    tfs = {k: open(v, 'w') for k,v in type_paths.items()}
+    rfs = {k: open(v, 'w', encoding = 'utf8') for k,v in rel_paths.items()}
+    tfs = {k: open(v, 'w', encoding = 'utf8') for k,v in type_paths.items()}
     rel_writers = {}
     type_writers = {}
     for k,v in rfs.items():
@@ -47,7 +47,7 @@ def data_to_graph_csvs(data, directory):
         x.writeheader()
     for x in type_writers.values():
         x.writeheader()
-    with open(node_path,'w') as nf:
+    with open(node_path,'w', encoding = 'utf8') as nf:
         node_writer = csv.DictWriter(nf, ['id','label','time','corpus','discourse'], delimiter = ',')
 
         node_writer.writeheader()
