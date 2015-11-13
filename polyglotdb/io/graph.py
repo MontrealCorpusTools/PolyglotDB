@@ -6,6 +6,50 @@ import time
 
 from .helper import normalize_values_for_neo4j
 
+def time_data_to_csvs(type, directory, discourse, timed_data):
+    with open(os.path.join(directory, '{}_{}.csv'.format(discourse, type)), 'w') as f:
+        for t in timed_data:
+            f.write('{},{}\n'.format(*t))
+
+def import_utterance_csv(corpus_context, discourse):
+    csv_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csvs'), '{}_utterance.csv'.format(discourse)).replace('\\','/'))
+    statement = '''USING PERIODIC COMMIT 1000
+            LOAD CSV FROM "{path}" AS csvLine
+            MATCH (begin:Anchor:{corpus}:{discourse} {{time: toFloat(csvLine[0])}}),
+            (end:Anchor:{corpus}:{discourse} {{time: toFloat(csvLine[1])}})
+            MERGE (begin)-[:r_utterance]->(utt:utterance:{corpus}:{discourse}:speech)-[:r_utterance]->(end)
+            MERGE (utt)-[:is_a]->(u_type:utterance_type)
+            WITH utt, begin, end
+            MATCH path = (begin)-[:r_word*]->(end)
+            WITH utt, begin, end, filter(n in nodes(path) where n.time is null) as words
+            UNWIND words as w
+            MERGE (w)-[:contained_by]->(utt)'''
+    statement = statement.format(path = csv_path, corpus = corpus_context.corpus_name,
+                                discourse = discourse)
+    corpus_context.graph.cypher.execute(statement)
+
+def import_syllable_csv(corpus_context, discourse, base):
+    csv_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csvs'), '{}_syllable.csv'.format(discourse)).replace('\\','/'))
+    statement = '''USING PERIODIC COMMIT 1000
+            LOAD CSV FROM "{path}" AS csvLine
+            MATCH (begin:Anchor:{corpus}:{discourse} {{time: toFloat(csvLine[0])}}),
+            (end:Anchor:{corpus}:{discourse} {{time: toFloat(csvLine[1])}})
+            MERGE (begin)-[:r_syllable]->(syl:syllable:{corpus}:{discourse}:speech)-[:r_syllable]->(end)
+            MERGE (syl)-[:is_a]->(s_type:syllable_type)
+            WITH syl, begin, end
+            MATCH path = (begin)-[:r_{base}*]->(end)
+            WITH syl, begin, end, filter(n in nodes(path) where n.time is null) as phones
+            UNWIND phones as p
+            MATCH (p)-[r:contained_by]->(w)
+            DELETE r
+            WITH p, w, syl
+            MERGE (p)-[:contained_by]->(syl)
+            MERGE (syl)-[:contained_by]->(w)'''
+    statement = statement.format(path = csv_path, corpus = corpus_context.corpus_name,
+                                base = base, discourse = discourse)
+    corpus_context.graph.cypher.execute(statement)
+
+
 def data_to_graph_csvs(data, directory):
     """
     Convert a DiscourseData object into CSV files for efficient loading

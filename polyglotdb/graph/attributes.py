@@ -376,6 +376,14 @@ class PathAnnotation(AnnotationAttribute):
     def __getattr__(self, key):
         if key == 'annotation':
             raise(AttributeError('Annotations cannot have annotations.'))
+        if key == 'initial':
+            return PositionalAnnotation(self, 0)
+        elif key == 'final':
+            return PositionalAnnotation(self, -1)
+        elif key == 'penultimate':
+            return PositionalAnnotation(self, -2)
+        elif key == 'antepenultimate':
+            return PositionalAnnotation(self, -3)
         return PathAttribute(self, key)
 
 class SubPathAnnotation(PathAnnotation):
@@ -424,6 +432,39 @@ class SubPathAnnotation(PathAnnotation):
     def key(self):
         return self.sub.type
 
+class PositionalAnnotation(SubPathAnnotation):
+    def __init__(self, path_annotation, pos):
+        self.annotation = path_annotation
+        self.pos = pos
+
+    def __getattr__(self, key):
+        if key == 'annotation':
+            raise(AttributeError('Annotations cannot have annotations.'))
+        return PositionalAttribute(self, key)
+
+    @property
+    def type(self):
+        return self.annotation.type
+
+    @property
+    def sub(self):
+        return self.annotation.sub
+
+    @property
+    def path_alias(self):
+        return self.annotation.path_alias
+
+    @property
+    def type_alias(self):
+        return self.annotation.type_alias
+
+    @property
+    def path_type_alias(self):
+        return self.annotation.path_type_alias
+
+    @property
+    def times_alias(self):
+        return self.annotation.times_alias
 
 
 class PathAttribute(Attribute):
@@ -474,10 +515,49 @@ class PathAttribute(Attribute):
     @property
     def with_alias(self):
         if self.label in type_attributes + ['rate', 'count']:
-            print(self.label, self.annotation.path_type_alias)
             return self.annotation.path_type_alias
         elif self.label in ['duration', 'begin', 'end', 'position']:
             return self.annotation.times_alias
+
+
+class PositionalAttribute(PathAttribute):
+    type_return_template = 'extract(n in {alias}|n.{property})[{pos}]'
+
+    @property
+    def base_annotation(self):
+        return self.annotation.annotation.annotation
+
+    @property
+    def is_type_attribute(self):
+        if self.label in type_attributes:
+            return True
+        return False
+
+    @property
+    def with_alias(self):
+        if self.label in type_attributes:
+            return self.annotation.path_type_alias
+        elif self.label in ['duration', 'begin', 'end']:
+            return self.annotation.times_alias
+
+    def for_cypher(self):
+        pos = self.annotation.pos
+        if self.label in type_attributes:
+            return self.type_return_template.format(alias = self.annotation.path_type_alias, property = self.label, pos = pos)
+
+        if pos < 0:
+            begpos = pos - 1
+            endpos = pos
+        else:
+            begpos = pos
+            endpos = pos + 1
+        if self.label == 'begin':
+            return '{}[{}]'.format(self.annotation.times_alias, begpos)
+        elif self.label == 'end':
+            return '{}[{}]'.format(self.annotation.times_alias, endpos)
+        elif self.label == 'duration':
+            return '{alias}[{endpos}] - {alias}[{begpos}]'.format(alias = self.annotation.times_alias, endpos = endpos, begpos = begpos)
+
 
 class PauseAnnotation(AnnotationAttribute):
     def __init__(self, pos = 0, corpus = None, contains = None):

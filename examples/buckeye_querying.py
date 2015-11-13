@@ -79,7 +79,7 @@ with CorpusContext('buckeye', **graph_db) as g:
     q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
     q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
     q = q.filter(g.surface_transcription.end != g.word.end)
-    q = q.times().duration().columns(g.word.label, g.word.transcription, g.word.surface_transcription, g.word.following.label, g.word.duration,
+    q = q.times().duration().columns(g.word.label, g.word.transcription, g.word.surface_transcription.label, g.word.following.label, g.word.duration,
         g.surface_transcription.following.label.column_name('following_consonant'))
 
     if debug:

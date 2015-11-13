@@ -136,6 +136,7 @@ class GraphQuery(object):
         self._aggregate = [Count()]
         cypher = self.cypher()
         value = self.corpus.graph.cypher.execute(cypher, **self.cypher_params())
+        self._aggregate = []
         return value.one
 
     def aggregate(self, *args):

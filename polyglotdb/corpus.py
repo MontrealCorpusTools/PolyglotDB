@@ -12,7 +12,8 @@ http.socket_timeout = 9999
 
 from .config import CorpusConfig
 
-from .io.graph import data_to_graph_csvs, import_csvs
+from .io.graph import (data_to_graph_csvs, import_csvs, time_data_to_csvs,
+                    import_utterance_csv, import_syllable_csv)
 
 from .graph.query import GraphQuery
 from .graph.attributes import AnnotationAttribute, PauseAnnotation
@@ -163,6 +164,14 @@ class CorpusContext(object):
             self._has_sound_files = self.sql_session.query(SoundFile).first() is not None
         return self._has_sound_files
 
+    @property
+    def lowest_annotation(self):
+        values = self.hierarchy.values()
+        for k in self.hierarchy.keys():
+            if k not in values:
+                return getattr(self, k)
+        return None
+
     def query_acoustics(self, graph_query):
         if not self.has_sound_files:
             raise(NoSoundFileError)
@@ -186,27 +195,70 @@ class CorpusContext(object):
     def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0):
         for d in self.discourses:
             utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
-            statement = '''MATCH (begin:Anchor:{corpus}:{discourse} {{time: {{begin_time}}}}),
-            (end:Anchor:{corpus}:{discourse} {{time: {{end_time}}}})
-            MERGE (begin)-[:r_utterance]->(utt:utterance:{corpus}:{discourse}:speech)-[:r_utterance]->(end)
-            MERGE (utt)-[:is_a]->(u_type:utterance_type)
-            WITH utt, begin, end
-            MATCH path = (begin)-[:r_word*]->(end)
-            WITH utt, begin, end, filter(n in nodes(path) where n.time is null) as words
-            UNWIND words as w
-            MERGE (w)-[:contained_by]->(utt)'''
-            for u in utterances:
-                self.graph.cypher.execute(statement.format(corpus = self.corpus_name, discourse = d), begin_time = u[0], end_time = u[1])
+            time_data_to_csvs('utterance', self.config.temporary_directory('csvs'), d, utterances)
+            import_utterance_csv(self, d)
         self.hierarchy['word'] = 'utterance'
         self.hierarchy['utterance'] = None
         self.relationship_types.add('utterance')
-    #       statement = '''MATCH path = (begin:Anchor:{corpus}:{discourse})-[:r_word*]->(end:Anchor:{corpus}:{discourse})
-#           WHERE ()-[:r_pause]->(begin)
-#       and size(filter(n in nodes(path) where (n)-[:r_pause]-> ())) = 1
-#       CREATE (begin)-[:r_utterance]->(:utterance:{corpus}:{discourse})-[:r_utterance]->(end)'''.format(corpus = self.corpus_name,
-#                                                                                                        discourse = d)
-            #print(statement)
 
+    def encode_syllables(self, syllable_phones):
+        base = self.lowest_annotation
+        for d in self.discourses:
+            syllables = self.get_syllables(d, syllable_phones)
+            time_data_to_csvs('syllable', self.config.temporary_directory('csvs'), d, syllables)
+            import_syllable_csv(self, d, base.type)
+        self.hierarchy[base.type] = 'syllable'
+        self.hierarchy['syllable'] = 'word'
+        self.relationship_types.add('syllable')
+
+    def get_syllables(self, discourse, syllable_phones):
+        base = self.lowest_annotation
+
+        q = self.query_graph(self.word).filter(self.word.discourse == discourse)
+        q = q.times().order_by(self.word.begin)
+        utterances = q.all()
+
+        if not utterances:
+            q = self.query_graph(self.word).filter(self.word.discourse == discourse)
+            q = q.times().order_by(self.word.begin)
+
+            results = q.all()
+            begin = results[0].begin
+            end = results[-1].end
+            utterances = [{'begin':begin, 'end':end}]
+
+        q = self.query_graph(base).filter(base.label.in_(syllable_phones))
+        q = q.filter(base.discourse == discourse)
+        q = q.times().duration().order_by(base.begin)
+        results = q.all()
+
+        syllables = []
+        utterance_ind = 0
+        r_ind = 0
+        for i, u in enumerate(utterances):
+            bounds = (u['begin'], u['end'])
+            syl_begins = []
+            while True:
+                try:
+                    if results[r_ind].begin >= u['end']:
+                        break
+                except IndexError:
+                    break
+                syl_begins.append(results[r_ind].begin)
+                r_ind += 1
+            syl_begins = syl_begins[1:]
+            if syl_begins:
+                for b in range(len(syl_begins)):
+                    end = syl_begins[b]
+                    if b == 0:
+                        begin = bounds[0]
+                    else:
+                        begin = syl_begins[b-1]
+                    syllables.append((begin, end))
+                syllables.append((syl_begins[b], bounds[1]))
+            else:
+                syllables.append(bounds)
+        return syllables
 
     def get_utterances(self, discourse, pause_words,
                 min_pause_length = 0.5, min_utterance_length = 0):
