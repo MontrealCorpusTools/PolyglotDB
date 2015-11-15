@@ -169,14 +169,17 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
     spelling_tier = tg.getFirst(data['word'].name)
 
     for si in spelling_tier:
-        annotations = dict()
-        word = Annotation(si.mark.strip())
+        annotations = {}
+        w = si.mark.strip()
+        if w == '':
+            w = 'sil'
+        word = Annotation(w)
         for n in data.base_levels:
             if data['word'].speaker != data[n].speaker \
                         and data[n].speaker is not None:
                 continue
             t = tg.getFirst(n)
-            tier_elements = list()
+            tier_elements = []
             for ti in t:
                 if ti.maxTime <= si.minTime:
                     continue
@@ -308,7 +311,6 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
             call_back(i)
         root, filename = t
         name = os.path.splitext(filename)[0]
-
         data = textgrid_to_data(os.path.join(root,filename), annotation_types, call_back, stop_check)
         data.wav_path = find_wav_path(path)
         parsed_data[t] = data

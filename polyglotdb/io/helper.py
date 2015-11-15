@@ -5,6 +5,7 @@ import logging
 import operator
 from uuid import uuid1
 import hashlib
+import copy
 
 from polyglotdb.exceptions import DelimiterError
 
@@ -435,6 +436,7 @@ class DiscourseData(object):
         self.data = {}
         self.ordering = []
         for x in annotation_types:
+            x = copy.deepcopy(x)
             label = x.name
             if x.anchor:
                 anchor_name = x.name
