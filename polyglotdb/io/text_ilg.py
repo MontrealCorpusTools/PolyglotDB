@@ -194,7 +194,6 @@ def ilg_to_data(path, annotation_types,
 
 
 def load_discourse_ilg(corpus_context, path, annotation_types,
-                    lexicon = None,
                     feature_system_path = None,
                     stop_check = None, call_back = None):
     """
@@ -218,6 +217,7 @@ def load_discourse_ilg(corpus_context, path, annotation_types,
     """
     data = ilg_to_data(path, annotation_types,
                     stop_check, call_back)
+    corpus_context.add_types({data.name: data})
     corpus_context.add_discourse(data)
 
     #if feature_system_path is not None:
@@ -259,6 +259,7 @@ def load_directory_ilg(corpus_context, path, annotation_types,
         call_back('Parsing files...')
         call_back(0,len(file_tuples))
         cur = 0
+    parsed_data = {}
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -267,10 +268,19 @@ def load_directory_ilg(corpus_context, path, annotation_types,
             call_back(i)
         root, filename = t
         name = os.path.splitext(filename)[0]
-        load_discourse_ilg(corpus_context, os.path.join(root,filename),
-                                    annotation_types, corpus.lexicon,
-                                    None,
-                                    stop_check, call_back)
+        data = ilg_to_data(os.path.join(root,filename), annotation_types,
+                        stop_check, call_back)
+        parsed_data[t] = data
+
+    if call_back is not None:
+        call_back('Parsing annotation types...')
+    corpus_context.add_types(parsed_data)
+    for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
+        if call_back is not None:
+            name = t[1]
+            call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
+            call_back(i)
+        corpus_context.add_discourse(data)
 
     #if feature_system_path is not None:
     #    feature_matrix = load_binary(feature_system_path)

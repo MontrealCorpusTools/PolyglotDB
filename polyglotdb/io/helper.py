@@ -4,6 +4,7 @@ import string
 import logging
 import operator
 from uuid import uuid1
+import hashlib
 
 from polyglotdb.exceptions import DelimiterError
 
@@ -164,7 +165,12 @@ class BaseAnnotation(object):
         self.super_id = None
 
     def __hash__(self):
-        return hash((self.label,))
+        return hash(self.label)
+
+    def sha(self):
+        m = hashlib.sha1()
+        m.update(self.label.encode())
+        return m.hexdigest()
 
     def __iter__(self):
         return iter(self.label)
@@ -248,6 +254,11 @@ class Annotation(BaseAnnotation):
 
     def __hash__(self):
         return hash(tuple(self.type_values()))
+
+    def sha(self):
+        m = hashlib.sha1()
+        m.update(' '.join(map(str, self.type_values())).encode())
+        return m.hexdigest()
 
     def __eq__(self, other):
         return self.label == other.label and self.begins == other.begins \

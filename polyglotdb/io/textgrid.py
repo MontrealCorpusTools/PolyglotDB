@@ -259,6 +259,7 @@ def load_discourse_textgrid(corpus_context, path, annotation_types,
     """
     data = textgrid_to_data(path, annotation_types, call_back, stop_check)
     data.wav_path = find_wav_path(path)
+    corpus_context.add_types({data.name: data})
     corpus_context.add_discourse(data)
 
 def load_directory_textgrid(corpus_context, path, annotation_types,
@@ -298,6 +299,7 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
         call_back('Parsing files...')
         call_back(0,len(file_tuples))
         cur = 0
+    parsed_data = {}
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -306,7 +308,17 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
             call_back(i)
         root, filename = t
         name = os.path.splitext(filename)[0]
-        load_discourse_textgrid(corpus_context, os.path.join(root,filename),
-                                    annotation_types,
-                                    None,
-                                    stop_check, call_back)
+
+        data = textgrid_to_data(os.path.join(root,filename), annotation_types, call_back, stop_check)
+        data.wav_path = find_wav_path(path)
+        parsed_data[t] = data
+
+    if call_back is not None:
+        call_back('Parsing annotation types...')
+    corpus_context.add_types(parsed_data)
+    for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
+        if call_back is not None:
+            name = t[1]
+            call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
+            call_back(i)
+        corpus_context.add_discourse(data)

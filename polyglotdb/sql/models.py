@@ -59,6 +59,9 @@ class AnnotationType(Base):
 
     label = Column(String(250), nullable = False)
 
+    def __repr__(self):
+        return '<AnnotationType \'{}\'>'.format(self.label)
+
 class InventoryItem(Base):
     __tablename__ = 'inventory_item'
 

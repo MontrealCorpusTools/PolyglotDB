@@ -136,7 +136,14 @@ class NoSoundFileError(PGError):
     pass
 
 class GraphQueryError(PGError):
-    pass
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return 'GraphyQueryError: {}'.format(self.value)
 
 class CorpusConfigError(PGError):
     pass

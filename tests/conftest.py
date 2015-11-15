@@ -547,6 +547,7 @@ def untimed_config(graph_db,corpus_data_untimed):
     config = CorpusConfig('untimed', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
+        c.add_types({corpus_data_untimed.name: corpus_data_untimed})
         c.add_discourse(corpus_data_untimed)
     return config
 
@@ -555,6 +556,7 @@ def timed_config(graph_db, corpus_data_timed):
     config = CorpusConfig('timed', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
+        c.add_types({corpus_data_timed.name: corpus_data_timed})
         c.add_discourse(corpus_data_timed)
     return config
 
@@ -563,6 +565,7 @@ def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme):
     config = CorpusConfig('syllable_morpheme', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
+        c.add_types({corpus_data_syllable_morpheme.name: corpus_data_syllable_morpheme})
         c.add_discourse(corpus_data_syllable_morpheme)
     return config
 
@@ -575,6 +578,7 @@ def ursr_config(graph_db, corpus_data_ur_sr):
     config = CorpusConfig('ur_sr', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
+        c.add_types({corpus_data_ur_sr.name: corpus_data_ur_sr})
         c.add_discourse(corpus_data_ur_sr)
     return config
 

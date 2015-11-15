@@ -46,6 +46,9 @@ class Attribute(object):
         if self.label == 'begin':
             b_node = self.annotation.begin_alias
             return '{}.time'.format(b_node)
+        elif self.label == 'discourse':
+            b_node = self.annotation.begin_alias
+            return '{}.discourse'.format(b_node)
         elif self.label == 'end':
             e_node = self.annotation.end_alias
             return '{}.time'.format(e_node)

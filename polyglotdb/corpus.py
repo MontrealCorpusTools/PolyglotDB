@@ -13,7 +13,8 @@ http.socket_timeout = 9999
 from .config import CorpusConfig
 
 from .io.graph import (data_to_graph_csvs, import_csvs, time_data_to_csvs,
-                    import_utterance_csv, import_syllable_csv)
+                    import_utterance_csv, import_syllable_csv,
+                    data_to_type_csvs, import_type_csvs)
 
 from .graph.query import GraphQuery
 from .graph.attributes import AnnotationAttribute, PauseAnnotation
@@ -195,7 +196,7 @@ class CorpusContext(object):
     def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0):
         for d in self.discourses:
             utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
-            time_data_to_csvs('utterance', self.config.temporary_directory('csvs'), d, utterances)
+            time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
             import_utterance_csv(self, d)
         self.hierarchy['word'] = 'utterance'
         self.hierarchy['utterance'] = None
@@ -205,7 +206,7 @@ class CorpusContext(object):
         base = self.lowest_annotation
         for d in self.discourses:
             syllables = self.get_syllables(d, syllable_phones)
-            time_data_to_csvs('syllable', self.config.temporary_directory('csvs'), d, syllables)
+            time_data_to_csvs('syllable', self.config.temporary_directory('csv'), d, syllables)
             import_syllable_csv(self, d, base.type)
         self.hierarchy[base.type] = 'syllable'
         self.hierarchy['syllable'] = 'word'
@@ -295,20 +296,9 @@ class CorpusContext(object):
             current = r.end
         return utterances
 
-    def add_discourse(self, data):
-        log = logging.getLogger('{}_loading'.format(self.corpus_name))
-        log.info('Begin adding discourse {}...'.format(data.name))
-        begin = time.time()
-        data.corpus_name = self.corpus_name
-        data_to_graph_csvs(data, self.config.temp_dir)
-        import_csvs(self, data)
+    def add_types(self, parsed_data):
+        data = list(parsed_data.values())[0]
         self.relationship_types.update(data.output_types)
-        if data.is_timed:
-            self.is_timed = True
-        else:
-            self.is_timed = False
-        self.update_sql_database(data)
-        add_acoustic_info(self, data)
         self.hierarchy = {}
         for x in data.output_types:
             if x == 'word':
@@ -318,6 +308,23 @@ class CorpusContext(object):
                 if supertype is not None and data[supertype].anchor:
                     supertype = 'word'
                 self.hierarchy[x] = supertype
+        data_to_type_csvs(parsed_data, self.config.temporary_directory('csv'))
+        import_type_csvs(self, list(parsed_data.values())[0].type_properties)
+
+    def add_discourse(self, data):
+        log = logging.getLogger('{}_loading'.format(self.corpus_name))
+        log.info('Begin adding discourse {}...'.format(data.name))
+        begin = time.time()
+        data.corpus_name = self.corpus_name
+        data_to_graph_csvs(data, self.config.temporary_directory('csv'))
+        import_csvs(self, data)
+        self.update_sql_database(data)
+        if data.is_timed:
+            self.is_timed = True
+        else:
+            self.is_timed = False
+        add_acoustic_info(self, data)
+
         log.info('Finished adding discourse {}!'.format(data.name))
         log.debug('Total time taken: {} seconds'.format(time.time() - begin))
 
@@ -327,13 +334,9 @@ class CorpusContext(object):
         initial_begin = time.time()
 
         discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
-        try:
-            transcription_type = self.inventory.get_annotation_type('transcription')
-        except:
-            transcription_type = AnnotationType(label = 'transcription')
-            self.sql_session.add(transcription_type)
-            self.inventory.type_cache['transcription'] = transcription_type
+        phone_cache = defaultdict(set)
         base_levels = data.base_levels
+        created_words = set()
         for level in data.output_types:
             if not data[level].anchor:
                 continue
@@ -343,16 +346,9 @@ class CorpusContext(object):
                 trans = None
                 if len(base_levels) > 0:
                     b = base_levels[0]
-                    try:
-                        base_type = self.inventory.get_annotation_type(b)
-                    except:
-                        base_type = AnnotationType(label = b)
-                        self.sql_session.add(base_type)
-                        self.inventory.type_cache[b] = base_type
                     begin, end = d[b]
                     base_sequence = data[b][begin:end]
-                    for j, first in enumerate(base_sequence):
-                        p = self.inventory.get_or_create_item(first.label, base_type)
+                    phone_cache[b].update(x.label for x in base_sequence)
                     if 'transcription' in d.type_properties:
                         trans = d.type_properties['transcription']
                     elif not data[b].token:
@@ -360,29 +356,40 @@ class CorpusContext(object):
                 if trans is None:
                     trans = ''
                 elif isinstance(trans, list):
-                    for seg in trans:
-                        p = self.inventory.get_or_create_item(first.label, transcription_type)
+                    phone_cache['transcription'].update(trans)
                     trans = '.'.join(trans)
-                word = self.lexicon.get_or_create_word(d.label, trans)
+                word, created = self.lexicon.get_or_create_word(d.label, trans)
                 word.frequency += 1
-                for k,v in d.type_properties.items():
-                    if v is None:
-                        continue
-                    try:
-                        prop_type = self.lexicon.get_property_type(k)
-                    except:
-                        prop_type = WordPropertyType(label = k)
-                        self.sql_session.add(prop_type)
-                        self.lexicon.prop_type_cache[k] = prop_type
-                    if isinstance(v, (int,float)):
-                        prop, _ = get_or_create(self.sql_session, WordNumericProperty, word = word, property_type = prop_type, value = v)
-                    elif isinstance(v, (list, tuple)):
-                        prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = '.'.join(map(str,v)))
-                    else:
-                        prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = v)
+                if created:
+                    created_words.add(d.label)
+                    for k,v in d.type_properties.items():
+                        if v is None:
+                            continue
+                        try:
+                            prop_type = self.lexicon.get_property_type(k)
+                        except:
+                            prop_type = WordPropertyType(label = k)
+                            self.sql_session.add(prop_type)
+                            self.lexicon.prop_type_cache[k] = prop_type
+                        if isinstance(v, (int,float)):
+                            prop, _ = get_or_create(self.sql_session, WordNumericProperty, word = word, property_type = prop_type, value = v)
+                        elif isinstance(v, (list, tuple)):
+                            prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = '.'.join(map(str,v)))
+                        else:
+                            prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = v)
 
             log.info('Finished importing {} annotations!'.format(level))
             log.debug('Importing {} annotations took: {} seconds.'.format(level, time.time()-begin))
+
+        for level, phones in phone_cache.items():
+            try:
+                base_type = self.inventory.get_annotation_type(level)
+            except:
+                base_type = AnnotationType(label = level)
+                self.sql_session.add(base_type)
+                self.inventory.type_cache[level] = base_type
+
+            for seg in phones:
+                p, _ = self.inventory.get_or_create_item(seg, base_type)
         log.info('Finished importing {} to the SQL database!'.format(data.name))
         log.debug('SQL importing took: {} seconds'.format(time.time() - initial_begin))
-

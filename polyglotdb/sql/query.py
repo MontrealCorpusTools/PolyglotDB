@@ -29,13 +29,15 @@ class Lexicon(object):
         return self.prop_type_cache[property_type]
 
     def get_or_create_word(self, orthography, transcription):
+        created = False
         if (orthography, transcription) not in self.cache:
             w, _ = get_or_create(self.corpus_context.sql_session,
                                     Word, defaults = {'frequency':0},
                                     orthography = orthography,
                                     transcription = transcription)
             self.cache[(orthography, transcription)] = w
-        return self.cache[(orthography, transcription)]
+            created = True
+        return self.cache[(orthography, transcription)], created
 
 class Inventory(object):
     def __init__(self, corpus_context):
@@ -61,9 +63,11 @@ class Inventory(object):
     def get_or_create_item(self, label, annotation_type):
         if isinstance(annotation_type, str):
             annotation_type = self.get_annotation_type(annotation_type)
+        created = False
         if (label, annotation_type) not in self.cache:
             p, _ = get_or_create(self.corpus_context.sql_session,
                                 InventoryItem, label = label,
                                 annotation_type = annotation_type)
             self.cache[(label, annotation_type)] = p
-        return self.cache[(label, annotation_type)]
+            created = True
+        return self.cache[(label, annotation_type)], created

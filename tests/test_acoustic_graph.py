@@ -8,6 +8,7 @@ def test_encode_pause(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_pauses(['sil'])
         q = g.query_graph(g.pause)
+        print(q.cypher())
         assert(len(q.all()) > 0)
 
 def test_get_utterances(acoustic_config):

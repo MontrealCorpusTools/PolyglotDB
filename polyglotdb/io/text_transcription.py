@@ -155,6 +155,7 @@ def load_directory_transcription(corpus_context, path, annotation_types = None,
         call_back('Parsing files...')
         call_back(0,len(file_tuples))
         cur = 0
+    parsed_data = {}
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -164,8 +165,19 @@ def load_directory_transcription(corpus_context, path, annotation_types = None,
         root, filename = t
         path = os.path.join(root, filename)
         name = os.path.splitext(filename)[0]
-        load_discourse_transcription(corpus_context, path, annotation_types,
-                    feature_system_path)
+        data = transcription_text_to_data(path, annotation_types,
+                                stop_check, call_back)
+        parsed_data[t] = data
+
+    if call_back is not None:
+        call_back('Parsing annotation types...')
+    corpus_context.add_types(parsed_data)
+    for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
+        if call_back is not None:
+            name = t[1]
+            call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
+            call_back(i)
+        corpus_context.add_discourse(data)
 
 
 def load_discourse_transcription(corpus_context, path, annotation_types = None,
@@ -195,6 +207,7 @@ def load_discourse_transcription(corpus_context, path, annotation_types = None,
 
     data = transcription_text_to_data(path, annotation_types,
                             stop_check, call_back)
+    corpus_context.add_types({data.name: data})
     corpus_context.add_discourse(data)
 
     #if feature_system_path is not None:

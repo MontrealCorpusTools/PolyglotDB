@@ -191,6 +191,7 @@ def load_directory_buckeye(corpus_context, path,
         call_back('Parsing files...')
         call_back(0, len(file_tuples))
         cur = 0
+    parsed_data = {}
     for i, t in enumerate(file_tuples):
         if stop_check is not None and stop_check():
             return
@@ -205,7 +206,23 @@ def load_directory_buckeye(corpus_context, path,
             phone_ext = '.PHONES'
         word_path = os.path.join(root,filename)
         phone_path = os.path.splitext(word_path)[0] + phone_ext
-        load_discourse_buckeye(corpus_context, word_path, phone_path, annotation_types)
+        data = buckeye_to_data(word_path,phone_path,
+                                        annotation_types,
+                                        stop_check, call_back)
+        if data is None:
+            continue
+        data.wav_path = find_wav_path(word_path)
+        parsed_data[t] = data
+
+    if call_back is not None:
+        call_back('Parsing annotation types...')
+    corpus_context.add_types(parsed_data)
+    for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
+        if call_back is not None:
+            name = t[1]
+            call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
+            call_back(i)
+        corpus_context.add_discourse(data)
 
     #if feature_system_path is not None:
     #    feature_matrix = load_binary(feature_system_path)
@@ -242,6 +259,7 @@ def load_discourse_buckeye(corpus_context, word_path, phone_path,
     if data is None:
         return
     data.wav_path = find_wav_path(word_path)
+    corpus_context.add_types({data.name: data})
     corpus_context.add_discourse(data)
 
 def read_phones(path):
