@@ -197,3 +197,12 @@ def test_regex_query(timed_config):
         print(q.cypher())
         assert(q.count() == 5)
 
+def test_utterance_nosilence(graph_db, textgrid_test_dir):
+    from polyglotdb.io.textgrid import inspect_discourse_textgrid, load_discourse_textgrid
+    tg_path = os.path.join(textgrid_test_dir, 'phone_word_no_silence.TextGrid')
+    with CorpusContext('word_phone_nosilence', **graph_db) as g:
+        g.reset()
+        annotation_types = inspect_discourse_textgrid(tg_path)
+        load_discourse_textgrid(g, tg_path, annotation_types)
+
+        g.encode_utterances()

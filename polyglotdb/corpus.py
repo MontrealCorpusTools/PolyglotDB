@@ -17,6 +17,7 @@ from .io.graph import (data_to_graph_csvs, import_csvs, time_data_to_csvs,
                     data_to_type_csvs, import_type_csvs)
 
 from .graph.query import GraphQuery
+from .graph.func import Max
 from .graph.attributes import AnnotationAttribute, PauseAnnotation
 
 from .sql.models import (Base, Word, WordProperty, WordPropertyType,
@@ -278,6 +279,10 @@ class CorpusContext(object):
             else:
                 collapsed_results.append(r)
         utterances = []
+        if not results:
+            q = self.query_graph(self.word).filter(self.word.discourse == discourse)
+            maxt = q.aggregate(Max(self.word.end))
+            return [(0,maxt)]
         if results[0].begin != 0:
             current = 0
         else:

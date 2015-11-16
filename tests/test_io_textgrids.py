@@ -29,7 +29,7 @@ def test_basic(textgrid_test_dir):
                                 AnnotationType('phone',None,None, base=True)])
     expected_words = []
 
-    a = Annotation('')
+    a = Annotation('sil')
     a.references.append('phone')
     a.begins.append(0)
     a.ends.append(1)
@@ -41,7 +41,7 @@ def test_basic(textgrid_test_dir):
     a.ends.append(3)
     expected_words.append(a)
 
-    a = Annotation('')
+    a = Annotation('sil')
     a.references.append('phone')
     a.begins.append(3)
     a.ends.append(4)
