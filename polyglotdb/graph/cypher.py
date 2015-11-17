@@ -42,6 +42,7 @@ prec_template = '''{path_alias} = ({begin_alias})-[:{rel_type}]->({node_alias})-
 foll_template = '''{path_alias} = ({main_end_alias})-[:r_pause*0..]->({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})'''
 
 template = '''{match}
+{optional_match}
 {where}
 {with}
 {return}'''
@@ -152,7 +153,7 @@ def create_return_statement(query):
     return template.format(**kwargs)
 
 
-def generate_token_match(annotation_type, annotation_list):
+def generate_token_match(annotation_type, annotation_list, filter_annotations):
     annotation_list = sorted(annotation_list, key = lambda x: x.pos)
     prec_condition = ''
     foll_condition = ''
@@ -168,7 +169,7 @@ def generate_token_match(annotation_type, annotation_list):
     statements.append(anchor_string)
     defined.update(generate_annotation_with(annotation_type))
     current = annotation_list[0].pos
-
+    optional_statements = []
     for a in annotation_list:
         if a.pos == 0:
             continue
@@ -192,11 +193,15 @@ def generate_token_match(annotation_type, annotation_list):
             kwargs['rel_type'] = a.rel_type_alias
             kwargs['path_alias'] = a.path_alias
             anchor_string = foll_template.format(**kwargs)
-        statements.append(anchor_string)
+        if a in filter_annotations:
+            statements.append(anchor_string)
+        else:
+            optional_statements.append(anchor_string)
         defined.update(generate_annotation_with(a))
         defined.add(kwargs['path_alias'])
-
-    return statements, defined
+    print(filter_annotations)
+    print(optional_statements)
+    return statements, optional_statements, defined
 
 hierarchy_template = '''({contained_alias})-[:contained_by*1..]->({containing_alias})'''
 
@@ -220,7 +225,7 @@ def generate_hierarchical_match(annotation_levels, hierarchy):
 
 type_match_template = '''({token_alias})-[:is_a]->({type_alias})'''
 
-def generate_type_matches(query):
+def generate_type_matches(query, filter_annotations):
     analyzed = defaultdict(set)
     defined = set()
     for c in query._criterion:
@@ -236,12 +241,17 @@ def generate_type_matches(query):
         analyzed[a.annotation].add(type_token)
 
     matches = []
+    optional_matches = []
     for k, v in analyzed.items():
         if 'type' in v:
-            matches.append(type_match_template.format(token_alias = k.alias,
-                                        type_alias = k.define_type_alias))
+            statement = type_match_template.format(token_alias = k.alias,
+                                        type_alias = k.define_type_alias)
+            if k.pos == 0 or k in filter_annotations:
+                matches.append(statement)
+            else:
+                optional_matches.append(statement)
             defined.add(k.type_alias)
-    return matches, defined
+    return matches, optional_matches, defined
 
 def generate_additional_withs(query):
     defined = set()
@@ -293,31 +303,45 @@ def withs_to_string(withs):
 
 def query_to_cypher(query):
     kwargs = {'match': '',
+            'optional_match':'',
             'where': '',
             'with': '',
             'return':''}
     annotation_levels = query.annotation_levels()
 
     match_strings = []
+    optional_match_strings = []
     where_strings = []
 
     all_withs = set()
 
+    filter_annotations = set()
+    for c in query._criterion:
+        for a in c.attributes:
+            t = a.base_annotation
+            filter_annotations.add(t)
+
     for k,v in annotation_levels.items():
         if k.has_subquery:
             continue
-        statements, withs = generate_token_match(k,v)
+        statements,optional_statements, withs = generate_token_match(k,v, filter_annotations)
         all_withs.update(withs)
         match_strings.extend(statements)
+        optional_match_strings.extend(optional_statements)
+
 
     statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
     match_strings.extend(statements)
 
-    statements, withs = generate_type_matches(query)
+    statements,optional_statements, withs = generate_type_matches(query, filter_annotations)
     all_withs.update(withs)
     match_strings.extend(statements)
+    optional_match_strings.extend(optional_statements)
 
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
+
+    if optional_match_strings:
+        kwargs['optional_match'] = 'OPTIONAL MATCH ' + ',\n'.join(optional_match_strings)
 
     kwargs['where'] = criterion_to_where(query._criterion)
 

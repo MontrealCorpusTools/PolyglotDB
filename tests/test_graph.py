@@ -206,3 +206,10 @@ def test_utterance_nosilence(graph_db, textgrid_test_dir):
         load_discourse_textgrid(g, tg_path, annotation_types)
 
         g.encode_utterances()
+
+        q = g.query_graph(g.word).filter(g.word.label == 'b')
+
+        q = q.columns(g.word.following.label.column_name('following_word'))
+        print(q.cypher())
+        results = q.all()
+        assert(results[0].following_word is None)
