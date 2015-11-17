@@ -199,8 +199,6 @@ def generate_token_match(annotation_type, annotation_list, filter_annotations):
             optional_statements.append(anchor_string)
         defined.update(generate_annotation_with(a))
         defined.add(kwargs['path_alias'])
-    print(filter_annotations)
-    print(optional_statements)
     return statements, optional_statements, defined
 
 hierarchy_template = '''({contained_alias})-[:contained_by*1..]->({containing_alias})'''
