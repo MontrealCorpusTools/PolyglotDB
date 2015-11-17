@@ -42,8 +42,8 @@ prec_template = '''{path_alias} = ({begin_alias})-[:{rel_type}]->({node_alias})-
 foll_template = '''{path_alias} = ({main_end_alias})-[:r_pause*0..]->({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})'''
 
 template = '''{match}
-{optional_match}
 {where}
+{optional_match}
 {with}
 {return}'''
 

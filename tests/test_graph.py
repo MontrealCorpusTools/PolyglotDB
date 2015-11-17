@@ -212,4 +212,15 @@ def test_utterance_nosilence(graph_db, textgrid_test_dir):
         q = q.columns(g.word.following.label.column_name('following_word'))
         print(q.cypher())
         results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].following_word is None)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'b')
+
+        q = q.filter(g.phone.following.label == 'b')
+
+        q = q.columns(g.word.following.label.column_name('following_word'))
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
         assert(results[0].following_word is None)
