@@ -22,7 +22,7 @@ def import_utterance_csv(corpus_context, discourse):
             MERGE (begin)-[:r_utterance]->(utt:utterance:{corpus}:{discourse}:speech)-[:r_utterance]->(end)
             MERGE (utt)-[:is_a]->(u_type:utterance_type)
             WITH utt, begin, end
-            MATCH path = (begin)-[:r_word*]->(end)
+            MATCH path = shortestPath((begin)-[:r_word*]->(end))
             WITH utt, begin, end, filter(n in nodes(path) where n.time is null) as words
             UNWIND words as w
             MERGE (w)-[:contained_by]->(utt)'''

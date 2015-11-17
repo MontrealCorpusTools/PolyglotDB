@@ -17,15 +17,19 @@ syllabics = set(['aa', 'aan','ae', 'aen','ah', 'ahn','ay', 'ayn','aw','awn','ao'
             'uw', 'uwn','uh', 'uhn',
             'eh', 'ehn','ey', 'eyn', 'er','el','em', 'eng',
             'ow','own', 'oy', 'oyn'])
-
+import time
 with CorpusContext('buckeye', **graph_db) as g:
     if first_run:
+        begin = time.time()
         g.encode_pauses('^[<{].*')
+        print('Finished encoding pauses in {} seconds'.format(time.time() - begin))
         #g.encode_pauses(['uh','um','okay','yes','yeah','oh','heh','yknow','um-huh',
         #        'uh-uh','uh-huh','uh-hum','mm-hmm'])
+        begin = time.time()
         g.encode_utterances()
+        print('Finished encoding utterances in {} seconds'.format(time.time() - begin))
         #g.encode_syllables(syllabics)
-
+    begin = time.time()
     q = g.query_graph(g.word).filter(g.word.transcription.regex(r'.*\.[td]$'))
     #print('words ending in t/d:',q.count())
     q = q.filter(g.word.following.transcription.regex(r'^({})\..*'.format('|'.join(syllabics))))
@@ -55,6 +59,8 @@ with CorpusContext('buckeye', **graph_db) as g:
     q = q.order_by(g.word.discourse)
 
     q.to_csv('test_nofilled.csv')
+
+    print('Finished query in: {} seconds'.format(time.time() - begin))
 
 
 

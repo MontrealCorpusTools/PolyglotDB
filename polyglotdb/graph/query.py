@@ -80,6 +80,14 @@ class GraphQuery(object):
         return self
 
     def cypher(self):
+        for c in self._criterion:
+            try:
+                if c.attribute.label == 'discourse':
+                    for c2 in self._criterion:
+                        c2.attribute.annotation.discourse_label = c.value
+                    break
+            except AttributeError:
+                pass
         return query_to_cypher(self)
 
     def cypher_params(self):
@@ -105,6 +113,7 @@ class GraphQuery(object):
             for a in c.attributes:
                 t = a.base_annotation
                 key = getattr(self.corpus, t.key)
+                key.discourse_label = t.discourse_label
                 annotation_levels[key].add(t)
         for a in self._columns + self._group_by + self._additional_columns:
             t = a.base_annotation

@@ -180,6 +180,18 @@ class AnnotationAttribute(Attribute):
     def __hash__(self):
         return hash((self.type, self.pos))
 
+    def __eq__(self, other):
+        if not isinstance(other, AnnotationAttribute):
+            return False
+        if self.type != other.type:
+            return False
+        if self.pos != other.pos:
+            return False
+        return True
+
+    def __str__(self):
+        return '{}_{}'.format(self.type, self.pos)
+
     def __repr__(self):
         return '<AnnotationAttribute object with \'{}\' type and {} position'.format(self.type, self.pos)
 
@@ -202,7 +214,7 @@ class AnnotationAttribute(Attribute):
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
         if self.discourse_label is not None:
-            label_string += ':{}'.format(self.discourse)
+            label_string += ':{}'.format(self.discourse_label)
         return '{}{}'.format(self.alias, label_string)
 
     @property
@@ -211,7 +223,7 @@ class AnnotationAttribute(Attribute):
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
         if self.discourse_label is not None:
-            label_string += ':{}'.format(self.discourse)
+            label_string += ':{}'.format(self.discourse_label)
         return '{}{}'.format(self.begin_alias, label_string)
 
     @property
@@ -220,7 +232,7 @@ class AnnotationAttribute(Attribute):
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
         if self.discourse_label is not None:
-            label_string += ':{}'.format(self.discourse)
+            label_string += ':{}'.format(self.discourse_label)
         return '{}{}'.format(self.end_alias, label_string)
 
     @property
@@ -576,7 +588,7 @@ class PauseAnnotation(AnnotationAttribute):
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
         if self.discourse_label is not None:
-            label_string += ':{}'.format(self.discourse)
+            label_string += ':{}'.format(self.discourse_label)
         return '{}{}'.format(self.alias, label_string)
 
     def __getattr__(self, key):

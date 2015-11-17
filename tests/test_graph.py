@@ -43,6 +43,11 @@ def test_discourse_query(untimed_config):
         print(q.cypher())
         assert(all(x.discourse == 'test' for x in q.all()))
 
+        q = g.query_graph(g.word).filter(g.word.discourse == 'test')
+        q = q.columns(g.word.discourse.column_name('discourse'))
+        print(q.cypher())
+        assert(all(x.discourse == 'test' for x in q.all()))
+
 
 def test_order_by(timed_config):
     with CorpusContext(timed_config) as g:
