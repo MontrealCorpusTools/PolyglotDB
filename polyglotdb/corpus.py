@@ -200,7 +200,7 @@ class CorpusContext(object):
         for d in self.discourses:
             utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
             time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
-        import_utterance_csv(self)
+            import_utterance_csv(self, d)
         self.hierarchy['word'] = 'utterance'
         self.hierarchy['utterance'] = None
         self.relationship_types.add('utterance')
