@@ -289,7 +289,7 @@ def import_csvs(corpus_context, data):
         rel_import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MATCH (n:{annotation_type}_type {{id: csvLine.type_id}})
-CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin), end: toFloat(csvLine.end), discourse: csvLine.discourse{token_property_string} }})
+CREATE (t:{annotation_type}:{corpus_name}:speech:unoptimized {{id: csvLine.id, begin: toFloat(csvLine.begin), end: toFloat(csvLine.end), discourse: csvLine.discourse{token_property_string} }})
 CREATE (t)-[:is_a]->(n)
 WITH t, csvLine
 MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
@@ -303,11 +303,17 @@ CREATE (p)-[:precedes]->(t)'''
         corpus_context.graph.cypher.execute(statement)
         log.info('Finished loading {} relationships!'.format(at))
         log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
+
+    log.info('Optimizing discourses...')
+    begin = time.time()
     for d in corpus_context.discourses:
-        statement = '''MATCH (utt:speech)
-        WHERE utt.discourse = '{discourse}'
-        SET utt :{discourse}'''.format(discourse = d)
-        corpus_context.graph.cypher.execute(statement)
+        statement = '''MATCH (utt:speech:unoptimized)
+        WHERE utt.discourse = {{discourse}}
+        SET utt :{discourse}
+        REMOVE utt:unoptimized'''.format(discourse = d)
+        corpus_context.graph.cypher.execute(statement, discourse = d)
+    log.info('Finished optimizing!')
+    log.debug('Optimizing took: {} seconds.'.format(time.time() - begin))
     log.info('Creating containing relationships...')
     begin = time.time()
     for at in annotation_types:
