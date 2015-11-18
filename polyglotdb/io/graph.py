@@ -146,11 +146,11 @@ def data_to_graph_csvs(data, directory):
     """
     rel_paths = {}
     for x in data.types:
-        rel_paths[x] = os.path.join(directory,'{}.csv'.format(x))
-    rfs = {k: open(v, 'a', encoding = 'utf8') for k,v in rel_paths.items()}
+        rel_paths[x] = os.path.join(directory,'{}_{}.csv'.format(data.name, x))
+    rfs = {k: open(v, 'w', encoding = 'utf8') for k,v in rel_paths.items()}
     rel_writers = {}
     for k,v in rfs.items():
-        token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'discourse']
+        token_header = ['begin', 'end', 'type_id', 'id', 'previous_id']
         if k == 'word':
             token_header += data.token_properties
             supertype = data[data.word_levels[0]].supertype
@@ -161,6 +161,7 @@ def data_to_graph_csvs(data, directory):
             if supertype is not None:
                 token_header.append(supertype)
         rel_writers[k] = csv.DictWriter(v, token_header, delimiter = ',')
+        rel_writers[k] .writeheader()
 
     base_levels = data.base_levels
     base_ind = 0
@@ -192,7 +193,7 @@ def data_to_graph_csvs(data, directory):
                         row = dict(begin=begin, end = end,
                                             type_id = seg.sha(),
                                             previous_id = previous_id,
-                                            id = seg.id, discourse = data.name)
+                                            id = seg.id)
                         supertype = data[b].supertype
                         if seg.super_id is not None:
                             row[supertype] = seg.super_id
@@ -217,7 +218,7 @@ def data_to_graph_csvs(data, directory):
                 base_ind += 1
             rel_writers[level].writerow(dict(begin = begin, end = end,
                              type_id = d.sha(), id = d.id,
-                             previous_id = previous_id, discourse = data.name,
+                             previous_id = previous_id,
                             **token_additional))
     for x in rfs.values():
         x.close()
@@ -256,7 +257,7 @@ MERGE (n:{annotation_type}_type {{ label: csvLine.label, id: csvLine.id{type_pro
 
 def import_csvs(corpus_context, data):
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
-    log.info('Beginning to import {} into the graph database...')
+    log.info('Beginning to import {} into the graph database...'.format(data.name))
     initial_begin = time.time()
     name, annotation_types = data.name, data.output_types
     token_properties = data.token_properties
@@ -265,7 +266,7 @@ def import_csvs(corpus_context, data):
     prop_temp = '''{name}: csvLine.{name}'''
 
     for at in annotation_types:
-        rel_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}.csv'.format(at)).replace('\\','/'))
+        rel_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_{}.csv'.format(data.name, at)).replace('\\','/'))
 
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
@@ -289,14 +290,15 @@ def import_csvs(corpus_context, data):
         rel_import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MATCH (n:{annotation_type}_type {{id: csvLine.type_id}})
-CREATE (t:{annotation_type}:{corpus_name}:speech:unoptimized {{id: csvLine.id, begin: toFloat(csvLine.begin), end: toFloat(csvLine.end), discourse: csvLine.discourse{token_property_string} }})
+CREATE (t:{annotation_type}:{corpus_name}:{discourse}:speech:unoptimized {{id: csvLine.id, begin: toFloat(csvLine.begin), end: toFloat(csvLine.end), discourse: '{discourse}'{token_property_string} }})
 CREATE (t)-[:is_a]->(n)
 WITH t, csvLine
-MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+MATCH (p:{annotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.previous_id}})
 CREATE (p)-[:precedes]->(t)'''
         kwargs = {'path': rel_path, 'annotation_type': at,
                     'token_property_string': token_prop_string,
-                    'corpus_name': corpus_context.corpus_name}
+                    'corpus_name': corpus_context.corpus_name,
+                    'discourse': data.name}
         statement = rel_import_statement.format(**kwargs)
         log.info('Loading {} relationships...'.format(at))
         begin = time.time()
@@ -304,16 +306,16 @@ CREATE (p)-[:precedes]->(t)'''
         log.info('Finished loading {} relationships!'.format(at))
         log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
 
-    log.info('Optimizing discourses...')
-    begin = time.time()
-    for d in corpus_context.discourses:
-        statement = '''MATCH (utt:speech:unoptimized)
-        WHERE utt.discourse = {{discourse}}
-        SET utt :{discourse}
-        REMOVE utt:unoptimized'''.format(discourse = d)
-        corpus_context.graph.cypher.execute(statement, discourse = d)
-    log.info('Finished optimizing!')
-    log.debug('Optimizing took: {} seconds.'.format(time.time() - begin))
+    #log.info('Optimizing discourses...')
+    #begin = time.time()
+    #for d in corpus_context.discourses:
+    #    statement = '''MATCH (utt:speech:unoptimized)
+    #    WHERE utt.discourse = {{discourse}}
+    #    SET utt :{discourse}
+    #    REMOVE utt:unoptimized'''.format(discourse = d)
+    #    corpus_context.graph.cypher.execute(statement, discourse = d)
+    #log.info('Finished optimizing!')
+    #log.debug('Optimizing took: {} seconds.'.format(time.time() - begin))
     log.info('Creating containing relationships...')
     begin = time.time()
     for at in annotation_types:
@@ -321,12 +323,13 @@ CREATE (p)-[:precedes]->(t)'''
         if st is None:
             continue
 
-        statement = '''MATCH (a:{atype}:{corpus})
+        statement = '''MATCH (a:{atype}:{corpus}:{discourse})
                                 WITH a
-                                MATCH (s:{stype}:{corpus} {{id: a.{stype}}})
+                                MATCH (s:{stype}:{corpus}:{discourse} {{id: a.{stype}}})
                                 WITH a, s
                                 CREATE (a)-[:contained_by]->(s)'''.format(atype = at,
-                                    stype = st, corpus = corpus_context.corpus_name)
+                                    stype = st, corpus = corpus_context.corpus_name,
+                                    discourse = data.name)
         corpus_context.graph.cypher.execute(statement)
     log.info('Finished creating containing relationships!')
     log.info('Creating containing relationships took: {}.seconds'.format(time.time() - begin))

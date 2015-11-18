@@ -328,10 +328,12 @@ class CorpusContext(object):
         import_type_csvs(self, list(parsed_data.values())[0].type_properties)
 
     def initialize_import(self, data):
-        initialize_csvs_header(data, self.config.temporary_directory('csv'))
+        return
+        #initialize_csvs_header(data, self.config.temporary_directory('csv'))
 
     def finalize_import(self, data):
-        import_csvs(self, data)
+        return
+        #import_csvs(self, data)
 
     def add_discourse(self, data):
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
@@ -339,6 +341,7 @@ class CorpusContext(object):
         begin = time.time()
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(data, self.config.temporary_directory('csv'))
+        import_csvs(self, data)
         self.update_sql_database(data)
         if data.is_timed:
             self.is_timed = True
