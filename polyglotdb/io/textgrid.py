@@ -263,7 +263,9 @@ def load_discourse_textgrid(corpus_context, path, annotation_types,
     data = textgrid_to_data(path, annotation_types, call_back, stop_check)
     data.wav_path = find_wav_path(path)
     corpus_context.add_types({data.name: data})
+    corpus_context.initialize_import(data)
     corpus_context.add_discourse(data)
+    corpus_context.finalize_import(data)
 
 def load_directory_textgrid(corpus_context, path, annotation_types,
                             feature_system_path = None,
@@ -318,9 +320,11 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
     if call_back is not None:
         call_back('Parsing annotation types...')
     corpus_context.add_types(parsed_data)
+    corpus_context.initialize_import(data)
     for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
         if call_back is not None:
             name = t[1]
             call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
             call_back(i)
         corpus_context.add_discourse(data)
+    corpus_context.finalize_import(data)

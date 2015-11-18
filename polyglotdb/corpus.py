@@ -14,7 +14,8 @@ from .config import CorpusConfig
 
 from .io.graph import (data_to_graph_csvs, import_csvs, time_data_to_csvs,
                     import_utterance_csv, import_syllable_csv,
-                    data_to_type_csvs, import_type_csvs)
+                    data_to_type_csvs, import_type_csvs, initialize_csv,
+                    initialize_csvs_header)
 
 from .graph.query import GraphQuery
 from .graph.func import Max
@@ -137,11 +138,11 @@ class CorpusContext(object):
         raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.relationship_types)))))
 
     def reset_graph(self):
-        self.graph.cypher.execute('''MATCH (:%s)-[r:is_a]->() DELETE r''' % (self.corpus_name))
 
-        self.graph.cypher.execute('''MATCH (n:%s)-[r]->()-[r2]->(:%s) DELETE n, r, r2''' % (self.corpus_name, self.corpus_name))
+        self.graph.cypher.execute('''MATCH (n:%s) DETACH DELETE n''' % (self.corpus_name))
 
         self.relationship_types = set()
+        self.hierarchy = {}
 
     def reset(self):
         self.reset_graph()
@@ -195,10 +196,11 @@ class CorpusContext(object):
         q.set(pause = True)
 
     def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0):
+        initialize_csv('utterance', self.config.temporary_directory('csv'))
         for d in self.discourses:
             utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
             time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
-            import_utterance_csv(self, d)
+        import_utterance_csv(self)
         self.hierarchy['word'] = 'utterance'
         self.hierarchy['utterance'] = None
         self.relationship_types.add('utterance')
@@ -279,10 +281,17 @@ class CorpusContext(object):
             else:
                 collapsed_results.append(r)
         utterances = []
-        if not results:
-            q = self.query_graph(self.word).filter(self.word.discourse == discourse)
-            maxt = q.aggregate(Max(self.word.end))
-            return [(0,maxt)]
+        q = self.query_graph(self.word).filter(self.word.discourse == discourse)
+        maxt = q.aggregate(Max(self.word.end))
+        if len(results) < 2:
+            begin = 0
+            if len(results) == 0:
+                return [(begin,maxt)]
+            if results[0].begin == 0:
+                return [(results[0].end, maxt)]
+            if results[0].end == maxt:
+                return [(begin, results[0].end)]
+
         if results[0].begin != 0:
             current = 0
         else:
@@ -299,6 +308,8 @@ class CorpusContext(object):
                     if dist_to_prev <= dist_to_foll:
                         utterances[-1] = (utterances[-1][0], r.begin)
             current = r.end
+        if current < maxt:
+            utterances.append((current, maxt))
         return utterances
 
     def add_types(self, parsed_data):
@@ -316,13 +327,18 @@ class CorpusContext(object):
         data_to_type_csvs(parsed_data, self.config.temporary_directory('csv'))
         import_type_csvs(self, list(parsed_data.values())[0].type_properties)
 
+    def initialize_import(self, data):
+        initialize_csvs_header(data, self.config.temporary_directory('csv'))
+
+    def finalize_import(self, data):
+        import_csvs(self, data)
+
     def add_discourse(self, data):
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(data, self.config.temporary_directory('csv'))
-        import_csvs(self, data)
         self.update_sql_database(data)
         if data.is_timed:
             self.is_timed = True

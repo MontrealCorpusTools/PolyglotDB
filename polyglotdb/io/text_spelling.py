@@ -157,12 +157,14 @@ def load_directory_spelling(corpus_context, path, annotation_types = None,
     if call_back is not None:
         call_back('Parsing annotation types...')
     corpus_context.add_types(parsed_data)
+    corpus_context.initialize_import(data)
     for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
         if call_back is not None:
             name = t[1]
             call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
             call_back(i)
         corpus_context.add_discourse(data)
+    corpus_context.finalize_import(data)
 
 def load_discourse_spelling(corpus_context, path, annotation_types = None,
                             support_corpus_path = None, ignore_case = False,
@@ -198,7 +200,9 @@ def load_discourse_spelling(corpus_context, path, annotation_types = None,
                 support_corpus_path, ignore_case,
                     stop_check, call_back)
     corpus_context.add_types({data.name: data})
+    corpus_context.initialize_import(data)
     corpus_context.add_discourse(data)
+    corpus_context.finalize_import(data)
 
 def export_discourse_spelling(corpus_context, discourse,
                             path, words_per_line = 10):

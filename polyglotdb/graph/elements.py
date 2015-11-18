@@ -19,9 +19,9 @@ class ClauseElement(object):
 
     @property
     def annotations(self):
-        annotations = [self.attribute.annotation]
+        annotations = [self.attribute.base_annotation]
         try:
-            annotations.append(self.value.annotation)
+            annotations.append(self.value.base_annotation)
         except AttributeError:
             pass
         return annotations
@@ -89,29 +89,28 @@ class AlignmentClauseElement(ClauseElement):
 
     @property
     def annotations(self):
-        return [self.first]
+        return [self.first, self.second]
 
     @property
     def attributes(self):
         return [self.first.id]
 
     def for_cypher(self):
-        kwargs = {'first_rel_type': self.first.rel_type_alias,
-                'second_rel_type': self.second.rel_type_alias,
-                'node_alias': getattr(self.first, self.alias_to_use)}
+        kwargs = {'second_node_alias': self.second.alias,
+                'first_node_alias': self.first.alias}
         return self.template.format(**kwargs)
 
 class RightAlignedClauseElement(AlignmentClauseElement):
-    template = '''()-[:{first_rel_type}]->({node_alias})<-[:{second_rel_type}]-()'''
+    template = '''not ({first_node_alias})-[:precedes]->()-[:contained_by*]->({second_node_alias})'''
     alias_to_use = 'end_alias'
 
 class LeftAlignedClauseElement(AlignmentClauseElement):
-    template = '''()<-[:{first_rel_type}]-({node_alias})-[:{second_rel_type}]->()'''
+    template = '''not ({first_node_alias})<-[:precedes]-()-[:contained_by*]->({second_node_alias})'''
     alias_to_use = 'begin_alias'
 
 class NotRightAlignedClauseElement(RightAlignedClauseElement):
-    template = '''not ()-[:{first_rel_type}]->({node_alias})<-[:{second_rel_type}]-()'''
+    template = '''({first_node_alias})-[:precedes]->()-[:contained_by*]->({second_node_alias})'''
 
 class NotLeftAlignedClauseElement(LeftAlignedClauseElement):
-    template = '''not ()<-[:{first_rel_type}]-({node_alias})-[:{second_rel_type}]->()'''
+    template = '''({first_node_alias})<-[:precedes]-()-[:contained_by*]->({second_node_alias})'''
 

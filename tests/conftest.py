@@ -548,7 +548,9 @@ def untimed_config(graph_db,corpus_data_untimed):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types({corpus_data_untimed.name: corpus_data_untimed})
+        c.initialize_import(corpus_data_untimed)
         c.add_discourse(corpus_data_untimed)
+        c.finalize_import(corpus_data_untimed)
     return config
 
 @pytest.fixture(scope='session')
@@ -557,7 +559,9 @@ def timed_config(graph_db, corpus_data_timed):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types({corpus_data_timed.name: corpus_data_timed})
+        c.initialize_import(corpus_data_timed)
         c.add_discourse(corpus_data_timed)
+        c.finalize_import(corpus_data_timed)
     return config
 
 @pytest.fixture(scope='session')
@@ -566,7 +570,9 @@ def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types({corpus_data_syllable_morpheme.name: corpus_data_syllable_morpheme})
+        c.initialize_import(corpus_data_syllable_morpheme)
         c.add_discourse(corpus_data_syllable_morpheme)
+        c.finalize_import(corpus_data_syllable_morpheme)
     return config
 
 
@@ -579,7 +585,9 @@ def ursr_config(graph_db, corpus_data_ur_sr):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types({corpus_data_ur_sr.name: corpus_data_ur_sr})
+        c.initialize_import(corpus_data_ur_sr)
         c.add_discourse(corpus_data_ur_sr)
+        c.finalize_import(corpus_data_ur_sr)
     return config
 
 @pytest.fixture(scope='session')

@@ -145,6 +145,7 @@ def test_query_word_in(untimed_config):
         print(q.cypher())
         assert(len(list(q.all())) == 2)
 
+@pytest.mark.xfail
 def test_query_coda_phone(syllable_morpheme_config):
     with CorpusContext(syllable_morpheme_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
@@ -167,6 +168,7 @@ def test_query_coda_phone(syllable_morpheme_config):
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
+@pytest.mark.xfail
 def test_query_onset_phone(syllable_morpheme_config):
     with CorpusContext(syllable_morpheme_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')

@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from .helper import type_attributes
 
-from .attributes import AnnotationAttribute, PathAnnotation, Attribute
+from .attributes import AnnotationAttribute, PathAnnotation, Attribute, PauseAnnotation
 
 aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
 
@@ -12,14 +12,13 @@ distinct_template = '''RETURN {columns}{additional_columns}{order_by}'''
 set_pause_template = '''SET {alias} :pause
 REMOVE {alias}:speech
 WITH {alias}
-MATCH ({begin_alias})-[:{rel_type}]->({alias})-[:{rel_type}]->({end_alias})
-CREATE ({begin_alias})-[:r_pause]->({alias})-[:r_pause]->({end_alias})'''
+MATCH (prec)-[r1:precedes]->({alias})-[r2:precedes]->(foll)
+CREATE (prec)-[:precedes]->(foll)
+CREATE (prec)-[:precedes_pause]->({alias})-[:precedes_pause]->(foll)
+DELETE r1, r2'''
 
 unset_pause_template = '''SET {alias} :speech
-REMOVE {alias}:pause
-WITH {alias}
-MATCH ({begin_alias})-[r1:r_pause]->({alias})-[r2:r_pause]->({end_alias})
-DELETE r1, r2'''
+REMOVE {alias}:pause'''
 
 change_label_template = '''SET {alias} {value}
 REMOVE {alias}{alt_value}
@@ -36,10 +35,13 @@ remove_label_template = '''REMOVE {alias}{value}'''
 
 set_property_template = '''SET {alias}.{attribute} = {value}'''
 
-anchor_template = '''({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})'''
+anchor_template = '''({token_alias})-[:is_a]->({type_alias})'''
 
-prec_template = '''{path_alias} = ({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})-[:r_pause*0..]->({main_begin_alias})'''
-foll_template = '''{path_alias} = ({main_end_alias})-[:r_pause*0..]->({begin_alias})-[:{rel_type}]->({node_alias})-[:{rel_type}]->({end_alias})'''
+prec_template = '''({prev_type_alias})<-[:is_a]-({prev_alias})-[:precedes]->({node_alias})'''
+foll_template = '''({node_alias})-[:precedes]->({foll_alias})-[:is_a]->({foll_type_alias})'''
+
+prec_pause_template = '''({prev_type_alias})<-[:is_a]-({prev_alias})-[:precedes_pause]->({node_alias})'''
+foll_pause_template = '''({node_alias})-[:precedes_pause]->({foll_alias})-[:is_a]->({foll_type_alias})'''
 
 template = '''{match}
 {where}
@@ -160,45 +162,53 @@ def generate_token_match(annotation_type, annotation_list, filter_annotations):
     defined = set()
 
     statements = []
-    kwargs = {}
-    kwargs['begin_alias'] = annotation_type.define_begin_alias
-    kwargs['end_alias'] = annotation_type.define_end_alias
-    kwargs['node_alias'] = annotation_type.define_alias
-    kwargs['rel_type'] = annotation_type.rel_type_alias
-    anchor_string = anchor_template.format(**kwargs)
-    statements.append(anchor_string)
-    defined.update(generate_annotation_with(annotation_type))
     current = annotation_list[0].pos
     optional_statements = []
+    if isinstance(annotation_type, PauseAnnotation):
+        prec = prec_pause_template
+        foll = foll_pause_template
+    else:
+        prec = prec_template
+        foll = foll_template
+        kwargs = {}
+        kwargs['token_alias'] = annotation_type.define_alias
+        kwargs['type_alias'] = annotation_type.define_type_alias
+        anchor_string = anchor_template.format(**kwargs)
+        statements.append(anchor_string)
+        defined.add(annotation_type.alias)
+        defined.add(annotation_type.type_alias)
     for a in annotation_list:
         if a.pos == 0:
+            if isinstance(annotation_type, PauseAnnotation):
+                kwargs = {}
+                kwargs['token_alias'] = annotation_type.define_alias
+                kwargs['type_alias'] = annotation_type.define_type_alias
+                anchor_string = anchor_template.format(**kwargs)
+
+                statements.append(anchor_string)
+                defined.add(annotation_type.alias)
+                defined.add(annotation_type.type_alias)
             continue
         elif a.pos < 0:
 
             kwargs = {}
-            kwargs['begin_alias'] = figure_property(a, 'begin_alias', defined)
-            kwargs['main_begin_alias'] = annotation_type.begin_alias
-            kwargs['end_alias'] = figure_property(a, 'end_alias', defined)
-            kwargs['node_alias'] = a.define_alias
-            kwargs['rel_type'] = a.rel_type_alias
-            kwargs['path_alias'] = a.path_alias
-            anchor_string = prec_template.format(**kwargs)
+            kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+            kwargs['prev_alias'] = a.define_alias
+            kwargs['prev_type_alias'] = a.define_type_alias
+            anchor_string = prec.format(**kwargs)
         elif a.pos > 0:
 
             kwargs = {}
-            kwargs['begin_alias'] = figure_property(a, 'begin_alias', defined)
-            kwargs['main_end_alias'] = annotation_type.end_alias
-            kwargs['end_alias'] = figure_property(a, 'end_alias', defined)
-            kwargs['node_alias'] = a.define_alias
-            kwargs['rel_type'] = a.rel_type_alias
-            kwargs['path_alias'] = a.path_alias
-            anchor_string = foll_template.format(**kwargs)
+            kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+            kwargs['foll_alias'] = a.define_alias
+            kwargs['foll_type_alias'] = a.define_type_alias
+            anchor_string = foll.format(**kwargs)
         if a in filter_annotations:
             statements.append(anchor_string)
         else:
             optional_statements.append(anchor_string)
-        defined.update(generate_annotation_with(a))
-        defined.add(kwargs['path_alias'])
+        defined.add(a.alias)
+        defined.add(a.type_alias)
     return statements, optional_statements, defined
 
 hierarchy_template = '''({contained_alias})-[:contained_by*1..]->({containing_alias})'''
@@ -217,11 +227,11 @@ def generate_hierarchical_match(annotation_levels, hierarchy):
                 continue
             sub = AnnotationAttribute(k, 0)
             sup = AnnotationAttribute(supertype, 0)
-            statements.append(hierarchy_template.format(contained_alias = sub.alias,
-                                                    containing_alias = sup.alias))
+            statement = hierarchy_template.format(contained_alias = sub.alias,
+                                                    containing_alias = sup.alias)
+            if statement not in statements:
+                statements.append(statement)
     return statements
-
-type_match_template = '''({token_alias})-[:is_a]->({type_alias})'''
 
 def generate_type_matches(query, filter_annotations):
     analyzed = defaultdict(set)
@@ -278,19 +288,13 @@ def generate_withs(query, all_withs):
     for c in query._criterion:
         for a in c.attributes:
             if a.with_alias not in all_withs:
-                if a.is_type_attribute:
-                    statement = a.annotation.type_subquery(all_withs)
-                else:
-                    statement = a.annotation.times_subquery(all_withs)
+                statement = a.annotation.subquery(all_withs)
                 statements.append(statement)
 
                 all_withs.add(a.with_alias)
     for a in query._columns + query._group_by + query._additional_columns:
         if a.with_alias not in all_withs:
-            if a.is_type_attribute:
-                statement = a.annotation.type_subquery(all_withs)
-            else:
-                statement = a.annotation.times_subquery(all_withs)
+            statement = a.annotation.subquery(all_withs)
             statements.append(statement)
 
             all_withs.add(a.with_alias)
@@ -315,9 +319,8 @@ def query_to_cypher(query):
 
     filter_annotations = set()
     for c in query._criterion:
-        for a in c.attributes:
-            t = a.base_annotation
-            filter_annotations.add(t)
+        for a in c.annotations:
+            filter_annotations.add(a)
 
     for k,v in annotation_levels.items():
         if k.has_subquery:
@@ -331,10 +334,10 @@ def query_to_cypher(query):
     statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
     match_strings.extend(statements)
 
-    statements,optional_statements, withs = generate_type_matches(query, filter_annotations)
-    all_withs.update(withs)
-    match_strings.extend(statements)
-    optional_match_strings.extend(optional_statements)
+    #statements,optional_statements, withs = generate_type_matches(query, filter_annotations)
+    #all_withs.update(withs)
+    #match_strings.extend(statements)
+    #optional_match_strings.extend(optional_statements)
 
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
 
@@ -363,16 +366,16 @@ def query_to_params(query):
 def discourse_query(corpus_context, discourse, annotations):
     if annotations is None:
         annotations = ['label']
-    template = '''MATCH (discourse_b0:Anchor:{corpus}:{discourse})
-WHERE discourse_b0.time = 0
+    template = '''MATCH (discourse_b0:word:{corpus}:{discourse})
+WHERE discourse_b0.begin = 0
 WITH discourse_b0
-MATCH p = (discourse_b0)-[:{word_rel_type}*0..]->()
+MATCH p = (discourse_b0)-[:precedes*0..]->()
 WITH COLLECT(p) AS paths, MAX(length(p)) AS maxLength
 WITH FILTER(path IN paths
   WHERE length(path)= maxLength) AS longestPath
-WITH filter(n in nodes(head(longestPath)) WHERE n:{token_node_type}) as np
+WITH nodes(head(longestPath)) as np
 UNWIND np as wt
-MATCH (wt)-[:is_a]->(w:{word_node_type})
+MATCH (wt)-[:is_a]->(w:word_type)
 RETURN {returns}'''
     extract_template = '''w.{annotation} as {annotation}'''
     extracts = []
@@ -381,8 +384,5 @@ RETURN {returns}'''
         extract_string = extract_template.format(annotation = a)
         extracts.append(extract_string)
     query = template.format(discourse = discourse, corpus = corpus_context.corpus_name,
-                            word_rel_type = word.rel_type_alias,
-                            token_node_type = word.type,
-                            word_node_type = word.type + '_type',
                             returns = ', '.join(extracts))
     return corpus_context.graph.cypher.execute(query)

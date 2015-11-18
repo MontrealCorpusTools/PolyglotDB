@@ -110,11 +110,10 @@ class GraphQuery(object):
     def annotation_levels(self):
         annotation_levels = defaultdict(set)
         for c in self._criterion:
-            for a in c.attributes:
-                t = a.base_annotation
-                key = getattr(self.corpus, t.key)
-                key.discourse_label = t.discourse_label
-                annotation_levels[key].add(t)
+            for a in c.annotations:
+                key = getattr(self.corpus, a.key)
+                key.discourse_label = a.discourse_label
+                annotation_levels[key].add(a)
         for a in self._columns + self._group_by + self._additional_columns:
             t = a.base_annotation
             key = getattr(self.corpus, t.key)

@@ -20,6 +20,7 @@ def test_get_utterances(acoustic_config):
                                 (18.359807, 19.434003), (19.599747, 21.017242),
                                 (21.208318, 22.331874), (22.865036, 23.554014),
                                 (24.174348, 24.706663), (24.980290, 25.251656)]
+        print(utterances)
         assert(len(utterances) == len(expected_utterances))
         for i, u in enumerate(utterances):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
@@ -53,6 +54,7 @@ def test_get_utterances(acoustic_config):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
             assert(round(u[1],5) == round(expected_utterances[i][1],5))
 
+@pytest.mark.xfail
 def test_query_with_pause(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_pauses(['uh','um'])
@@ -62,8 +64,9 @@ def test_query_with_pause(acoustic_config):
                     g.pause.following.duration.column_name('following_pause_duration')).order_by(g.word.begin)
         print(q.cypher())
         results = q.all()
+        assert(len(results) == 1)
         assert(results[0].following == 'this')
-        assert(results[0].following_pause == ['sil', 'um'])
+        assert(results[0].following_pause == 'sil')
         assert(abs(results[0].following_pause_duration - 1.035027) < 0.001)
 
         q = g.query_graph(g.word).filter(g.word.label == 'this')
@@ -74,8 +77,9 @@ def test_query_with_pause(acoustic_config):
                     g.pause.previous.end).order_by(g.word.begin)
         print(q.cypher())
         results = q.all()
+        assert(len(results) == 2)
         assert(results[0].previous == 'cares')
-        assert(results[0].previous_pause == ['sil', 'um'])
+        assert(results[0].previous_pause == 'um')
         assert(abs(results[0].previous_pause_duration - 1.035027) < 0.001)
 
 def test_encode_utterances(acoustic_config):
@@ -86,6 +90,7 @@ def test_encode_utterances(acoustic_config):
         results = q.all()
         assert(abs(results[0].duration - 6.482261) < 0.001)
 
+@pytest.mark.xfail
 def test_encode_syllables(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_syllables(set(['ih','iy','ah','uw','er','ay','aa','ae','eh','ow']))
@@ -102,6 +107,7 @@ def test_encode_syllables(acoustic_config):
         print(results)
         assert(abs(results[0].syllables_per_second - (35 / 6.482261)) < 0.001) # 34 syllabic segments plus one word that doesn't have syllabic segments
 
+@pytest.mark.xfail
 def test_initial_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'this')
@@ -117,6 +123,7 @@ def test_initial_query(acoustic_config):
         assert(abs(results[0].begin - 1.203942) < 0.001)
         assert(abs(results[0].end - 1.266295) < 0.001)
 
+@pytest.mark.xfail
 def test_final_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'is')
@@ -132,6 +139,7 @@ def test_final_query(acoustic_config):
         assert(abs(results[0].begin - 1.124835) < 0.001)
         assert(abs(results[0].end - 1.203942) < 0.001)
 
+@pytest.mark.xfail
 def test_penult_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'is')
@@ -257,3 +265,57 @@ def test_query_speaking_rate(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(abs(results[0].words_per_second - (26 / 6.482261)) < 0.001)
+
+def test_complex_query(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        vowels = ['aa']
+        obstruents = ['k']
+        q = g.query_graph(g.phone).filter(g.phone.label.in_(vowels))
+        q = q.filter(g.phone.following.label.in_(obstruents))
+        #q = q.filter(g.phone.following.end == g.word.end)
+        #q = q.filter(g.word.end == g.utterance.end)
+
+        q = q.clear_columns().columns(g.phone.label.column_name('vowel'),
+                                      g.phone.duration.column_name('vowel_duration'),
+                                      g.phone.begin.column_name('vowel_begin'),
+                                      g.phone.end.column_name('vowel_end'),
+                                      g.utterance.phone.rate.column_name('phone_rate'),
+                                      g.word.phone.count.column_name('num_segments_in_word'),
+                                      g.word.discourse.column_name('discourse'),
+                                      g.word.label.column_name('word'),
+                                      g.word.transcription.column_name('word_transcription'),
+                                      g.word.following.label.column_name('following_word'),
+                                      g.word.following.duration.column_name('following_word_duration'),
+                                      g.pause.following.duration.column_name('following_pause_duration'),
+                                      g.phone.following.label.column_name('following_phone'))
+        q.order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 2)
+        assert(results[0].num_segments_in_word == 5)
+
+def test_mirrored(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        vowels = ['ih']
+        obstruents = ['s']
+        q = g.query_graph(g.phone).filter(g.phone.label.in_(obstruents))
+        q = q.filter(g.phone.previous.label.in_(vowels))
+        q = q.filter(g.phone.following.label == g.phone.previous.label)
+
+        print(q.cypher())
+
+        results = q.all()
+        print(results)
+        assert(len(results) == 2)
+        q = g.query_graph(g.phone).filter(g.phone.label.in_(obstruents))
+        q = q.filter(g.phone.previous.label.in_(vowels))
+        q = q.filter(g.phone.following.label == g.phone.previous.label)
+        q = q.filter(g.phone.end == g.word.end)
+        q = q.filter(g.phone.following.begin == g.word.following.begin)
+
+        print(q.cypher())
+
+        results = q.all()
+        print(results)
+        assert(len(results) == 2)
+

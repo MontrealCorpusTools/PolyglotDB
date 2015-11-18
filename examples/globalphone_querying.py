@@ -9,9 +9,6 @@ import polyglotdb.io.textgrid as tio
 
 from polyglotdb.corpus import CorpusContext
 
-path_to_gp_german = r'D:\Data\GlobalPhone\BG'
-#path_to_gp_german = r'D:\Data\gp_german_subset'
-
 graph_db = {'host':'localhost', 'port': 7474,
             'user': 'neo4j', 'password': 'test'}
 
@@ -23,13 +20,17 @@ def call_back(*args):
         print(' '.join(args))
 
 obstruents = ['b','bj','d','dj','f','fj','g','gj','k','kj','p','pj','s','sj','S', 't','tj','v','vj','z','zj','Z','x','dz','dZ','ts','tS']
+#obstruents = ['p', 'b', 't', 'd', 'tr', 'dr', 'k', 'g', 'f', 'v', 's', 'S', 'C', 'h', 'ks']
 
 vowels = ['a', 'y',' e','i','o','u','ja','ju']
+#vowels = ['a','e', 'al', 'ael', 'alel', 'el', 'il', 'oel', 'ol', 'olel', 'uel',  'ul', 'i', 'ue', 'uxl', 'u', 'oe', 'etu', 'ox', 'o', 'ae', 'ole', 'oc', 'ale', 'abl']
+
 
 first_run = True
 import time
 if __name__ == '__main__':
     with CorpusContext('gp_bulgarian', **graph_db) as g:
+        print(g.hierarchy)
         if first_run:
             begin = time.time()
             g.encode_pauses(['sil'])
@@ -53,7 +54,8 @@ if __name__ == '__main__':
                                       g.word.transcription.column_name('word_transcription'),
                                       g.word.following.label.column_name('following_word'),
                                       g.word.following.duration.column_name('following_word_duration'),
+                                      g.pause.following.duration.column_name('following_pause_duration'),
                                       g.phones.following.label.column_name('following_phone'))
-        q.to_csv('bulgarian.csv')
         print(q.cypher())
-        print(q.count())
+        q.to_csv('bulgarian.csv')
+        #print(q.count())

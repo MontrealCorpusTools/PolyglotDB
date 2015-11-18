@@ -9,13 +9,11 @@ import polyglotdb.io.textgrid as tio
 
 from polyglotdb.corpus import CorpusContext
 
-path_to_gp_german = r'D:\Data\gp_german_subset'
+path_to_gp = r'D:\Data\GlobalPhone\BG'
 
 graph_db = {'host':'localhost', 'port': 7474,
             'user': 'neo4j', 'password': 'test'}
 
-print("Getting annotation types..")
-annotation_types = tio.inspect_discourse_textgrid(path_to_gp_german)
 
 
 def call_back(*args):
@@ -23,20 +21,22 @@ def call_back(*args):
     if args:
         print(' '.join(args))
 
-reset = False
+reset = True
 
 if reset:
-    with CorpusContext('gp_german', **graph_db) as g:
+    print("Getting annotation types..")
+    annotation_types = tio.inspect_discourse_textgrid(path_to_gp)
+    print('Loading corpus...')
+    with CorpusContext('gp_bulgarian', **graph_db) as g:
         g.reset()
         beg = time.time()
-        tio.load_directory_textgrid(g, path_to_gp_german, annotation_types, call_back = print)
+        tio.load_directory_textgrid(g, path_to_gp, annotation_types, call_back = print)
         end = time.time()
         print('Time taken: {}'.format(end - beg))
 
 
 if __name__ == '__main__':
-    with CorpusContext('gp_german', **graph_db) as g:
+    with CorpusContext('gp_bulgarian', **graph_db) as g:
         q = g.query_graph(g.phones).filter(g.phones.label == 'd')
         print(q.cypher())
-        print(q.all())
         print(q.count())
