@@ -57,7 +57,7 @@ def test_get_utterances(acoustic_config):
 @pytest.mark.xfail
 def test_query_with_pause(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        g.encode_pauses(['uh','um'])
+        g.encode_pauses(['sil', 'uh','um'])
         q = g.query_graph(g.word).filter(g.word.label == 'cares')
         q = q.columns(g.word.following.label.column_name('following'),
                     g.pause.following.label.column_name('following_pause'),
@@ -109,7 +109,17 @@ def test_encode_syllables(acoustic_config):
         print(results)
         assert(abs(results[0].syllables_per_second - (35 / 6.482261)) < 0.001) # 34 syllabic segments plus one word that doesn't have syllabic segments
 
-@pytest.mark.xfail
+def test_position_query(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        q = g.query_graph(g.word).filter(g.word.label == 'words')
+        q = q.columns(g.utterance.word.position.column_name('word_position'))
+        q = q.order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        expected = [5, 5, 6, 7, 8]
+        for i in range(len(expected)):
+            assert(results[i].word_position == expected[i])
+
 def test_initial_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'this')
@@ -125,7 +135,6 @@ def test_initial_query(acoustic_config):
         assert(abs(results[0].begin - 1.203942) < 0.001)
         assert(abs(results[0].end - 1.266295) < 0.001)
 
-@pytest.mark.xfail
 def test_final_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'is')
@@ -141,7 +150,6 @@ def test_final_query(acoustic_config):
         assert(abs(results[0].begin - 1.124835) < 0.001)
         assert(abs(results[0].end - 1.203942) < 0.001)
 
-@pytest.mark.xfail
 def test_penult_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'is')

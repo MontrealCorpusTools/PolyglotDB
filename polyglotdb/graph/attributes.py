@@ -372,7 +372,7 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def def_path_alias(self):
-        return '{}:{}'.format(self.path_alias, self.sub.type)
+        return '{}:{}:{}'.format(self.path_alias, self.sub.type, self.sub.corpus)
 
     @property
     def path_alias(self):
@@ -408,6 +408,12 @@ class PositionalAnnotation(SubPathAnnotation):
             raise(AttributeError('Annotations cannot have annotations.'))
         return PositionalAttribute(self, key)
 
+    def generate_subquery(self, output_with_string, input_with_string):
+        return self.subquery_template.format(alias = self.annotation.annotation.alias,
+                        input_with_string = input_with_string, output_with_string = output_with_string,
+                        path_type_alias = self.path_type_alias, def_path_type_alias = self.def_path_type_alias,
+                        def_path_alias = self.def_path_alias, path_alias = self.path_alias)
+
     @property
     def type(self):
         return self.annotation.type
@@ -427,11 +433,6 @@ class PositionalAnnotation(SubPathAnnotation):
     @property
     def path_type_alias(self):
         return self.annotation.path_type_alias
-
-    @property
-    def times_alias(self):
-        return self.annotation.times_alias
-
 
 class PathAttribute(Attribute):
     type_return_template = 'extract(n in {alias}|n.{property})'
@@ -477,6 +478,10 @@ class PathAttribute(Attribute):
         return False
 
     @property
+    def with_aliases(self):
+        return [self.annotation.path_alias, self.annotation.path_type_alias]
+
+    @property
     def with_alias(self):
         if self.label in type_attributes + ['rate', 'count']:
             return self.annotation.path_type_alias
@@ -491,35 +496,22 @@ class PositionalAttribute(PathAttribute):
         return self.annotation.annotation.annotation
 
     @property
-    def is_type_attribute(self):
-        if self.label in type_attributes:
-            return True
-        return False
-
-    @property
     def with_alias(self):
-        if self.label in type_attributes:
-            return self.annotation.path_type_alias
-        elif self.label in ['duration', 'begin', 'end']:
-            return self.annotation.times_alias
+        if self.label in type_attributes + ['rate', 'count']:
+            return self.annotation.annotation.path_type_alias
+        return self.annotation.annotation.path_alias
 
     def for_cypher(self):
         pos = self.annotation.pos
         if self.label in type_attributes:
-            return self.type_return_template.format(alias = self.annotation.path_type_alias, property = self.label, pos = pos)
-
-        if pos < 0:
-            begpos = pos - 1
-            endpos = pos
+            alias = self.annotation.path_type_alias
         else:
-            begpos = pos
-            endpos = pos + 1
-        if self.label == 'begin':
-            return '{}[{}]'.format(self.annotation.times_alias, begpos)
-        elif self.label == 'end':
-            return '{}[{}]'.format(self.annotation.times_alias, endpos)
-        elif self.label == 'duration':
-            return '{alias}[{endpos}] - {alias}[{begpos}]'.format(alias = self.annotation.times_alias, endpos = endpos, begpos = begpos)
+            alias = self.annotation.path_alias
+        if self.label == 'duration':
+            beg = self.type_return_template.format(alias = alias, property = 'begin', pos = pos)
+            end = self.type_return_template.format(alias = alias, property = 'end', pos = pos)
+            return '{} - {}'.format(end, beg)
+        return self.type_return_template.format(alias = alias, property = self.label, pos = pos)
 
 
 class PauseAnnotation(AnnotationAttribute):
