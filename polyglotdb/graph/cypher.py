@@ -43,6 +43,8 @@ foll_template = '''({node_alias})-[:precedes]->({foll_alias})-[:is_a]->({foll_ty
 prec_pause_template = '''({prev_type_alias})<-[:is_a]-({prev_alias})-[:precedes_pause]->({node_alias})'''
 foll_pause_template = '''({node_alias})-[:precedes_pause]->({foll_alias})-[:is_a]->({foll_type_alias})'''
 
+delete_template = '''DETACH DELETE {alias}'''
+
 template = '''{match}
 {where}
 {optional_match}
@@ -71,6 +73,11 @@ def figure_property(annotation, property_string, withs):
 
 def create_return_statement(query):
     kwargs = {'order_by': '', 'additional_columns':'', 'columns':''}
+    if query._delete:
+        kwargs = {}
+        kwargs['alias'] = query.to_find.alias
+        return_statement = delete_template.format(**kwargs)
+        return return_statement
     if query._set or query._set_labels or query._remove_labels:
         for k,v in query._set.items():
             if k == 'pause':

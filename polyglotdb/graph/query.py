@@ -32,6 +32,7 @@ class GraphQuery(object):
         self._remove_labels = []
 
         self._set = {}
+        self._delete = False
 
     def clear_columns(self):
         self._columns = []
@@ -161,3 +162,6 @@ class GraphQuery(object):
             self._set[k] = v
         self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
 
+    def delete(self):
+        self._delete = True
+        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())

@@ -48,7 +48,7 @@ def import_utterance_csv(corpus_context, discourse):
             (end:word:{corpus}:{discourse} {{end: toFloat(csvLine[1])}})
             MERGE (utt:utterance:{corpus}:{discourse}:speech {{begin: toFloat(csvLine[0]), end: toFloat(csvLine[1]), discourse: '{discourse}'}})-[:is_a]->(u_type:utterance_type)
             WITH utt, begin, end
-            MATCH path = shortestPath((begin)-[:precedes*]->(end))
+            MATCH path = shortestPath((begin)-[:precedes*0..]->(end))
             WITH utt, begin, end, nodes(path) as words
             UNWIND words as w
             MERGE (w)-[:contained_by]->(utt)'''

@@ -195,10 +195,14 @@ class CorpusContext(object):
             raise(NotImplementedError)
         q.set(pause = True)
 
+    def reset_utterances(self):
+        q = self.query_graph(self.utterance).delete()
+
     def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0):
         #initialize_csv('utterance', self.config.temporary_directory('csv'))
         self.graph.cypher.execute('CREATE INDEX ON :utterance(begin)')
         self.graph.cypher.execute('CREATE INDEX ON :utterance(end)')
+        self.reset_utterances()
         for d in self.discourses:
             utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
             time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
@@ -268,13 +272,13 @@ class CorpusContext(object):
                 syllables.append(bounds)
         return syllables
 
-    def get_utterances(self, discourse, pause_words,
+    def get_utterances(self, discourse,
                 min_pause_length = 0.5, min_utterance_length = 0):
-
         q = self.query_graph(self.pause).filter(self.pause.discourse == discourse)
         q = q.filter(self.pause.duration >= min_pause_length)
         q = q.clear_columns().times().duration().order_by(self.pause.begin)
         results = q.all()
+
         collapsed_results = []
         for i, r in enumerate(results):
             if len(collapsed_results) == 0:
