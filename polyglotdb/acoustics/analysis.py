@@ -36,13 +36,14 @@ def acoustic_analysis(corpus_context):
         if pauses is None:
             path = sf.filepath
         else:
-            utterances = corpus_context.get_utterances(sf.discourse.name, pauses,
-                min_pause_length = getattr(corpus_context.config, 'min_pause_length', 0.5))
+            q = corpus_context.query_graph(corpus_context.utterance)
+            q = q.filter(corpus_context.utterance.discourse == sf.discourse.name).times()
+            utterances = q.all()
 
             outdir = corpus_context.config.temporary_directory(sf.discourse.name)
             for i, u in enumerate(utterances):
-                outpath = os.path.join(outdir, 'temp-{}-{}.wav'.format(u[0], u[1]))
-                extract_audio(sf.filepath, outpath, u[0], u[1], padding = padding)
+                outpath = os.path.join(outdir, 'temp-{}-{}.wav'.format(u.begin, u.end))
+                extract_audio(sf.filepath, outpath, u.begin, u.end, padding = padding)
             path = outdir
 
         analyze_pitch(corpus_context, sf, path)

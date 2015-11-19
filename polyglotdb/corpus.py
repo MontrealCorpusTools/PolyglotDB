@@ -18,7 +18,7 @@ from .io.graph import (data_to_graph_csvs, import_csvs, time_data_to_csvs,
                     initialize_csvs_header)
 
 from .graph.query import GraphQuery
-from .graph.func import Max
+from .graph.func import Max, Min
 from .graph.attributes import AnnotationAttribute, PauseAnnotation
 
 from .sql.models import (Base, Word, WordProperty, WordPropertyType,
@@ -196,7 +196,10 @@ class CorpusContext(object):
         q.set(pause = True)
 
     def reset_utterances(self):
-        q = self.query_graph(self.utterance).delete()
+        try:
+            q = self.query_graph(self.utterance).delete()
+        except GraphQueryError:
+            pass
 
     def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0):
         #initialize_csv('utterance', self.config.temporary_directory('csv'))
@@ -290,14 +293,14 @@ class CorpusContext(object):
                 collapsed_results.append(r)
         utterances = []
         q = self.query_graph(self.word).filter(self.word.discourse == discourse)
-        maxt = q.aggregate(Max(self.word.end))
+        times = q.aggregate(Min(self.word.begin), Max(self.word.end))
         if len(results) < 2:
-            begin = 0
+            begin = times.min_begin
             if len(results) == 0:
-                return [(begin,maxt)]
+                return [(begin, times.max_end)]
             if results[0].begin == 0:
-                return [(results[0].end, maxt)]
-            if results[0].end == maxt:
+                return [(results[0].end, times.max_end)]
+            if results[0].end == times.max_end:
                 return [(begin, results[0].end)]
 
         if results[0].begin != 0:
@@ -316,8 +319,12 @@ class CorpusContext(object):
                     if dist_to_prev <= dist_to_foll:
                         utterances[-1] = (utterances[-1][0], r.begin)
             current = r.end
-        if current < maxt:
-            utterances.append((current, maxt))
+        if current < times.max_end:
+            utterances.append((current, times.max_end))
+        if utterances[-1][1] > times.max_end:
+            utterances[-1] = (utterances[-1][0], times.max_end)
+        if utterances[0][0] < times.min_begin:
+            utterances[0] = (times.min_begin, utterances[0][1])
         return utterances
 
     def add_types(self, parsed_data):

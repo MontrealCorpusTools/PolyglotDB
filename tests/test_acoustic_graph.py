@@ -13,7 +13,7 @@ def test_encode_pause(acoustic_config):
 
 def test_get_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0, min_utterance_length = 0)
+        utterances = g.get_utterances('acoustic_corpus', min_pause_length = 0, min_utterance_length = 0)
 
         expected_utterances = [(1.059223, 7.541484), (8.016164, 11.807666),
                                 (12.167356, 13.898228), (14.509726, 17.207370),
@@ -25,7 +25,7 @@ def test_get_utterances(acoustic_config):
         for i, u in enumerate(utterances):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
             assert(round(u[1],5) == round(expected_utterances[i][1],5))
-        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0.5)
+        utterances = g.get_utterances('acoustic_corpus', min_pause_length = 0.5)
 
         expected_utterances = [(1.059223, 13.898228), (14.509726, 17.207370),
                                 (18.359807, 22.331874), (22.865036, 23.554014),
@@ -35,7 +35,7 @@ def test_get_utterances(acoustic_config):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
             assert(round(u[1],5) == round(expected_utterances[i][1],5))
 
-        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0.5, min_utterance_length = 1.0)
+        utterances = g.get_utterances('acoustic_corpus', min_pause_length = 0.5, min_utterance_length = 1.0)
 
         expected_utterances = [(1.059223, 13.898228), (14.509726, 17.207370),
                                 (18.359807, 23.554014),
@@ -45,7 +45,7 @@ def test_get_utterances(acoustic_config):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
             assert(round(u[1],5) == round(expected_utterances[i][1],5))
 
-        utterances = g.get_utterances('acoustic_corpus', ['sil'], min_pause_length = 0.5, min_utterance_length = 1.1)
+        utterances = g.get_utterances('acoustic_corpus', min_pause_length = 0.5, min_utterance_length = 1.1)
 
         expected_utterances = [(1.059223, 13.898228), (14.509726, 17.207370),
                                 (18.359807, 25.251656)]
@@ -84,10 +84,12 @@ def test_query_with_pause(acoustic_config):
 
 def test_encode_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        g.encode_utterances()
+        g.encode_pauses(['sil', 'uh','um'])
+        g.encode_utterances(min_pause_length = 0.4)
         q = g.query_graph(g.utterance).duration().order_by(g.utterance.begin)
         print(q.cypher())
         results = q.all()
+        print(results)
         assert(abs(results[0].duration - 6.482261) < 0.001)
 
 @pytest.mark.xfail
