@@ -36,17 +36,17 @@ def initialize_csvs_header(data, directory):
         x.close()
 
 def time_data_to_csvs(type, directory, discourse, timed_data):
-    with open(os.path.join(directory, '{}_{}.csv'.format(discourse, type)), 'a') as f:
+    with open(os.path.join(directory, '{}_{}.csv'.format(discourse, type)), 'w') as f:
         for t in timed_data:
             f.write('{},{}\n'.format(t[0], t[1]))
 
 def import_utterance_csv(corpus_context, discourse):
     csv_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse)).replace('\\','/'))
-    statement = '''USING PERIODIC COMMIT 3000
+    statement = '''USING PERIODIC COMMIT 1000
             LOAD CSV FROM "{path}" AS csvLine
-            MATCH (begin:word:{corpus}:{discourse} {{begin: toFloat(csvLine[0]), discourse: csvLine[2]}}),
-            (end:word:{corpus}:{discourse} {{end: toFloat(csvLine[1]), discourse: csvLine[2]}})
-            MERGE (utt:utterance:{corpus}:{discourse}:speech {{begin: toFloat(csvLine[0]), end: toFloat(csvLine[1]), discourse: csvLine[2]}})-[:is_a]->(u_type:utterance_type)
+            MATCH (begin:word:{corpus}:{discourse} {{begin: toFloat(csvLine[0])}}),
+            (end:word:{corpus}:{discourse} {{end: toFloat(csvLine[1])}})
+            MERGE (utt:utterance:{corpus}:{discourse}:speech {{begin: toFloat(csvLine[0]), end: toFloat(csvLine[1]), discourse: '{discourse}'}})-[:is_a]->(u_type:utterance_type)
             WITH utt, begin, end
             MATCH path = shortestPath((begin)-[:precedes*]->(end))
             WITH utt, begin, end, nodes(path) as words
@@ -57,6 +57,7 @@ def import_utterance_csv(corpus_context, discourse):
 
 
 def import_syllable_csv(corpus_context, discourse, base):
+    return
     csv_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_syllable.csv'.format(discourse)).replace('\\','/'))
     statement = '''USING PERIODIC COMMIT 1000
             LOAD CSV FROM "{path}" AS csvLine
@@ -227,6 +228,7 @@ def import_type_csvs(corpus_context, word_type_properties):
             continue
         type_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_type.csv'.format(at)).replace('\\','/'))
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
+        corpus_context.graph.cypher.execute('CREATE INDEX ON :%s_type(label)' % (at,))
         properties = []
         if at == 'word':
             for x in word_type_properties:
@@ -267,6 +269,8 @@ def import_csvs(corpus_context, data):
 
         properties = []
         corpus_context.graph.cypher.execute('CREATE INDEX ON :%s(discourse)' % (at,))
+        corpus_context.graph.cypher.execute('CREATE INDEX ON :%s(begin)' % (at,))
+        corpus_context.graph.cypher.execute('CREATE INDEX ON :%s(end)' % (at,))
         if at == 'word':
             for x in token_properties:
                 properties.append(prop_temp.format(name=x))
@@ -285,7 +289,7 @@ def import_csvs(corpus_context, data):
         rel_import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MATCH (n:{annotation_type}_type {{id: csvLine.type_id}})
-CREATE (t:{annotation_type}:{corpus_name}:{discourse}:speech:unoptimized {{id: csvLine.id, begin: toFloat(csvLine.begin), end: toFloat(csvLine.end), discourse: '{discourse}'{token_property_string} }})
+CREATE (t:{annotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin), end: toFloat(csvLine.end), discourse: '{discourse}'{token_property_string} }})
 CREATE (t)-[:is_a]->(n)
 WITH t, csvLine
 MATCH (p:{annotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.previous_id}})

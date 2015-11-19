@@ -45,19 +45,19 @@ with CorpusContext('buckeye', **graph_db) as g:
                 g.pause.following.label.column_name('following_pause'),
                 g.word.surface_transcription.count.column_name('number_of_surface_phones'),
                 g.word.surface_transcription.label.column_name('surface_transcription'),
-                g.word.surface_transcription.penultimate.label.column_name('penult_segment'),
-                g.word.surface_transcription.penultimate.duration.column_name('penult_segment_duration'),
-                g.word.surface_transcription.final.label.column_name('final_segment'),
-                g.word.surface_transcription.final.duration.column_name('final_segment_duration'),
+                #g.word.surface_transcription.penultimate.label.column_name('penult_segment'),
+                #g.word.surface_transcription.penultimate.duration.column_name('penult_segment_duration'),
+                #g.word.surface_transcription.final.label.column_name('final_segment'),
+                #g.word.surface_transcription.final.duration.column_name('final_segment_duration'),
                 g.word.following.surface_transcription.label.column_name('following_surface_transcription'),
-                g.word.following.surface_transcription.initial.label.column_name('following_initial_segment'),
-                g.word.following.surface_transcription.initial.duration.column_name('following_initial_segment_duration'),
+                #g.word.following.surface_transcription.initial.label.column_name('following_initial_segment'),
+                #g.word.following.surface_transcription.initial.duration.column_name('following_initial_segment_duration'),
                 g.word.duration.column_name('word_duration'),
                 g.word.following.duration.column_name('following_word_duration'),
                 g.utterance.surface_transcription.rate.column_name('utterance_surface_phones_per_second'),
                 g.word.discourse.column_name('discourse'))
     q = q.order_by(g.word.discourse)
-
+    print(q.cypher())
     q.to_csv('test_nofilled.csv')
 
     print('Finished query in: {} seconds'.format(time.time() - begin))

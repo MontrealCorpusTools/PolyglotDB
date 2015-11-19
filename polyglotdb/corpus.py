@@ -196,11 +196,14 @@ class CorpusContext(object):
         q.set(pause = True)
 
     def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0):
-        initialize_csv('utterance', self.config.temporary_directory('csv'))
+        #initialize_csv('utterance', self.config.temporary_directory('csv'))
+        self.graph.cypher.execute('CREATE INDEX ON :utterance(begin)')
+        self.graph.cypher.execute('CREATE INDEX ON :utterance(end)')
         for d in self.discourses:
             utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
             time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
             import_utterance_csv(self, d)
+
         self.hierarchy['word'] = 'utterance'
         self.hierarchy['utterance'] = None
         self.relationship_types.add('utterance')
@@ -216,6 +219,7 @@ class CorpusContext(object):
         self.relationship_types.add('syllable')
 
     def get_syllables(self, discourse, syllable_phones):
+        return
         base = self.lowest_annotation
 
         q = self.query_graph(self.word).filter(self.word.discourse == discourse)
