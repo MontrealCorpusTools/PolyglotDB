@@ -12,10 +12,13 @@ distinct_template = '''RETURN {columns}{additional_columns}{order_by}'''
 set_pause_template = '''SET {alias} :pause
 REMOVE {alias}:speech
 WITH {alias}
-MATCH (prec)-[r1:precedes]->({alias})-[r2:precedes]->(foll)
-CREATE (prec)-[:precedes]->(foll)
-CREATE (prec)-[:precedes_pause]->({alias})-[:precedes_pause]->(foll)
-DELETE r1, r2'''
+OPTIONAL MATCH (prec)-[r1:precedes]->({alias})
+MERGE (prec)-[:precedes_pause]->({alias})
+DELETE r1
+WITH {alias}, prec
+OPTIONAL MATCH ({alias})-[r2:precedes]->(foll)
+MERGE ({alias})-[:precedes_pause]->(foll)
+DELETE r2'''
 
 unset_pause_template = '''SET {alias} :speech
 REMOVE {alias}:pause'''
@@ -40,8 +43,8 @@ anchor_template = '''({token_alias})-[:is_a]->({type_alias})'''
 prec_template = '''({prev_type_alias})<-[:is_a]-({prev_alias})-[:precedes]->({node_alias})'''
 foll_template = '''({node_alias})-[:precedes]->({foll_alias})-[:is_a]->({foll_type_alias})'''
 
-prec_pause_template = '''({prev_type_alias})<-[:is_a]-({prev_alias})-[:precedes_pause]->({node_alias})'''
-foll_pause_template = '''({node_alias})-[:precedes_pause]->({foll_alias})-[:is_a]->({foll_type_alias})'''
+prec_pause_template = '''{path_alias} = (:speech:word)-[:precedes_pause*0..]->({node_alias})'''
+foll_pause_template = '''{path_alias} = ({node_alias})-[:precedes_pause*0..]->(:speech:word)'''
 
 delete_template = '''DETACH DELETE {alias}'''
 
@@ -200,22 +203,31 @@ def generate_token_match(annotation_type, annotation_list, filter_annotations):
 
             kwargs = {}
             kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
-            kwargs['prev_alias'] = a.define_alias
-            kwargs['prev_type_alias'] = a.define_type_alias
+            if isinstance(annotation_type, PauseAnnotation):
+                kwargs['path_alias'] = a.path_alias
+            else:
+                kwargs['prev_alias'] = a.define_alias
+                kwargs['prev_type_alias'] = a.define_type_alias
             anchor_string = prec.format(**kwargs)
         elif a.pos > 0:
 
             kwargs = {}
             kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
-            kwargs['foll_alias'] = a.define_alias
-            kwargs['foll_type_alias'] = a.define_type_alias
+            if isinstance(annotation_type, PauseAnnotation):
+                kwargs['path_alias'] = a.path_alias
+            else:
+                kwargs['foll_alias'] = a.define_alias
+                kwargs['foll_type_alias'] = a.define_type_alias
             anchor_string = foll.format(**kwargs)
         if a in filter_annotations:
             statements.append(anchor_string)
         else:
             optional_statements.append(anchor_string)
         defined.add(a.alias)
-        defined.add(a.type_alias)
+        if isinstance(annotation_type, PauseAnnotation):
+            defined.add(a.path_alias)
+        else:
+            defined.add(a.type_alias)
     return statements, optional_statements, defined
 
 hierarchy_template = '''({contained_alias})-[:contained_by*1..]->({containing_alias})'''
@@ -374,9 +386,10 @@ def discourse_query(corpus_context, discourse, annotations):
     if annotations is None:
         annotations = ['label']
     template = '''MATCH (discourse_b0:word:{corpus}:{discourse})
-WHERE discourse_b0.begin = 0
+WITH min(discourse_b0.begin) as mintime, discourse_b0
+WHERE discourse_b0.begin = mintime
 WITH discourse_b0
-MATCH p = (discourse_b0)-[:precedes*0..]->()
+MATCH p = (discourse_b0)-[:precedes*0..]->(:word:{corpus}:{discourse})
 WITH COLLECT(p) AS paths, MAX(length(p)) AS maxLength
 WITH FILTER(path IN paths
   WHERE length(path)= maxLength) AS longestPath

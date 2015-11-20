@@ -6,13 +6,44 @@ from polyglotdb.corpus import CorpusContext
 
 def test_encode_pause(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        discourse = g.discourse('acoustic_corpus')
         g.encode_pauses(['sil'])
         q = g.query_graph(g.pause)
         print(q.cypher())
-        assert(len(q.all()) > 0)
+        assert(len(q.all()) == 11)
+
+        paused = g.discourse('acoustic_corpus')
+        expected = [x for x in discourse if x.label != 'sil']
+        for i,d in enumerate(expected):
+            print(d.label, paused[i].label)
+            assert(d.label == paused[i].label)
+
+        g.reset_pauses()
+        new_discourse = g.discourse('acoustic_corpus')
+        for i,d in enumerate(discourse):
+            assert(d.label == new_discourse[i].label)
+
+        g.encode_pauses(['sil','um','uh'])
+        q = g.query_graph(g.pause)
+        print(q.cypher())
+        assert(len(q.all()) == 14)
+
+        paused = g.discourse('acoustic_corpus')
+        expected = [x for x in discourse if x.label not in ['sil','um','uh']]
+        for i,d in enumerate(expected):
+            print(d.label, paused[i].label)
+            assert(d.label == paused[i].label)
+
+        g.reset_pauses()
+        new_discourse = g.discourse('acoustic_corpus')
+        print(discourse)
+        print(new_discourse)
+        for i,d in enumerate(discourse):
+            assert(d.label == new_discourse[i].label)
 
 def test_get_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil'])
         utterances = g.get_utterances('acoustic_corpus', min_pause_length = 0, min_utterance_length = 0)
 
         expected_utterances = [(1.059223, 7.541484), (8.016164, 11.807666),
@@ -54,7 +85,56 @@ def test_get_utterances(acoustic_config):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
             assert(round(u[1],5) == round(expected_utterances[i][1],5))
 
-@pytest.mark.xfail
+        g.encode_pauses(['sil','um'])
+        utterances = g.get_utterances('acoustic_corpus', min_pause_length = 0, min_utterance_length = 0)
+
+        expected_utterances = [(1.059223, 7.541484), (8.576511, 11.807666),
+                                (12.167356, 13.898228), (14.509726, 17.207370),
+                                (18.359807, 19.434003), (19.599747, 21.017242),
+                                (21.208318, 22.331874),
+                                (24.174348, 24.706663), (24.980290, 25.251656)]
+        print(utterances)
+        assert(len(utterances) == len(expected_utterances))
+        for i, u in enumerate(utterances):
+            assert(round(u[0],5) == round(expected_utterances[i][0],5))
+            assert(round(u[1],5) == round(expected_utterances[i][1],5))
+
+def test_encode_utterances(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil', 'um'])
+        g.encode_utterances(min_pause_length = 0)
+        q = g.query_graph(g.utterance).times().duration().order_by(g.utterance.begin)
+        print(q.cypher())
+        results = q.all()
+        print(results)
+        expected_utterances = [(1.059223, 7.541484), (8.576511, 11.807666),
+                                (12.167356, 13.898228), (14.509726, 17.207370),
+                                (18.359807, 19.434003), (19.599747, 21.017242),
+                                (21.208318, 22.331874),
+                                (24.174348, 24.706663), (24.980290, 25.251656)]
+        assert(len(results) == len(expected_utterances))
+        for i, r in enumerate(results):
+            assert(round(r.begin,3) == round(expected_utterances[i][0], 3))
+            assert(round(r.end,3) == round(expected_utterances[i][1],3))
+        assert(abs(results[0].duration - 6.482261) < 0.001)
+
+        g.encode_pauses(['sil'])
+        g.encode_utterances(min_pause_length = 0)
+
+        expected_utterances = [(1.059223, 7.541484), (8.016164, 11.807666),
+                                (12.167356, 13.898228), (14.509726, 17.207370),
+                                (18.359807, 19.434003), (19.599747, 21.017242),
+                                (21.208318, 22.331874), (22.865036, 23.554014),
+                                (24.174348, 24.706663), (24.980290, 25.251656)]
+        q = g.query_graph(g.utterance).times().duration().order_by(g.utterance.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(len(g.query_graph(g.pause).all()) == 11)
+        assert(len(results) == len(expected_utterances))
+        for i, r in enumerate(results):
+            assert(round(r.begin,3) == round(expected_utterances[i][0], 3))
+            assert(round(r.end,3) == round(expected_utterances[i][1],3))
+
 def test_query_with_pause(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_pauses(['sil', 'uh','um'])
@@ -66,7 +146,7 @@ def test_query_with_pause(acoustic_config):
         results = q.all()
         assert(len(results) == 1)
         assert(results[0].following == 'this')
-        assert(results[0].following_pause == 'sil')
+        assert(results[0].following_pause == ['sil','um'])
         assert(abs(results[0].following_pause_duration - 1.035027) < 0.001)
 
         q = g.query_graph(g.word).filter(g.word.label == 'this')
@@ -78,19 +158,9 @@ def test_query_with_pause(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
-        assert(results[0].previous == 'cares')
-        assert(results[0].previous_pause == 'um')
-        assert(abs(results[0].previous_pause_duration - 1.035027) < 0.001)
-
-def test_encode_utterances(acoustic_config):
-    with CorpusContext(acoustic_config) as g:
-        g.encode_pauses(['sil', 'uh','um'])
-        g.encode_utterances(min_pause_length = 0.4)
-        q = g.query_graph(g.utterance).duration().order_by(g.utterance.begin)
-        print(q.cypher())
-        results = q.all()
-        print(results)
-        assert(abs(results[0].duration - 6.482261) < 0.001)
+        assert(results[1].previous == 'cares')
+        assert(results[1].previous_pause == ['sil','um'])
+        assert(abs(results[1].previous_pause_duration - 1.035027) < 0.001)
 
 @pytest.mark.xfail
 def test_encode_syllables(acoustic_config):
@@ -111,18 +181,26 @@ def test_encode_syllables(acoustic_config):
 
 def test_position_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil'])
+        q = g.query_graph(g.pause)
+        print(q.all())
+        g.encode_utterances(min_pause_length = 0)
+        q = g.query_graph(g.utterance).times()
+        print(q.all())
         q = g.query_graph(g.word).filter(g.word.label == 'words')
         q = q.columns(g.utterance.word.position.column_name('word_position'))
         q = q.order_by(g.word.begin)
         print(q.cypher())
         results = q.all()
-        expected = [5, 5, 6, 7, 8]
+        expected = [6, 4, 1, 2, 3]
+        assert(len(results) == len(expected))
         for i in range(len(expected)):
             assert(results[i].word_position == expected[i])
 
 def test_initial_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'this')
+        g.encode_pauses(['sil'])
         q = q.columns(g.word.following.phone.initial.label.column_name('initial_following_phone'),
                     g.word.following.phone.initial.duration.column_name('initial_following_phone_duration'),
                     g.word.following.phone.initial.begin.column_name('begin'),
@@ -137,6 +215,7 @@ def test_initial_query(acoustic_config):
 
 def test_final_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil'])
         q = g.query_graph(g.word).filter(g.word.label == 'is')
         q = q.columns(g.word.previous.phone.final.label.column_name('final_previous_phone'),
                     g.word.previous.phone.final.duration.column_name('final_previous_phone_duration'),
@@ -152,6 +231,7 @@ def test_final_query(acoustic_config):
 
 def test_penult_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil'])
         q = g.query_graph(g.word).filter(g.word.label == 'is')
         q = q.columns(g.word.previous.phone.penultimate.label.column_name('phone'),
                     g.word.previous.phone.penultimate.duration.column_name('duration'),
@@ -189,6 +269,10 @@ def test_speech_rate(acoustic_config):
 
 def test_utterance_position(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil','um'])
+        q = g.query_graph(g.pause)
+        print(q.all())
+        g.encode_utterances(min_pause_length = 0)
         q = g.query_graph(g.word)
         q = q.filter(g.word.label == 'this')
         q = q.order_by(g.word.begin)

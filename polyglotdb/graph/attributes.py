@@ -280,16 +280,15 @@ class AggregateAttribute(Attribute):
 class PathAnnotation(AnnotationAttribute):
     has_subquery = True
     path_prefix = 'path_'
-    with_type_template = 'collect({type_alias}) AS {type}'
-    with_times_template = 'extract(n in filter(n in nodes({path_alias}) where n.time is not null)| n.time) as {path_times_alias}'
 
-    subquery_template = '''UNWIND nodes({path_alias}) as n
-        MATCH (n)-[:is_a]->({path_type_alias})
+    subquery_template = '''UNWIND (CASE WHEN length({path_alias}) > 0 THEN nodes({path_alias})[1..-1] ELSE [null] END) as n
+        OPTIONAL MATCH (n)-[:is_a]->({path_type_alias})
         WITH {output_with_string}'''
 
     def subquery(self, withs):
         input_with = ', '.join(withs)
-        output_with = input_with + ', ' + self.with_statement()
+        new_withs = withs - set([self.path_alias])
+        output_with = ', '.join(new_withs) + ', ' + self.with_statement()
         return self.generate_subquery(output_with, input_with)
 
 
@@ -300,30 +299,33 @@ class PathAnnotation(AnnotationAttribute):
         return self.subquery_template.format(path_alias = self.path_alias,
                         output_with_string = output_with_string,
                         key = self.key,
-                        path_type_alias = self.define_type_alias)
+                        path_type_alias = self.def_path_type_alias)
 
+
+
+    def with_statement(self):
+        return ', '.join(['collect(n) as {a}'.format(a=self.path_alias),
+                    'collect(t) as {a}'.format(a=self.path_type_alias)])
+    @property
+    def def_path_type_alias(self):
+        return 't:{}_type'.format(self.type)
+
+    @property
+    def def_path_alias(self):
+        return '{}:{}:{}'.format(self.path_alias, self.key, self.sub.corpus)
 
     @property
     def path_alias(self):
-        return self.path_prefix + self.alias
-
-    @property
-    def type_alias(self):
-        return self.path_alias + '_type'
+        pre = ''
+        if self.pos < 0:
+            pre += 'prev_{}_'.format(-1 * self.pos)
+        elif self.pos > 0:
+            pre += 'foll_{}_'.format(self.pos)
+        return '{}{}'.format(pre, self.key)
 
     @property
     def path_type_alias(self):
-        return self.path_prefix + self.type_alias
-
-    @property
-    def times_alias(self):
-        return self.path_alias + '_times'
-
-    def with_times(self):
-        return self.with_times_template.format(path_alias = self.path_alias, path_times_alias = self.times_alias)
-
-    def with_type(self):
-        return self.with_type_template.format(type_alias = self.type_alias, type = self.path_type_alias)
+        return 'type_'+self.path_alias
 
     @property
     def key(self):
@@ -436,8 +438,8 @@ class PositionalAnnotation(SubPathAnnotation):
 
 class PathAttribute(Attribute):
     type_return_template = 'extract(n in {alias}|n.{property})'
-    count_return_template = 'reduce(count = 0, n in {alias} | count + 1)'
-    rate_return_template = 'reduce(count = 0, n in {alias} | count + 1) / ({node_alias}.end - {node_alias}.begin)'
+    count_return_template = 'size({alias})'
+    rate_return_template = 'size({alias}) / ({node_alias}.end - {node_alias}.begin)'
     position_return_template = 'reduce(count = 1, n in filter(x in {alias} where x.begin < {node_alias}.begin) | count + 1)'
 
     @property
@@ -451,20 +453,18 @@ class PathAttribute(Attribute):
         if self.label in type_attributes:
             return self.type_return_template.format(alias = self.annotation.path_type_alias, property = self.label)
 
-        if self.annotation.pos >= 0:
-            begpos = 0
-            endpos = -2
-        else:
-            begpos = 1
-            endpos = -1
+        begpos = 0
+        endpos = -1
+        beg = self.type_return_template.format(alias = self.annotation.path_alias, property = 'begin')
+        end = self.type_return_template.format(alias = self.annotation.path_alias, property = 'end')
         if self.label == 'begin':
-            return '{}[{}]'.format(self.annotation.times_alias, begpos)
+            return '{}[{}]'.format(beg, begpos)
         elif self.label == 'end':
-            return '{}[{}]'.format(self.annotation.times_alias, endpos)
+            return '{}[{}]'.format(end, endpos)
         elif self.label == 'duration':
-            return '{alias}[{endpos}] - {alias}[{begpos}]'.format(alias = self.annotation.times_alias, endpos = endpos, begpos = begpos)
+            return '{endalias}[{endpos}] - {begalias}[{begpos}]'.format(begalias = beg, endalias = end, endpos = endpos, begpos = begpos)
         elif self.label == 'count':
-            return self.count_return_template.format(alias = self.annotation.path_type_alias, node_alias = self.base_annotation.alias)
+            return self.count_return_template.format(alias = self.annotation.path_alias)
         elif self.label == 'rate':
             return self.rate_return_template.format(alias = self.annotation.path_type_alias, node_alias = self.base_annotation.alias)
         elif self.label == 'position':
@@ -473,9 +473,7 @@ class PathAttribute(Attribute):
 
     @property
     def is_type_attribute(self):
-        if self.label in type_attributes + ['rate', 'count']:
-            return True
-        return False
+        return True
 
     @property
     def with_aliases(self):
@@ -483,9 +481,7 @@ class PathAttribute(Attribute):
 
     @property
     def with_alias(self):
-        if self.label in type_attributes + ['rate', 'count']:
-            return self.annotation.path_type_alias
-        return self.annotation.path_alias
+        return self.annotation.path_type_alias
 
 
 class PositionalAttribute(PathAttribute):
@@ -555,7 +551,7 @@ class PauseAnnotation(AnnotationAttribute):
                 pos = self.pos - 1
             else:
                 pos = self.pos + 1
-            return PauseAnnotation(pos, corpus = self.corpus, contains = self.contains)
+            return PathAnnotation(self.type, pos, corpus = self.corpus, contains = self.contains)
 
         return Attribute(self, key)
 

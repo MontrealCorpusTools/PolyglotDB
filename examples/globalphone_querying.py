@@ -38,6 +38,7 @@ if __name__ == '__main__':
             begin = time.time()
             g.encode_utterances(min_pause_length = 0.15)
             print('Utterance encoding took: {} seconds'.format(time.time() - begin))
+        begin = time.time()
         q = g.query_graph(g.phones).filter(g.phones.label.in_(vowels))
         q = q.filter(g.phones.following.label.in_(obstruents))
         q = q.filter(g.phones.following.end == g.word.end)
@@ -53,9 +54,11 @@ if __name__ == '__main__':
                                       g.word.label.column_name('word'),
                                       g.word.transcription.column_name('word_transcription'),
                                       g.word.following.label.column_name('following_word'),
+                                      g.word.following.transcription.column_name('following_word_transcription'),
                                       g.word.following.duration.column_name('following_word_duration'),
                                       g.pause.following.duration.column_name('following_pause_duration'),
                                       g.phones.following.label.column_name('following_phone'))
         print(q.cypher())
         q.to_csv('bulgarian.csv')
+        print('Query took: {} seconds'.format(time.time() - begin))
         #print(q.count())

@@ -186,6 +186,7 @@ class CorpusContext(object):
         acoustic_analysis(self)
 
     def encode_pauses(self, pause_words):
+        self.reset_pauses()
         q = self.query_graph(self.word)
         if isinstance(pause_words, (list, tuple, set)):
             q = q.filter(self.word.label.in_(pause_words))
@@ -195,9 +196,37 @@ class CorpusContext(object):
             raise(NotImplementedError)
         q.set(pause = True)
 
+        statement = '''MATCH (prec:{corpus}:word:speech)
+        WHERE not (prec)-[:precedes]->()
+        WITH prec
+        MATCH p = (prec)-[:precedes_pause*]->(foll:{corpus}:word:speech)
+        WITH min(length(p)) as minlength, prec, foll, p
+        WHERE length(p) = minlength
+        MERGE (prec)-[:precedes]->(foll)'''.format(corpus = self.corpus_name)
+
+        #statement = '''MATCH ()-[:precedes]->(prec:{corpus}:word:speech)-[:precedes_pause*]->(foll:{corpus}:word:speech)-[:precedes]->()
+        #MERGE (prec)-[:precedes]->(foll)'''.format(corpus = self.corpus_name)
+        self.graph.cypher.execute(statement)
+
+    def reset_pauses(self):
+        statement = '''MATCH (n:{corpus}:word:speech)-[r:precedes]->(m:{corpus}:word:speech)
+        WHERE (n)-[:precedes_pause]->()
+        DELETE r'''.format(corpus=self.corpus_name)
+        self.graph.cypher.execute(statement)
+        statement = '''MATCH (n:{corpus}:word)-[r:precedes_pause]->(m:{corpus}:word)
+        MERGE (n)-[:precedes]->(m)
+        DELETE r'''.format(corpus=self.corpus_name)
+        self.graph.cypher.execute(statement)
+        statement = '''MATCH (n:pause:{corpus})
+        SET n :speech
+        REMOVE n:pause'''.format(corpus=self.corpus_name)
+        self.graph.cypher.execute(statement)
+
+
     def reset_utterances(self):
         try:
-            q = self.query_graph(self.utterance).delete()
+            q = self.query_graph(self.utterance)
+            q.delete()
         except GraphQueryError:
             pass
 
@@ -281,7 +310,6 @@ class CorpusContext(object):
         q = q.filter(self.pause.duration >= min_pause_length)
         q = q.clear_columns().times().duration().order_by(self.pause.begin)
         results = q.all()
-
         collapsed_results = []
         for i, r in enumerate(results):
             if len(collapsed_results) == 0:
