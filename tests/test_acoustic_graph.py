@@ -197,6 +197,15 @@ def test_position_query(acoustic_config):
         for i in range(len(expected)):
             assert(results[i].word_position == expected[i])
 
+        q = g.query_graph(g.phone).filter(g.word.label == 'words').filter(g.phone.label == 'er')
+        q = q.columns(g.utterance.word.position.column_name('word_position'))
+        q = q.order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == len(expected))
+        for i in range(len(expected)):
+            assert(results[i].word_position == expected[i])
+
 def test_initial_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'this')

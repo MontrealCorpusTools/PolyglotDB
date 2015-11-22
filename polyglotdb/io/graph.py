@@ -206,8 +206,11 @@ def data_to_graph_csvs(data, directory):
             else:
                 previous_id = data[level][k-1].id
             if len(base_levels) > 0:
-                begin = base_sequence[0].begin
-                end = base_sequence[-1].end
+                try:
+                    begin = base_sequence[0].begin
+                    end = base_sequence[-1].end
+                except IndexError:
+                    continue # Don't include words with empty transcriptions
             else:
                 begin = base_ind
                 end = base_ind + 1

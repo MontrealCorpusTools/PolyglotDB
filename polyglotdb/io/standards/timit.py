@@ -84,6 +84,10 @@ def timit_to_data(word_path, phone_path, annotation_types = None,
         found_all = False
         found = []
         while not found_all:
+            if len(phones) == 0:
+                break
+            if phones[0].begin >= end:
+                break
             p = phones.pop(0)
             if p.begin < beg:
                 continue
@@ -161,6 +165,9 @@ def load_directory_timit(corpus_context, path,
                                         annotation_types,
                                         stop_check, call_back)
         data.wav_path = find_wav_path(word_path)
+        speaker = os.path.basename(root)
+        if not data.name.startswith(speaker):
+            data.name = speaker + '_' + data.name
         parsed_data[t] = data
 
     if call_back is not None:
@@ -169,7 +176,7 @@ def load_directory_timit(corpus_context, path,
     corpus_context.initialize_import(data)
     for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
         if call_back is not None:
-            name = t[1]
+            name = data.name
             call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
             call_back(i)
         corpus_context.add_discourse(data)

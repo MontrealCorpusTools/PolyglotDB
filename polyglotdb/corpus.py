@@ -306,10 +306,17 @@ class CorpusContext(object):
 
     def get_utterances(self, discourse,
                 min_pause_length = 0.5, min_utterance_length = 0):
-        q = self.query_graph(self.pause).filter(self.pause.discourse == discourse)
-        q = q.filter(self.pause.duration >= min_pause_length)
-        q = q.clear_columns().times().duration().order_by(self.pause.begin)
-        results = q.all()
+
+        statement = '''MATCH p = (prev_node_word:word:speech:{corpus}:{discourse})-[:precedes_pause*1..]->(foll_node_word:word:speech:{corpus}:{discourse})
+
+WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
+
+WITH foll_node_word, prev_node_word
+RETURN prev_node_word.end AS begin, foll_node_word.begin AS end, foll_node_word.begin - prev_node_word.end AS duration
+ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse)
+
+        results = self.graph.cypher.execute(statement, node_pause_duration = min_pause_length)
+
         collapsed_results = []
         for i, r in enumerate(results):
             if len(collapsed_results) == 0:
