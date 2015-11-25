@@ -309,12 +309,12 @@ class CorpusContext(object):
 
         statement = '''MATCH p = (prev_node_word:word:speech:{corpus}:{discourse})-[:precedes_pause*1..]->(foll_node_word:word:speech:{corpus}:{discourse})
 
+WITH nodes(p)[1..-1] as ns,foll_node_word, prev_node_word
 WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
-
+AND NONE (x in ns where x:speech)
 WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, foll_node_word.begin AS end, foll_node_word.begin - prev_node_word.end AS duration
 ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse)
-
         results = self.graph.cypher.execute(statement, node_pause_duration = min_pause_length)
 
         collapsed_results = []
