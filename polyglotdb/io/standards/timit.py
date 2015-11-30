@@ -235,11 +235,15 @@ def read_phones(path):
 def read_words(path):
     output = []
     sr = 16000
+    prev = None
     with open(path,'r') as file_handle:
         for line in file_handle:
             l = line.strip().split(' ')
             begin = float(l[0]) / sr
             end = float(l[1]) / sr
             word = l[2]
+            if prev is not None and begin != prev:
+                output.append({'spelling': 'sil', 'begin':prev, 'end':begin})
             output.append({'spelling':word, 'begin':begin, 'end':end})
+            prev = end
     return output

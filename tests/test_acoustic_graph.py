@@ -164,6 +164,20 @@ def test_query_with_pause(acoustic_config):
         assert(results[1].previous_pause == ['sil','um'])
         assert(abs(results[1].previous_pause_duration - 1.035027) < 0.001)
 
+        g.encode_pauses(['sil'])
+        q = g.query_graph(g.word).filter(g.word.label == 'words')
+        q = q.columns(g.word.following.label.column_name('following'),
+                    g.pause.following.label.column_name('following_pause'),
+                    g.pause.following.duration.column_name('following_pause_duration')).order_by(g.word.begin)
+        q = q.order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 5)
+        assert(results[0].following == 'and')
+        assert(results[0].following_pause == ['sil'])
+        assert(abs(results[0].following_pause_duration - 1.152438) < 0.001)
+
+
 @pytest.mark.xfail
 def test_encode_syllables(acoustic_config):
     with CorpusContext(acoustic_config) as g:

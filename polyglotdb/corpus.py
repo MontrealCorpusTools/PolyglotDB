@@ -200,8 +200,8 @@ class CorpusContext(object):
         WHERE not (prec)-[:precedes]->()
         WITH prec
         MATCH p = (prec)-[:precedes_pause*]->(foll:{corpus}:word:speech)
-        WITH min(length(p)) as minlength, prec, foll, p
-        WHERE length(p) = minlength
+        WITH prec, foll, p
+        WHERE NONE (x in nodes(p)[1..-1] where x:speech)
         MERGE (prec)-[:precedes]->(foll)'''.format(corpus = self.corpus_name)
 
         #statement = '''MATCH ()-[:precedes]->(prec:{corpus}:word:speech)-[:precedes_pause*]->(foll:{corpus}:word:speech)-[:precedes]->()

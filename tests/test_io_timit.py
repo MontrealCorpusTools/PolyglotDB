@@ -69,7 +69,9 @@ def test_load_words(timit_test_dir):
         {'spelling':'in','begin': 22511 / 16000,'end': 25400 / 16000},
         {'spelling':'greasy','begin': 25400 / 16000,'end': 32584 / 16000},
         {'spelling':'wash','begin': 32584 / 16000,'end': 38417 / 16000},
+        {'spelling': 'sil','begin': 38417 / 16000, 'end':38833 / 16000},
         {'spelling':'water','begin': 38833 / 16000,'end': 43730 / 16000},
+        {'spelling': 'sil','begin': 43730 / 16000, 'end':45067 / 16000},
         {'spelling':'all','begin': 45067 / 16000,'end': 48200 / 16000},
         {'spelling':'year','begin': 48200 / 16000,'end': 53756 / 16000}]
     for i,w in enumerate(expected_words):

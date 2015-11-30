@@ -57,10 +57,12 @@ template = '''{match}
 def generate_annotation_with(annotation):
     return [annotation.alias, annotation.begin_alias, annotation.end_alias]
 
-def criterion_to_where(criterion):
+def criterion_to_where(criterion, wheres = None):
     properties = []
     for c in criterion:
         properties.append(c.for_cypher())
+    if wheres is not None:
+        properties.extend(wheres)
     where_string = ''
     if properties:
         where_string += 'WHERE ' + '\nAND '.join(properties)
@@ -172,6 +174,8 @@ def generate_token_match(annotation_type, annotation_list, filter_annotations):
     defined = set()
 
     statements = []
+    wheres = []
+    optional_wheres = []
     current = annotation_list[0].pos
     optional_statements = []
     if isinstance(annotation_type, PauseAnnotation):
@@ -188,6 +192,7 @@ def generate_token_match(annotation_type, annotation_list, filter_annotations):
         defined.add(annotation_type.alias)
         defined.add(annotation_type.type_alias)
     for a in annotation_list:
+        where = ''
         if a.pos == 0:
             if isinstance(annotation_type, PauseAnnotation):
                 kwargs = {}
@@ -205,6 +210,7 @@ def generate_token_match(annotation_type, annotation_list, filter_annotations):
             kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
             if isinstance(annotation_type, PauseAnnotation):
                 kwargs['path_alias'] = a.path_alias
+                where = a.additional_where()
             else:
                 kwargs['prev_alias'] = a.define_alias
                 kwargs['prev_type_alias'] = a.define_type_alias
@@ -215,20 +221,25 @@ def generate_token_match(annotation_type, annotation_list, filter_annotations):
             kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
             if isinstance(annotation_type, PauseAnnotation):
                 kwargs['path_alias'] = a.path_alias
+                where = a.additional_where()
             else:
                 kwargs['foll_alias'] = a.define_alias
                 kwargs['foll_type_alias'] = a.define_type_alias
             anchor_string = foll.format(**kwargs)
         if a in filter_annotations:
             statements.append(anchor_string)
+            if where:
+                wheres.append(where)
         else:
             optional_statements.append(anchor_string)
+            if where:
+                optional_wheres.append(where)
         defined.add(a.alias)
         if isinstance(annotation_type, PauseAnnotation):
             defined.add(a.path_alias)
         else:
             defined.add(a.type_alias)
-    return statements, optional_statements, defined
+    return statements, optional_statements, defined, wheres, optional_wheres
 
 hierarchy_template = '''({contained_alias})-[:contained_by*1..]->({containing_alias})'''
 
@@ -332,6 +343,7 @@ def query_to_cypher(query):
 
     match_strings = []
     optional_match_strings = []
+    optional_where_strings = []
     where_strings = []
 
     all_withs = set()
@@ -344,10 +356,12 @@ def query_to_cypher(query):
     for k,v in annotation_levels.items():
         if k.has_subquery:
             continue
-        statements,optional_statements, withs = generate_token_match(k,v, filter_annotations)
+        statements,optional_statements, withs, wheres, optional_wheres = generate_token_match(k,v, filter_annotations)
         all_withs.update(withs)
         match_strings.extend(statements)
         optional_match_strings.extend(optional_statements)
+        optional_where_strings.extend(optional_wheres)
+        where_strings.extend(wheres)
 
 
     statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
@@ -362,8 +376,10 @@ def query_to_cypher(query):
 
     if optional_match_strings:
         kwargs['optional_match'] = 'OPTIONAL MATCH ' + ',\n'.join(optional_match_strings)
+        if optional_wheres:
+            kwargs['optional_match'] += '\nWHERE ' + ',\n'.join(optional_where_strings)
 
-    kwargs['where'] = criterion_to_where(query._criterion)
+    kwargs['where'] = criterion_to_where(query._criterion, wheres)
 
     kwargs['with'] = generate_withs(query, all_withs)
 
