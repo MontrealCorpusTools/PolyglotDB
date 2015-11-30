@@ -363,7 +363,6 @@ def query_to_cypher(query):
         optional_where_strings.extend(optional_wheres)
         where_strings.extend(wheres)
 
-
     statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
     match_strings.extend(statements)
 
@@ -376,7 +375,7 @@ def query_to_cypher(query):
 
     if optional_match_strings:
         kwargs['optional_match'] = 'OPTIONAL MATCH ' + ',\n'.join(optional_match_strings)
-        if optional_wheres:
+        if optional_where_strings:
             kwargs['optional_match'] += '\nWHERE ' + ',\n'.join(optional_where_strings)
 
     kwargs['where'] = criterion_to_where(query._criterion, wheres)
