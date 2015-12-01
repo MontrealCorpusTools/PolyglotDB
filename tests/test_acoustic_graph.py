@@ -383,10 +383,60 @@ def test_query_speaking_rate(acoustic_config):
         results = q.all()
         assert(abs(results[0].words_per_second - (26 / 6.482261)) < 0.001)
 
+def test_subset(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q.set_type('+syllabic')
+
+        q = g.query_graph(g.phone.subset_type('+syllabic'))
+        q = q.order_by(g.phone.subset_type('+syllabic').begin.column_name('begin')).duration()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 3)
+        assert(abs(results[0].begin - 2.704) < 0.001)
+        assert(abs(results[0].duration - 0.078) < 0.001)
+
+        assert(abs(results[1].begin - 9.320) < 0.001)
+        assert(abs(results[1].duration - 0.122) < 0.001)
+
+        assert(abs(results[2].begin - 24.560) < 0.001)
+        assert(abs(results[2].duration - 0.039) < 0.001)
+
+        syllabics = ['aa','ih']
+        q = g.query_graph(g.phone).filter(g.phone.label.in_(syllabics))
+        q.set_type('syllabic')
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.filter(g.phone.following.label == 'k')
+
+        q = q.columns(g.word.phone.subset_type('syllabic').count.column_name('num_syllables_in_word'))
+        q = q.order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 2)
+        assert(results[0].num_syllables_in_word == 2)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.filter(g.phone.following.label == 'k')
+
+        q = q.columns(g.word.phone.subset_type('syllabic').count.column_name('num_syllables_in_word'),
+                    g.word.phone.count.column_name('num_segments_in_word'),)
+        q = q.order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 2)
+        assert(results[0].num_segments_in_word == 5)
+        assert(results[0].num_syllables_in_word == 2)
+
+
 def test_complex_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         vowels = ['aa']
         obstruents = ['k']
+        syllabics = ['aa','ih']
+        q = g.query_graph(g.phone).filter(g.phone.label.in_(syllabics))
+        q.set_type('syllabic')
+
         q = g.query_graph(g.phone).filter(g.phone.label.in_(vowels))
         q = q.filter(g.phone.following.label.in_(obstruents))
         #q = q.filter(g.phone.following.end == g.word.end)
@@ -398,6 +448,7 @@ def test_complex_query(acoustic_config):
                                       g.phone.end.column_name('vowel_end'),
                                       g.utterance.phone.rate.column_name('phone_rate'),
                                       g.word.phone.count.column_name('num_segments_in_word'),
+                                      g.word.phone.subset_type('syllabic').count.column_name('num_syllables_in_word'),
                                       g.word.discourse.column_name('discourse'),
                                       g.word.label.column_name('word'),
                                       g.word.transcription.column_name('word_transcription'),
@@ -410,6 +461,7 @@ def test_complex_query(acoustic_config):
         results = q.all()
         assert(len(results) == 2)
         assert(results[0].num_segments_in_word == 5)
+        assert(results[0].num_syllables_in_word == 2)
 
 def test_mirrored(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -435,4 +487,3 @@ def test_mirrored(acoustic_config):
         results = q.all()
         print(results)
         assert(len(results) == 2)
-

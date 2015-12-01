@@ -1,7 +1,7 @@
 
 from collections import defaultdict
 
-from .helper import type_attributes
+from .helper import type_attributes, key_for_cypher, value_for_cypher
 
 from .attributes import AnnotationAttribute, PathAnnotation, Attribute, PauseAnnotation
 
@@ -9,7 +9,7 @@ aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
 
 distinct_template = '''RETURN {columns}{additional_columns}{order_by}'''
 
-set_pause_template = '''SET {alias} :pause
+set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
 REMOVE {alias}:speech
 WITH {alias}
 OPTIONAL MATCH (prec)-[r1:precedes]->({alias})
@@ -20,23 +20,16 @@ OPTIONAL MATCH ({alias})-[r2:precedes]->(foll)
 MERGE ({alias})-[:precedes_pause]->(foll)
 DELETE r2'''
 
-unset_pause_template = '''SET {alias} :speech
-REMOVE {alias}:pause'''
-
 change_label_template = '''SET {alias} {value}
-REMOVE {alias}{alt_value}
-WITH {alias}
-MATCH (a:Anchor)-[:{rel_type}]->({alias})-[:{rel_type}]->(b:Anchor)
-CREATE (a:Anchor)-[:{rel_value}]->({alias})-[:{rel_value}]->(b:Anchor)'''
+REMOVE {alias}{alt_value}'''
 
-set_label_template = '''SET {alias} {value}
-WITH {alias}
-MATCH (a:Anchor)-[:{rel_type}]->({alias})-[:{rel_type}]->(b:Anchor)
-CREATE (a:Anchor)-[:{rel_value}]->({alias})-[:{rel_value}]->(b:Anchor)'''
+set_label_template = '''{alias} {value}'''
 
-remove_label_template = '''REMOVE {alias}{value}'''
+remove_label_template = '''{alias}{value}'''
 
-set_property_template = '''SET {alias}.{attribute} = {value}'''
+set_property_template = '''{alias}.{attribute} = {value}'''
+
+remove_property_template = '''{alias}.{attribute}'''
 
 anchor_template = '''({token_alias})-[:is_a]->({type_alias})'''
 
@@ -78,41 +71,64 @@ def figure_property(annotation, property_string, withs):
 
 def create_return_statement(query):
     kwargs = {'order_by': '', 'additional_columns':'', 'columns':''}
+    return_statement = ''
     if query._delete:
         kwargs = {}
         kwargs['alias'] = query.to_find.alias
         return_statement = delete_template.format(**kwargs)
         return return_statement
-    if query._set or query._set_labels or query._remove_labels:
-        for k,v in query._set.items():
-            if k == 'pause':
-                kwargs = {}
-                kwargs['alias'] = query.to_find.alias
-                kwargs['begin_alias'] = query.to_find.begin_alias
-                kwargs['end_alias'] = query.to_find.end_alias
-                if v:
-                    kwargs['rel_type'] = query.to_find.rel_type_alias
-                    return_statement = set_pause_template.format(**kwargs)
-                else:
-                    return_statement = unset_pause_template.format(**kwargs)
+    set_strings = []
+    set_label_strings = []
+    remove_label_strings = []
+    if 'pause' in query._set_token:
+        kwargs = {}
+        kwargs['alias'] = query.to_find.alias
+        kwargs['type_alias'] = query.to_find.type_alias
+
+        return_statement = set_pause_template.format(**kwargs)
         return return_statement
-        return_statement = ''
-        if query._set_labels:
-            kwargs = {}
-            kwargs['alias'] = query.to_find.alias
-            kwargs['value'] = ':' + ':'.join(query._set_labels) #FIXME
-            kwargs['alt_value'] = ':' + ':'.join(query._remove_labels) #FIXME
-            kwargs['rel_type'] = query.to_find.rel_type_alias
-            kwargs['rel_value'] = ':' + ':'.join(map(lambda x: 'r_'+ x,query._set_labels)) #FIXME
-            kwargs['alt_rel_value'] = ':' + ':'.join(map(lambda x: 'r_'+ x,query._remove_labels)) #FIXME
-            return_statement += set_label_template.format(alias = query.to_find.alias, value = value)
-        if query._remove_labels:
-            if return_statement:
-                return_statement += '\nWITH {alias}\n'.format(alias = query.to_find.alias)
-            value = ':' + ':'.join(query._remove_labels) #FIXME
-            return_statement += remove_label_template.format(alias = query.to_find.alias, value = value)
+    for k,v in query._set_token.items():
+        if v is None:
+            v = 'NULL'
+        else:
+            v = value_for_cypher(v)
+        set_strings.append(set_property_template.format(alias = query.to_find.alias, attribute = k, value = v))
+    for k,v in query._set_type.items():
+        if v is None:
+            v = 'NULL'
+        else:
+            v = value_for_cypher(v)
+        set_strings.append(set_property_template.format(alias = query.to_find.type_alias, attribute = k, value = v))
+    if query._set_token_labels:
+        kwargs = {}
+        kwargs['alias'] = query.to_find.alias
+        kwargs['value'] = ':' + ':'.join(map(key_for_cypher, query._set_token_labels))
+        set_label_strings.append(set_label_template.format(**kwargs))
+    if query._set_type_labels:
+        kwargs = {}
+        kwargs['alias'] = query.to_find.type_alias
+        kwargs['value'] = ':' + ':'.join(map(key_for_cypher, query._set_type_labels))
+        set_label_strings.append(set_label_template.format(**kwargs))
+    if set_label_strings or set_strings:
+        return_statement = 'SET ' + ', '.join(set_label_strings + set_strings)
+    if query._remove_type_labels:
+        kwargs = {}
+        kwargs['alias'] = query.to_find.type_alias
+        kwargs['value'] = ':' + ':'.join(map(key_for_cypher, query._remove_type_labels))
+        remove_label_strings.append(remove_label_template.format(**kwargs))
+    if query._remove_token_labels:
+        kwargs = {}
+        kwargs['alias'] = query.to_find.type_alias
+        kwargs['value'] = ':' + ':'.join(map(key_for_cypher, query._remove_token_labels))
+        remove_label_strings.append(remove_label_template.format(**kwargs))
+    if remove_label_strings:
+        if return_statement:
+            return_statement += '\nWITH {alias}, {type_alias}\n'.format(alias = query.to_find.alias, type_alias = query.to_find.type_alias)
+        return_statement += '\nREMOVE ' + ', '.join(remove_label_strings)
+    if return_statement:
         return return_statement
-    elif query._aggregate:
+
+    if query._aggregate:
         template = aggregate_template
         properties = []
         for g in query._group_by:
@@ -207,22 +223,24 @@ def generate_token_match(annotation_type, annotation_list, filter_annotations):
         elif a.pos < 0:
 
             kwargs = {}
-            kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
             if isinstance(annotation_type, PauseAnnotation):
+                kwargs['node_alias'] = AnnotationAttribute('word',0,a.corpus).alias
                 kwargs['path_alias'] = a.path_alias
                 where = a.additional_where()
             else:
+                kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
                 kwargs['prev_alias'] = a.define_alias
                 kwargs['prev_type_alias'] = a.define_type_alias
             anchor_string = prec.format(**kwargs)
         elif a.pos > 0:
 
             kwargs = {}
-            kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
             if isinstance(annotation_type, PauseAnnotation):
+                kwargs['node_alias'] = AnnotationAttribute('word',0,a.corpus).alias
                 kwargs['path_alias'] = a.path_alias
                 where = a.additional_where()
             else:
+                kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
                 kwargs['foll_alias'] = a.define_alias
                 kwargs['foll_type_alias'] = a.define_type_alias
             anchor_string = foll.format(**kwargs)

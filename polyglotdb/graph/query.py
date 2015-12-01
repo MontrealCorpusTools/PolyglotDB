@@ -28,10 +28,13 @@ class GraphQuery(object):
         self._group_by = []
         self._aggregate = []
 
-        self._set_labels = []
-        self._remove_labels = []
+        self._set_type_labels = []
+        self._set_token_labels = []
+        self._remove_type_labels = []
+        self._remove_token_labels = []
 
-        self._set = {}
+        self._set_type = {}
+        self._set_token = {}
         self._delete = False
 
     def clear_columns(self):
@@ -112,12 +115,16 @@ class GraphQuery(object):
         annotation_levels = defaultdict(set)
         for c in self._criterion:
             for a in c.annotations:
-                key = getattr(self.corpus, a.key)
+                key = getattr(self.corpus, a.type)
                 key.discourse_label = a.discourse_label
+                key = key.subset_type(*a.subset_type_labels)
+                key = key.subset_token(*a.subset_token_labels)
                 annotation_levels[key].add(a)
         for a in self._columns + self._group_by + self._additional_columns:
             t = a.base_annotation
-            key = getattr(self.corpus, t.key)
+            key = getattr(self.corpus, t.type)
+            key = key.subset_type(*t.subset_type_labels)
+            key = key.subset_token(*t.subset_token_labels)
             annotation_levels[key].add(t)
 
         return annotation_levels
@@ -157,10 +164,26 @@ class GraphQuery(object):
         else:
             return value.one
 
-    def set(self, **kwargs):
+    def set_type(self, *args, **kwargs):
         for k,v in kwargs.items():
-            self._set[k] = v
+            self._set_type[k] = v
+        self._set_type_labels.extend(args)
         self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+        self._set_type = {}
+        self._set_type_labels = []
+
+    def set_token(self, *args, **kwargs):
+        for k,v in kwargs.items():
+            self._set_token[k] = v
+        self._set_token_labels.extend(args)
+        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+        self._set_token = {}
+        self._set_token_labels = []
+
+    def set_pause(self):
+        self._set_token['pause'] = True
+        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+        self._set_token = {}
 
     def delete(self):
         self._delete = True

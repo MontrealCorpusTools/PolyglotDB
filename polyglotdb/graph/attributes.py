@@ -165,6 +165,8 @@ class AnnotationAttribute(Attribute):
         self.corpus = corpus
         self.contains = contains
         self.discourse_label = None
+        self.subset_token_labels = []
+        self.subset_type_labels = []
 
     def __hash__(self):
         return hash((self.key, self.pos))
@@ -179,14 +181,24 @@ class AnnotationAttribute(Attribute):
         return True
 
     def __str__(self):
-        return '{}_{}'.format(self.type, self.pos)
+        return '{}_{}'.format(self.key, self.pos)
 
     def __repr__(self):
         return '<AnnotationAttribute object with \'{}\' type and {} position'.format(self.type, self.pos)
 
+    def subset_type(self, *args):
+        self.subset_type_labels.extend(args)
+        return self
+
+    def subset_token(self, *args):
+        self.subset_token_labels.extend(args)
+        return self
+
     @property
     def define_type_alias(self):
         label_string = ':{}_type'.format(self.type)
+        if self.subset_type_labels:
+            label_string += ':' + ':'.join(map(key_for_cypher, self.subset_type_labels))
         return '{}{}'.format(self.type_alias, label_string)
 
     @property
@@ -196,6 +208,8 @@ class AnnotationAttribute(Attribute):
             label_string += ':{}'.format(self.corpus)
         if self.discourse_label is not None:
             label_string += ':{}'.format(self.discourse_label)
+        if self.subset_token_labels:
+            label_string += ':' + ':'.join(map(key_for_cypher, self.subset_token_labels))
         return '{}{}'.format(self.alias, label_string)
 
     @property
@@ -205,7 +219,7 @@ class AnnotationAttribute(Attribute):
             pre += 'prev_{}_'.format(-1 * self.pos)
         elif self.pos > 0:
             pre += 'foll_{}_'.format(self.pos)
-        return self.alias_template.format(t=self.type, prefix = pre)
+        return key_for_cypher(self.alias_template.format(t=self.key, prefix = pre))
 
     @property
     def alias(self):
@@ -214,7 +228,7 @@ class AnnotationAttribute(Attribute):
             pre += 'prev_{}_'.format(-1 * self.pos)
         elif self.pos > 0:
             pre += 'foll_{}_'.format(self.pos)
-        return self.alias_template.format(t=self.type, prefix = pre)
+        return key_for_cypher(self.alias_template.format(t=self.key, prefix = pre))
 
     @property
     def with_alias(self):
@@ -222,7 +236,9 @@ class AnnotationAttribute(Attribute):
 
     @property
     def path_alias(self):
-        return 'path_'+self.alias
+        a = 'path_'+self.alias
+        a = a.replace('`','')
+        return key_for_cypher(a)
 
     def right_aligned(self, other):
         return RightAlignedClauseElement(self, other)
@@ -249,7 +265,12 @@ class AnnotationAttribute(Attribute):
 
     @property
     def key(self):
-        return self.type
+        key = self.type
+        if self.subset_token_labels:
+            key += '_' + '_'.join(self.subset_token_labels)
+        if self.subset_type_labels:
+            key += '_' + '_'.join(self.subset_type_labels)
+        return key
 
 class AggregateAttribute(Attribute):
     def __init__(self, aggregate):
@@ -257,7 +278,7 @@ class AggregateAttribute(Attribute):
 
     @property
     def alias(self):
-        return '{}_{}_{}'.format(self.annotation.alias, self.label, self.aggregate.function)
+        return key_for_cypher('{}_{}_{}'.format(self.annotation.alias, self.label, self.aggregate.function))
 
     @property
     def annotation(self):
@@ -313,7 +334,10 @@ class PathAnnotation(AnnotationAttribute):
                     'collect(t) as {a}'.format(a=self.path_type_alias)])
     @property
     def def_path_type_alias(self):
-        return 't:{}_type'.format(self.type)
+        label_string = self.type + '_type'
+        if self.subset_type_labels:
+            label_string += ':' + ':'.join(map(key_for_cypher, self.subset_type_labels))
+        return 't:{}'.format(label_string)
 
     @property
     def def_path_alias(self):
@@ -326,11 +350,15 @@ class PathAnnotation(AnnotationAttribute):
             pre += 'prev_{}_'.format(-1 * self.pos)
         elif self.pos > 0:
             pre += 'foll_{}_'.format(self.pos)
-        return '{}{}'.format(pre, self.key)
+        return key_for_cypher('{}{}'.format(pre, self.key))
+
+    alias = path_alias
 
     @property
     def path_type_alias(self):
-        return 'type_'+self.path_alias
+        a = 'type_'+self.path_alias
+        a = a.replace('`','')
+        return key_for_cypher(a)
 
     @property
     def key(self):
@@ -375,7 +403,10 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def def_path_type_alias(self):
-        return '{}:{}_type'.format(self.path_type_alias, self.sub.type)
+        label_string = self.sub.type + '_type'
+        if self.sub.subset_type_labels:
+            label_string += ':' + ':'.join(map(key_for_cypher, self.sub.subset_type_labels))
+        return '{}:{}'.format(self.path_type_alias,label_string)
 
     @property
     def def_path_alias(self):
@@ -383,32 +414,36 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def path_alias(self):
-        return '{}_in_{}'.format(self.sub.alias, self.annotation.alias)
+        return key_for_cypher('{}_in_{}'.format(self.sub.alias, self.annotation.alias))
 
     @property
     def alias(self):
         return self.sub.alias
 
-    @property
-    def end_alias(self):
-        return self.annotation.end_alias
+    def subset_type(self, *args):
+        self.sub = self.sub.subset_type(*args)
+        return self
 
-    @property
-    def begin_alias(self):
-        return self.annotation.begin_alias
+    def subset_token(self, *args):
+        self.sub.subset_token_labels.extend(args)
+        return self
 
     @property
     def path_type_alias(self):
-        return 'type_'+self.path_alias
+        a = 'type_'+self.path_alias
+        a = a.replace('`','')
+        return key_for_cypher(a)
 
     @property
     def key(self):
-        return self.sub.type
+        return self.sub.key
 
 class PositionalAnnotation(SubPathAnnotation):
     def __init__(self, path_annotation, pos):
         self.annotation = path_annotation
         self.pos = pos
+        self.subset_token_labels = []
+        self.subset_type_labels = []
 
     def __getattr__(self, key):
         if key == 'annotation':
@@ -517,29 +552,13 @@ class PositionalAttribute(PathAttribute):
 
 class PauseAnnotation(AnnotationAttribute):
     def __init__(self, pos = 0, corpus = None, contains = None):
-        self.type = 'word'
+        self.type = 'pause'
         self.pos = pos
         self.corpus = corpus
         self.contains = contains
         self.discourse_label = None
-
-    @property
-    def alias(self):
-        pre = self.alias_prefix
-        if self.pos < 0:
-            pre += 'prev_{}_'.format(-1 * self.pos)
-        elif self.pos > 0:
-            pre += 'foll_{}_'.format(self.pos)
-        return self.alias_template.format(t='pause', prefix = pre)
-
-    @property
-    def type_alias(self):
-        pre = self.alias_prefix + 'type_'
-        if self.pos < 0:
-            pre += 'prev_{}_'.format(-1 * self.pos)
-        elif self.pos > 0:
-            pre += 'foll_{}_'.format(self.pos)
-        return self.alias_template.format(t='pause', prefix = pre)
+        self.subset_token_labels = []
+        self.subset_type_labels = []
 
     @property
     def define_alias(self):

@@ -194,7 +194,7 @@ class CorpusContext(object):
             q = q.filter(self.word.label.regex(pause_words))
         else:
             raise(NotImplementedError)
-        q.set(pause = True)
+        q.set_pause()
 
         statement = '''MATCH (prec:{corpus}:word:speech)
         WHERE not (prec)-[:precedes]->()
