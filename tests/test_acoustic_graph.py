@@ -76,8 +76,6 @@ def test_get_utterances(acoustic_config):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
             assert(round(u[1],5) == round(expected_utterances[i][1],5))
 
-
-        return # FIXME something's up with the following test
         utterances = g.get_utterances('acoustic_corpus', min_pause_length = 0.5, min_utterance_length = 1.1)
 
         expected_utterances = [(1.059223, 13.898228), (14.509726, 17.207370),

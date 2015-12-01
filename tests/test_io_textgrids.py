@@ -81,5 +81,6 @@ def test_two_speakers(textgrid_test_dir):
 def test_load_pronunciation(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'pronunc_variants_corpus.TextGrid')
     with CorpusContext('test_pronunc', **graph_db) as c:
+        c.reset()
         annotation_types = inspect_discourse_textgrid(path)
         load_discourse_textgrid(c, path, annotation_types)

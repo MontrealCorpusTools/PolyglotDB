@@ -204,8 +204,6 @@ class CorpusContext(object):
         WHERE NONE (x in nodes(p)[1..-1] where x:speech)
         MERGE (prec)-[:precedes]->(foll)'''.format(corpus = self.corpus_name)
 
-        #statement = '''MATCH ()-[:precedes]->(prec:{corpus}:word:speech)-[:precedes_pause*]->(foll:{corpus}:word:speech)-[:precedes]->()
-        #MERGE (prec)-[:precedes]->(foll)'''.format(corpus = self.corpus_name)
         self.graph.cypher.execute(statement)
 
     def reset_pauses(self):
@@ -355,7 +353,10 @@ ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse)
                         utterances[-1] = (utterances[-1][0], r.begin)
             current = r.end
         if current < times.max_end:
-            utterances.append((current, times.max_end))
+            if times.max_end - current > min_utterance_length:
+                utterances.append((current, times.max_end))
+            else:
+                utterances[-1] = (utterances[-1][0], times.max_end)
         if utterances[-1][1] > times.max_end:
             utterances[-1] = (utterances[-1][0], times.max_end)
         if utterances[0][0] < times.min_begin:
