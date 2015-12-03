@@ -26,6 +26,6 @@ Installation
 ============
 
 Once Neo4j is installed and running, clone or download the Git repository
-(https://github.com/PhonologicalCorpusTools/PolyglotDB).  Navigate to
+(https://github.com/MontrealCorpusTools/PolyglotDB).  Navigate to
 the diretory via command line and install via :code:`python setup.py install`.
 
