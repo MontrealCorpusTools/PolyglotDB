@@ -35,49 +35,6 @@ def initialize_csvs_header(data, directory):
     for x in rfs.values():
         x.close()
 
-def time_data_to_csvs(type, directory, discourse, timed_data):
-    with open(os.path.join(directory, '{}_{}.csv'.format(discourse, type)), 'w') as f:
-        for t in timed_data:
-            f.write('{},{}\n'.format(t[0], t[1]))
-
-def import_utterance_csv(corpus_context, discourse):
-    csv_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse)).replace('\\','/'))
-    statement = '''USING PERIODIC COMMIT 1000
-            LOAD CSV FROM "{path}" AS csvLine
-            MATCH (begin:word:{corpus}:{discourse} {{begin: toFloat(csvLine[0])}}),
-            (end:word:{corpus}:{discourse} {{end: toFloat(csvLine[1])}})
-            MERGE (utt:utterance:{corpus}:{discourse}:speech {{begin: toFloat(csvLine[0]), end: toFloat(csvLine[1]), discourse: '{discourse}'}})-[:is_a]->(u_type:utterance_type)
-            WITH utt, begin, end
-            MATCH path = shortestPath((begin)-[:precedes*0..]->(end))
-            WITH utt, begin, end, nodes(path) as words
-            UNWIND words as w
-            MERGE (w)-[:contained_by]->(utt)'''
-    statement = statement.format(path = csv_path, corpus = corpus_context.corpus_name, discourse = discourse)
-    corpus_context.graph.cypher.execute(statement)
-
-
-def import_syllable_csv(corpus_context, discourse, base):
-    return
-    csv_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_syllable.csv'.format(discourse)).replace('\\','/'))
-    statement = '''USING PERIODIC COMMIT 1000
-            LOAD CSV FROM "{path}" AS csvLine
-            MATCH (begin:Anchor:{corpus}:{discourse} {{time: toFloat(csvLine[0])}}),
-            (end:Anchor:{corpus}:{discourse} {{time: toFloat(csvLine[1])}})
-            MERGE (begin)-[:r_syllable]->(syl:syllable:{corpus}:{discourse}:speech)-[:r_syllable]->(end)
-            MERGE (syl)-[:is_a]->(s_type:syllable_type)
-            WITH syl, begin, end
-            MATCH path = (begin)-[:r_{base}*]->(end)
-            WITH syl, begin, end, filter(n in nodes(path) where n.time is null) as phones
-            UNWIND phones as p
-            MATCH (p)-[r:contained_by]->(w)
-            DELETE r
-            WITH p, w, syl
-            MERGE (p)-[:contained_by]->(syl)
-            MERGE (syl)-[:contained_by]->(w)'''
-    statement = statement.format(path = csv_path, corpus = corpus_context.corpus_name,
-                                base = base, discourse = discourse)
-    corpus_context.graph.cypher.execute(statement)
-
 def data_to_type_csvs(parsed_data, directory):
     type_paths = {}
     data = list(parsed_data.values())[0]
@@ -141,7 +98,7 @@ def data_to_graph_csvs(data, directory):
         Full path to a directory to store CSV files
     """
     rel_paths = {}
-    for x in data.types:
+    for x in data.output_types:
         rel_paths[x] = os.path.join(directory,'{}_{}.csv'.format(data.name, x))
     rfs = {k: open(v, 'w', encoding = 'utf8') for k,v in rel_paths.items()}
     rel_writers = {}
@@ -161,6 +118,9 @@ def data_to_graph_csvs(data, directory):
 
     base_levels = data.base_levels
     base_ind = 0
+
+    print(data.base_levels)
+    print(data.output_types)
     for i, level in enumerate(data.process_order):
         annotations = []
         for k,d in enumerate(data[level]):

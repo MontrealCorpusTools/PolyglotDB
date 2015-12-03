@@ -468,10 +468,6 @@ class DiscourseData(object):
         for x in self.types:
             if len(self[x]) == 0:
                 continue
-            if x in self.type_properties:
-                continue
-            if x in self.token_properties:
-                continue
             if self[x].anchor:
                 labels.append('word')
             else:

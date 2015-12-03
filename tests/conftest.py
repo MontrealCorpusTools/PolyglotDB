@@ -599,5 +599,4 @@ def acoustic_config(graph_db, textgrid_test_dir):
         c.reset()
         annotation_types = inspect_discourse_textgrid(acoustic_path)
         load_discourse_textgrid(c, acoustic_path, annotation_types)
-        c.analyze_acoustics()
     return config

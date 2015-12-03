@@ -47,9 +47,6 @@ template = '''{match}
 {with}
 {return}'''
 
-def generate_annotation_with(annotation):
-    return [annotation.alias, annotation.begin_alias, annotation.end_alias]
-
 def criterion_to_where(criterion, wheres = None):
     properties = []
     for c in criterion:
@@ -60,14 +57,6 @@ def criterion_to_where(criterion, wheres = None):
     if properties:
         where_string += 'WHERE ' + '\nAND '.join(properties)
     return where_string
-
-def figure_property(annotation, property_string, withs):
-    if getattr(annotation, property_string) in withs:
-        return getattr(annotation, property_string)
-    else:
-        return getattr(annotation, 'define_'+property_string)
-
-    return match_template.format(anchor_string, where_string, with_string), withs
 
 def create_return_statement(query):
     kwargs = {'order_by': '', 'additional_columns':'', 'columns':''}
@@ -80,13 +69,6 @@ def create_return_statement(query):
     set_strings = []
     set_label_strings = []
     remove_label_strings = []
-    if 'pause' in query._set_token:
-        kwargs = {}
-        kwargs['alias'] = query.to_find.alias
-        kwargs['type_alias'] = query.to_find.type_alias
-
-        return_statement = set_pause_template.format(**kwargs)
-        return return_statement
     for k,v in query._set_token.items():
         if v is None:
             v = 'NULL'
