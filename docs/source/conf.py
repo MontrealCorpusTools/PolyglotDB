@@ -15,6 +15,15 @@
 
 import sys
 import os
+from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+MOCK_MODULES = ['textgrid', 'py2neo', 'sqlalchemy']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 import shlex
 import alabaster
 
