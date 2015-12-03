@@ -41,4 +41,9 @@ The idea of using multiple languages or technologies that suit individual
 problems has been known, particularly in the realm of merging SQL and NoSQL
 databases, as "polyglot persistence."
 
+PolyglotDB was originally created for use in Phonological CorpusTools
+(http://phonologicalcorpustools.github.io/CorpusTools/), developed at the
+University of British Columna.  However, primary development shifted to the
+umbrella of Montreal Corpus Tools, developed by members of the Montreal
+Language Modelling Lab at McGill University.
 
