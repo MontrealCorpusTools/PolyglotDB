@@ -138,13 +138,18 @@ def guess_tiers(tg):
     interval_tiers = [x for x in tg.tiers if isinstance(x, IntervalTier)]
     for i,t in enumerate(interval_tiers):
         tier_properties[t.name] = (i, len(t), averageLabelLen(t), len(uniqueLabels(t)))
-    max_labels = max(tier_properties.values(), key = lambda x: x[1])
-    likely_segment = [k for k,v in tier_properties.items() if v == max_labels]
+    likely_spelling = sorted((x for x in tier_properties.keys() if x not in segment_tiers),
+                        key = lambda x: (tier_properties[x][1], tier_properties[x][0]))[0]
+    spelling_tiers.append(likely_spelling)
+
+    max_labels = max(tier_properties.values(), key = lambda x: x[1])[1]
+
+    likely_segment = [k for k,v in tier_properties.items() if v[1] == max_labels and k != likely_spelling]
     if len(likely_segment) == 1:
         segment_tiers.append(likely_segment[0])
-    likely_spelling = min((x for x in tier_properties.keys() if x not in segment_tiers),
-                        key = lambda x: tier_properties[x][0])
-    spelling_tiers.append(likely_spelling)
+    if segment_tiers:
+        if len(segment_tiers[0]) == len(spelling_tiers[0]):
+            segment_tiers = []
 
     for k in tier_properties.keys():
         if k in segment_tiers:

@@ -43,7 +43,7 @@ databases, as "polyglot persistence."
 
 PolyglotDB was originally created for use in Phonological CorpusTools
 (http://phonologicalcorpustools.github.io/CorpusTools/), developed at the
-University of British Columna.  However, primary development shifted to the
+University of British Columbia.  However, primary development shifted to the
 umbrella of Montreal Corpus Tools, developed by members of the Montreal
 Language Modelling Lab at McGill University.
 

@@ -1,8 +1,8 @@
 PolyglotDB
 ==========
 
-[![Build Status](https://travis-ci.org/PhonologicalCorpusTools/PolyglotDB.svg?branch=master)](https://travis-ci.org/PhonologicalCorpusTools/PolyglotDB)
-[![Coverage Status](https://coveralls.io/repos/PhonologicalCorpusTools/PolyglotDB/badge.svg?branch=master&service=github)](https://coveralls.io/github/PhonologicalCorpusTools/PolyglotDB?branch=master)
+[![Build Status](https://travis-ci.org/MontrealCorpusTools/PolyglotDB.svg?branch=master)](https://travis-ci.org/MontrealCorpusTools/PolyglotDB)
+[![Coverage Status](https://coveralls.io/repos/MontrealCorpusTools/PolyglotDB/badge.svg?branch=master&service=github)](https://coveralls.io/github/MontrealCorpusTools/PolyglotDB?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/polyglotdb/badge/?version=latest)](http://polyglotdb.readthedocs.org/en/latest/?badge=latest)
 
 
@@ -30,6 +30,12 @@ linguistic representations map well onto relational databases.
 The idea of using multiple languages or technologies that suit individual
 problems has been known, particularly in the realm of merging SQL and NoSQL
 databases, as "polyglot persistence."
+
+PolyglotDB was originally created for use in Phonological CorpusTools
+(http://phonologicalcorpustools.github.io/CorpusTools/), developed at the
+University of British Columbia.  However, primary development shifted to the
+umbrella of Montreal Corpus Tools, developed by members of the Montreal
+Language Modelling Lab at McGill University.
 
 Further documentation, including installation, can be found at http://polyglotdb.readthedocs.org/en/latest/.
 
