@@ -153,7 +153,6 @@ def buckeye_to_data(word_path, phone_path, annotation_types = None,
 
 def load_directory_buckeye(corpus_context, path,
                                     annotation_types = None,
-                                    feature_system_path = None,
                                     stop_check = None, call_back = None):
     """
     Loads a directory of Buckeye files (separated into words files
@@ -168,8 +167,6 @@ def load_directory_buckeye(corpus_context, path,
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse the files.
         Auto-generated based on dialect.
-    feature_system_path : str, optional
-        File path of FeatureMatrix binary to specify segments
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None
@@ -232,7 +229,6 @@ def load_directory_buckeye(corpus_context, path,
 
 def load_discourse_buckeye(corpus_context, word_path, phone_path,
                                     annotation_types = None,
-                                    feature_system_path = None,
                                     stop_check = None, call_back = None):
     """
     Load a discourse from a Buckeye file pair
@@ -248,8 +244,6 @@ def load_discourse_buckeye(corpus_context, word_path, phone_path,
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse the files.
         Auto-generated based on dialect.
-    feature_system_path : str
-        Full path to pickled FeatureMatrix to use with the Corpus
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None

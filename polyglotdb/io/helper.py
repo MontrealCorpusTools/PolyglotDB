@@ -545,6 +545,10 @@ class DiscourseData(object):
         return len(self.data[key])
 
 def compile_digraphs(digraph_list):
+    """
+    Compile a list of digraphs into a regex that will match the longest
+    first, and also match single characters.
+    """
     digraph_list = sorted(digraph_list, key = lambda x: len(x), reverse=True)
     pattern = '|'.join(re.escape(d) for d in digraph_list)
     pattern += '|\d+|\S'

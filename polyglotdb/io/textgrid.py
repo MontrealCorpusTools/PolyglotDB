@@ -244,7 +244,6 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
 
 
 def load_discourse_textgrid(corpus_context, path, annotation_types,
-                            feature_system_path = None,
                             stop_check = None, call_back = None):
     """
     Load a discourse from a TextGrid file
@@ -258,8 +257,6 @@ def load_discourse_textgrid(corpus_context, path, annotation_types,
     annotation_types : list of AnnotationType
         List of AnnotationType specifying how to parse the TextGrids.
         Can be generated through ``inspect_discourse_textgrid``.
-    feature_system_path : str
-        Full path to pickled FeatureMatrix to use with the Corpus
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None
@@ -273,7 +270,6 @@ def load_discourse_textgrid(corpus_context, path, annotation_types,
     corpus_context.finalize_import(data)
 
 def load_directory_textgrid(corpus_context, path, annotation_types,
-                            feature_system_path = None,
                             stop_check = None, call_back = None):
     """
     Loads a directory of TextGrid files
@@ -287,8 +283,6 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
     annotation_types : list of AnnotationType
         List of AnnotationType specifying how to parse the TextGrids.
         Can be generated through ``inspect_discourse_textgrid``.
-    feature_system_path : str, optional
-        File path of FeatureMatrix binary to specify segments
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None

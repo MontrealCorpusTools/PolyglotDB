@@ -208,8 +208,6 @@ def load_discourse_ilg(corpus_context, path, annotation_types,
     annotation_types : list of AnnotationType
         List of AnnotationType specifying how to parse the glosses.
         Can be generated through ``inspect_discourse_ilg``.
-    feature_system_path : str
-        Full path to pickled FeatureMatrix to use with the Corpus
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None
@@ -227,7 +225,6 @@ def load_discourse_ilg(corpus_context, path, annotation_types,
     #    discourse.lexicon.set_feature_matrix(feature_matrix)
 
 def load_directory_ilg(corpus_context, path, annotation_types,
-                        feature_system_path = None,
                         stop_check = None, call_back = None):
     """
     Loads a directory of interlinear gloss text files
@@ -241,8 +238,6 @@ def load_directory_ilg(corpus_context, path, annotation_types,
     annotation_types : list of AnnotationType
         List of AnnotationType specifying how to parse the glosses.
         Can be generated through ``inspect_discourse_ilg``.
-    feature_system_path : str, optional
-        File path of FeatureMatrix binary to specify segments
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None

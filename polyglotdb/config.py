@@ -18,6 +18,34 @@ def setup_logger(logger_name, log_file, level=logging.INFO):
     l.info('---------INIT-----------')
 
 class CorpusConfig(object):
+    """
+    Class for storing configuration information about a corpus.
+
+    Parameters
+    ----------
+    corpus_name : str
+        Identifier for the corpus
+    kwargs : keyword arguments
+        All keywords will be converted to attributes of the object
+
+    Attributes
+    ----------
+    corpus_name : str
+        Identifier of the corpus
+    graph_user : str
+        Username for connecting to the graph database
+    graph_password : str
+        Password for connecting to the graph database
+    graph_host : str
+        Host for the graph database
+    graph_port : int
+        Port for connecting to the graph database
+    engine : str
+        Type of SQL database
+    base_dir : str
+        Base directory to store information and temporary files for the corpus
+        defaults to "Documents/SCT" under the current user's home directory
+    """
     def __init__(self, corpus_name, **kwargs):
         self.corpus_name = corpus_name
         self.graph_user = None
@@ -44,6 +72,18 @@ class CorpusConfig(object):
             setattr(self, k, v)
 
     def temporary_directory(self, name):
+        """
+        Create a temporary directory for use in the corpus, and return the
+        path name.
+
+        All temporary directories deleted upon successful exit of the
+        context manager.
+
+        Returns
+        -------
+        str:
+            Full path to temporary directory
+        """
         temp = os.path.join(self.temp_dir, name)
         os.makedirs(temp, exist_ok = True)
         return temp
