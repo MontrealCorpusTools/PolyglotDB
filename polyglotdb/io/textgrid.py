@@ -138,13 +138,18 @@ def guess_tiers(tg):
     interval_tiers = [x for x in tg.tiers if isinstance(x, IntervalTier)]
     for i,t in enumerate(interval_tiers):
         tier_properties[t.name] = (i, len(t), averageLabelLen(t), len(uniqueLabels(t)))
-    max_labels = max(tier_properties.values(), key = lambda x: x[1])
-    likely_segment = [k for k,v in tier_properties.items() if v == max_labels]
+    likely_spelling = sorted((x for x in tier_properties.keys() if x not in segment_tiers),
+                        key = lambda x: (tier_properties[x][1], tier_properties[x][0]))[0]
+    spelling_tiers.append(likely_spelling)
+
+    max_labels = max(tier_properties.values(), key = lambda x: x[1])[1]
+
+    likely_segment = [k for k,v in tier_properties.items() if v[1] == max_labels and k != likely_spelling]
     if len(likely_segment) == 1:
         segment_tiers.append(likely_segment[0])
-    likely_spelling = min((x for x in tier_properties.keys() if x not in segment_tiers),
-                        key = lambda x: tier_properties[x][0])
-    spelling_tiers.append(likely_spelling)
+    if segment_tiers:
+        if len(segment_tiers[0]) == len(spelling_tiers[0]):
+            segment_tiers = []
 
     for k in tier_properties.keys():
         if k in segment_tiers:
@@ -239,7 +244,6 @@ def textgrid_to_data(path, annotation_types, stop_check = None,
 
 
 def load_discourse_textgrid(corpus_context, path, annotation_types,
-                            feature_system_path = None,
                             stop_check = None, call_back = None):
     """
     Load a discourse from a TextGrid file
@@ -253,8 +257,6 @@ def load_discourse_textgrid(corpus_context, path, annotation_types,
     annotation_types : list of AnnotationType
         List of AnnotationType specifying how to parse the TextGrids.
         Can be generated through ``inspect_discourse_textgrid``.
-    feature_system_path : str
-        Full path to pickled FeatureMatrix to use with the Corpus
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None
@@ -268,7 +270,6 @@ def load_discourse_textgrid(corpus_context, path, annotation_types,
     corpus_context.finalize_import(data)
 
 def load_directory_textgrid(corpus_context, path, annotation_types,
-                            feature_system_path = None,
                             stop_check = None, call_back = None):
     """
     Loads a directory of TextGrid files
@@ -282,8 +283,6 @@ def load_directory_textgrid(corpus_context, path, annotation_types,
     annotation_types : list of AnnotationType
         List of AnnotationType specifying how to parse the TextGrids.
         Can be generated through ``inspect_discourse_textgrid``.
-    feature_system_path : str, optional
-        File path of FeatureMatrix binary to specify segments
     stop_check : callable or None
         Optional function to check whether to gracefully terminate early
     call_back : callable or None

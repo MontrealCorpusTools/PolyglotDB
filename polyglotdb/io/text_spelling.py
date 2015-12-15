@@ -5,7 +5,7 @@ from polyglotdb.exceptions import DelimiterError
 from .helper import (DiscourseData, Annotation, BaseAnnotation,
                         AnnotationType, text_to_lines)
 
-def inspect_discourse_spelling(path, support_corpus_path = None):
+def inspect_discourse_spelling(path):
     """
     Generate a list of AnnotationTypes for a specified text file for parsing
     it as an orthographic text
@@ -14,9 +14,6 @@ def inspect_discourse_spelling(path, support_corpus_path = None):
     ----------
     path : str
         Full path to text file
-    support_corpus_path : str, optional
-        Full path to a corpus to look up transcriptions from spellings
-        in the text
 
     Returns
     -------
@@ -42,21 +39,20 @@ def inspect_discourse_spelling(path, support_corpus_path = None):
 
                 a.add(trial, save = False)
     annotation_types = [a]
-    if support_corpus_path is not None:
-        annotation_types += [AnnotationType('transcription', None, None)]
+    #if support_corpus_path is not None:
+    #    annotation_types += [AnnotationType('transcription', None, None)]
     return annotation_types
 
 def spelling_text_to_data(path, annotation_types = None,
-                            support_corpus_path = None, ignore_case = True,
                             stop_check = None, call_back = None):
 
     name = os.path.splitext(os.path.split(path)[1])[0]
-    if support_corpus_path is not None:
-        if not os.path.exists(support_corpus_path):
-            raise(PCTOSError("The corpus path specified ({}) does not exist".format(support_corpus_path)))
-        support = load_binary(support_corpus_path)
+    #if support_corpus_path is not None:
+    #    if not os.path.exists(support_corpus_path):
+    #        raise(PCTOSError("The corpus path specified ({}) does not exist".format(support_corpus_path)))
+    #    support = load_binary(support_corpus_path)
     if annotation_types is None:
-        annotation_types = inspect_discourse_spelling(path, support_corpus_path)
+        annotation_types = inspect_discourse_spelling(path)
 
     for a in annotation_types:
         a.reset()
@@ -84,26 +80,25 @@ def spelling_text_to_data(path, annotation_types = None,
             if spell == '':
                 continue
             word = Annotation(spell)
-            if support_corpus_path is not None:
-                trans = None
-                try:
-                    trans = support.find(spell, ignore_case = ignore_case).transcription
-                except KeyError:
-                    trans = []
-                n = data.base_levels[0]
-                tier_elements = [BaseAnnotation(x) for x in trans]
-                level_count = data.level_length(n)
-                word.references.append(n)
-                word.begins.append(level_count)
-                word.ends.append(level_count + len(tier_elements))
-                annotations[n] = tier_elements
+            #if support_corpus_path is not None:
+            #    trans = None
+            #    try:
+            #        trans = support.find(spell, ignore_case = ignore_case).transcription
+            #    except KeyError:
+            #        trans = []
+            #    n = data.base_levels[0]
+            #    tier_elements = [BaseAnnotation(x) for x in trans]
+            #    level_count = data.level_length(n)
+            #    word.references.append(n)
+            #    word.begins.append(level_count)
+            #    word.ends.append(level_count + len(tier_elements))
+            #    annotations[n] = tier_elements
             annotations['word'] = [word]
             data.add_annotations(**annotations)
 
     return data
 
 def load_directory_spelling(corpus_context, path, annotation_types = None,
-                            support_corpus_path = None, ignore_case = False,
                             stop_check = None, call_back = None):
     """
     Loads a directory of orthographic texts
@@ -116,10 +111,6 @@ def load_directory_spelling(corpus_context, path, annotation_types = None,
         Path to directory of text files
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse text files
-    support_corpus_path : str, optional
-        File path of corpus binary to load transcriptions from
-    ignore_case : bool, optional
-        Specifies whether lookups in the support corpus should ignore case
     stop_check : callable, optional
         Optional function to check whether to gracefully terminate early
     call_back : callable, optional
@@ -150,7 +141,6 @@ def load_directory_spelling(corpus_context, path, annotation_types = None,
         path = os.path.join(root, filename)
         name = os.path.splitext(filename)[0]
         data = spelling_text_to_data(path, annotation_types,
-                    support_corpus_path, ignore_case,
                         stop_check, call_back)
         parsed_data[t] = data
 
@@ -167,7 +157,6 @@ def load_directory_spelling(corpus_context, path, annotation_types = None,
     corpus_context.finalize_import(data)
 
 def load_discourse_spelling(corpus_context, path, annotation_types = None,
-                            support_corpus_path = None, ignore_case = False,
                             stop_check = None, call_back = None):
     """
     Load a discourse from a text file containing running text of
@@ -181,12 +170,6 @@ def load_discourse_spelling(corpus_context, path, annotation_types = None,
         Full path to text file
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse text files
-    support_corpus_path : str, optional
-        Full path to a corpus to look up transcriptions from spellings
-        in the text
-    ignore_case : bool, optional
-        Specify whether to ignore case when using spellings in the text
-        to look up transcriptions
     stop_check : callable, optional
         Callable that returns a boolean for whether to exit before
         finishing full calculation
@@ -197,7 +180,6 @@ def load_discourse_spelling(corpus_context, path, annotation_types = None,
     """
 
     data = spelling_text_to_data(path, annotation_types,
-                support_corpus_path, ignore_case,
                     stop_check, call_back)
     corpus_context.add_types({data.name: data})
     corpus_context.initialize_import(data)

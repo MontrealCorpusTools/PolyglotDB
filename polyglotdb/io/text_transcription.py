@@ -121,7 +121,6 @@ def transcription_text_to_data(path, annotation_types = None,
     return data
 
 def load_directory_transcription(corpus_context, path, annotation_types = None,
-                                feature_system_path = None,
                                 stop_check = None, call_back = None):
     """
     Loads a directory of transcribed texts.
@@ -134,8 +133,6 @@ def load_directory_transcription(corpus_context, path, annotation_types = None,
         Path to directory of text files
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse text files
-    feature_system_path : str, optional
-        File path of FeatureMatrix binary to specify segments
     stop_check : callable, optional
         Optional function to check whether to gracefully terminate early
     call_back : callable, optional
@@ -183,7 +180,6 @@ def load_directory_transcription(corpus_context, path, annotation_types = None,
 
 
 def load_discourse_transcription(corpus_context, path, annotation_types = None,
-                    feature_system_path = None,
                     stop_check = None, call_back = None):
     """
     Load a discourse from a text file containing running transcribed text
@@ -196,16 +192,14 @@ def load_discourse_transcription(corpus_context, path, annotation_types = None,
         Full path to text file
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse text files
-    feature_system_path : str, optional
-        Full path to pickled FeatureMatrix to use with the Corpus
     stop_check : callable, optional
         Optional function to check whether to gracefully terminate early
     call_back : callable, optional
         Optional function to supply progress information during the loading
     """
-    if feature_system_path is not None:
-        if not os.path.exists(feature_system_path):
-            raise(PCTOSError("The feature path specified ({}) does not exist".format(feature_system_path)))
+    #if feature_system_path is not None:
+    #    if not os.path.exists(feature_system_path):
+    #        raise(PCTOSError("The feature path specified ({}) does not exist".format(feature_system_path)))
 
     data = transcription_text_to_data(path, annotation_types,
                             stop_check, call_back)

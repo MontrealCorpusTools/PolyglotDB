@@ -119,8 +119,6 @@ def data_to_graph_csvs(data, directory):
     base_levels = data.base_levels
     base_ind = 0
 
-    print(data.base_levels)
-    print(data.output_types)
     for i, level in enumerate(data.process_order):
         annotations = []
         for k,d in enumerate(data[level]):
@@ -224,7 +222,7 @@ def import_csvs(corpus_context, data):
     type_properties = data.type_properties
 
     prop_temp = '''{name}: csvLine.{name}'''
-
+    corpus_context.graph.cypher.execute('''MERGE (n:Discourse:{} {{name: {{discourse_name}}}})'''.format(corpus_context.corpus_name), discourse_name = data.name)
     for at in annotation_types:
         rel_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_{}.csv'.format(data.name, at)).replace('\\','/'))
 

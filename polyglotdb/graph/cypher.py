@@ -412,11 +412,15 @@ WITH nodes(head(longestPath)) as np
 UNWIND np as wt
 MATCH (wt)-[:is_a]->(w:word_type)
 RETURN {returns}'''
-    extract_template = '''w.{annotation} as {annotation}'''
+    type_extract_template = '''w.{annotation} as {annotation}'''
+    token_extract_template = '''wt.{annotation} as {annotation}'''
     extracts = []
     word = corpus_context.word
     for a in annotations:
-        extract_string = extract_template.format(annotation = a)
+        if a in type_attributes:
+            extract_string = type_extract_template.format(annotation = a)
+        else:
+            extract_string = token_extract_template.format(annotation = a)
         extracts.append(extract_string)
     query = template.format(discourse = discourse, corpus = corpus_context.corpus_name,
                             returns = ', '.join(extracts))

@@ -459,6 +459,14 @@ class DiscourseData(object):
         return item in self.data
 
     @property
+    def speakers(self):
+        speakers = set()
+        for v in self.values():
+            if v.speaker is not None:
+                speakers.add(v.speaker)
+        return speakers
+
+    @property
     def types(self):
         return self.keys()
 
@@ -545,6 +553,10 @@ class DiscourseData(object):
         return len(self.data[key])
 
 def compile_digraphs(digraph_list):
+    """
+    Compile a list of digraphs into a regex that will match the longest
+    first, and also match single characters.
+    """
     digraph_list = sorted(digraph_list, key = lambda x: len(x), reverse=True)
     pattern = '|'.join(re.escape(d) for d in digraph_list)
     pattern += '|\d+|\S'

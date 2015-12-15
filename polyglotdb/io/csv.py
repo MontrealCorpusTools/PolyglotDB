@@ -107,7 +107,6 @@ def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
 
 def load_corpus_csv(corpus_context, path, delimiter,
                     annotation_types = None,
-                    feature_system_path = None,
                     stop_check = None, call_back = None):
     """
     Load a corpus from a column-delimited text file
@@ -122,8 +121,6 @@ def load_corpus_csv(corpus_context, path, delimiter,
         Character to use for spliting lines into columns
     annotation_types : list of AnnotationType, optional
         List of AnnotationType specifying how to parse text files
-    feature_system_path : str
-        Full path to pickled FeatureMatrix to use with the Corpus
     stop_check : callable, optional
         Optional function to check whether to gracefully terminate early
     call_back : callable, optional
