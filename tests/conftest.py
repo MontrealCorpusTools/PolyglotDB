@@ -70,7 +70,7 @@ def corpus_data_timed():
     levels = [AnnotationType('phone', None, 'word', base = True, token = True),
                 AnnotationType('word','phone','line', anchor = True),
                 AnnotationType('line', 'word', None)]
-    data = DiscourseData('test',levels)
+    data = DiscourseData('test_timed',levels)
     annotations = {
                     'phone':[BaseAnnotation('k', 0.0, 0.1),
                             BaseAnnotation('ae', 0.1, 0.2),
@@ -144,6 +144,13 @@ def corpus_data_timed():
     data.add_annotations(**annotations)
     return data
 
+
+@pytest.fixture(scope='session')
+def corpus_data_onespeaker(corpus_data_timed):
+    for k in corpus_data_timed.data.keys():
+        corpus_data_timed.data[k].speaker = 'some_speaker'
+    return corpus_data_timed
+
 @pytest.fixture(scope='session')
 def corpus_data_untimed():
     levels = [AnnotationType('phone', None, 'word', base = True, token = True),
@@ -151,7 +158,7 @@ def corpus_data_untimed():
                 AnnotationType('morpheme', 'phone', 'word'),
                 AnnotationType('word','phone','line', anchor = True),
                 AnnotationType('line', 'word', None)]
-    data = DiscourseData('test',levels)
+    data = DiscourseData('test_untimed',levels)
     annotations = {'phone':[BaseAnnotation('k'),
                             BaseAnnotation('ae'),
                             BaseAnnotation('t'),
@@ -255,7 +262,7 @@ def corpus_data_ur_sr():
                 AnnotationType('word','sr','line', anchor = True),
                 AnnotationType('ur', None, None, token = False),
                 AnnotationType('line', 'word', None, anchor = False)]
-    data = DiscourseData('test',levels)
+    data = DiscourseData('test_ur_sr',levels)
     annotations = {'sr':[BaseAnnotation('k', 0.0, 0.1),
                             BaseAnnotation('ae', 0.1, 0.2),
                             BaseAnnotation('s', 0.2, 0.4),
@@ -355,7 +362,7 @@ def corpus_data_syllable_morpheme_srur():
                 AnnotationType('morpheme', 'ur', 'word'),
                 AnnotationType('word','phone','line', anchor = True),
                 AnnotationType('line', 'word', None)]
-    data = DiscourseData('test',levels)
+    data = DiscourseData('test_morpheme_srur',levels)
     annotations = {'ur':[BaseAnnotation('b'),
                             BaseAnnotation('aa'),
                             BaseAnnotation('k'),
@@ -420,7 +427,7 @@ def corpus_data_syllable_morpheme():
                 AnnotationType('syllable', 'phone', 'word'),
                 AnnotationType('morpheme', 'phone', 'word'),
                 AnnotationType('word','phone',None, anchor = True)]
-    data = DiscourseData('test',levels)
+    data = DiscourseData('test_syllable_morpheme',levels)
     annotations = {'phone':[BaseAnnotation('b'),
                             BaseAnnotation('aa'),
                             BaseAnnotation('k'),

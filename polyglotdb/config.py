@@ -2,6 +2,7 @@
 import os
 import sys
 import logging
+import socket
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
     l = logging.getLogger(logger_name)
@@ -95,13 +96,30 @@ class CorpusConfig(object):
         setup_logger('{}_acoustics'.format(self.corpus_name), os.path.join(self.log_dir, 'acoustics.log'), level = self.log_level)
 
     @property
+    def graph_hostname(self):
+        return '{}:{}'.format(self.graph_host, self.graph_port)
+
+    @property
     def graph_connection_string(self):
-        host_string = '{}:{}'.format(self.graph_host, self.graph_port)
         user_string = ''
         if self.graph_user is not None and self.graph_password is not None:
             user_string = '{}:{}@'.format(self.graph_user, self.graph_password)
-        return "http://{}{}/db/data/".format(user_string, host_string)
+        return "http://{}{}/db/data/".format(user_string, self.graph_hostname)
 
     @property
     def sql_connection_string(self):
         return '{}:///{}.db'.format(self.engine, self.db_path)
+
+def is_valid_ipv4_address(address):
+    try:
+        socket.inet_pton(socket.AF_INET, address)
+    except AttributeError:  # no inet_pton here, sorry
+        try:
+            socket.inet_aton(address)
+        except socket.error:
+            return False
+        return address.count('.') == 3
+    except socket.error:  # not a valid address
+        return False
+
+    return True

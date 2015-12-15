@@ -2,6 +2,8 @@ import os
 import sys
 import traceback
 
+from py2neo.packages.httpstream.http import SocketError
+
 ## Base exception classes
 
 class PGError(Exception):

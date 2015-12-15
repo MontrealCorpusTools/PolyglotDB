@@ -459,6 +459,14 @@ class DiscourseData(object):
         return item in self.data
 
     @property
+    def speakers(self):
+        speakers = set()
+        for v in self.values():
+            if v.speaker is not None:
+                speakers.add(v.speaker)
+        return speakers
+
+    @property
     def types(self):
         return self.keys()
 

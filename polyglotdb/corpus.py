@@ -9,6 +9,7 @@ from collections import defaultdict
 from py2neo import Graph
 from py2neo.packages.httpstream import http
 http.socket_timeout = 9999
+from py2neo.cypher.error.schema import IndexAlreadyExists
 
 from .config import CorpusConfig
 
@@ -238,8 +239,20 @@ class CorpusContext(object):
         import_type_csvs(self, list(parsed_data.values())[0].type_properties)
 
     def initialize_import(self, data):
-        return
-        #initialize_csvs_header(data, self.config.temporary_directory('csv'))
+        try:
+            self.graph.cypher.execute('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
+        except IndexAlreadyExists:
+            pass
+
+        try:
+            self.graph.cypher.execute('CREATE INDEX ON :Discourse(name)')
+        except IndexAlreadyExists:
+            pass
+        try:
+            self.graph.cypher.execute('CREATE INDEX ON :Speaker(name)')
+        except IndexAlreadyExists:
+            pass
+        self.graph.cypher.execute('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
     def finalize_import(self, data):
         return
@@ -257,6 +270,14 @@ class CorpusContext(object):
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
+
+        self.graph.cypher.execute(
+            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(corpus_name = self.corpus_name),
+                    discourse_name = data.name)
+        for s in data.speakers:
+            self.graph.cypher.execute(
+                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.corpus_name),
+                        speaker_name = s)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(data, self.config.temporary_directory('csv'))
         import_csvs(self, data)
@@ -265,6 +286,7 @@ class CorpusContext(object):
             self.is_timed = True
         else:
             self.is_timed = False
+
 
         log.info('Finished adding discourse {}!'.format(data.name))
         log.debug('Total time taken: {} seconds'.format(time.time() - begin))
@@ -344,3 +366,10 @@ class CorpusContext(object):
                 p, _ = self.inventory.get_or_create_item(seg, base_type)
         log.info('Finished importing {} to the SQL database!'.format(data.name))
         log.debug('SQL importing took: {} seconds'.format(time.time() - initial_begin))
+
+
+def get_corpora_list(config):
+    with CorpusContext(config) as c:
+        statement = '''MATCH (n:Corpus) RETURN n.name as name ORDER BY name'''
+        results = c.graph.cypher.execute(statement)
+    return [x.name for x in results]

@@ -197,9 +197,9 @@ def load_discourse_transcription(corpus_context, path, annotation_types = None,
     call_back : callable, optional
         Optional function to supply progress information during the loading
     """
-    if feature_system_path is not None:
-        if not os.path.exists(feature_system_path):
-            raise(PCTOSError("The feature path specified ({}) does not exist".format(feature_system_path)))
+    #if feature_system_path is not None:
+    #    if not os.path.exists(feature_system_path):
+    #        raise(PCTOSError("The feature path specified ({}) does not exist".format(feature_system_path)))
 
     data = transcription_text_to_data(path, annotation_types,
                             stop_check, call_back)
