@@ -28,7 +28,7 @@ MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
                 'sqlalchemy.orm', 'sqlalchemy.sql', 'sqlalchemy.sql.expression',
                 'sqlalchemy.ext', 'sqlalchemy.ext.declarative', 'sqlalchemy.ext.orderinglist',
                 'sqlalchemy.ext.associationproxy', 'sqlalchemy.ext.hybrid']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+#sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 import shlex
 import alabaster
 
