@@ -40,7 +40,6 @@ def test_transcription_directory(graph_db, text_transcription_test_dir):
     with CorpusContext('transcription_test_directory', **graph_db) as c:
         c.load(parser, text_transcription_test_dir)
 
-@pytest.mark.xfail
 def test_load_transcription_morpheme(graph_db, text_transcription_test_dir):
     transcription_morphemes_path = os.path.join(text_transcription_test_dir,
                                 'text_transcription_morpheme_boundaries.txt')

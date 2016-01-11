@@ -37,7 +37,7 @@ def inspect_transcription(path):
                     for line in f.readlines():
                         trial = line.strip().split()
                         if a.trans_delimiter is None:
-                            a.tran_delimiter = guess_trans_delimiter(trial)
+                            a.trans_delimiter = guess_trans_delimiter(trial)
 
                         a.add(((x, num_annotations + i) for i, x in enumerate(trial)), save = False)
                         num_annotations += len(trial)
@@ -47,7 +47,7 @@ def inspect_transcription(path):
             for line in f.readlines():
                 trial = line.strip().split()
                 if a.trans_delimiter is None:
-                    a.tran_delimiter = guess_trans_delimiter(trial)
+                    a.trans_delimiter = guess_trans_delimiter(trial)
 
                 a.add(((x, num_annotations + i) for i, x in enumerate(trial)), save = False)
                 num_annotations += len(trial)

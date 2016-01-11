@@ -81,7 +81,7 @@ class BaseParser(object):
                                     pass
                         if rl.name == k or rl.name == 'label':
                             if rl[i].value == '':
-                                label = 'sil'
+                                label = '<SIL>'
                             elif rl[i].value is not None:
                                 label = rl[i].value
                         elif rl.type_property:
@@ -108,5 +108,11 @@ class BaseParser(object):
                 for a in annotation_types[k]:
                     transcription = annotation_types[segment_type].lookup_range(a.begin, a.end, speaker = a.speaker)
                     a.type_properties['transcription'] = [x.label for x in transcription]
+            if self.make_label and 'transcription' in v.type_property_keys and v.is_word:
+
+                for a in annotation_types[k]:
+                    if a.label is None:
+                        a.label = ''.join(a.type_properties['transcription'])
+                        print(a.label, a.type_properties['transcription'])
         return annotation_types
 

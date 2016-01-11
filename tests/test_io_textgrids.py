@@ -4,9 +4,17 @@ import os
 
 from polyglotdb.io import inspect_textgrid
 
+from polyglotdb.io.types.parsing import TobiTier, OrthographyTier
+
 from polyglotdb.corpus import CorpusContext
 
 from polyglotdb.exceptions import TextGridError
+
+def test_tobi(textgrid_test_dir):
+    path = os.path.join(textgrid_test_dir, 'tobi.TextGrid')
+    parser = inspect_textgrid(path)
+    assert(isinstance(parser.annotation_types[0], TobiTier))
+    assert(isinstance(parser.annotation_types[1], OrthographyTier))
 
 #def test_guess_tiers(textgrid_test_dir):
 #    tg = load_textgrid(os.path.join(textgrid_test_dir,'phone_word.TextGrid'))

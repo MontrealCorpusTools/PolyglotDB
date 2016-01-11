@@ -20,7 +20,7 @@ from .graph.query import GraphQuery
 from .graph.func import Max, Min
 from .graph.attributes import AnnotationAttribute, PauseAnnotation
 
-from .sql.models import (Base, Word, WordProperty, WordPropertyType,
+from .sql.models import (Base, Word, WordProperty, WordNumericProperty, WordPropertyType,
                     InventoryItem, AnnotationType, Discourse)
 
 from sqlalchemy import create_engine
@@ -250,29 +250,28 @@ class CorpusContext(object):
         segment_type = data.segment_type
         created_words = set()
         for level in data.annotation_types:
-            continue
             if not data[level].is_word:
                 continue
             log.info('Beginning to import annotations...'.format(level))
             begin = time.time()
             for d in data[level]:
                 trans = None
-                if len(base_levels) > 0:
-                    b = segment_type
-                    begin, end = d[b]
-                    base_sequence = data[b][begin:end]
-                    phone_cache[b].update(x.label for x in base_sequence)
-                    if 'transcription' in d.type_properties:
-                        trans = d.type_properties['transcription']
-                    elif not data[b].token:
-                        trans = [x.label for x in base_sequence]
+                if segment_type is not None:
+                    base_sequence = data[segment_type].lookup_range(d.begin, d.end, speaker = d.speaker)
+                    phone_cache[segment_type].update(x.label for x in base_sequence)
+                elif 'transcription' in d.type_properties:
+                    trans = d.type_properties['transcription']
+                print(trans)
                 if trans is None:
                     trans = ''
                 elif isinstance(trans, list):
                     phone_cache['transcription'].update(trans)
                     trans = '.'.join(trans)
                 word, created = self.lexicon.get_or_create_word(d.label, trans)
-                word.frequency += 1
+                if 'frequency' in d.type_properties:
+                    word.frequency = d.type_properties['frequency']
+                else:
+                    word.frequency += 1
                 if created:
                     created_words.add(d.label)
                     for k,v in d.type_properties.items():
@@ -284,7 +283,7 @@ class CorpusContext(object):
                             prop_type = WordPropertyType(label = k)
                             self.sql_session.add(prop_type)
                             self.lexicon.prop_type_cache[k] = prop_type
-                        if isinstance(v, (int,float)):
+                        if isinstance(v, (int,float)) and k != 'frequency':
                             prop, _ = get_or_create(self.sql_session, WordNumericProperty, word = word, property_type = prop_type, value = v)
                         elif isinstance(v, (list, tuple)):
                             prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = '.'.join(map(str,v)))

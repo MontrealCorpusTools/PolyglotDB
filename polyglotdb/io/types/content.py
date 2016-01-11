@@ -197,3 +197,12 @@ class NumericAnnotation(BaseAnnotation):
 class NumericAnnotationType(BaseAnnotationType):
     annotation_class = NumericAnnotation
 
+    def add(self, annotations, save = True):
+        for a in annotations:
+            a = list(a)
+            label = a.pop(0)
+            if save or len(self._list) < 10:
+                a.insert(0, float(label))
+                annotation = self.annotation_class(*a)
+                self._list.append(annotation)
+

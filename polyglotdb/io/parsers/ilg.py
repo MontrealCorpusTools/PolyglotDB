@@ -18,6 +18,7 @@ class IlgParser(BaseParser):
         self.annotation_types = annotation_types
         self.hierarchy = {'word': None}
         self.make_transcription = False
+        self.make_label = True
         self.stop_check = stop_check
         self.call_back = call_back
 

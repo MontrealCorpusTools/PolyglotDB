@@ -35,7 +35,7 @@ class TranscriptionTextParser(BaseParser):
                 cur += 1
                 if cur % 20 == 0:
                     self.call_back(cur)
-            if not line or line == '\n':
+            if not line:
                 continue
             a.add(((x, num_annotations + i) for i, x in enumerate(line)))
             num_annotations += len(line)

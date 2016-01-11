@@ -13,6 +13,7 @@ from polyglotdb.io.discoursedata import DiscourseData
 from polyglotdb.io import (inspect_textgrid)
 
 from polyglotdb.corpus import CorpusContext
+from polyglotdb.structure import Hierarchy
 from polyglotdb.config import CorpusConfig
 
 @pytest.fixture(scope='session')
@@ -81,6 +82,29 @@ def corpus_data_timed():
     levels[0].add(phones)
     levels[1].add(words)
     levels[2].add(lines)
+    hierarchy = {'phone':'word', 'word': 'line', 'line': None}
+    data = parse_annotations('test', levels, hierarchy, make_transcription = True)
+    return data
+
+@pytest.fixture(scope='session')
+def subannotation_data():
+    levels = [SegmentTier('label', 'phone'),
+                OrthographyTier('label', 'word'),
+                OrthographyTier('stop_information', 'phone')]
+    phones = [('k', 0.0, 0.1), ('ae', 0.1, 0.2), ('t', 0.2, 0.3), ('s', 0.3, 0.4),
+            ('aa', 0.5, 0.6), ('r',  0.6, 0.7),
+            ('k', 0.8, 0.9), ('u', 0.9, 1.0), ('t', 1.0, 1.1),
+            ('d', 2.0,  2.1), ('aa', 2.1, 2.2), ('g', 2.2, 2.3), ('z', 2.3, 2.4),
+            ('aa', 2.4, 2.5), ('r', 2.5, 2.6),
+            ('t', 2.6, 2.7), ('uw', 2.7, 2.8),
+            ('ay', 3.0, 3.1),
+            ('g', 3.3, 3.4), ('eh', 3.4, 3.5), ('s', 3.5, 3.6)]
+    words = [('cats', 0.0, 0.4), ('are', 0.5, 0.7), ('cute', 0.8, 1.1),
+            ('dogs', 2.0, 2.4), ('are', 2.4, 2.6), ('too', 2.6, 2.8),
+            ('i', 3.0, 3.1), ('guess', 3.3, 3.6)]
+
+    levels[0].add(phones)
+    levels[1].add(words)
     hierarchy = {'phone':'word', 'word': 'line', 'line': None}
     data = parse_annotations('test', levels, hierarchy, make_transcription = True)
     return data

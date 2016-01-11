@@ -8,9 +8,11 @@ from collections import Counter
 
 from polyglotdb.exceptions import DelimiterError
 
-ATT_TYPES = ['orthography', 'transcription', 'numeric', 'morpheme', 'tobi']
+ATT_TYPES = ['orthography', 'transcription', 'numeric',
+            'morpheme', 'tobi', 'grouping']
 
 tobi_characters = set('LH%-+!*')
+morph_delimiters = set('-=')
 
 def normalize_values_for_neo4j(dictionary):
     out = {}
@@ -37,7 +39,16 @@ def guess_type(values, trans_delimiters = None):
                     probable_values['transcription'] += 1
                     break
             else:
-                probable_values['orthography'] += 1
+                if v == '':
+                    probable_values['grouping'] += 1
+                elif set(v).issubset(tobi_characters):
+                    probable_values['tobi'] += 1
+                elif len(set(v) & morph_delimiters) > 0:
+                    probable_values['morpheme'] += 1
+                else:
+                    probable_values['orthography'] += 1
+    if probable_values['orthography'] > 0:
+        del probable_values['grouping']
     return max(probable_values.items(), key=operator.itemgetter(1))[0]
 
 def guess_trans_delimiter(values):

@@ -54,6 +54,7 @@ def data_to_type_csvs(parsed_data, directory):
 
     for data in parsed_data.values():
         for k,v in data.items():
+            print(k)
             for d in v:
                 type_additional = dict(zip(d.type_keys(), d.type_values()))
                 #print(type_headers[k], k, type_additional, d.label)
@@ -61,6 +62,7 @@ def data_to_type_csvs(parsed_data, directory):
                 for th in type_headers[k]:
                     if th not in ['id']:
                         row.append(type_additional[th])
+                print(tuple(row))
                 types[k].add(tuple(row))
     for k, v in types.items():
         for d in v:
@@ -90,7 +92,6 @@ def data_to_graph_csvs(data, directory):
         token_header = ['begin', 'end', 'type_id', 'id', 'previous_id']
         token_header += data[k].token_property_keys
         supertype = data[k].supertype
-        print(supertype)
         if supertype is not None:
             token_header.append(supertype)
         rel_writers[k] = csv.DictWriter(v, token_header, delimiter = ',')
@@ -98,7 +99,6 @@ def data_to_graph_csvs(data, directory):
 
     segment_type = data.segment_type
     for level in data.highest_to_lowest():
-        print(level)
         for d in data[level]:
             if d.begin is None or d.end is None:
                 continue

@@ -51,7 +51,6 @@ def test_inspect_example(csv_test_dir):
             assert(isinstance(a, OrthographyAnnotationType))
 
 
-@pytest.mark.xfail
 def test_corpus_csv(graph_db, csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'example.txt')
 
@@ -64,19 +63,21 @@ def test_corpus_csv(graph_db, csv_test_dir):
 
     with CorpusContext('basic_csv', **graph_db) as c:
         parser = inspect_csv(example_path)
+        parser.annotation_types[1].name = 'word'
         c.load(parser, example_path)
 
         assert(c.lexicon['mata'].frequency == 2)
         assert(c.lexicon['mata'].transcription == 'm.ɑ.t.ɑ')
 
 
-@pytest.mark.xfail
 def test_corpus_csv_tiered(graph_db, csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'tiered.txt')
 
     with CorpusContext('tiered_csv', **graph_db) as c:
         c.reset()
         parser = inspect_csv(example_path)
+
+        parser.annotation_types[0].name = 'word'
         c.load(parser, example_path)
 
         assert(c.lexicon['tusi'].frequency == 13)
@@ -131,13 +132,13 @@ def test_extra_feature(features_test_dir):
     with pytest.raises(KeyError):
         fm.__getitem__(('a','feature3'))
 
-@pytest.mark.xfail
-def test_stressed(csv_test_dir):
+def test_stressed(graph_db, csv_test_dir):
     stressed_path = os.path.join(csv_test_dir, 'stressed.txt')
-    ats,_ = inspect_csv(stressed_path, coldelim = ',')
-    print(ats)
-    ats[1].number_behavior = 'stress'
-    c = load_corpus_csv('stressed',stressed_path,',', ats)
-    assert(c.inventory['uw'].symbol == 'uw')
-    assert(c.inventory.stresses == {'1': set(['uw','iy']),
-                                    '0': set(['uw','iy','ah'])})
+
+    with CorpusContext('stressed_csv', **graph_db) as c:
+        c.reset()
+        parser = inspect_csv(stressed_path)
+        parser.annotation_types[0].name = 'word'
+        parser.annotation_types[1].number_behavior = 'stress'
+        c.load(parser, stressed_path)
+

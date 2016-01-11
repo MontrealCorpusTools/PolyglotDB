@@ -44,11 +44,11 @@ def inspect_ilg(path, number = None):
     annotation_types = []
     for i in range(number):
         name = 'Line {}'.format(i+1)
-        if i == 0:
-            a = TextOrthographyTier('wprd','word')
+        labels = lines[p][i][1]
+        cat = guess_type(labels, trans_delimiters)
+        if i == 0 and cat == 'orthography':
+            a = TextOrthographyTier('word','word')
         else:
-            labels = lines[p][i][1]
-            cat = guess_type(labels, trans_delimiters)
             if cat == 'transcription':
                 a = TextTranscriptionTier('transcription', 'word')
                 a.trans_delimiter = guess_trans_delimiter(labels)

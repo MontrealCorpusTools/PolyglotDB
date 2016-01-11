@@ -4,6 +4,7 @@ from .form import (PointAnnotation, PointAnnotationType, IntervalAnnotation,
 
 from .content import (OrthographyAnnotation, OrthographyAnnotationType,
                 TranscriptionAnnotation, TranscriptionAnnotationType,
+                NumericAnnotation, NumericAnnotationType,
                 GroupingAnnotation, GroupingAnnotationType,
                 MorphemeAnnotation, MorphemeAnnotationType)
 
@@ -52,6 +53,15 @@ class Grouping(IntervalAnnotation, GroupingAnnotation):
 class GroupingTier(GroupingAnnotationType, IntervalAnnotationType):
     annotation_class = Grouping
 
+    def add(self, annotations, save = True):
+        for a in annotations:
+            if len(a) > 2:
+                label = a.pop(0)
+            if save or len(self._list) < 10:
+                #If save is False, only the first 10 annotations are saved
+                annotation = self.annotation_class(*a)
+                self._list.append(annotation)
+
 class TextOrthography(OrthographyAnnotation, PointAnnotation):
     def __init__(self, label, time):
         OrthographyAnnotation.__init__(self, label)
@@ -75,3 +85,11 @@ class TextTranscription(TranscriptionAnnotation, PointAnnotation):
 
 class TextTranscriptionTier(TranscriptionAnnotationType, PointAnnotationType):
     annotation_class = TextTranscription
+
+class BreakIndex(NumericAnnotation, PointAnnotation):
+    def __init__(self, value, time):
+        NumericAnnotation.__init__(self, value)
+        PointAnnotation.__init__(self, time)
+
+class BreakIndexTier(NumericAnnotationType, PointAnnotationType):
+    annotation_class = BreakIndex
