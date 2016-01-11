@@ -25,7 +25,6 @@ class DiscourseData(object):
     def __init__(self, name, annotation_types, hierarchy):
         self.name = name
         self.data = annotation_types
-        print(hierarchy)
         self.segment_type = None
         for k,v in self.data.items():
             if k not in hierarchy.values() and not v.is_word:
@@ -52,6 +51,13 @@ class DiscourseData(object):
                     ats.append(k)
                     break
         return ats
+
+    @property
+    def speakers(self):
+        speakers = set()
+        for x in self.values():
+            speakers.update(x.speakers)
+        return speakers
 
     @property
     def annotation_types(self):

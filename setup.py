@@ -2,8 +2,6 @@ import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
-import polyglotdb
-
 def readme():
     with open('README.md') as f:
         return f.read()
@@ -21,7 +19,7 @@ class PyTest(TestCommand):
             sys.exit(errcode)
 
 setup(name='polyglotdb',
-      version=polyglotdb.__version__,
+      version='0.0.1',
       description='',
       long_description='',
       classifiers=[
@@ -33,8 +31,8 @@ setup(name='polyglotdb',
         'Topic :: Text Processing :: Linguistic',
       ],
       keywords='phonology corpus phonetics',
-      url='https://github.com/PhonologicalCorpusTools/PolyglotDB',
-      author='Phonological CorpusTools',
+      url='https://github.com/MontrealCorpusTools/PolyglotDB',
+      author='Montreal Corpus Tools',
       author_email='michael.e.mcauliffe@gmail.com',
       packages=['polyglotdb',
                 'polyglotdb.io',
@@ -42,7 +40,8 @@ setup(name='polyglotdb',
                 'polyglotdb.io.inspect',
                 'polyglotdb.io.exporters',
                 'polyglotdb.graph',
-                'polyglotdb.sql'],
+                'polyglotdb.sql',
+                'polyglotdb.gui'],
       install_requires=[
           'sqlalchemy',
           'textgrid',

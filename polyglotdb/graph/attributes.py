@@ -497,11 +497,7 @@ class PathAttribute(Attribute):
         endpos = -1
         beg = self.type_return_template.format(alias = self.annotation.path_alias, property = 'begin')
         end = self.type_return_template.format(alias = self.annotation.path_alias, property = 'end')
-        if self.label == 'begin':
-            return '{}[{}]'.format(beg, begpos)
-        elif self.label == 'end':
-            return '{}[{}]'.format(end, endpos)
-        elif self.label == 'duration':
+        if self.label == 'duration':
             return '{endalias}[{endpos}] - {begalias}[{begpos}]'.format(begalias = beg, endalias = end, endpos = endpos, begpos = begpos)
         elif self.label == 'count':
             return self.count_return_template.format(alias = self.annotation.path_alias)
@@ -510,7 +506,8 @@ class PathAttribute(Attribute):
         elif self.label == 'position':
             return self.position_return_template.format(alias = self.annotation.path_alias,
                                                     node_alias = self.annotation.sub.alias)
-
+        else:
+            return self.type_return_template.format(alias = self.annotation.path_alias, property = self.label)
     @property
     def is_type_attribute(self):
         return True

@@ -9,6 +9,7 @@ from collections import defaultdict
 from py2neo import Graph
 from py2neo.packages.httpstream import http
 http.socket_timeout = 9999
+from py2neo.cypher.error.schema import IndexAlreadyExists
 
 from .config import CorpusConfig
 
@@ -36,6 +37,19 @@ from .graph.cypher import discourse_query
 from .exceptions import CorpusConfigError, GraphQueryError
 
 class CorpusContext(object):
+    """
+    Base CorpusContext class.  Inherit from this and extend to create
+    more functionality.
+
+    Parameters
+    ----------
+    args : arguments or :class:`polyglotdb.config.CorpusConfig`
+        If the first argument is not a CorpusConfig object, it is
+        the name of the corpus
+    kwargs : keyword arguments
+        If a :class:`polyglotdb.config.CorpusConfig` object is not specified, all arguments and
+        keyword arguments are passed to a CorpusConfig object
+    """
     def __init__(self, *args, **kwargs):
         if len(args) == 0:
             raise(CorpusConfigError('Need to specify a corpus name or CorpusConfig.'))
@@ -64,6 +78,9 @@ class CorpusContext(object):
 
     @property
     def discourses(self):
+        '''
+        Return a list of all discourses in the corpus.
+        '''
         q = self.sql_session.query(Discourse)
         results = [d.name for d in q.all()]
         return results
@@ -122,6 +139,10 @@ class CorpusContext(object):
         raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.annotation_types)))))
 
     def reset_graph(self):
+        '''
+        Remove all nodes and relationships in the graph that are apart
+        of this corpus.
+        '''
 
         self.graph.cypher.execute('''MATCH (n:%s) DETACH DELETE n''' % (self.corpus_name))
 
@@ -129,24 +150,59 @@ class CorpusContext(object):
         self.hierarchy = {}
 
     def reset(self):
+        '''
+        Reset the graph and SQL databases for a corpus.
+        '''
         self.reset_graph()
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)
 
     def remove_discourse(self, name):
+        '''
+        Remove the nodes and relationships associated with a single
+        discourse in the corpus.
+
+        Parameters
+        ----------
+        name : str
+            Name of the discourse to remove
+        '''
         self.graph.cypher.execute('''MATCH (n:%s:%s)-[r]->() DELETE n, r'''
                                     % (self.corpus_name, name))
 
     def discourse(self, name, annotations = None):
+        '''
+        Get all words spoken in a discourse.
+
+        Parameters
+        ----------
+        name : str
+            Name of the discourse
+        '''
         return discourse_query(self, name, annotations)
 
     def query_graph(self, annotation_type):
+        '''
+        Return a :class:`polyglotdb.config.GraphQuery` for the specified annotation type.
+
+        When extending :class:`polyglotdb.config.GraphQuery` functionality, this function must be
+        overwritten.
+
+        Parameters
+        ----------
+        annotation_type : str
+            The type of annotation to look for in the corpus
+        '''
         if annotation_type.type not in self.annotation_types:
             raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.annotation_types)))))
         return GraphQuery(self, annotation_type, self.is_timed)
 
     @property
     def lowest_annotation(self):
+        '''
+        Returns the annotation type that is the lowest in the hierarchy
+        of containment.
+        '''
         values = self.hierarchy.values()
         for k in self.hierarchy.keys():
             if k not in values:
@@ -155,6 +211,15 @@ class CorpusContext(object):
 
 
     def add_types(self, parsed_data):
+        '''
+        This function imports types of annotations into the corpus.
+
+        Parameters
+        ----------
+        parsed_data: dict
+            Dictionary with keys for discourse names and values of :class:`polyglotdb.io.helper.DiscourseData`
+            objects
+        '''
         data = list(parsed_data.values())[0]
         self.annotation_types.update(data.annotation_types)
         self.hierarchy = data.hierarchy
@@ -162,17 +227,45 @@ class CorpusContext(object):
         import_type_csvs(self, list(parsed_data.values())[0])
 
     def initialize_import(self, data):
-        return
-        #initialize_csvs_header(data, self.config.temporary_directory('csv'))
+        try:
+            self.graph.cypher.execute('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
+        except IndexAlreadyExists:
+            pass
+
+        try:
+            self.graph.cypher.execute('CREATE INDEX ON :Discourse(name)')
+        except IndexAlreadyExists:
+            pass
+        try:
+            self.graph.cypher.execute('CREATE INDEX ON :Speaker(name)')
+        except IndexAlreadyExists:
+            pass
+        self.graph.cypher.execute('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
     def finalize_import(self, data):
         return
         #import_csvs(self, data)
 
     def add_discourse(self, data):
+        '''
+        Add a discourse to the graph database for corpus.
+
+        Parameters
+        ----------
+        data : :class:`polyglotdb.io.helper.DiscourseData`
+            Data for the discourse to be added
+        '''
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
+
+        self.graph.cypher.execute(
+            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(corpus_name = self.corpus_name),
+                    discourse_name = data.name)
+        for s in data.speakers:
+            self.graph.cypher.execute(
+                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.corpus_name),
+                        speaker_name = s)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(data, self.config.temporary_directory('csv'))
         import_csvs(self, data)
@@ -181,6 +274,7 @@ class CorpusContext(object):
             self.is_timed = True
         else:
             self.is_timed = False
+
 
         log.info('Finished adding discourse {}!'.format(data.name))
         log.debug('Total time taken: {} seconds'.format(time.time() - begin))
@@ -241,6 +335,16 @@ class CorpusContext(object):
         self.finalize_import(data)
 
     def update_sql_database(self, data):
+        '''
+        Update the SQL database given a discourse's data.  This function
+        adds new words and updates frequencies given occurences in the
+        discourse
+
+        Parameters
+        ----------
+        data : :class:`polyglotdb.io.helper.DiscourseData`
+            Data for the discourse
+        '''
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
         log.info('Beginning to import {} into the SQL database...'.format(data.name))
         initial_begin = time.time()
@@ -305,3 +409,10 @@ class CorpusContext(object):
                 p, _ = self.inventory.get_or_create_item(seg, base_type)
         log.info('Finished importing {} to the SQL database!'.format(data.name))
         log.debug('SQL importing took: {} seconds'.format(time.time() - initial_begin))
+
+
+def get_corpora_list(config):
+    with CorpusContext(config) as c:
+        statement = '''MATCH (n:Corpus) RETURN n.name as name ORDER BY name'''
+        results = c.graph.cypher.execute(statement)
+    return [x.name for x in results]

@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb.corpus import CorpusContext, get_corpora_list
 from polyglotdb.graph.func import Count
 
 def test_basic_query(timed_config):
@@ -9,6 +9,7 @@ def test_basic_query(timed_config):
         q = g.query_graph(g.word).filter(g.word.label == 'are')
         print(q.cypher())
         assert(all(x.label == 'are' for x in q.all()))
+    assert('timed' in get_corpora_list(timed_config))
 
 @pytest.mark.xfail
 def test_aggregate_element(timed_config):
@@ -41,12 +42,12 @@ def test_discourse_query(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).columns(g.word.discourse.column_name('discourse'))
         print(q.cypher())
-        assert(all(x.discourse == 'test' for x in q.all()))
+        assert(all(x.discourse == 'test_timed' for x in q.all()))
 
         q = g.query_graph(g.word).filter(g.word.discourse == 'test')
         q = q.columns(g.word.discourse.column_name('discourse'))
         print(q.cypher())
-        assert(all(x.discourse == 'test' for x in q.all()))
+        assert(all(x.discourse == 'test_timed' for x in q.all()))
 
 
 def test_order_by(timed_config):
@@ -58,10 +59,11 @@ def test_order_by(timed_config):
         for x in q.all():
             assert(x.begin > prev)
             prev = x.begin
+    assert('timed' in get_corpora_list(timed_config))
 
 def test_basic_discourses_prop(timed_config):
     with CorpusContext(timed_config) as g:
-        assert(g.discourses == ['test'])
+        assert(g.discourses == ['test_timed'])
 
 def test_query_previous(timed_config):
     with CorpusContext(timed_config) as g:
@@ -162,6 +164,7 @@ def test_query_coda_phone(syllable_morpheme_config):
         q = q.filter(g.phone.end != g.syllable.end)
         print(q.cypher())
         assert(len(list(q.all())) == 1)
+    assert('syllable_morpheme' in get_corpora_list(syllable_morpheme_config))
 
 @pytest.mark.xfail
 def test_query_onset_phone(syllable_morpheme_config):
@@ -213,6 +216,7 @@ def test_query_duration(acoustic_config):
 
         assert(abs(results[2].begin - 24.560) < 0.001)
         assert(abs(results[2].duration - 0.039) < 0.001)
+    assert('acoustic' in get_corpora_list(acoustic_config))
 
 
 def test_discourses_prop(acoustic_config):

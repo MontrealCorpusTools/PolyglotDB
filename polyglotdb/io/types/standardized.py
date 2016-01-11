@@ -64,6 +64,15 @@ class PGAnnotationType(object):
         self.type_property_keys.update(annotation.type_keys())
         self.token_property_keys.update(annotation.token_keys())
 
+    @property
+    def speakers(self):
+        speakers = set()
+        for x in self:
+            if x.speaker is None:
+                continue
+            speakers.add(x.speaker)
+        return speakers
+
     def lookup(self, timepoint, speaker = None):
         if speaker is None:
             return next((x for x in self._list

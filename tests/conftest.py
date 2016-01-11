@@ -83,7 +83,7 @@ def corpus_data_timed():
     levels[1].add(words)
     levels[2].add(lines)
     hierarchy = {'phone':'word', 'word': 'line', 'line': None}
-    data = parse_annotations('test', levels, hierarchy, make_transcription = True)
+    data = parse_annotations('test_timed', levels, hierarchy, make_transcription = True)
     return data
 
 @pytest.fixture(scope='session')
@@ -102,12 +102,19 @@ def subannotation_data():
     words = [('cats', 0.0, 0.4), ('are', 0.5, 0.7), ('cute', 0.8, 1.1),
             ('dogs', 2.0, 2.4), ('are', 2.4, 2.6), ('too', 2.6, 2.8),
             ('i', 3.0, 3.1), ('guess', 3.3, 3.6)]
-
+    info = [('burst', 0, 0.05), ('vot', 0.05, 0.1), ('closure', 0.2, 0.25)]
     levels[0].add(phones)
     levels[1].add(words)
-    hierarchy = {'phone':'word', 'word': 'line', 'line': None}
+    hierarchy = Hierarchy({'phone':'word', 'word': None})
     data = parse_annotations('test', levels, hierarchy, make_transcription = True)
     return data
+
+
+@pytest.fixture(scope='session')
+def corpus_data_onespeaker(corpus_data_timed):
+    for k in corpus_data_timed.data.keys():
+        corpus_data_timed.data[k].speaker = 'some_speaker'
+    return corpus_data_timed
 
 @pytest.fixture(scope='session')
 def corpus_data_untimed():
@@ -134,7 +141,6 @@ def corpus_data_untimed():
 
     hierarchy = {'word':'line', 'line': None}
     data = parse_annotations('test', levels, hierarchy)
-
     return data
 
 
@@ -188,7 +194,6 @@ def lexicon_data():
 
 @pytest.fixture(scope='session')
 def corpus_data_syllable_morpheme_srur():
-
     levels = [SegmentTier('sr', 'phone'),
                 TranscriptionTier('ur', 'word'),
                 GroupingTier('syllable', 'syllable'),

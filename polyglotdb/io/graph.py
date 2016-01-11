@@ -150,6 +150,7 @@ def import_csvs(corpus_context, data):
     initial_begin = time.time()
     name, annotation_types = data.name, data.annotation_types
 
+    corpus_context.graph.cypher.execute('''MERGE (n:Discourse:{} {{name: {{discourse_name}}}})'''.format(corpus_context.corpus_name), discourse_name = data.name)
     prop_temp = '''{name}: csvLine.{name}'''
 
     for at in data.highest_to_lowest():
