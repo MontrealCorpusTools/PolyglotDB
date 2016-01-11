@@ -48,7 +48,7 @@ class CorpusContext(object):
         self.corpus_name = self.config.corpus_name
         self.init_sql()
 
-        self.relationship_types = set()
+        self.annotation_types = set()
         self.is_timed = False
         self.hierarchy = {}
 
@@ -72,19 +72,15 @@ class CorpusContext(object):
         try:
             with open(os.path.join(self.config.data_dir, 'variables'), 'rb') as f:
                 var = pickle.load(f)
-            self.relationship_types = var['relationship_types']
-            self.is_timed = var['is_timed']
+            self.annotation_types = var['annotation_types']
             self.hierarchy = var['hierarchy']
         except FileNotFoundError:
-            self.relationship_types = set()
-            self.is_timed = False
+            self.annotation_types = set()
             self.hierarchy = {}
-        self.relationship_types.add('pause')
 
     def save_variables(self):
         with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
-            pickle.dump({'relationship_types':self.relationship_types,
-                        'is_timed': self.is_timed,
+            pickle.dump({'annotation_types':self.annotation_types,
                         'hierarchy': self.hierarchy}, f)
 
     def __enter__(self):
@@ -109,7 +105,7 @@ class CorpusContext(object):
     def __getattr__(self, key):
         if key == 'pause':
             return PauseAnnotation(corpus = self.corpus_name)
-        if key in self.relationship_types:
+        if key in self.annotation_types:
             supertype = self.hierarchy[key]
 
 
@@ -123,13 +119,13 @@ class CorpusContext(object):
                     supertypes.append(supertype)
             contains = [x for x in contains if x not in supertypes]
             return AnnotationAttribute(key, corpus = self.corpus_name, contains = contains)
-        raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.relationship_types)))))
+        raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.annotation_types)))))
 
     def reset_graph(self):
 
         self.graph.cypher.execute('''MATCH (n:%s) DETACH DELETE n''' % (self.corpus_name))
 
-        self.relationship_types = set()
+        self.annotation_types = set()
         self.hierarchy = {}
 
     def reset(self):
@@ -145,8 +141,8 @@ class CorpusContext(object):
         return discourse_query(self, name, annotations)
 
     def query_graph(self, annotation_type):
-        if annotation_type.type not in self.relationship_types:
-            raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.relationship_types)))))
+        if annotation_type.type not in self.annotation_types:
+            raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.annotation_types)))))
         return GraphQuery(self, annotation_type, self.is_timed)
 
     @property
@@ -160,18 +156,10 @@ class CorpusContext(object):
 
     def add_types(self, parsed_data):
         data = list(parsed_data.values())[0]
-        self.relationship_types.update(data.output_types)
-        self.hierarchy = {}
-        for x in data.output_types:
-            if x == 'word':
-                self.hierarchy[x] = data[data.word_levels[0]].supertype
-            else:
-                supertype = data[x].supertype
-                if supertype is not None and data[supertype].anchor:
-                    supertype = 'word'
-                self.hierarchy[x] = supertype
+        self.annotation_types.update(data.annotation_types)
+        self.hierarchy = data.hierarchy
         data_to_type_csvs(parsed_data, self.config.temporary_directory('csv'))
-        import_type_csvs(self, list(parsed_data.values())[0].type_properties)
+        import_type_csvs(self, list(parsed_data.values())[0])
 
     def initialize_import(self, data):
         return
@@ -197,6 +185,61 @@ class CorpusContext(object):
         log.info('Finished adding discourse {}!'.format(data.name))
         log.debug('Total time taken: {} seconds'.format(time.time() - begin))
 
+    def load(self, parser, path):
+        if os.path.isdir(path):
+            self.load_directory(parser, path)
+        else:
+            self.load_discourse(parser, path)
+
+    def load_discourse(self, parser, path):
+        data = parser.parse_discourse(path)
+        self.add_types({data.name: data})
+        self.initialize_import(data)
+        self.add_discourse(data)
+        self.finalize_import(data)
+
+    def load_directory(self, parser, path):
+        if parser.call_back is not None:
+            parser.call_back('Finding  files...')
+            parser.call_back(0, 0)
+        file_tuples = []
+        for root, subdirs, files in os.walk(path, followlinks = True):
+            for filename in files:
+                if parser.stop_check is not None and parser.stop_check():
+                    return
+                if not parser.match_extension(filename):
+                    continue
+                file_tuples.append((root, filename))
+        if parser.call_back is not None:
+            parser.call_back('Parsing files...')
+            parser.call_back(0,len(file_tuples))
+            cur = 0
+        parsed_data = {}
+
+        for i, t in enumerate(file_tuples):
+            if parser.stop_check is not None and parser.stop_check():
+                return
+            if parser.call_back is not None:
+                parser.call_back('Parsing file {} of {}...'.format(i+1, len(file_tuples)))
+                parser.call_back(i)
+            root, filename = t
+            name = os.path.splitext(filename)[0]
+            path = os.path.join(root,filename)
+            data = parser.parse_discourse(path)
+            parsed_data[t] = data
+
+        if parser.call_back is not None:
+            parser.call_back('Parsing annotation types...')
+        self.add_types(parsed_data)
+        self.initialize_import(data)
+        for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
+            if parser.call_back is not None:
+                name = t[1]
+                parser.call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
+                parser.call_back(i)
+            self.add_discourse(data)
+        self.finalize_import(data)
+
     def update_sql_database(self, data):
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
         log.info('Beginning to import {} into the SQL database...'.format(data.name))
@@ -204,17 +247,18 @@ class CorpusContext(object):
 
         discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
         phone_cache = defaultdict(set)
-        base_levels = data.base_levels
+        segment_type = data.segment_type
         created_words = set()
-        for level in data.output_types:
-            if not data[level].anchor:
+        for level in data.annotation_types:
+            continue
+            if not data[level].is_word:
                 continue
             log.info('Beginning to import annotations...'.format(level))
             begin = time.time()
             for d in data[level]:
                 trans = None
                 if len(base_levels) > 0:
-                    b = base_levels[0]
+                    b = segment_type
                     begin, end = d[b]
                     base_sequence = data[b][begin:end]
                     phone_cache[b].update(x.label for x in base_sequence)

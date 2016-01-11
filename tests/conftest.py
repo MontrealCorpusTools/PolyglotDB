@@ -1,20 +1,19 @@
 import pytest
 import os
 
-from polyglotdb.io.helper import BaseAnnotation, Annotation, AnnotationType, DiscourseData
+from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
+                                        GroupingTier, TextOrthographyTier,
+                                        TextTranscriptionTier, TextMorphemeTier,
+                                        MorphemeTier)
 
-from polyglotdb.io.textgrid import inspect_discourse_textgrid, load_discourse_textgrid
+from polyglotdb.io.parse import parse_annotations
+
+from polyglotdb.io.discoursedata import DiscourseData
+
+from polyglotdb.io import (inspect_textgrid)
 
 from polyglotdb.corpus import CorpusContext
 from polyglotdb.config import CorpusConfig
-
-
-@pytest.fixture(scope='session')
-def show_plots():
-    return False
-    if os.environ.get('TRAVIS'):
-        return False
-    return True
 
 @pytest.fixture(scope='session')
 def test_dir():
@@ -25,10 +24,6 @@ def test_dir():
 @pytest.fixture(scope='session')
 def buckeye_test_dir(test_dir):
     return os.path.join(test_dir, 'buckeye')
-
-@pytest.fixture(scope='session')
-def globalphone_test_dir(test_dir):
-    return os.path.join(test_dir, 'globalphone')
 
 @pytest.fixture(scope='session')
 def timit_test_dir(test_dir):
@@ -67,263 +62,83 @@ def export_test_dir(test_dir):
 
 @pytest.fixture(scope='session')
 def corpus_data_timed():
-    levels = [AnnotationType('phone', None, 'word', base = True, token = True),
-                AnnotationType('word','phone','line', anchor = True),
-                AnnotationType('line', 'word', None)]
-    data = DiscourseData('test',levels)
-    annotations = {
-                    'phone':[BaseAnnotation('k', 0.0, 0.1),
-                            BaseAnnotation('ae', 0.1, 0.2),
-                            BaseAnnotation('t', 0.2, 0.3),
-                            BaseAnnotation('s', 0.3, 0.4),
-                            BaseAnnotation('aa', 0.5, 0.6),
-                            BaseAnnotation('r',  0.6, 0.7),
-                            BaseAnnotation('k', 0.8, 0.9),
-                            BaseAnnotation('u', 0.9, 1.0),
-                            BaseAnnotation('t', 1.0, 1.1),
-                            BaseAnnotation('d', 2.0,  2.1),
-                            BaseAnnotation('aa', 2.1, 2.2),
-                            BaseAnnotation('g', 2.2, 2.3),
-                            BaseAnnotation('z', 2.3, 2.4),
-                            BaseAnnotation('aa', 2.4, 2.5),
-                            BaseAnnotation('r', 2.5, 2.6),
-                            BaseAnnotation('t', 2.6, 2.7),
-                            BaseAnnotation('uw', 2.7, 2.8),
-                            BaseAnnotation('ay', 3.0, 3.1),
-                            BaseAnnotation('g', 3.3, 3.4),
-                            BaseAnnotation('eh', 3.4, 3.5),
-                            BaseAnnotation('s', 3.5, 3.6),
-                            ],
-                    'word':[
-                            Annotation('cats', phone = (0,4)),
-                            Annotation('are', phone = (4,6)),
-                            Annotation('cute', phone = (6,9)),
-                            Annotation('dogs', phone =  (9,13)),
-                            Annotation('are', phone =  (13,15)),
-                            Annotation('too', phone =  (15,17)),
-                            Annotation('i', phone =  (17,18)),
-                            Annotation('guess', phone = (18,21)),
-                            ],
-                    'line': [
-                            Annotation('', phone = (0,9)),
-                            Annotation('', phone = (9,17)),
-                            Annotation('', phone =  (17,21))
-                            ]
-                    }
+    levels = [SegmentTier('label', 'phone'),
+                OrthographyTier('label', 'word'),
+                GroupingTier('line', 'line')]
+    phones = [('k', 0.0, 0.1), ('ae', 0.1, 0.2), ('t', 0.2, 0.3), ('s', 0.3, 0.4),
+            ('aa', 0.5, 0.6), ('r',  0.6, 0.7),
+            ('k', 0.8, 0.9), ('u', 0.9, 1.0), ('t', 1.0, 1.1),
+            ('d', 2.0,  2.1), ('aa', 2.1, 2.2), ('g', 2.2, 2.3), ('z', 2.3, 2.4),
+            ('aa', 2.4, 2.5), ('r', 2.5, 2.6),
+            ('t', 2.6, 2.7), ('uw', 2.7, 2.8),
+            ('ay', 3.0, 3.1),
+            ('g', 3.3, 3.4), ('eh', 3.4, 3.5), ('s', 3.5, 3.6)]
+    words = [('cats', 0.0, 0.4), ('are', 0.5, 0.7), ('cute', 0.8, 1.1),
+            ('dogs', 2.0, 2.4), ('are', 2.4, 2.6), ('too', 2.6, 2.8),
+            ('i', 3.0, 3.1), ('guess', 3.3, 3.6)]
+    lines = [(0.0, 1.1), (2.0, 2.8), (3.0, 3.6)]
 
-    annotations['phone'][0].super_id = annotations['word'][0].id
-    annotations['phone'][1].super_id = annotations['word'][0].id
-    annotations['phone'][2].super_id = annotations['word'][0].id
-    annotations['phone'][3].super_id = annotations['word'][0].id
-    annotations['phone'][4].super_id = annotations['word'][1].id
-    annotations['phone'][5].super_id = annotations['word'][1].id
-    annotations['phone'][6].super_id = annotations['word'][2].id
-    annotations['phone'][7].super_id = annotations['word'][2].id
-    annotations['phone'][8].super_id = annotations['word'][2].id
-    annotations['phone'][9].super_id = annotations['word'][3].id
-    annotations['phone'][10].super_id = annotations['word'][3].id
-    annotations['phone'][11].super_id = annotations['word'][3].id
-    annotations['phone'][12].super_id = annotations['word'][3].id
-    annotations['phone'][13].super_id = annotations['word'][4].id
-    annotations['phone'][14].super_id = annotations['word'][4].id
-    annotations['phone'][15].super_id = annotations['word'][5].id
-    annotations['phone'][16].super_id = annotations['word'][5].id
-    annotations['phone'][17].super_id = annotations['word'][6].id
-    annotations['phone'][18].super_id = annotations['word'][7].id
-    annotations['phone'][19].super_id = annotations['word'][7].id
-    annotations['phone'][20].super_id = annotations['word'][7].id
-
-    annotations['word'][0].super_id = annotations['line'][0].id
-    annotations['word'][1].super_id = annotations['line'][0].id
-    annotations['word'][2].super_id = annotations['line'][0].id
-    annotations['word'][3].super_id = annotations['line'][1].id
-    annotations['word'][4].super_id = annotations['line'][1].id
-    annotations['word'][5].super_id = annotations['line'][1].id
-    annotations['word'][6].super_id = annotations['line'][2].id
-    annotations['word'][7].super_id = annotations['line'][2].id
-    data.add_annotations(**annotations)
+    levels[0].add(phones)
+    levels[1].add(words)
+    levels[2].add(lines)
+    hierarchy = {'phone':'word', 'word': 'line', 'line': None}
+    data = parse_annotations('test', levels, hierarchy, make_transcription = True)
     return data
 
 @pytest.fixture(scope='session')
 def corpus_data_untimed():
-    levels = [AnnotationType('phone', None, 'word', base = True, token = True),
-                AnnotationType('transcription', None, None, token = False),
-                AnnotationType('morpheme', 'phone', 'word'),
-                AnnotationType('word','phone','line', anchor = True),
-                AnnotationType('line', 'word', None)]
-    data = DiscourseData('test',levels)
-    annotations = {'phone':[BaseAnnotation('k'),
-                            BaseAnnotation('ae'),
-                            BaseAnnotation('t'),
-                            BaseAnnotation('s'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('r'),
-                            BaseAnnotation('k'),
-                            BaseAnnotation('u'),
-                            BaseAnnotation('t'),
-                            BaseAnnotation('d'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('g'),
-                            BaseAnnotation('z'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('r'),
-                            BaseAnnotation('t'),
-                            BaseAnnotation('uw'),
-                            BaseAnnotation('ay'),
-                            BaseAnnotation('g'),
-                            BaseAnnotation('eh'),
-                            BaseAnnotation('s'),
-                            ],
-                    'morpheme':[
-                            Annotation('cat', phone = (0,3)),
-                            Annotation('PL', phone = (3,4)),
-                            Annotation('are', phone = (4,6)),
-                            Annotation('cute', phone = (6,9)),
-                            Annotation('dog', phone =  (9,12)),
-                            Annotation('PL', phone =  (12,13)),
-                            Annotation('are', phone =  (13,15)),
-                            Annotation('too', phone =  (15,17)),
-                            Annotation('i', phone =  (17,18)),
-                            Annotation('guess', phone = (18,21)),
-                            ],
-                    'word':[
-                            Annotation('cats', phone = (0,4), type_properties = {'transcription': 'k.ae.t.s'}),
-                            Annotation('are', phone = (4,6), type_properties = {'transcription': 'aa.r'}),
-                            Annotation('cute', phone = (6,9), type_properties = {'transcription': 'k.uw.t'}),
-                            Annotation('dogs', phone =  (9,13), type_properties = {'transcription': 'd.aa.g.z'}),
-                            Annotation('are', phone =  (13,15), type_properties = {'transcription': 'aa.r'}),
-                            Annotation('too', phone =  (15,17), type_properties = {'transcription': 't.uw'}),
-                            Annotation('i', phone =  (17,18), type_properties = {'transcription': 'ay'}),
-                            Annotation('guess', phone = (18,21), type_properties = {'transcription': 'g.eh.s'}),
-                            ],
-                    'line': [
-                            Annotation('', phone = (0,9)),
-                            Annotation('', phone = (9,17)),
-                            Annotation('', phone =  (17,21))
-                            ]
-                    }
+    levels = [TextTranscriptionTier('transcription', 'word'),
+                TextOrthographyTier('spelling', 'word'),
+                TextMorphemeTier('morpheme', 'word'),
+                GroupingTier('line', 'line')]
 
-    annotations['phone'][0].super_id = annotations['word'][0].id
-    annotations['phone'][1].super_id = annotations['word'][0].id
-    annotations['phone'][2].super_id = annotations['word'][0].id
-    annotations['phone'][3].super_id = annotations['word'][0].id
-    annotations['phone'][4].super_id = annotations['word'][1].id
-    annotations['phone'][5].super_id = annotations['word'][1].id
-    annotations['phone'][6].super_id = annotations['word'][2].id
-    annotations['phone'][7].super_id = annotations['word'][2].id
-    annotations['phone'][8].super_id = annotations['word'][2].id
-    annotations['phone'][9].super_id = annotations['word'][3].id
-    annotations['phone'][10].super_id = annotations['word'][3].id
-    annotations['phone'][11].super_id = annotations['word'][3].id
-    annotations['phone'][12].super_id = annotations['word'][3].id
-    annotations['phone'][13].super_id = annotations['word'][4].id
-    annotations['phone'][14].super_id = annotations['word'][4].id
-    annotations['phone'][15].super_id = annotations['word'][5].id
-    annotations['phone'][16].super_id = annotations['word'][5].id
-    annotations['phone'][17].super_id = annotations['word'][6].id
-    annotations['phone'][18].super_id = annotations['word'][7].id
-    annotations['phone'][19].super_id = annotations['word'][7].id
-    annotations['phone'][20].super_id = annotations['word'][7].id
+    transcriptions = [('k.ae.t-s', 0), ('aa.r', 1), ('k.y.uw.t', 2),
+                    ('d.aa.g-z', 3), ('aa.r', 4), ('t.uw', 5),
+                    ('ay', 6), ('g.eh.s', 7)]
+    morphemes = [('cat-PL', 0), ('are', 1), ('cute', 2),
+                ('dog-PL', 3), ('are', 4), ('too',5),
+                ('i', 6), ('guess', 7)]
+    words = [('cats', 0), ('are', 1), ('cute', 2),
+            ('dogs', 3), ('are', 4), ('too', 5),
+            ('i', 6), ('guess', 7)]
+    lines = [(0, 2), (3, 5), (6, 7)]
 
-    annotations['morpheme'][0].super_id = annotations['word'][0].id
-    annotations['morpheme'][1].super_id = annotations['word'][0].id
-    annotations['morpheme'][2].super_id = annotations['word'][1].id
-    annotations['morpheme'][3].super_id = annotations['word'][2].id
-    annotations['morpheme'][4].super_id = annotations['word'][3].id
-    annotations['morpheme'][5].super_id = annotations['word'][3].id
-    annotations['morpheme'][6].super_id = annotations['word'][4].id
-    annotations['morpheme'][7].super_id = annotations['word'][5].id
-    annotations['morpheme'][8].super_id = annotations['word'][6].id
-    annotations['morpheme'][9].super_id = annotations['word'][7].id
+    levels[0].add(transcriptions)
+    levels[1].add(words)
+    levels[2].add(morphemes)
+    levels[3].add(lines)
 
-    annotations['word'][0].super_id = annotations['line'][0].id
-    annotations['word'][1].super_id = annotations['line'][0].id
-    annotations['word'][2].super_id = annotations['line'][0].id
-    annotations['word'][3].super_id = annotations['line'][1].id
-    annotations['word'][4].super_id = annotations['line'][1].id
-    annotations['word'][5].super_id = annotations['line'][1].id
-    annotations['word'][6].super_id = annotations['line'][2].id
-    annotations['word'][7].super_id = annotations['line'][2].id
+    hierarchy = {'word':'line', 'line': None}
+    data = parse_annotations('test', levels, hierarchy)
 
-    data.add_annotations(**annotations)
     return data
 
 
 @pytest.fixture(scope='session')
 def corpus_data_ur_sr():
-    levels = [AnnotationType('sr', None, 'word', base = True, token = True),
-                AnnotationType('word','sr','line', anchor = True),
-                AnnotationType('ur', None, None, token = False),
-                AnnotationType('line', 'word', None, anchor = False)]
-    data = DiscourseData('test',levels)
-    annotations = {'sr':[BaseAnnotation('k', 0.0, 0.1),
-                            BaseAnnotation('ae', 0.1, 0.2),
-                            BaseAnnotation('s', 0.2, 0.4),
-                            BaseAnnotation('aa', 0.5, 0.6),
-                            BaseAnnotation('r', 0.6, 0.7),
-                            BaseAnnotation('k', 0.8, 0.9),
-                            BaseAnnotation('u', 0.9, 1.1),
-                            BaseAnnotation('d',  2.0, 2.1),
-                            BaseAnnotation('aa', 2.1, 2.2),
-                            BaseAnnotation('g', 2.2, 2.25),
-                            BaseAnnotation('ah', 2.25, 2.3),
-                            BaseAnnotation('z', 2.3, 2.4),
-                            BaseAnnotation('aa', 2.4, 2.5),
-                            BaseAnnotation('r', 2.5, 2.6),
-                            BaseAnnotation('t', 2.6, 2.7),
-                            BaseAnnotation('uw', 2.7, 2.8),
-                            BaseAnnotation('ay', 3.0, 3.1),
-                            BaseAnnotation('g', 3.3, 3.4),
-                            BaseAnnotation('eh', 3.4, 3.5),
-                            BaseAnnotation('s', 3.5, 3.6),
-                            ],
-                    'word':[
-                            Annotation('cats', type_properties = {'ur':['k','ae','t','s']}, sr =  (0,3)),
-                            Annotation('are', type_properties = {'ur':['aa','r']}, sr =  (3,5)),
-                            Annotation('cute', type_properties = {'ur':['k','uw','t']}, sr =  (5,7)),
-                            Annotation('dogs', type_properties = {'ur':['d','aa','g','z']}, sr =  (7,12)),
-                            Annotation('are', type_properties = {'ur':['aa','r']}, sr =  (12,14)),
-                            Annotation('too', type_properties = {'ur':['t','uw']}, sr =  (14,16)),
-                            Annotation('i', type_properties = {'ur':['ay']}, sr =  (16,17)),
-                            Annotation('guess', type_properties = {'ur':['g','eh','s']}, sr =  (17,20)),
-                            ],
-                    'line': [
-                            Annotation('', sr = (0,7)),
-                            Annotation('', sr = (7,16)),
-                            Annotation('', sr =  (16,20))
-                            ]
-                    }
-
-    annotations['sr'][0].super_id = annotations['word'][0].id
-    annotations['sr'][1].super_id = annotations['word'][0].id
-    annotations['sr'][2].super_id = annotations['word'][0].id
-    annotations['sr'][3].super_id = annotations['word'][1].id
-    annotations['sr'][4].super_id = annotations['word'][1].id
-    annotations['sr'][5].super_id = annotations['word'][2].id
-    annotations['sr'][6].super_id = annotations['word'][2].id
-    annotations['sr'][7].super_id = annotations['word'][3].id
-    annotations['sr'][8].super_id = annotations['word'][3].id
-    annotations['sr'][9].super_id = annotations['word'][3].id
-    annotations['sr'][10].super_id = annotations['word'][3].id
-    annotations['sr'][11].super_id = annotations['word'][3].id
-    annotations['sr'][12].super_id = annotations['word'][4].id
-    annotations['sr'][13].super_id = annotations['word'][4].id
-    annotations['sr'][14].super_id = annotations['word'][5].id
-    annotations['sr'][15].super_id = annotations['word'][5].id
-    annotations['sr'][16].super_id = annotations['word'][6].id
-    annotations['sr'][17].super_id = annotations['word'][7].id
-    annotations['sr'][18].super_id = annotations['word'][7].id
-    annotations['sr'][19].super_id = annotations['word'][7].id
-
-    annotations['word'][0].super_id = annotations['line'][0].id
-    annotations['word'][1].super_id = annotations['line'][0].id
-    annotations['word'][2].super_id = annotations['line'][0].id
-    annotations['word'][3].super_id = annotations['line'][1].id
-    annotations['word'][4].super_id = annotations['line'][1].id
-    annotations['word'][5].super_id = annotations['line'][1].id
-    annotations['word'][6].super_id = annotations['line'][2].id
-    annotations['word'][7].super_id = annotations['line'][2].id
-    data.add_annotations(**annotations)
+    levels = [SegmentTier('sr', 'phone'),
+                OrthographyTier('word', 'word'),
+                TranscriptionTier('ur', 'word')]
+    hierarchy = {'phone': 'word', 'word': None}
+    srs = [('k', 0.0, 0.1), ('ae', 0.1, 0.2), ('s', 0.2, 0.4),
+            ('aa', 0.5, 0.6), ('r', 0.6, 0.7),
+            ('k', 0.8, 0.9), ('u', 0.9, 1.1),
+            ('d',  2.0, 2.1), ('aa', 2.1, 2.2), ('g', 2.2, 2.25),
+                ('ah', 2.25, 2.3), ('z', 2.3, 2.4),
+            ('aa', 2.4, 2.5), ('r', 2.5, 2.6),
+            ('t', 2.6, 2.7), ('uw', 2.7, 2.8),
+            ('ay', 3.0, 3.1),
+            ('g', 3.3, 3.4), ('eh', 3.4, 3.5), ('s', 3.5, 3.6)]
+    words = [('cats', 0.0, 0.4), ('are', 0.5, 0.7), ('cute', 0.8, 1.1),
+            ('dogs', 2.0, 2.4), ('are', 2.4, 2.6), ('too', 2.6, 2.8),
+            ('i', 3.0, 3.1), ('guess', 3.3, 3.6)]
+    urs = [('k.ae.t.s', 0.0, 0.4), ('aa.r', 0.5, 0.7), ('k.y.uw.t', 0.8, 1.1),
+            ('d.aa.g.z', 2.0, 2.4), ('aa.r', 2.4, 2.6), ('t.uw', .6, 2.8),
+            ('ay', 3.0, 3.1), ('g.eh.s', 3.3, 3.6)]
+    levels[0].add(srs)
+    levels[1].add(words)
+    levels[2].add(urs)
+    data = parse_annotations('test', levels, hierarchy)
     return data
 
 
@@ -349,154 +164,39 @@ def lexicon_data():
 
 @pytest.fixture(scope='session')
 def corpus_data_syllable_morpheme_srur():
-    levels = [AnnotationType('ur', None, 'word', base = True, token = False),
-                AnnotationType('sr', None, 'word', base = True, token = True),
-                AnnotationType('syllable', 'sr', 'word'),
-                AnnotationType('morpheme', 'ur', 'word'),
-                AnnotationType('word','phone','line', anchor = True),
-                AnnotationType('line', 'word', None)]
-    data = DiscourseData('test',levels)
-    annotations = {'ur':[BaseAnnotation('b'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('k'),
-                            BaseAnnotation('s'),
-                            BaseAnnotation('ah'),
-                            BaseAnnotation('z'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('r'),
-                            BaseAnnotation('f'),
-                            BaseAnnotation('ao'),
-                            BaseAnnotation('r'),
-                            BaseAnnotation('p'),
-                            BaseAnnotation('ae'),
-                            BaseAnnotation('k'),
-                            BaseAnnotation('ih'),
-                            BaseAnnotation('ng'),
-                            ],
-                    'sr':[BaseAnnotation('b'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('k'),
-                            BaseAnnotation('s'),
-                            BaseAnnotation('ah'),
-                            BaseAnnotation('s'),
-                            BaseAnnotation('er'),
-                            BaseAnnotation('f'),
-                            BaseAnnotation('er'),
-                            BaseAnnotation('p'),
-                            BaseAnnotation('ae'),
-                            BaseAnnotation('k'),
-                            BaseAnnotation('eng'),
-                            ],
-                    'syllable':[
-                            Annotation('', sr = (0,3)),
-                            Annotation('', sr = (3,6)),
-                            Annotation('', sr = (6,7)),
-                            Annotation('', sr = (7,9)),
-                            Annotation('', sr =  (9,11)),
-                            Annotation('', sr =  (11,13)),
-                            ],
-                    'morpheme':[
-                            Annotation('box', ur = (0,4)),
-                            Annotation('PL', ur = (4,6)),
-                            Annotation('are', ur = (6,8)),
-                            Annotation('for', ur = (8,11)),
-                            Annotation('pack', ur =  (11,14)),
-                            Annotation('PROG', ur =  (14,16)),
-                            ],
-                    'word':[
-                            Annotation('boxes', ur = (0,6), sr = (0,6)),
-                            Annotation('are', ur = (6,8), sr =  (6,7)),
-                            Annotation('for', ur = (8,11), sr =  (7,9)),
-                            Annotation('packing', ur =  (11,16), sr = (9,13)),
-                            ],
-                    'line':[Annotation('', sr = (0,13))]
-                    }
-    data.add_annotations(**annotations)
+
+    levels = [SegmentTier('sr', 'phone'),
+                TranscriptionTier('ur', 'word'),
+                GroupingTier('syllable', 'syllable'),
+                MorphemeTier('morphemes', 'word'),
+                OrthographyTier('word', 'word'),
+                GroupingTier('line', 'line')]
+
+    srs = [('b', 0, 0.1), ('aa', 0.1, 0.2), ('k', 0.2, 0.3), ('s', 0.3, 0.4),
+                ('ah', 0.4, 0.5), ('s', 0.5, 0.6),
+            ('er', 0.7, 0.8),
+            ('f', 0.9, 1.0), ('er', 1.0, 1.1),
+            ('p', 1.2, 1.3), ('ae', 1.3, 1.4), ('k', 1.4, 1.5), ('eng', 1.5, 1.6)]
+    urs = [('b.aa.k.s-ah.z', 0, 0.6), ('aa.r', 0.7, 0.8),
+            ('f.ao.r', 0.9, 1.1), ('p.ae.k-ih.ng', 1.2, 1.6)]
+    syllables = [(0, 0.3), (0.3, 0.6), (0.7, 0.8), (0.9, 1.1),
+                (1.2, 1.5), (1.5, 1.6)]
+    morphemes = [('box-PL', 0, 0.6), ('are', 0.7, 0.8),
+                ('for', 0.9, 1.1), ('pack-PROG', 1.2, 1.6)]
+    words = [('boxes', 0, 0.6), ('are', 0.7, 0.8),
+            ('for', 0.9, 1.1), ('packing', 1.2, 1.6)]
+    lines = [(0, 1.6)]
+
+    levels[0].add(srs)
+    levels[1].add(urs)
+    levels[2].add(syllables)
+    levels[3].add(morphemes)
+    levels[4].add(words)
+    levels[5].add(lines)
+    hierarchy = {'phone': 'syllable', 'syllable': 'word',
+            'word':'line', 'line':None}
+    data = parse_annotations('test', levels, hierarchy)
     return data
-
-@pytest.fixture(scope='session')
-def corpus_data_syllable_morpheme():
-    levels = [AnnotationType('phone', None, 'word', base = True, token = True),
-                AnnotationType('syllable', 'phone', 'word'),
-                AnnotationType('morpheme', 'phone', 'word'),
-                AnnotationType('word','phone',None, anchor = True)]
-    data = DiscourseData('test',levels)
-    annotations = {'phone':[BaseAnnotation('b'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('k'),
-                            BaseAnnotation('s'),
-                            BaseAnnotation('ah'),
-                            BaseAnnotation('z'),
-                            BaseAnnotation('aa'),
-                            BaseAnnotation('r'),
-                            BaseAnnotation('f'),
-                            BaseAnnotation('ao'),
-                            BaseAnnotation('r'),
-                            BaseAnnotation('p'),
-                            BaseAnnotation('ae'),
-                            BaseAnnotation('k'),
-                            BaseAnnotation('ih'),
-                            BaseAnnotation('ng'),
-                            ],
-                    'syllable':[
-                            Annotation('', phone = (0,3)),
-                            Annotation('', phone = (3,6)),
-                            Annotation('', phone = (6,8)),
-                            Annotation('', phone = (8,11)),
-                            Annotation('', phone =  (11,13)),
-                            Annotation('', phone =  (13,16)),
-                            ],
-                    'morpheme':[
-                            Annotation('box', phone = (0,4)),
-                            Annotation('PL', phone = (4,6)),
-                            Annotation('are', phone = (6,8)),
-                            Annotation('for', phone = (8,11)),
-                            Annotation('pack', phone =  (11,14)),
-                            Annotation('PROG', phone =  (14,16)),
-                            ],
-                    'word':[
-                            Annotation('boxes', phone = (0,6)),
-                            Annotation('are', phone = (6,8)),
-                            Annotation('for', phone = (8,11)),
-                            Annotation('packing', phone = (11,16)),
-                            ]
-                    }
-    annotations['phone'][0].super_id = annotations['word'][0].id
-    annotations['phone'][1].super_id = annotations['word'][0].id
-    annotations['phone'][2].super_id = annotations['word'][0].id
-    annotations['phone'][3].super_id = annotations['word'][0].id
-    annotations['phone'][4].super_id = annotations['word'][0].id
-    annotations['phone'][5].super_id = annotations['word'][0].id
-    annotations['phone'][6].super_id = annotations['word'][1].id
-    annotations['phone'][7].super_id = annotations['word'][1].id
-    annotations['phone'][8].super_id = annotations['word'][2].id
-    annotations['phone'][9].super_id = annotations['word'][2].id
-    annotations['phone'][10].super_id = annotations['word'][2].id
-    annotations['phone'][11].super_id = annotations['word'][3].id
-    annotations['phone'][12].super_id = annotations['word'][3].id
-    annotations['phone'][13].super_id = annotations['word'][3].id
-    annotations['phone'][14].super_id = annotations['word'][3].id
-    annotations['phone'][15].super_id = annotations['word'][3].id
-
-    annotations['syllable'][0].super_id = annotations['word'][0].id
-    annotations['syllable'][1].super_id = annotations['word'][0].id
-    annotations['syllable'][2].super_id = annotations['word'][1].id
-    annotations['syllable'][3].super_id = annotations['word'][2].id
-    annotations['syllable'][4].super_id = annotations['word'][3].id
-    annotations['syllable'][5].super_id = annotations['word'][3].id
-
-    annotations['morpheme'][0].super_id = annotations['word'][0].id
-    annotations['morpheme'][1].super_id = annotations['word'][0].id
-    annotations['morpheme'][2].super_id = annotations['word'][1].id
-    annotations['morpheme'][3].super_id = annotations['word'][2].id
-    annotations['morpheme'][4].super_id = annotations['word'][3].id
-    annotations['morpheme'][5].super_id = annotations['word'][3].id
-
-    data.add_annotations(**annotations)
-    return data
-
-
-
 
 @pytest.fixture(scope='session')
 def unspecified_test_corpus():
@@ -597,6 +297,6 @@ def acoustic_config(graph_db, textgrid_test_dir):
     acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
     with CorpusContext(config) as c:
         c.reset()
-        annotation_types = inspect_discourse_textgrid(acoustic_path)
-        load_discourse_textgrid(c, acoustic_path, annotation_types)
+        parser = inspect_textgrid(acoustic_path)
+        c.load(parser, acoustic_path)
     return config

@@ -12,7 +12,7 @@ from .helper import anchor_attributes, type_attributes
 
 from .cypher import query_to_cypher, query_to_params
 
-from polyglotdb.io.csv import save_results
+from polyglotdb.io import save_results
 
 
 class GraphQuery(object):
