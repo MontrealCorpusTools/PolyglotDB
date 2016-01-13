@@ -11,6 +11,20 @@ from ..types.content import (OrthographyAnnotationType, TranscriptionAnnotationT
                             NumericAnnotationType)
 
 class CsvParser(BaseParser):
+    '''
+    Parser for CSV files.
+
+    Parameters
+    ----------
+    annotation_types: list
+        Annotation types of the files to parse
+    column_delimiter : str
+        Delimiter for columns
+    stop_check : callable, optional
+        Function to check whether to halt parsing
+    call_back : callable, optional
+        Function to output progress messages
+    '''
     _extensions = ['.txt', '.csv']
 
     def __init__(self, annotation_types, column_delimiter,
@@ -24,6 +38,19 @@ class CsvParser(BaseParser):
         self.make_label = True
 
     def parse_discourse(self, path):
+        '''
+        Parse a CSV file for later importing.
+
+        Parameters
+        ----------
+        path : str
+            Path to CSV file
+
+        Returns
+        -------
+        :class:`~polyglotdb.io.discoursedata.DiscourseData`
+            Parsed data from the file
+        '''
         name = os.path.splitext(os.path.split(path)[1])[0]
         for a in self.annotation_types:
             if a.name == 'transcription' and not isinstance(a, TranscriptionAnnotationType):

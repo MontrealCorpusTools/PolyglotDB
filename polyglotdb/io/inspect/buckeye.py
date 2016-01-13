@@ -8,7 +8,8 @@ from ..parsers import BuckeyeParser
 
 def inspect_buckeye(word_path):
     """
-    Generate a list of AnnotationTypes for the Buckeye corpus
+    Generate a :class:`~polyglotdb.io.parsers.buckeye.BuckeyeParser`
+    for the Buckeye corpus.
 
     Parameters
     ----------
@@ -17,8 +18,8 @@ def inspect_buckeye(word_path):
 
     Returns
     -------
-    list of AnnotationTypes
-        Auto-detected AnnotationTypes for the Buckeye corpus
+    :class:`~polyglotdb.io.parsers.buckeye.BuckeyeParser`
+        Auto-detected parser for the Buckeye corpus
     """
     annotation_types = [OrthographyTier('word', 'word'),
                             TranscriptionTier('transcription', 'word'),

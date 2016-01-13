@@ -5,9 +5,38 @@ from .base import BaseParser, DiscourseData
 from ..helper import find_wav_path
 
 class TimitParser(BaseParser):
+    '''
+    Parser for the TIMIT corpus.
+
+    Has annotation types for word labels and surface transcription labels.
+
+    Parameters
+    ----------
+    annotation_types: list
+        Annotation types of the files to parse
+    hierarchy : :class:`~polyglotdb.structure.Hierarchy`
+        Details of how linguistic types relate to one another
+    stop_check : callable, optional
+        Function to check whether to halt parsing
+    call_back : callable, optional
+        Function to output progress messages
+    '''
     _extensions = ['.wrd']
 
     def parse_discourse(self, word_path):
+        '''
+        Parse a TIMIT file for later importing.
+
+        Parameters
+        ----------
+        word_path : str
+            Path to TIMIT .wrd file
+
+        Returns
+        -------
+        :class:`~polyglotdb.io.discoursedata.DiscourseData`
+            Parsed data from the file
+        '''
 
         name, ext = os.path.splitext(os.path.split(word_path)[1])
         if ext == '.WRD':

@@ -7,8 +7,8 @@ from ..parsers import OrthographyTextParser
 
 def inspect_orthography(path):
     """
-    Generate a OrthographyTextParser for a specified text file for parsing
-    it as an orthographic text
+    Generate a :class:`~polyglotdb.io.parsers.text_orthography.OrthographyTextParser`
+    for a specified text file for parsing it as an orthographic text
 
     Parameters
     ----------
@@ -20,7 +20,7 @@ def inspect_orthography(path):
 
     Returns
     -------
-    OrthographyTextParser
+    :class:`~polyglotdb.io.parsers.text_orthography.OrthographyTextParser`
         Autodetected parser for the text file
     """
     a = TextOrthographyTier('word', 'word')
