@@ -16,3 +16,37 @@ def test_basic(subannotation_config):
         print(res[0])
         assert(res[0].label == 'g')
         assert(round(res[0].voicing_during_closure, 2) == 0.04)
+
+def test_add_token_label(subannotation_config):
+    with CorpusContext(subannotation_config) as c:
+        q = c.query_graph(c.phone).filter(c.phone.label == 'ae')
+        q.set_token('ae', aeness = 'such ae')
+
+        q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')
+        results = q.all()
+        assert(len(results) > 0)
+        assert(results[0].label == 'ae')
+
+        q.set_token(aeness = None)
+
+        q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')
+        results = q.all()
+        assert(len(results) == 0)
+
+        q = c.query_graph(c.phone).filter(c.phone.label == 't')
+        q.set_type('t', tness = 'such t')
+
+        q = c.query_graph(c.phone.subset_type('t'))
+        results = q.all()
+        assert(len(results) > 0)
+        assert(results[0].label == 't')
+
+
+def test_delete(subannotation_config):
+    with CorpusContext(subannotation_config) as c:
+        q = c.query_graph(c.phone).filter(c.phone.label == 'ae')
+        q.delete()
+
+        q = c.query_graph(c.phone).filter(c.phone.label == 'ae')
+        results = q.all()
+        assert(len(results) == 0)

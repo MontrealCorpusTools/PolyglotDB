@@ -4,9 +4,7 @@ class Hierarchy(object):
     def __init__(self, data = None):
         if data is None:
             data = {}
-
         self._data = data
-
         self.subannotations = {}
 
     def keys(self):
@@ -26,3 +24,7 @@ class Hierarchy(object):
 
     def __contains__(self, item):
         return item in self._data
+
+    def update(self, other):
+        self._data.update(other._data)
+        self.subannotations.update(other.subannotations)

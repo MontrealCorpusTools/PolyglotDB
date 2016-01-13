@@ -13,6 +13,8 @@ from py2neo.cypher.error.schema import IndexAlreadyExists
 
 from .config import CorpusConfig
 
+from .structure import Hierarchy
+
 from .io.graph import (data_to_graph_csvs, import_csvs,
                     data_to_type_csvs, import_type_csvs)
 
@@ -63,7 +65,7 @@ class CorpusContext(object):
 
         self.annotation_types = set()
         self.is_timed = False
-        self.hierarchy = {}
+        self.hierarchy = Hierarchy({})
 
         self.lexicon = Lexicon(self)
 
@@ -92,7 +94,7 @@ class CorpusContext(object):
             self.hierarchy = var['hierarchy']
         except FileNotFoundError:
             self.annotation_types = set()
-            self.hierarchy = {}
+            self.hierarchy = Hierarchy({})
 
     def save_variables(self):
         with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
@@ -149,7 +151,7 @@ class CorpusContext(object):
         self.graph.cypher.execute('''MATCH (n:%s) DETACH DELETE n''' % (self.corpus_name))
 
         self.annotation_types = set()
-        self.hierarchy = {}
+        self.hierarchy = Hierarchy({})
 
     def reset(self):
         '''
@@ -224,7 +226,6 @@ class CorpusContext(object):
         '''
         data = list(parsed_data.values())[0]
         self.annotation_types.update(data.annotation_types)
-        self.hierarchy = data.hierarchy
         data_to_type_csvs(parsed_data, self.config.temporary_directory('csv'))
         import_type_csvs(self, list(parsed_data.values())[0])
 
@@ -272,6 +273,7 @@ class CorpusContext(object):
         data_to_graph_csvs(data, self.config.temporary_directory('csv'))
         import_csvs(self, data)
         self.update_sql_database(data)
+        self.hierarchy.update(data.hierarchy)
         if data.is_timed:
             self.is_timed = True
         else:

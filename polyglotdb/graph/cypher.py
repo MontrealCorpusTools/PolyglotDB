@@ -266,56 +266,6 @@ def generate_hierarchical_match(annotation_levels, hierarchy):
                 statements.append(statement)
     return statements
 
-def generate_type_matches(query, filter_annotations):
-    analyzed = defaultdict(set)
-    defined = set()
-    for c in query._criterion:
-        for a in c.attributes:
-            if a.annotation.has_subquery:
-                continue
-            type_token =  'type' if a.label in type_attributes else 'token'
-            analyzed[a.annotation].add(type_token)
-    for a in query._columns + query._group_by + query._additional_columns:
-        if a.annotation.has_subquery:
-            continue
-        type_token =  'type' if a.label in type_attributes else 'token'
-        analyzed[a.annotation].add(type_token)
-
-    matches = []
-    optional_matches = []
-    for k, v in analyzed.items():
-        if 'type' in v:
-            statement = type_match_template.format(token_alias = k.alias,
-                                        type_alias = k.define_type_alias)
-            if k.pos == 0 or k in filter_annotations:
-                matches.append(statement)
-            else:
-                optional_matches.append(statement)
-            defined.add(k.type_alias)
-    return matches, optional_matches, defined
-
-def generate_additional_withs(query):
-    defined = set()
-    for c in query._criterion:
-        for a in c.attributes:
-            if hasattr(a, 'for_with'):
-                defined.add(a.for_with())
-    for a in query._columns + query._group_by + query._additional_columns:
-        if hasattr(a, 'for_with'):
-            defined.add(a.for_with())
-    return defined
-
-def generate_additional_matches(query):
-    matches = []
-    for c in query._criterion:
-        for a in c.attributes:
-            if hasattr(a, 'for_match'):
-                matches.append(a.for_match())
-    for a in query._columns + query._group_by + query._additional_columns:
-        if hasattr(a, 'for_match'):
-            matches.append(a.for_match())
-    return matches
-
 def generate_withs(query, all_withs):
     statements = [withs_to_string(all_withs)]
     for c in query._criterion:
@@ -377,11 +327,6 @@ def query_to_cypher(query):
 
     statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
     match_strings.extend(statements)
-
-    #statements,optional_statements, withs = generate_type_matches(query, filter_annotations)
-    #all_withs.update(withs)
-    #match_strings.extend(statements)
-    #optional_match_strings.extend(optional_statements)
 
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
 
