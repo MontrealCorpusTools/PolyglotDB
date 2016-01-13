@@ -28,8 +28,7 @@ class GraphQuery(object):
     to_find : str
         Name of the annotation type to search for
     """
-    def __init__(self, corpus, to_find, is_timed):
-        self.is_timed = is_timed
+    def __init__(self, corpus, to_find):
         self.corpus = corpus
         self.to_find = to_find
         self._criterion = []

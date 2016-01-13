@@ -11,8 +11,38 @@ from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
 from ..helper import find_wav_path
 
 class TextgridParser(BaseParser):
+    '''
+    Parser for Praat TextGrid files.
+
+    Parameters
+    ----------
+    annotation_types: list
+        Annotation types of the files to parse
+    hierarchy : :class:`~polyglotdb.structure.Hierarchy`
+        Details of how linguistic types relate to one another
+    make_transcription : bool, defaults to True
+        If true, create a word attribute for transcription based on segments
+        that are contained by the word
+    stop_check : callable, optional
+        Function to check whether to halt parsing
+    call_back : callable, optional
+        Function to output progress messages
+    '''
     _extensions = ['.textgrid']
     def parse_discourse(self, path):
+        '''
+        Parse a TextGrid file for later importing.
+
+        Parameters
+        ----------
+        path : str
+            Path to TextGrid file
+
+        Returns
+        -------
+        :class:`~polyglotdb.io.discoursedata.DiscourseData`
+            Parsed data from the file
+        '''
         tg = TextGrid()
         tg.read(path)
 

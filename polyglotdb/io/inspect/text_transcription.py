@@ -9,8 +9,8 @@ from ..parsers import TranscriptionTextParser
 
 def inspect_transcription(path):
     """
-    Generate a TranscriptionTextParser for a specified text file for parsing
-    it as a transcribed text
+    Generate a :class:`~polyglotdb.io.parsers.text_transcription.TranscriptionTextParser`
+    for a specified text file for parsing it as a transcribed text
 
     Parameters
     ----------
@@ -19,7 +19,7 @@ def inspect_transcription(path):
 
     Returns
     -------
-    TranscriptionTextParser
+    :class:`~polyglotdb.io.parsers.text_transcription.TranscriptionTextParser`
         Autodetected parser for the text file
     """
     trans_delimiters = ['.', ';', ',']

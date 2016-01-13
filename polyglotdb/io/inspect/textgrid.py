@@ -69,7 +69,7 @@ def guess_tiers(tg):
 
 def inspect_textgrid(path):
     """
-    Generate a list of AnnotationTypes for a specified TextGrid file
+    Generate a :class:`~polyglotdb.io.parsers.textgrid.TextgridParser` for a specified TextGrid file
 
     Parameters
     ----------
@@ -78,8 +78,8 @@ def inspect_textgrid(path):
 
     Returns
     -------
-    list of AnnotationTypes
-        Autodetected AnnotationTypes for the TextGrid file
+    :class:`~polyglotdb.io.parsers.textgrid.TextgridParser`
+        Autodetected parser for the TextGrid file
     """
     trans_delimiters = ['.',' ', ';', ',']
     textgrids = []

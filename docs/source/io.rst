@@ -8,16 +8,27 @@ In addition to documenting the IO module of PolyglotDB, this document
 should serve as a guide for implementing future importers for additional
 formats.
 
-Importers
-=========
+Import pipeline
+===============
 
-Importers to be used are either discourse importers (i.e, ``load_discourse_texgrid``)
-or directory importers (i.e. ``load_directory_textgrid``).  Importing a
-directory requires that all files in the directory have the same format.
-For instance, TextGrids in a directory to import should have identical format, with
-the same number of tiers, the same names of tiers, etc.
+Importing a corpus consists of several steps.  First, a file must be
+inspected with the relevant inspect function (i.e., ``inspect_textgrid`` or
+``inspect_buckeye``).  These functions generate Parsers for a given format
+that allow annotations across many tiers to be coalesced into linguistic
+types (word, segments, etc).
 
-Currently there are the following importers:
+As an example, suppose a TextGrid has an interval tier for word labels,
+an interval tier for phone labels, tiers for annotating stop information
+(closure duration, bursts, VOT, etc).  In this case, our parser would want
+to associate the stop information annotations with the phones (or rather a
+subset of the phones), and not have them as a separate linguistic type.
+
+Following inspection, the file can be imported easily using a CorpusContext's
+``load`` function.  Under the hood, what happens is the Parser object creates
+standardized linguistic annotations from the annotations in the text file,
+which are then imported into the database.
+
+Currently the following formats are supported:
 
 - TextGrid
 - Column-delimited text files (i.e. CSV)
@@ -35,102 +46,142 @@ Currently there are the following importers:
 Inspect
 -------
 
-Inspect functions (i.e. ``inspect_discourse_textgrid``) return guesses for
-the types of annotations present in a given file (or files in a given
-directory).  They return a list of AnnotationTypes, with the length depending
-on aspects of the format.  For instance, the inspect function for TextGrids
-will return an AnnotationType for each interval tier in the TextGrid.
+Inspect functions (i.e., :code:`inspect_textgrid`) return a guess for
+how to parse the annotations present in a given file (or files in a given
+directory).  They return a parser of the respective type (i.e., :code:`TextgridParser`)
+with an attribute for the :code:`annotation_types` detected.  For instance, the inspect function for TextGrids
+will return a parser with annotation types for each interval and point tier in the TextGrid.
 
 Details of inspect functions
 ````````````````````````````
 
 Textgrid:
 
-- AnnotationType per interval tier
-- The AnnotationType with the most number of intervals is guessed to be
-  the one corresponding to segments
-- The AnnotationType with the least number of intervals and closest to
-  the first tier (top of the TextGrid in Praat) is guessed to be the
-  word tier
-- All interval tiers with the same number of intervals as the guessed
-  word tier are guessed to be attributes of the words (i.e. part-of-speech)
+- Annotation types:
 
-.. note:: At the moment, the word guessing is most fragile.  Segments are
-   generally guessed fairly accurately (unless a TextGrid is annotated with
-   parts of segments).  A possible improvement would be to guess how many
-   words should be in the TextGrid given the number of segments and some
-   segment/word notion, so that larger annotations (like speaker, sentence, etc)
-   are not improperly detected as words.
+  - AnnotationType per tier
+  - All interval tiers with the same number of intervals as the guessed
+    word tier are guessed to be attributes of the words (i.e. part-of-speech)
+
+.. note:: The linguistic types of annotation types (i.e., does a given
+   annotation type contain an attribute of a word or a segment?)) is guessed
+   via the rate/duration of the annotations in a tier.  Using average durations
+   per discourse from the Buckeye Corpus, probability of the tier being a
+   word or segment annotation is calculated and the higher probability determines
+   the guess.  Currently the only guesses for linguistic types are "words"
+   and "segments".
+
+- Hierarchy:
+
+  - Posits segments as contained by words (if both exist)
 
 CSV:
 
-- AnnotationType per column
+- Annotation types:
+
+  - AnnotationType per column
+
+- Hierarchy:
+
+  - Words only
 
 Interlinear gloss files:
 
-- Guesses the number of lines per gloss based on the number of words in
-  each line (so 3 3 3 4 4 4, would return 3 lines per gloss with 2 total
-  glosses and 2 2 2 2 3 3 would return 2 lines per gloss with 3 total glosses)
-- AnnotationType per guessed number of lines per gloss
-- First AnnotationType is guessed to be the orthography of the word
-- Guesses the types of the remaining AnnotationTypes based on their content, i.e.,
-  if they contain a ``.``, they are guessed to be a transcription.
+- Annotation types:
+
+  - Guesses the number of lines per gloss based on the number of words in
+    each line (so 3 3 3 4 4 4, would return 3 lines per gloss with 2 total
+    glosses and 2 2 2 2 3 3 would return 2 lines per gloss with 3 total glosses)
+  - AnnotationType per guessed number of lines per gloss
+  - First AnnotationType is guessed to be the orthography of the word
+  - Guesses the types of the remaining AnnotationTypes based on their content, i.e.,
+    if they contain a ``.``, they are guessed to be a transcription.
+
+- Hierarchy:
+
+  - Words only
 
 Orthographic text files:
 
-- One AnnotationType for the word
+- Annotation types:
+
+  - One AnnotationType for the word
+
+- Hierarchy:
+
+  - Words only
 
 Transcribed text files:
 
-- One AnnotationType for the word (with the property of having a transcription)
+- Annotation types:
+
+  - One AnnotationType for the word (with the property of having a transcription)
+
+- Hierarchy:
+
+  - Words only
 
 Buckeye:
 
-- One AnnotationType for words
-- Words have type properties for underlying transcription and token
-  properties for their part of speech
-- One AnnotationType for surface transcriptions
+- Annotation types:
+
+  - One AnnotationType for words
+  - Words have type properties for underlying transcription and token
+    properties for their part of speech
+  - One AnnotationType for surface transcriptions
+
+- Hierarchy:
+
+  - Posits ``surface_transcriptions`` as contained by words
 
 TIMIT:
 
-- One AnnotationType for words
-- One AnnotationType for surface transcriptions
-- Timepoints in number of samples get converted to seconds
+- Annotation types:
 
-Format to DiscourseData
------------------------
+  - One AnnotationType for words
+  - One AnnotationType for surface transcriptions
+  - Timepoints in number of samples get converted to seconds
 
-The lion's share of work gets done in functions that read the specific
-format and output a DiscourseData object.  Their names are of the form
-"format_to_data" (i.e. ``textgrid_to_data``).
+- Hierarchy:
 
-These functions take a path to a file and a list of AnnotationTypes and
-parse the file into a DiscourseData object.  Loading a DiscourseData object
-into PolyglotDB is then straightforward.
-
+  - Posits ``surface_transcriptions`` as contained by words
 
 Load discourse
 --------------
 
-Discourse loading functions are wrappers around the format-to-data functions
-and calls to a CorpusContext's ``add_discourse`` function.
+Loading of discourses is done via a CorpusContext's ``load`` function:
+
+.. code-block:: python
+
+   import polyglotdb.io as pgio
+
+   parser = pgio.inspect_textgrid('/path/to/textgrid.TextGrid')
+
+   with CorpusContext(corpus_name = 'my_corpus', **graph_db_login) as c:
+       c.load(parser, '/path/to/textgrid.TextGrid')
+
+Alternatively, ``load_discourse`` can be used with the same arguments.
+The ``load`` function automatically determines whether the input path to
+be loaded is a single file or a folder, and proceeds accordingly.
 
 Load directory
 --------------
 
-Directory loading functions find all files matching the desired format
-in the directory as well as subdirectories (corpora often have subdirectories
-for each speaker).  For each such file, the function executes a similar
-process to loading single discourses.
+As stated above, a CorpusContext's ``load`` function will import a directory of
+files as well as a single file, but the ``load_directory`` can be explicitly
+called as well:
+
+.. code-block:: python
+
+   import polyglotdb.io as pgio
+
+   parser = pgio.inspect_textgrid('/path/to/textgrids')
+
+   with CorpusContext(corpus_name = 'my_corpus', **graph_db_login) as c:
+       c.load_directory(parser, '/path/to/textgrids')
 
 Exporters
 =========
 
-Needs work
-
-Export discourse
-----------------
-
-Export directory
-----------------
+Under development.
 

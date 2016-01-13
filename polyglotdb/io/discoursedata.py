@@ -8,16 +8,19 @@ class DiscourseData(object):
     name : str
         Identifier for the discourse
     annotation_types : list
-        List of :class:`AnnotationType` objects
-
+        List of :class:`BaseAnnotationType` objects
+    hierarchy : :class:`~polyglotdb.structure.Hierarchy`
+        Details of how linguistic types relate to one another
 
     Attributes
     ----------
     name : str
         Identifier for the discourse
     data : dict
-        Dictionary containing :class:`AnnotationType` objects indexed by
+        Dictionary containing :class:`BaseAnnotationType` objects indexed by
         their name
+    segment_type : str or None
+        Identifier of the segment linguistic annotation, if it exists
     wav_path : str or None
         Path to sound file if it exists
 
@@ -31,7 +34,6 @@ class DiscourseData(object):
                 self.segment_type = k
         self.hierarchy = hierarchy
         self.wav_path = None
-        self.is_timed = False
 
     def __getitem__(self, key):
         return self.data[key]

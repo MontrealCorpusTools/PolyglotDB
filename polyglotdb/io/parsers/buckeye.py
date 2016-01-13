@@ -13,10 +13,39 @@ FILLERS = set(['uh','um','okay','yes','yeah','oh','heh','yknow','um-huh',
 from ..helper import find_wav_path
 
 class BuckeyeParser(BaseParser):
+    '''
+    Parser for the Buckeye corpus.
 
+    Has annotation types for word labels, word transcription, word part of
+    speech, and surface transcription labels.
+
+    Parameters
+    ----------
+    annotation_types: list
+        Annotation types of the files to parse
+    hierarchy : :class:`~polyglotdb.structure.Hierarchy`
+        Details of how linguistic types relate to one another
+    stop_check : callable, optional
+        Function to check whether to halt parsing
+    call_back : callable, optional
+        Function to output progress messages
+    '''
     _extensions = ['.words']
     def parse_discourse(self, word_path):
+        '''
+        Parse a Buckeye file for later importing.
 
+        Parameters
+        ----------
+        word_path : str
+            Path to Buckeye .words file
+
+        Returns
+        -------
+        DiscourseData
+            Parsed data from the file
+        '''
+        self.make_transcription = False
         name, ext = os.path.splitext(os.path.split(word_path)[1])
         if ext == '.words':
             phone_ext = '.phones'

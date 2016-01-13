@@ -7,6 +7,23 @@ from ..types.parsing import Tobi, BreakIndex
 from ..discoursedata import DiscourseData
 
 class BaseParser(object):
+    '''
+    Base parser, extend this class for new parsers.
+
+    Parameters
+    ----------
+    annotation_types: list
+        Annotation types of the files to parse
+    hierarchy : :class:`~polyglotdb.structure.Hierarchy`
+        Details of how linguistic types relate to one another
+    make_transcription : bool, defaults to True
+        If true, create a word attribute for transcription based on segments
+        that are contained by the word
+    stop_check : callable, optional
+        Function to check whether to halt parsing
+    call_back : callable, optional
+        Function to output progress messages
+    '''
     _extensions = ['.txt']
     def __init__(self, annotation_types, hierarchy, make_transcription = True,
                     stop_check = None, call_back = None):
@@ -137,6 +154,19 @@ class BaseParser(object):
 
 
     def parse_discourse(self, name):
+        '''
+        Parse annotations for later importing.
+
+        Parameters
+        ----------
+        name : str
+            Name of the discourse
+
+        Returns
+        -------
+        :class:`~polyglotdb.io.discoursedata.DiscourseData`
+            Parsed data
+        '''
         pg_annotations = self._parse_annotations()
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
