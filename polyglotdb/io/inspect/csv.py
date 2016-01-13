@@ -9,8 +9,8 @@ from ..parsers import CsvParser
 
 def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
     """
-    Generate a list of AnnotationTypes for a specified text file for parsing
-    it as a column-delimited file
+    Generate a :class:`~polyglotdb.io.parsers.csv.CsvParser`
+    for a specified text file for parsing it as a column-delimited file
 
     Parameters
     ----------
@@ -27,8 +27,8 @@ def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
 
     Returns
     -------
-    list of AnnotationTypes
-        Autodetected AnnotationTypes for the text file
+    :class:`~polyglotdb.io.parsers.csv.CsvParser`
+        Autodetected parser for the text file
     """
     if coldelim is not None:
         common_delimiters = [coldelim]

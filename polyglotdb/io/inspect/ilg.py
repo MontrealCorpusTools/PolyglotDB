@@ -10,8 +10,8 @@ from ..parsers import IlgParser
 
 def inspect_ilg(path, number = None):
     """
-    Generate an IlgParser for a specified text file for parsing
-    it as an interlinear gloss text file
+    Generate an :class:`~polyglotdb.io.parsers.ilg.IlgParser`
+    for a specified text file for parsing it as an interlinear gloss text file
 
     Parameters
     ----------
@@ -22,7 +22,7 @@ def inspect_ilg(path, number = None):
 
     Returns
     -------
-    IlgParser
+    :class:`~polyglotdb.io.parsers.ilg.IlgParser`
         Autodetected parser for the text file
     """
     trans_delimiters = ['.', ';', ',']

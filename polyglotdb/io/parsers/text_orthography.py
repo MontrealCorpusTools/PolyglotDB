@@ -8,6 +8,18 @@ from .base import BaseParser,  DiscourseData
 from ..helper import text_to_lines
 
 class OrthographyTextParser(BaseParser):
+    '''
+    Parser for orthographic text files.
+
+    Parameters
+    ----------
+    annotation_types: list
+        Annotation types of the files to parse
+    stop_check : callable, optional
+        Function to check whether to halt parsing
+    call_back : callable, optional
+        Function to output progress messages
+    '''
     def __init__(self, annotation_types,
                     stop_check = None, call_back = None):
         self.annotation_types = annotation_types
@@ -18,6 +30,19 @@ class OrthographyTextParser(BaseParser):
         self.call_back = call_back
 
     def parse_discourse(self, path):
+        '''
+        Parse a text file for later importing.
+
+        Parameters
+        ----------
+        path : str
+            Path to text file
+
+        Returns
+        -------
+        :class:`~polyglotdb.io.discoursedata.DiscourseData`
+            Parsed data from the file
+        '''
 
         name = os.path.splitext(os.path.split(path)[1])[0]
 

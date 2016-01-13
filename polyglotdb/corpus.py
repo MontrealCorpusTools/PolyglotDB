@@ -64,7 +64,6 @@ class CorpusContext(object):
         self.init_sql()
 
         self.annotation_types = set()
-        self.is_timed = False
         self.hierarchy = Hierarchy({})
 
         self.lexicon = Lexicon(self)
@@ -199,7 +198,7 @@ class CorpusContext(object):
         '''
         if annotation_type.type not in self.annotation_types:
             raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.annotation_types)))))
-        return GraphQuery(self, annotation_type, self.is_timed)
+        return GraphQuery(self, annotation_type)
 
     @property
     def lowest_annotation(self):
@@ -274,10 +273,6 @@ class CorpusContext(object):
         import_csvs(self, data)
         self.update_sql_database(data)
         self.hierarchy.update(data.hierarchy)
-        if data.is_timed:
-            self.is_timed = True
-        else:
-            self.is_timed = False
 
 
         log.info('Finished adding discourse {}!'.format(data.name))

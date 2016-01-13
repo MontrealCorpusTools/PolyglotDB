@@ -7,7 +7,7 @@ from ..parsers.timit import TimitParser
 
 def inspect_timit(word_path):
     """
-    Generate a list of AnnotationTypes for TIMIT
+    Generate a :class:`~polyglotdb.io.parsers.timit.TimitParser`.
 
     Parameters
     ----------
@@ -16,8 +16,8 @@ def inspect_timit(word_path):
 
     Returns
     -------
-    list of AnnotationTypes
-        Auto-detected AnnotationTypes for TIMIT
+    :class:`~polyglotdb.io.parsers.timit.TimitParser`
+        Auto-detected parser for TIMIT
     """
     annotation_types = [OrthographyTier('word', 'word'),
                        SegmentTier('surface_transcription', 'surface_transcription')]
