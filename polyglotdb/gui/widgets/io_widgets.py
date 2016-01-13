@@ -1,17 +1,13 @@
 import os
 from PyQt5 import QtGui, QtCore, QtWidgets
 
-from polyglotdb.io.helper import (Attribute, AnnotationType,
-                #get_corpora_list, corpus_name_to_path,
-                NUMBER_CHARACTERS)
-
 class AnnotationTypeWidget(QtWidgets.QGroupBox):
     def __init__(self, annotation_type, parent = None,
                 ignorable = True):
         #if title is None:
         #    title = 'Annotation type details'
         super(AnnotationTypeWidget, self).__init__(annotation_type.name, parent)
-
+        return
         main = QtWidgets.QHBoxLayout()
 
         #main.addWidget(QLabel(annotation_type.name))
@@ -193,7 +189,7 @@ class AttributeWidget(QtWidgets.QGroupBox):
     def __init__(self, attribute = None, exclude_tier = False,
                 disable_name = False, parent = None):
         super(AttributeWidget, self).__init__('Column details', parent)
-
+        return
         main = QtWidgets.QFormLayout()
 
         self.nameWidget = QtWidgets.QLineEdit()
@@ -374,7 +370,7 @@ class ParsingDialog(QtWidgets.QDialog):
 class CorpusSourceWidget(QtWidgets.QWidget):
     def __init__(self, parent = None):
         super(CorpusSourceWidget, self).__init__(parent)
-
+        return
         self.filefilter = 'Text files (*.txt *.csv *.TextGrid *.words *.wrds)'
         self.relevent_files = None
         self.suggested_type = None

@@ -22,6 +22,7 @@ class ImportWidget(SafeWidget):
     def __init__(self, parent):
         self._parent = parent
         super(ImportWidget, self).__init__(parent)
+        return
         self.textType = None
         self.isDirectory = False
 
