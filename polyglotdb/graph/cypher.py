@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from .helper import type_attributes, key_for_cypher, value_for_cypher
 
-from .attributes import AnnotationAttribute, PathAnnotation, Attribute, PauseAnnotation
+from .attributes import AnnotationAttribute, PathAnnotation, Attribute, PathAttribute, PauseAnnotation
 
 aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
 
@@ -115,6 +115,9 @@ def create_return_statement(query):
         properties = []
         for g in query._group_by:
             properties.append(g.aliased_for_output())
+        if any(not x.collapsing for x in query._aggregate):
+            for c in query._columns:
+                properties.append(c.aliased_for_output())
         if len(query._order_by) == 0 and len(query._group_by) > 0:
             query._order_by.append((query._group_by[0], False))
         for a in query._aggregate:
@@ -263,56 +266,6 @@ def generate_hierarchical_match(annotation_levels, hierarchy):
                 statements.append(statement)
     return statements
 
-def generate_type_matches(query, filter_annotations):
-    analyzed = defaultdict(set)
-    defined = set()
-    for c in query._criterion:
-        for a in c.attributes:
-            if a.annotation.has_subquery:
-                continue
-            type_token =  'type' if a.label in type_attributes else 'token'
-            analyzed[a.annotation].add(type_token)
-    for a in query._columns + query._group_by + query._additional_columns:
-        if a.annotation.has_subquery:
-            continue
-        type_token =  'type' if a.label in type_attributes else 'token'
-        analyzed[a.annotation].add(type_token)
-
-    matches = []
-    optional_matches = []
-    for k, v in analyzed.items():
-        if 'type' in v:
-            statement = type_match_template.format(token_alias = k.alias,
-                                        type_alias = k.define_type_alias)
-            if k.pos == 0 or k in filter_annotations:
-                matches.append(statement)
-            else:
-                optional_matches.append(statement)
-            defined.add(k.type_alias)
-    return matches, optional_matches, defined
-
-def generate_additional_withs(query):
-    defined = set()
-    for c in query._criterion:
-        for a in c.attributes:
-            if hasattr(a, 'for_with'):
-                defined.add(a.for_with())
-    for a in query._columns + query._group_by + query._additional_columns:
-        if hasattr(a, 'for_with'):
-            defined.add(a.for_with())
-    return defined
-
-def generate_additional_matches(query):
-    matches = []
-    for c in query._criterion:
-        for a in c.attributes:
-            if hasattr(a, 'for_match'):
-                matches.append(a.for_match())
-    for a in query._columns + query._group_by + query._additional_columns:
-        if hasattr(a, 'for_match'):
-            matches.append(a.for_match())
-    return matches
-
 def generate_withs(query, all_withs):
     statements = [withs_to_string(all_withs)]
     for c in query._criterion:
@@ -323,6 +276,15 @@ def generate_withs(query, all_withs):
 
                 all_withs.update(a.with_aliases)
     for a in query._columns + query._group_by + query._additional_columns:
+        if a.with_alias not in all_withs:
+            statement = a.annotation.subquery(all_withs)
+            statements.append(statement)
+
+            all_withs.update(a.with_aliases)
+    for agg in query._aggregate:
+        if agg.collapsing:
+            continue
+        a = agg.attribute
         if a.with_alias not in all_withs:
             statement = a.annotation.subquery(all_withs)
             statements.append(statement)
@@ -365,11 +327,6 @@ def query_to_cypher(query):
 
     statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
     match_strings.extend(statements)
-
-    #statements,optional_statements, withs = generate_type_matches(query, filter_annotations)
-    #all_withs.update(withs)
-    #match_strings.extend(statements)
-    #optional_match_strings.extend(optional_statements)
 
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
 

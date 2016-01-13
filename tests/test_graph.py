@@ -4,16 +4,16 @@ import pytest
 from polyglotdb.corpus import CorpusContext, get_corpora_list
 from polyglotdb.graph.func import Count
 
-def test_basic_query(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_basic_query(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
         print(q.cypher())
         assert(all(x.label == 'are' for x in q.all()))
-    assert('untimed' in get_corpora_list(untimed_config))
+    assert('timed' in get_corpora_list(timed_config))
 
 @pytest.mark.xfail
-def test_aggregate_element(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_aggregate_element(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.filter(Count(g.word.label) >= 2).columns(g.word.label.column_name('word_label'))
         print(q.cypher())
@@ -21,8 +21,8 @@ def test_aggregate_element(untimed_config):
         assert(len(results) == 2)
         assert(all(x.word_label == 'are' for x in results))
 
-def test_strings(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_strings(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
         q = q .columns(g.word.phone.label.column_name('phones'))
         print(q.cypher())
@@ -30,24 +30,24 @@ def test_strings(untimed_config):
         assert(all(x.label == 'are' for x in results))
         assert(all(x.phones == ['aa','r'] for x in results))
 
-def test_columns(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_columns(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.columns(g.word.label.column_name('word_label'), g.line.id)
         print(q.cypher())
         results = q.all()
         assert(all(x.word_label in ['are', 'dogs'] for x in results))
 
-def test_discourse_query(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_discourse_query(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).columns(g.word.discourse.column_name('discourse'))
         print(q.cypher())
-        assert(all(x.discourse == 'test_untimed' for x in q.all()))
+        assert(all(x.discourse == 'test_timed' for x in q.all()))
 
         q = g.query_graph(g.word).filter(g.word.discourse == 'test')
         q = q.columns(g.word.discourse.column_name('discourse'))
         print(q.cypher())
-        assert(all(x.discourse == 'test_untimed' for x in q.all()))
+        assert(all(x.discourse == 'test_timed' for x in q.all()))
 
 
 def test_order_by(timed_config):
@@ -65,15 +65,15 @@ def test_basic_discourses_prop(timed_config):
     with CorpusContext(timed_config) as g:
         assert(g.discourses == ['test_timed'])
 
-def test_query_previous(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_previous(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
         q = q.filter(g.word.previous.label == 'cats')
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
-def test_query_following(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_following(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
         q = q.filter(g.word.following.label == 'too')
         print(q.cypher())
@@ -92,47 +92,79 @@ def test_query_time(timed_config):
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
-def test_query_contains(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_contains(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter_contains(g.phone.label == 'aa')
         print(q.cypher())
         assert(len(list(q.all())) == 3)
 
-def test_query_contained_by(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_contained_by(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.filter_contained_by(g.word.label == 'dogs')
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
-def test_query_columns_contained(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_columns_contained(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.columns(g.word.label)
         print(q.cypher())
         assert(len(list(q.all())) == 3)
 
-def test_query_left_aligned_line(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_alignment(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.filter_left_aligned(g.line)
+        q = q.filter_left_aligned(g.line).times()
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0)
 
-def test_query_previous_left_aligned_line(untimed_config, timed_config):
-    with CorpusContext(untimed_config) as g:
-        q = g.query_graph(g.phone).filter(g.phone.label == 'ae')
-        q = q.filter(g.phone.previous.begin == g.line.begin)
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.begin == g.line.begin).times()
         print(q.cypher())
-        assert(q.count() == 1)
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.begin != g.line.begin).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0.8)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 's')
+        q = q.filter_right_aligned(g.line).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 3.5)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 's')
+        q = q.filter(g.phone.end == g.line.end).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 3.5)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 's')
+        q = q.filter(g.phone.end != g.line.end).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0.3)
+
+def test_query_previous_left_aligned_line(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'ae')
         q = q.filter(g.phone.previous.begin == g.line.begin)
         print(q.cypher())
         assert(q.count() == 1)
 
-def test_query_phone_in_line_initial_word(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_phone_in_line_initial_word(timed_config):
+    with CorpusContext(timed_config) as g:
         word_q = g.query_graph(g.word).filter_left_aligned(g.line)
         assert(len(list(word_q.all())) == 3)
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
@@ -140,8 +172,8 @@ def test_query_phone_in_line_initial_word(untimed_config):
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
-def test_query_word_in(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_word_in(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_contained_by(g.word.label.in_(['cats','dogs','cute']))
         print(q.cypher())
@@ -195,8 +227,8 @@ def test_query_onset_phone(syllable_morpheme_config):
         assert(len(list(q.all())) == 1)
 
 @pytest.mark.xfail
-def test_query_frequency(untimed_config):
-    with CorpusContext(untimed_config) as g:
+def test_query_frequency(timed_config):
+    with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.frequency > 1)
         print(q.cypher())
     assert(False)
@@ -281,7 +313,7 @@ def test_mirrored(acoustic_config):
         q = g.query_graph(g.phone).filter(g.phone.label.in_(obstruents))
         q = q.filter(g.phone.previous.label.in_(vowels))
         q = q.filter(g.phone.following.label == g.phone.previous.label)
-
+        q = q.times()
         print(q.cypher())
 
         results = q.all()
@@ -292,6 +324,7 @@ def test_mirrored(acoustic_config):
         q = q.filter(g.phone.following.label == g.phone.previous.label)
         q = q.filter(g.phone.end == g.word.end)
         q = q.filter(g.phone.following.begin == g.word.following.begin)
+        q = q.times()
 
         print(q.cypher())
 

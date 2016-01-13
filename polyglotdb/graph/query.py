@@ -12,7 +12,7 @@ from .helper import anchor_attributes, type_attributes
 
 from .cypher import query_to_cypher, query_to_params
 
-from polyglotdb.io.csv import save_results
+from polyglotdb.io import save_results
 
 
 class GraphQuery(object):
@@ -279,7 +279,7 @@ class GraphQuery(object):
         self._aggregate = args
         cypher = self.cypher()
         value = self.corpus.graph.cypher.execute(cypher, **self.cypher_params())
-        if self._group_by:
+        if self._group_by or any(not x.collapsing for x in self._aggregate):
             return value
         else:
             return value.one
