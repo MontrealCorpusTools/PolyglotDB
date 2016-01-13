@@ -4,6 +4,8 @@ import math
 
 from textgrid import TextGrid, IntervalTier
 
+from polyglotdb.structure import Hierarchy
+
 from ..helper import guess_type, guess_trans_delimiter
 
 from ..types.parsing import *
@@ -62,7 +64,7 @@ def guess_tiers(tg):
             tier_guesses[k] = (k, 'word')
         else:
             tier_guesses[k] = (k, 'segment')
-    hierarchy = {'phone': 'word', 'word': None}
+    hierarchy = Hierarchy({'phone': 'word', 'word': None})
     return tier_guesses, hierarchy
 
 def inspect_textgrid(path):
@@ -95,7 +97,6 @@ def inspect_textgrid(path):
         tg.read(t)
         if len(anno_types) == 0:
             tier_guesses, hierarchy = guess_tiers(tg)
-            print(hierarchy, tier_guesses)
             for ti in tg.tiers:
                 if ti.name not in tier_guesses:
                     a = OrthographyTier('word', 'word')

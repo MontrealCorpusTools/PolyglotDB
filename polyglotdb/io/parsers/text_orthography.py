@@ -1,6 +1,8 @@
 
 import os
 
+from polyglotdb.structure import Hierarchy
+
 from .base import BaseParser,  DiscourseData
 
 from ..helper import text_to_lines
@@ -9,7 +11,7 @@ class OrthographyTextParser(BaseParser):
     def __init__(self, annotation_types,
                     stop_check = None, call_back = None):
         self.annotation_types = annotation_types
-        self.hierarchy = {'word': None}
+        self.hierarchy = Hierarchy({'word': None})
         self.make_transcription = False
         self.make_label = False
         self.stop_check = stop_check

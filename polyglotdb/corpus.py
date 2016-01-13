@@ -14,8 +14,7 @@ from py2neo.cypher.error.schema import IndexAlreadyExists
 from .config import CorpusConfig
 
 from .io.graph import (data_to_graph_csvs, import_csvs,
-                    data_to_type_csvs, import_type_csvs, initialize_csv,
-                    initialize_csvs_header)
+                    data_to_type_csvs, import_type_csvs)
 
 from .graph.query import GraphQuery
 from .graph.func import Max, Min
@@ -135,7 +134,10 @@ class CorpusContext(object):
                         break
                     supertypes.append(supertype)
             contains = [x for x in contains if x not in supertypes]
-            return AnnotationAttribute(key, corpus = self.corpus_name, contains = contains)
+            annotations = None
+            if key in self.hierarchy.subannotations:
+                annotations = self.hierarchy.subannotations[key]
+            return AnnotationAttribute(key, corpus = self.corpus_name, contains = contains, annotations = annotations)
         raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.annotation_types)))))
 
     def reset_graph(self):
@@ -365,7 +367,6 @@ class CorpusContext(object):
                     phone_cache[segment_type].update(x.label for x in base_sequence)
                 elif 'transcription' in d.type_properties:
                     trans = d.type_properties['transcription']
-                print(trans)
                 if trans is None:
                     trans = ''
                 elif isinstance(trans, list):

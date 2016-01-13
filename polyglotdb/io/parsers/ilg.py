@@ -5,6 +5,7 @@ from collections import Counter
 
 from polyglotdb.exceptions import (DelimiterError, ILGError, ILGLinesMismatchError,
                                 ILGWordMismatchError)
+from polyglotdb.structure import Hierarchy
 
 from ..helper import guess_type, ilg_text_to_lines
 
@@ -16,7 +17,7 @@ class IlgParser(BaseParser):
     def __init__(self, annotation_types,
                     stop_check = None, call_back = None):
         self.annotation_types = annotation_types
-        self.hierarchy = {'word': None}
+        self.hierarchy = Hierarchy({'word': None})
         self.make_transcription = False
         self.make_label = True
         self.stop_check = stop_check

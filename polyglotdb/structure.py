@@ -23,3 +23,6 @@ class Hierarchy(object):
 
     def __setitem__(self, key, value):
         self._data[key] = value
+
+    def __contains__(self, item):
+        return item in self._data

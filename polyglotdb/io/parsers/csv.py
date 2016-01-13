@@ -2,6 +2,7 @@ import os
 from csv import DictReader
 
 from polyglotdb.exceptions import DelimiterError, CorpusIntegrityError
+from polyglotdb.structure import Hierarchy
 
 from .base import BaseParser, DiscourseData
 
@@ -16,7 +17,7 @@ class CsvParser(BaseParser):
                     stop_check = None, call_back = None):
         self.annotation_types = annotation_types
         self.column_delimiter = column_delimiter
-        self.hierarchy = {'word': None}
+        self.hierarchy = Hierarchy({'word': None})
         self.stop_check = stop_check
         self.call_back = call_back
         self.make_transcription = False

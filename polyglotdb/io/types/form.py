@@ -6,6 +6,8 @@ class IntervalAnnotation(BaseAnnotation):
         self.begin = begin
         self.end = end
 
+        self.midpoint = (end - begin) / 2 + begin
+
 class PointAnnotation(BaseAnnotation):
     def __init__(self, time):
         self.time = time

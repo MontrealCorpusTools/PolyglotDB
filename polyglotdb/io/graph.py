@@ -8,33 +8,6 @@ from collections import defaultdict
 
 from .helper import normalize_values_for_neo4j
 
-def initialize_csv(type, directory):
-    with open(os.path.join(directory, '{}.csv'.format(type)), 'w') as f:
-        pass
-
-def initialize_csvs_header(data, directory):
-    rel_paths = {}
-    for x in data.types:
-        rel_paths[x] = os.path.join(directory,'{}.csv'.format(x))
-    rfs = {k: open(v, 'w', encoding = 'utf8') for k,v in rel_paths.items()}
-    rel_writers = {}
-    for k,v in rfs.items():
-        token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'discourse']
-        if k == 'word':
-            token_header += data.token_properties
-            supertype = data[data.word_levels[0]].supertype
-            if supertype is not None:
-                token_header.append(supertype)
-        else:
-            supertype = data[k].supertype
-            if supertype is not None:
-                token_header.append(supertype)
-        rel_writers[k] = csv.DictWriter(v, token_header, delimiter = ',')
-    for x in rel_writers.values():
-        x.writeheader()
-    for x in rfs.values():
-        x.close()
-
 def data_to_type_csvs(parsed_data, directory):
     type_paths = {}
     data = list(parsed_data.values())[0]
@@ -54,15 +27,12 @@ def data_to_type_csvs(parsed_data, directory):
 
     for data in parsed_data.values():
         for k,v in data.items():
-            print(k)
             for d in v:
                 type_additional = dict(zip(d.type_keys(), d.type_values()))
-                #print(type_headers[k], k, type_additional, d.label)
                 row = [d.sha()]
                 for th in type_headers[k]:
                     if th not in ['id']:
                         row.append(type_additional[th])
-                print(tuple(row))
                 types[k].add(tuple(row))
     for k, v in types.items():
         for d in v:
@@ -83,11 +53,12 @@ def data_to_graph_csvs(data, directory):
     directory: str
         Full path to a directory to store CSV files
     """
-    rel_paths = {}
+    rfs = {}
     for x in data.annotation_types:
-        rel_paths[x] = os.path.join(directory,'{}_{}.csv'.format(data.name, x))
-    rfs = {k: open(v, 'w', encoding = 'utf8') for k,v in rel_paths.items()}
+        path = os.path.join(directory,'{}_{}.csv'.format(data.name, x))
+        rfs[x] = open(path, 'w', encoding = 'utf8')
     rel_writers = {}
+
     for k,v in rfs.items():
         token_header = ['begin', 'end', 'type_id', 'id', 'previous_id']
         token_header += data[k].token_property_keys
@@ -95,7 +66,17 @@ def data_to_graph_csvs(data, directory):
         if supertype is not None:
             token_header.append(supertype)
         rel_writers[k] = csv.DictWriter(v, token_header, delimiter = ',')
-        rel_writers[k] .writeheader()
+        rel_writers[k].writeheader()
+
+    subanno_files = {}
+    subanno_writers = {}
+    for k,v in data.hierarchy.subannotations.items():
+        for s in v:
+            path = os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s))
+            subanno_files[k,s] = open(path, 'w', encoding = 'utf8')
+            header = ['begin', 'end', 'annotation_id', 'label']
+            subanno_writers[k,s] = csv.DictWriter(subanno_files[k,s], header, delimiter = ',')
+            subanno_writers[k,s].writeheader()
 
     segment_type = data.segment_type
     for level in data.highest_to_lowest():
@@ -109,7 +90,15 @@ def data_to_graph_csvs(data, directory):
                              type_id = d.sha(), id = d.id,
                              previous_id = d.previous_id,
                             **token_additional))
+            if d.subannotations:
+                for sub in d.subannotations:
+                    row = {'begin': sub.begin, 'end':sub.end, 'label': sub.label,
+                            'annotation_id': d.id}
+                    subanno_writers[level, sub.type].writerow(row)
+
     for x in rfs.values():
+        x.close()
+    for x in subanno_files.values():
         x.close()
 
 def import_type_csvs(corpus_context, discourse_data):
@@ -153,8 +142,9 @@ def import_csvs(corpus_context, data):
     corpus_context.graph.cypher.execute('''MERGE (n:Discourse:{} {{name: {{discourse_name}}}})'''.format(corpus_context.corpus_name), discourse_name = data.name)
     prop_temp = '''{name}: csvLine.{name}'''
 
+    directory = corpus_context.config.temporary_directory('csv')
     for at in data.highest_to_lowest():
-        rel_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_{}.csv'.format(data.name, at)).replace('\\','/'))
+        rel_path = 'file:///{}'.format(os.path.join(directory, '{}_{}.csv'.format(data.name, at)).replace('\\','/'))
 
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
@@ -178,7 +168,8 @@ def import_csvs(corpus_context, data):
         rel_import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MATCH (n:{annotation_type}_type {{id: csvLine.type_id}})
-CREATE (t:{annotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin), end: toFloat(csvLine.end), discourse: '{discourse}'{token_property_string} }})
+CREATE (t:{annotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                            end: toFloat(csvLine.end), discourse: '{discourse}'{token_property_string} }})
 CREATE (t)-[:is_a]->(n)
 WITH t, csvLine
 MATCH (p:{annotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.previous_id}})
@@ -188,23 +179,13 @@ CREATE (p)-[:precedes]->(t)'''
                     'corpus_name': corpus_context.corpus_name,
                     'discourse': data.name}
         statement = rel_import_statement.format(**kwargs)
-        print(statement)
         log.info('Loading {} relationships...'.format(at))
         begin = time.time()
         corpus_context.graph.cypher.execute(statement)
         log.info('Finished loading {} relationships!'.format(at))
         log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
 
-    #log.info('Optimizing discourses...')
-    #begin = time.time()
-    #for d in corpus_context.discourses:
-    #    statement = '''MATCH (utt:speech:unoptimized)
-    #    WHERE utt.discourse = {{discourse}}
-    #    SET utt :{discourse}
-    #    REMOVE utt:unoptimized'''.format(discourse = d)
-    #    corpus_context.graph.cypher.execute(statement, discourse = d)
-    #log.info('Finished optimizing!')
-    #log.debug('Optimizing took: {} seconds.'.format(time.time() - begin))
+
     log.info('Creating containing relationships...')
     begin = time.time()
     for at in annotation_types:
@@ -224,3 +205,21 @@ CREATE (p)-[:precedes]->(t)'''
     log.info('Creating containing relationships took: {}.seconds'.format(time.time() - begin))
     log.info('Finished importing {} into the graph database!'.format(data.name))
     log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
+
+
+    for k,v in data.hierarchy.subannotations.items():
+        for s in v:
+            path = 'file:///{}'.format(os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s)).replace('\\','/'))
+
+            rel_import_statement = '''USING PERIODIC COMMIT 3000
+LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
+CREATE (t:{subannotation_type}:{corpus_name}:{discourse}:speech {{begin: toFloat(csvLine.begin),
+                            end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
+CREATE (t)-[:annotates]->(n)'''
+            kwargs = {'path': path, 'annotation_type': k,
+                        'subannotation_type': s,
+                        'corpus_name': corpus_context.corpus_name,
+                        'discourse': data.name}
+            statement = rel_import_statement.format(**kwargs)
+            corpus_context.graph.cypher.execute(statement)

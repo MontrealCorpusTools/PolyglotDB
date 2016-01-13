@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from .helper import type_attributes, key_for_cypher, value_for_cypher
 
-from .attributes import AnnotationAttribute, PathAnnotation, Attribute, PauseAnnotation
+from .attributes import AnnotationAttribute, PathAnnotation, Attribute, PathAttribute, PauseAnnotation
 
 aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
 
@@ -115,6 +115,9 @@ def create_return_statement(query):
         properties = []
         for g in query._group_by:
             properties.append(g.aliased_for_output())
+        if any(not x.collapsing for x in query._aggregate):
+            for c in query._columns:
+                properties.append(c.aliased_for_output())
         if len(query._order_by) == 0 and len(query._group_by) > 0:
             query._order_by.append((query._group_by[0], False))
         for a in query._aggregate:
@@ -323,6 +326,15 @@ def generate_withs(query, all_withs):
 
                 all_withs.update(a.with_aliases)
     for a in query._columns + query._group_by + query._additional_columns:
+        if a.with_alias not in all_withs:
+            statement = a.annotation.subquery(all_withs)
+            statements.append(statement)
+
+            all_withs.update(a.with_aliases)
+    for agg in query._aggregate:
+        if agg.collapsing:
+            continue
+        a = agg.attribute
         if a.with_alias not in all_withs:
             statement = a.annotation.subquery(all_withs)
             statements.append(statement)

@@ -21,7 +21,7 @@ class PGAnnotation(object):
         self.previous_id = None
         self.speaker = None
 
-        self.subannotations = {}
+        self.subannotations = []
 
     def sha(self):
         m = hashlib.sha1()
@@ -43,11 +43,18 @@ class PGAnnotation(object):
                 yield normalized[k]
 
     def token_keys(self):
-        return sorted(self.token_properties.keys())
+        keys = list(self.token_properties.keys())
+        if self.label is not None:
+            keys.append('label')
+        return sorted(keys)
 
     def token_values(self):
+        normalized = normalize_values_for_neo4j(self.token_properties)
         for k in self.token_keys():
-            yield self.token_properties[k]
+            if k == 'label':
+                yield self.label
+            else:
+                yield normalized[k]
 
 
 class PGAnnotationType(object):
@@ -105,3 +112,14 @@ class PGAnnotationType(object):
     def __iter__(self):
         for a in self._list:
             yield a
+
+class PGSubAnnotation(PGAnnotation):
+    def __init__(self, label, type, begin, end):
+        self.label = label
+        self.type = type
+        self.begin = begin
+        self.end = end
+
+        self.type_properties = {}
+        self.token_properties = {}
+

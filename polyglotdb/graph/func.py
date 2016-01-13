@@ -2,26 +2,44 @@
 from .elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement)
 
-from .attributes import AggregateAttribute
+from .attributes import AggregateAttribute, PathAttribute
 
 class AggregateFunction(object):
     function = ''
     template = '{function}({property}) AS {output_name}'
+    collection_templates = {'sum': 'reduce(count = 0, n in {property} | count + n) AS {output_name}',
+                            'avg': 'reduce(count = 0, n in {property} | count + n) / toFloat(size({property})) AS {output_name}',
+                            'count': 'size({property}) AS {output_name}'}
     def __init__(self, attribute = None):
         self.attribute = attribute
-        self.output_name = None
+        self.output_label = None
 
     def aliased_for_output(self):
-        if self.output_name is None:
+        if self.output_label is None:
             if self.attribute is not None:
                 name = self.attribute.label
             else:
                 name = 'all'
             return '{}_{}'.format(self.__class__.__name__.lower(), name)
+        else:
+            return self.output_label
 
+    @property
+    def collapsing(self):
+        if self.attribute is not None and isinstance(self.attribute, PathAttribute):
+            return False
+        return True
+
+    def column_name(self, label):
+        self.output_label = label
+        return self
 
     def for_cypher(self):
-        if self.attribute is not None:
+        if not self.collapsing:
+            return self.collection_templates[self.function].format(
+                                property = self.attribute.for_cypher(),
+                                output_name = self.aliased_for_output())
+        elif self.attribute is not None:
             element = self.attribute.for_cypher()
         else:
             element = '*'
@@ -71,7 +89,7 @@ class Quantile(AggregateFunction):
     def __init__(self, attribute, percentile = 0.5):
         self.attribute = attribute
         self.percentile = percentile
-        self.output_name = None
+        self.output_label = None
 
     def for_cypher(self):
         if self.attribute is not None:
@@ -85,9 +103,7 @@ class Quantile(AggregateFunction):
 
 class Median(Quantile):
     def __init__(self, attribute):
-        self.attribute = attribute
-        self.percentile = 0.5
-        self.output_name = None
+        Quantile.__init__(self, attribute, 0.5)
 
 class InterquartileRange(AggregateFunction):
     template = 'percentileDisc({property}, 0.75) - percentileDisc({property}, 0.25) AS {output_name}'

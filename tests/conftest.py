@@ -6,9 +6,7 @@ from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
                                         TextTranscriptionTier, TextMorphemeTier,
                                         MorphemeTier)
 
-from polyglotdb.io.parse import parse_annotations
-
-from polyglotdb.io.discoursedata import DiscourseData
+from polyglotdb.io.parsers.base import BaseParser
 
 from polyglotdb.io import (inspect_textgrid)
 
@@ -82,8 +80,9 @@ def corpus_data_timed():
     levels[0].add(phones)
     levels[1].add(words)
     levels[2].add(lines)
-    hierarchy = {'phone':'word', 'word': 'line', 'line': None}
-    data = parse_annotations('test_timed', levels, hierarchy, make_transcription = True)
+    hierarchy = Hierarchy({'phone':'word', 'word': 'line', 'line': None})
+    parser = BaseParser(levels, hierarchy)
+    data = parser.parse_discourse('test_timed')
     return data
 
 @pytest.fixture(scope='session')
@@ -91,6 +90,7 @@ def subannotation_data():
     levels = [SegmentTier('label', 'phone'),
                 OrthographyTier('label', 'word'),
                 OrthographyTier('stop_information', 'phone')]
+    levels[2].subannotation = True
     phones = [('k', 0.0, 0.1), ('ae', 0.1, 0.2), ('t', 0.2, 0.3), ('s', 0.3, 0.4),
             ('aa', 0.5, 0.6), ('r',  0.6, 0.7),
             ('k', 0.8, 0.9), ('u', 0.9, 1.0), ('t', 1.0, 1.1),
@@ -102,11 +102,16 @@ def subannotation_data():
     words = [('cats', 0.0, 0.4), ('are', 0.5, 0.7), ('cute', 0.8, 1.1),
             ('dogs', 2.0, 2.4), ('are', 2.4, 2.6), ('too', 2.6, 2.8),
             ('i', 3.0, 3.1), ('guess', 3.3, 3.6)]
-    info = [('burst', 0, 0.05), ('vot', 0.05, 0.1), ('closure', 0.2, 0.25)]
+    info = [('burst', 0, 0.05), ('vot', 0.05, 0.1), ('closure', 0.2, 0.25),
+            ('burst', 0.25, 0.26), ('vot', 0.26, 0.3),('closure', 2.2, 2.25),
+            ('burst', 2.25, 2.26), ('vot', 2.26, 2.3),
+            ('voicing_during_closure', 2.2, 2.23),('voicing_during_closure', 2.24, 2.25)]
     levels[0].add(phones)
     levels[1].add(words)
+    levels[2].add(info)
     hierarchy = Hierarchy({'phone':'word', 'word': None})
-    data = parse_annotations('test', levels, hierarchy, make_transcription = True)
+    parser = BaseParser(levels, hierarchy)
+    data = parser.parse_discourse('test_sub')
     return data
 
 
@@ -139,8 +144,9 @@ def corpus_data_untimed():
     levels[2].add(morphemes)
     levels[3].add(lines)
 
-    hierarchy = {'word':'line', 'line': None}
-    data = parse_annotations('test', levels, hierarchy)
+    hierarchy = Hierarchy({'word': 'line', 'line': None})
+    parser = BaseParser(levels, hierarchy)
+    data = parser.parse_discourse('test_untimed')
     return data
 
 
@@ -149,7 +155,6 @@ def corpus_data_ur_sr():
     levels = [SegmentTier('sr', 'phone'),
                 OrthographyTier('word', 'word'),
                 TranscriptionTier('ur', 'word')]
-    hierarchy = {'phone': 'word', 'word': None}
     srs = [('k', 0.0, 0.1), ('ae', 0.1, 0.2), ('s', 0.2, 0.4),
             ('aa', 0.5, 0.6), ('r', 0.6, 0.7),
             ('k', 0.8, 0.9), ('u', 0.9, 1.1),
@@ -168,7 +173,10 @@ def corpus_data_ur_sr():
     levels[0].add(srs)
     levels[1].add(words)
     levels[2].add(urs)
-    data = parse_annotations('test', levels, hierarchy)
+
+    hierarchy = Hierarchy({'phone':'word', 'word': None})
+    parser = BaseParser(levels, hierarchy)
+    data = parser.parse_discourse('test_ursr')
     return data
 
 
@@ -222,9 +230,11 @@ def corpus_data_syllable_morpheme_srur():
     levels[3].add(morphemes)
     levels[4].add(words)
     levels[5].add(lines)
-    hierarchy = {'phone': 'syllable', 'syllable': 'word',
-            'word':'line', 'line':None}
-    data = parse_annotations('test', levels, hierarchy)
+
+    hierarchy = Hierarchy({'phone': 'syllable', 'syllable': 'word',
+                            'word': 'line', 'line': None})
+    parser = BaseParser(levels, hierarchy)
+    data = parser.parse_discourse('test_syllable_morpheme')
     return data
 
 @pytest.fixture(scope='session')
@@ -317,6 +327,17 @@ def ursr_config(graph_db, corpus_data_ur_sr):
         c.initialize_import(corpus_data_ur_sr)
         c.add_discourse(corpus_data_ur_sr)
         c.finalize_import(corpus_data_ur_sr)
+    return config
+
+@pytest.fixture(scope='session')
+def subannotation_config(graph_db, subannotation_data):
+    config = CorpusConfig('subannotations', **graph_db)
+    with CorpusContext(config) as c:
+        c.reset()
+        c.add_types({subannotation_data.name: subannotation_data})
+        c.initialize_import(subannotation_data)
+        c.add_discourse(subannotation_data)
+        c.finalize_import(subannotation_data)
     return config
 
 @pytest.fixture(scope='session')

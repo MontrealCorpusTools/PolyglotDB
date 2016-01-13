@@ -1,6 +1,8 @@
 import os
 
-from ..types.standardized import PGAnnotation, PGAnnotationType
+from ..types.standardized import PGAnnotation, PGSubAnnotation, PGAnnotationType
+
+from ..types.parsing import Tobi, BreakIndex
 
 from ..discoursedata import DiscourseData
 
@@ -46,23 +48,24 @@ class BaseParser(object):
                 if speaker not in relevent_levels:
                     relevent_levels[speaker] = []
                 if speaker not in lengths:
-                    lengths[speaker] = None
+                    lengths[speaker] = 0
                 relevent_levels[speaker].append(inputlevel)
-                if lengths[speaker] is None:
+                if inputlevel.subannotation:
+                    continue
+                if lengths[speaker] == 0:
                     lengths[speaker] = len(inputlevel)
                 elif lengths[speaker] != len(inputlevel):
                     raise(Exception('Annotations sharing a linguistic type and a speaker don\'t have a consistent length.'))
             for speaker, speaker_levels in relevent_levels.items():
-                if len(speaker_levels) == 0:
-                    continue
-
-                for i in range(len(speaker_levels[0])):
+                for i in range(lengths[speaker]):
                     type_properties = {}
                     token_properties = {}
                     label = None
                     begin = None
                     end = None
                     for rl in speaker_levels:
+                        if rl.subannotation:
+                            continue
                         if begin is None:
                             try:
                                 begin = rl[i].begin
@@ -96,6 +99,22 @@ class BaseParser(object):
                     if i != 0:
                         a.previous_id = annotation_types[k][-1].id
                     annotation_types[k].add(a)
+                for rl in speaker_levels:
+                    if not rl.subannotation:
+                        continue
+                    for sub in rl:
+
+                        annotation = annotation_types[k].lookup(sub.midpoint, speaker = speaker)
+                        if isinstance(sub, Tobi):
+                            a = PGSubAnnotation(sub.label, 'tone', sub.begin, sub.end)
+                        elif isinstance(sub, BreakIndex):
+                            a = PGSubAnnotation(sub.value, 'break', sub.begin, sub.end)
+                        else:
+                            a = PGSubAnnotation(None, sub.label, sub.begin, sub.end)
+                        annotation.subannotations.append(a)
+                        if k not in self.hierarchy.subannotations:
+                            self.hierarchy.subannotations[k] = set()
+                        self.hierarchy.subannotations[k].add(a.type)
 
         for k, v in annotation_types.items():
             st = v.supertype
@@ -109,10 +128,16 @@ class BaseParser(object):
                     transcription = annotation_types[segment_type].lookup_range(a.begin, a.end, speaker = a.speaker)
                     a.type_properties['transcription'] = [x.label for x in transcription]
             if self.make_label and 'transcription' in v.type_property_keys and v.is_word:
-
                 for a in annotation_types[k]:
                     if a.label is None:
                         a.label = ''.join(a.type_properties['transcription'])
-                        print(a.label, a.type_properties['transcription'])
+                        annotation_types[k].type_property_keys.add('label')
+                        annotation_types[k].token_property_keys.add('label')
         return annotation_types
 
+
+    def parse_discourse(self, name):
+        pg_annotations = self._parse_annotations()
+
+        data = DiscourseData(name, pg_annotations, self.hierarchy)
+        return data

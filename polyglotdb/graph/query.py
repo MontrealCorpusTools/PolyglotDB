@@ -279,7 +279,7 @@ class GraphQuery(object):
         self._aggregate = args
         cypher = self.cypher()
         value = self.corpus.graph.cypher.execute(cypher, **self.cypher_params())
-        if self._group_by:
+        if self._group_by or any(not x.collapsing for x in self._aggregate):
             return value
         else:
             return value.one
