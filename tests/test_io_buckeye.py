@@ -2,40 +2,38 @@
 import pytest
 import os
 
-from polyglotdb.io.standards.buckeye import (read_phones, read_words,
-                            BaseAnnotation,
-                            buckeye_to_data,
-                            load_discourse_buckeye,
-                            load_directory_buckeye)
+from polyglotdb.io import inspect_buckeye
+
+from polyglotdb.io.parsers.buckeye import read_phones, read_words
 
 from polyglotdb.corpus import CorpusContext
 
 def test_load_phones(buckeye_test_dir):
-    expected_phones = [BaseAnnotation('{B_TRANS}',0.0, 2.609000),
-                            BaseAnnotation('IVER',2.609000, 2.714347),
-                            BaseAnnotation('eh',2.714347, 2.753000),
-                            BaseAnnotation('s',2.753000, 2.892000),
-                            BaseAnnotation('IVER',2.892000, 3.206890),
-                            BaseAnnotation('dh',3.206890, 3.244160),
-                            BaseAnnotation('ae',3.244160, 3.327000),
-                            BaseAnnotation('s',3.327000, 3.377192),
-                            BaseAnnotation('s',3.377192, 3.438544),
-                            BaseAnnotation('ae',3.438544, 3.526272),
-                            BaseAnnotation('tq',3.526272, 3.614398),
-                            BaseAnnotation('VOCNOISE',3.614398, 3.673454),
-                            BaseAnnotation('ah',3.673454, 3.718614),
-                            BaseAnnotation('w',3.718614, 3.771112),
-                            BaseAnnotation('ah',3.771112, 3.851000),
-                            BaseAnnotation('dx',3.851000, 3.881000),
-                            BaseAnnotation('eh',3.881000, 3.941000),
-                            BaseAnnotation('v',3.941000, 4.001000),
-                            BaseAnnotation('er',4.001000, 4.036022),
-                            BaseAnnotation('ey',4.036022, 4.111000),
-                            BaseAnnotation('k',4.111000, 4.246000),
-                            BaseAnnotation('ao',4.246000, 4.326000),
-                            BaseAnnotation('l',4.326000, 4.369000),
-                            BaseAnnotation('ah',4.369000, 4.443707),
-                            BaseAnnotation('t',4.443707, 4.501000),
+    expected_phones = [('{B_TRANS}',0.0, 2.609000),
+                            ('IVER',2.609000, 2.714347),
+                            ('eh',2.714347, 2.753000),
+                            ('s',2.753000, 2.892000),
+                            ('IVER',2.892000, 3.206890),
+                            ('dh',3.206890, 3.244160),
+                            ('ae',3.244160, 3.327000),
+                            ('s',3.327000, 3.377192),
+                            ('s',3.377192, 3.438544),
+                            ('ae',3.438544, 3.526272),
+                            ('tq',3.526272, 3.614398),
+                            ('VOCNOISE',3.614398, 3.673454),
+                            ('ah',3.673454, 3.718614),
+                            ('w',3.718614, 3.771112),
+                            ('ah',3.771112, 3.851000),
+                            ('dx',3.851000, 3.881000),
+                            ('eh',3.881000, 3.941000),
+                            ('v',3.941000, 4.001000),
+                            ('er',4.001000, 4.036022),
+                            ('ey',4.036022, 4.111000),
+                            ('k',4.111000, 4.246000),
+                            ('ao',4.246000, 4.326000),
+                            ('l',4.326000, 4.369000),
+                            ('ah',4.369000, 4.443707),
+                            ('t',4.443707, 4.501000),
                             ]
     phones = read_phones(os.path.join(buckeye_test_dir,'test.phones'))
     for i,p in enumerate(expected_phones):
@@ -60,8 +58,9 @@ def test_load_words(buckeye_test_dir):
 def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('discourse_buckeye', **graph_db) as c:
         c.reset()
-        load_discourse_buckeye(c,os.path.join(buckeye_test_dir,'test.words'),
-                            os.path.join(buckeye_test_dir,'test.phones'))
+        word_path = os.path.join(buckeye_test_dir,'test.words')
+        parser = inspect_buckeye(word_path)
+        c.load(parser, word_path)
 
         q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 's')
         assert(q.count() == 3)
@@ -69,7 +68,8 @@ def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
 def test_load_directory_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
         c.reset()
-        load_directory_buckeye(c, buckeye_test_dir)
+        parser = inspect_buckeye(buckeye_test_dir)
+        c.load(parser, buckeye_test_dir)
 
         q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 's')
         assert(q.count() == 3)

@@ -16,6 +16,18 @@ Corpus class
 
    CorpusContext
 
+.. _config_api:
+
+Corpus config class
+-------------------
+.. currentmodule:: polyglotdb.config
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+   CorpusConfig
+
 .. _graph_api:
 
 Graph classes

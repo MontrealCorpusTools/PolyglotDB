@@ -22,8 +22,13 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 
-MOCK_MODULES = ['textgrid', 'py2neo', 'sqlalchemy']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
+                'py2neo', 'py2neo.packages', 'py2neo.packages.httpstream',
+                'sqlalchemy',
+                'sqlalchemy.orm', 'sqlalchemy.sql', 'sqlalchemy.sql.expression',
+                'sqlalchemy.ext', 'sqlalchemy.ext.declarative', 'sqlalchemy.ext.orderinglist',
+                'sqlalchemy.ext.associationproxy', 'sqlalchemy.ext.hybrid']
+#sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 import shlex
 import alabaster
 
