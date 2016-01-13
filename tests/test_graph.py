@@ -112,12 +112,49 @@ def test_query_columns_contained(timed_config):
         print(q.cypher())
         assert(len(list(q.all())) == 3)
 
-def test_query_left_aligned_line(timed_config):
+def test_query_alignment(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.filter_left_aligned(g.line)
+        q = q.filter_left_aligned(g.line).times()
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.begin == g.line.begin).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.begin != g.line.begin).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0.8)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 's')
+        q = q.filter_right_aligned(g.line).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 3.5)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 's')
+        q = q.filter(g.phone.end == g.line.end).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 3.5)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 's')
+        q = q.filter(g.phone.end != g.line.end).times()
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0.3)
 
 def test_query_previous_left_aligned_line(timed_config):
     with CorpusContext(timed_config) as g:

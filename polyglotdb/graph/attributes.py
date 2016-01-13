@@ -70,12 +70,6 @@ class Attribute(object):
         return self.alias
 
     @property
-    def is_type_attribute(self):
-        if self.label in type_attributes:
-            return True
-        return False
-
-    @property
     def with_alias(self):
         if self.label in type_attributes:
             return self.annotation.type_alias
@@ -234,18 +228,6 @@ class AnnotationAttribute(Attribute):
     @property
     def with_alias(self):
         return self.alias
-
-    @property
-    def path_alias(self):
-        a = 'path_'+self.alias
-        a = a.replace('`','')
-        return key_for_cypher(a)
-
-    def right_aligned(self, other):
-        return RightAlignedClauseElement(self, other)
-
-    def left_aligned(self, other):
-        return LeftAlignedClauseElement(self, other)
 
     def __getattr__(self, key):
         if key == 'annotation':
