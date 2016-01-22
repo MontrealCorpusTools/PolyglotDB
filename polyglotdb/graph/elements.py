@@ -126,7 +126,11 @@ class AlignmentClauseElement(ClauseElement):
     template = "{first}.label = {second}.label"
     side = ''
     def __init__(self, first, second):
+        from .attributes import HierarchicalAnnotation
         self.first = first
+
+        if not isinstance(first, HierarchicalAnnotation) and not isinstance(second, HierarchicalAnnotation):
+            second = getattr(self.first, second.type)
         self.second = second
 
     def __hash__(self):

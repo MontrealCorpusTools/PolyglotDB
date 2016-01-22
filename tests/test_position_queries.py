@@ -6,8 +6,8 @@ from polyglotdb.corpus import CorpusContext
 def test_position_query(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.columns(g.word.phone.position.column_name('position'))
-        q = q.order_by(g.word.begin)
+        q = q.columns(g.phone.word.phone.position.column_name('position'))
+        q = q.order_by(g.phone.word.begin)
         print(q.cypher())
         results = q.all()
         expected = [1,1]

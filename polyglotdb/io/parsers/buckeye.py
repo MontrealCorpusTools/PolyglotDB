@@ -64,6 +64,11 @@ class BuckeyeParser(BaseParser):
             return
         phones = read_phones(phone_path)
 
+        if self.call_back is not None:
+            cur = 0
+            self.call_back("Parsing %s..." % name)
+            self.call_back(0, len(words))
+
         for i, w in enumerate(words):
             if self.stop_check is not None and self.stop_check():
                 return
@@ -85,10 +90,11 @@ class BuckeyeParser(BaseParser):
                 while len(found) < len(expected):
                     cur_phone = phones.pop(0)
                     if phone_match(cur_phone[0], expected[len(found)]) \
-                        and cur_phone[2] >= beg and cur_phone[2] <= end:
+                        and cur_phone[2] >= beg and cur_phone[1] <= end:
                             found.append(cur_phone)
 
                     if not len(phones) and i < len(words)-1:
+                        print(found)
                         print(BuckeyeParseError(word_path, [w]))
                         return
             self.annotation_types[0].add([(word, beg, end)])

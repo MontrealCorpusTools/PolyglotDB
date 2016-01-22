@@ -115,6 +115,7 @@ class PGAnnotationType(object):
 
 class PGSubAnnotation(PGAnnotation):
     def __init__(self, label, type, begin, end):
+        self.id = uuid1()
         self.label = label
         self.type = type
         self.begin = begin

@@ -149,3 +149,9 @@ class GraphQueryError(PGError):
 
 class CorpusConfigError(PGError):
     pass
+
+class SubannotationError(PGError):
+    pass
+
+class GraphModelError(PGError):
+    pass

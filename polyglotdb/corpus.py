@@ -123,22 +123,7 @@ class CorpusContext(object):
         if key == 'pause':
             return PauseAnnotation(corpus = self.corpus_name)
         if key in self.annotation_types:
-            supertype = self.hierarchy[key]
-
-
-            contains = sorted(self.hierarchy.keys())
-            supertypes = [supertype, key]
-            if supertype is not None:
-                while True:
-                    supertype = self.hierarchy[supertype]
-                    if supertype is None:
-                        break
-                    supertypes.append(supertype)
-            contains = [x for x in contains if x not in supertypes]
-            annotations = None
-            if key in self.hierarchy.subannotations:
-                annotations = self.hierarchy.subannotations[key]
-            return AnnotationAttribute(key, corpus = self.corpus_name, contains = contains, annotations = annotations)
+            return AnnotationAttribute(key, corpus = self.corpus_name, hierarchy = self.hierarchy)
         raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.annotation_types)))))
 
     def reset_graph(self):

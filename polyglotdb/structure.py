@@ -81,3 +81,27 @@ class Hierarchy(object):
         else:
             self._data.update(other._data)
             self.subannotations.update(other.subannotations)
+
+    def contained_by(self, key):
+        supertype = self[key]
+        supertypes = [supertype]
+        if supertype is not None:
+            while True:
+                supertype = self[supertype]
+                if supertype is None:
+                    break
+                supertypes.append(supertype)
+        return supertypes
+
+    def contains(self, key):
+        supertypes = self.contained_by(key)
+
+        return [x for x in sorted(self.keys()) if x not in supertypes and x != key]
+
+    get_lower_types = contains
+    get_higher_types = contained_by
+
+    def add_subannotation_type(self, linguistic_type, subannotation_type):
+        if linguistic_type not in self.subannotations:
+            self.subannotations[linguistic_type] = set()
+        self.subannotations[linguistic_type].add(subannotation_type)

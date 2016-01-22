@@ -6,6 +6,8 @@ from .elements import (ContainsClauseElement,
                     RightAlignedClauseElement, LeftAlignedClauseElement,
                     NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
+from .attributes import HierarchicalAnnotation
+
 from .func import Count
 
 from .helper import anchor_attributes, type_attributes
@@ -14,6 +16,7 @@ from .cypher import query_to_cypher, query_to_params
 
 from polyglotdb.io import save_results
 
+from polyglotdb.exceptions import SubannotationError
 
 class GraphQuery(object):
     """
@@ -48,6 +51,8 @@ class GraphQuery(object):
         self._set_token = {}
         self._delete = False
 
+        self._add_subannotations = []
+
     def clear_columns(self):
         """
         Remove any columns specified.  The default columns for any query
@@ -74,15 +79,13 @@ class GraphQuery(object):
         """
         Deprecated, use ``filter`` instead.
         """
-        self._criterion.extend(args)
-        return self
+        return self.filter(*args)
 
     def filter_contained_by(self, *args):
         """
         Deprecated, use ``filter`` instead.
         """
-        self._criterion.extend(args)
-        return self
+        return self.filter(*args)
 
     def columns(self, *args):
         """
@@ -103,6 +106,8 @@ class GraphQuery(object):
 
         Same as query.filter(g.word.begin == g.phone.begin).
         """
+        if not isinstance(annotation_type, HierarchicalAnnotation):
+            annotation_type = getattr(self.to_find, annotation_type.type)
         self._criterion.append(LeftAlignedClauseElement(self.to_find, annotation_type))
         return self
 
@@ -113,6 +118,8 @@ class GraphQuery(object):
 
         Same as query.filter(g.word.end == g.phone.end).
         """
+        if not isinstance(annotation_type, HierarchicalAnnotation):
+            annotation_type = getattr(self.to_find, annotation_type.type)
         self._criterion.append(RightAlignedClauseElement(self.to_find, annotation_type))
         return self
 
@@ -123,6 +130,8 @@ class GraphQuery(object):
 
         Same as query.filter(g.word.begin != g.phone.begin).
         """
+        if not isinstance(annotation_type, HierarchicalAnnotation):
+            annotation_type = getattr(self.to_find, annotation_type.type)
         self._criterion.append(NotLeftAlignedClauseElement(self.to_find, annotation_type))
         return self
 
@@ -133,6 +142,8 @@ class GraphQuery(object):
 
         Same as query.filter(g.word.end != g.phone.end).
         """
+        if not isinstance(annotation_type, HierarchicalAnnotation):
+            annotation_type = getattr(self.to_find, annotation_type.type)
         self._criterion.append(NotRightAlignedClauseElement(self.to_find, annotation_type))
         return self
 
@@ -140,14 +151,6 @@ class GraphQuery(object):
         """
         Generates a Cypher statement based on the query.
         """
-        for c in self._criterion:
-            try:
-                if c.attribute.label == 'discourse':
-                    for c2 in self._criterion:
-                        c2.attribute.annotation.discourse_label = c.value
-                    break
-            except AttributeError:
-                pass
         return query_to_cypher(self)
 
     def cypher_params(self):
@@ -189,7 +192,7 @@ class GraphQuery(object):
         """
         if output_name is None:
             output_name = 'discourse'
-        self = self.columns(self.to_find.discourse.column_name(output_name))
+        self = self.columns(self.to_find.discourse.name.column_name(output_name))
         return self
 
     def annotation_levels(self):
@@ -202,18 +205,22 @@ class GraphQuery(object):
         annotation_levels = defaultdict(set)
         for c in self._criterion:
             for a in c.annotations:
-                key = getattr(self.corpus, a.type)
-                key.discourse_label = a.discourse_label
-                key = key.subset_type(*a.subset_type_labels)
-                key = key.subset_token(*a.subset_token_labels)
-                annotation_levels[key].add(a)
+                if isinstance(a, HierarchicalAnnotation):
+                    annotation_levels[a].add(a)
+                else:
+                    key = getattr(self.corpus, a.type)
+                    key = key.subset_type(*a.subset_type_labels)
+                    key = key.subset_token(*a.subset_token_labels)
+                    annotation_levels[key].add(a)
         for a in self._columns + self._group_by + self._additional_columns:
             t = a.base_annotation
-            key = getattr(self.corpus, t.type)
-            key = key.subset_type(*t.subset_type_labels)
-            key = key.subset_token(*t.subset_token_labels)
-            annotation_levels[key].add(t)
-
+            if isinstance(t, HierarchicalAnnotation):
+                annotation_levels[t].add(t)
+            else:
+                key = getattr(self.corpus, t.type)
+                key = key.subset_type(*t.subset_type_labels)
+                key = key.subset_token(*t.subset_token_labels)
+                annotation_levels[key].add(t)
         return annotation_levels
 
     def times(self, begin_name = None, end_name = None):
@@ -311,4 +318,15 @@ class GraphQuery(object):
         irreversible.
         """
         self._delete = True
+        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+
+    def add_subannotation(self, type, begin, end, label = None):
+        #Check if it's a id-based query
+        for c in self._criterion:
+            if c.attribute.label == 'id':
+                break
+        else:
+            if begin <= 1 and begin >= 0 and end <= 1 and end >= 0:
+                raise(SubannotationError('Subannotations can only be added using queries with an \'id\' filter.'))
+        self._add_subannotations.append((type, begin, end, label))
         self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
