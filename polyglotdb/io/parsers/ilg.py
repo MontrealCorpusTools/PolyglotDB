@@ -28,12 +28,10 @@ class IlgParser(BaseParser):
     '''
     def __init__(self, annotation_types,
                     stop_check = None, call_back = None):
-        self.annotation_types = annotation_types
-        self.hierarchy = Hierarchy({'word': None})
-        self.make_transcription = False
-        self.make_label = True
-        self.stop_check = stop_check
-        self.call_back = call_back
+        super(IlgParser, self).__init__(annotation_types,
+                    Hierarchy({'word': None}), make_transcription = False,
+                    make_label = True,
+                    stop_check = stop_check, call_back = call_back)
 
     def parse_discourse(self, path):
         '''
@@ -60,8 +58,15 @@ class IlgParser(BaseParser):
         index = 0
         name = os.path.splitext(os.path.split(path)[1])[0]
 
+        if self.speaker_parser is not None:
+            speaker = self.speaker_parser.parse_path(word_path)
+            name = speaker + '_' + name
+        else:
+            speaker = None
+
         for a in self.annotation_types:
             a.reset()
+            a.speaker = speaker
 
         mismatching_lines = []
         num_annotations = 0

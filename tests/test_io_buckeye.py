@@ -68,6 +68,7 @@ def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
         q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
         print(q.cypher())
         results = q.all()
+        print(results)
         assert(all(x.speaker == 'tes' for x in results))
 
 def test_load_directory_buckeye(graph_db, buckeye_test_dir):
@@ -82,4 +83,5 @@ def test_load_directory_buckeye(graph_db, buckeye_test_dir):
         q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
         print(q.cypher())
         results = q.all()
+        print(results)
         assert(all(x.speaker == 'tes' for x in results))

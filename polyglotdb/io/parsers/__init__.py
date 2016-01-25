@@ -13,3 +13,5 @@ from .text_transcription import TranscriptionTextParser
 from .textgrid import TextgridParser
 
 from .timit import TimitParser
+
+from .speaker import FilenameSpeakerParser, DirectorySpeakerParser

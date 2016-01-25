@@ -35,7 +35,7 @@ from .sql.query import Lexicon, Inventory
 
 from .graph.cypher import discourse_query
 
-from .exceptions import CorpusConfigError, GraphQueryError
+from .exceptions import CorpusConfigError, GraphQueryError, ConnectionError
 
 class CorpusContext(object):
     """
@@ -76,14 +76,21 @@ class CorpusContext(object):
         if not os.path.exists(self.config.db_path):
             Base.metadata.create_all(self.engine)
 
+    def execute_cypher(self, statement, **parameters):
+        try:
+            return self.graph.cypher.execute(statement, **parameters)
+        except http.SocketError:
+            raise(ConnectionError('PolyglotDB could not connect to the server specified.'))
+        except Exception:
+            raise
+
     @property
     def discourses(self):
         '''
         Return a list of all discourses in the corpus.
         '''
-        q = self.sql_session.query(Discourse)
-        results = [d.name for d in q.all()]
-        return results
+        res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.corpus_name))
+        return [d.discourse for d in res]
 
     def load_variables(self):
         try:
@@ -132,7 +139,7 @@ class CorpusContext(object):
         of this corpus.
         '''
 
-        self.graph.cypher.execute('''MATCH (n:%s) DETACH DELETE n''' % (self.corpus_name))
+        self.execute_cypher('''MATCH (n:%s) DETACH DELETE n''' % (self.corpus_name))
 
         self.annotation_types = set()
         self.hierarchy = Hierarchy({})
@@ -155,7 +162,7 @@ class CorpusContext(object):
         name : str
             Name of the discourse to remove
         '''
-        self.graph.cypher.execute('''MATCH (n:%s:%s)-[r]->() DELETE n, r'''
+        self.execute_cypher('''MATCH (n:%s:%s)-[r]->() DELETE n, r'''
                                     % (self.corpus_name, name))
 
     def discourse(self, name, annotations = None):
@@ -215,19 +222,19 @@ class CorpusContext(object):
 
     def initialize_import(self, data):
         try:
-            self.graph.cypher.execute('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
+            self.execute_cypher('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
         except IndexAlreadyExists:
             pass
 
         try:
-            self.graph.cypher.execute('CREATE INDEX ON :Discourse(name)')
+            self.execute_cypher('CREATE INDEX ON :Discourse(name)')
         except IndexAlreadyExists:
             pass
         try:
-            self.graph.cypher.execute('CREATE INDEX ON :Speaker(name)')
+            self.execute_cypher('CREATE INDEX ON :Speaker(name)')
         except IndexAlreadyExists:
             pass
-        self.graph.cypher.execute('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
+        self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
     def finalize_import(self, data):
         return
@@ -246,11 +253,11 @@ class CorpusContext(object):
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
 
-        self.graph.cypher.execute(
+        self.execute_cypher(
             '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(corpus_name = self.corpus_name),
                     discourse_name = data.name)
         for s in data.speakers:
-            self.graph.cypher.execute(
+            self.execute_cypher(
                 '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.corpus_name),
                         speaker_name = s)
         data.corpus_name = self.corpus_name
@@ -397,5 +404,5 @@ class CorpusContext(object):
 def get_corpora_list(config):
     with CorpusContext(config) as c:
         statement = '''MATCH (n:Corpus) RETURN n.name as name ORDER BY name'''
-        results = c.graph.cypher.execute(statement)
+        results = c.execute_cypher(statement)
     return [x.name for x in results]

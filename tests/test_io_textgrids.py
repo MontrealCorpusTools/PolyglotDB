@@ -36,6 +36,11 @@ def test_load(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
     with CorpusContext('test_textgrid', **graph_db) as c:
         parser = inspect_textgrid(path)
+        parser.annotation_types[1].linguistic_type = 'word'
+        parser.annotation_types[2].ignored = True
+        parser.hierarchy['word'] = None
+        parser.hierarchy['phone'] = 'word'
+        print([(x.linguistic_type, x.name) for x in parser.annotation_types])
         c.load(parser, path)
 
 def test_directory(textgrid_test_dir, graph_db):

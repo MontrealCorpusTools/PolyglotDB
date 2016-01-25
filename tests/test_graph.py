@@ -24,7 +24,8 @@ def test_aggregate_element(timed_config):
 def test_strings(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
-        q = q .columns(g.word.phone.label.column_name('phones'))
+        q = q .columns(g.word.label.column_name('label'),
+                    g.word.phone.label.column_name('phones'))
         print(q.cypher())
         results = q.all()
         assert(all(x.label == 'are' for x in results))
@@ -242,7 +243,8 @@ def test_regex_query(timed_config):
 
 def test_query_duration(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        q = g.query_graph(g.phone).filter(g.phone.label == 'aa').order_by(g.phone.begin.column_name('begin')).duration()
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.order_by(g.phone.begin.column_name('begin')).times().duration()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 3)
@@ -268,7 +270,8 @@ def test_subset(acoustic_config):
         q.set_type('+syllabic')
 
         q = g.query_graph(g.phone.subset_type('+syllabic'))
-        q = q.order_by(g.phone.subset_type('+syllabic').begin.column_name('begin')).duration()
+        q = q.order_by(g.phone.subset_type('+syllabic').begin.column_name('begin'))
+        q = q.times().duration()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 3)

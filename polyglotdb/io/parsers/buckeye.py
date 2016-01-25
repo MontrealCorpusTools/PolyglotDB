@@ -7,6 +7,8 @@ from polyglotdb.exceptions import BuckeyeParseError
 
 from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
 
+from .speaker import FilenameSpeakerParser
+
 FILLERS = set(['uh','um','okay','yes','yeah','oh','heh','yknow','um-huh',
                 'uh-uh','uh-huh','uh-hum','mm-hmm'])
 
@@ -31,6 +33,14 @@ class BuckeyeParser(BaseParser):
         Function to output progress messages
     '''
     _extensions = ['.words']
+
+    def __init__(self, annotation_types, hierarchy,
+                    stop_check = None, call_back = None):
+        super(BuckeyeParser, self).__init__(annotation_types, hierarchy,
+                    make_transcription = False, make_label = False,
+                    stop_check = stop_check, call_back = call_back)
+        self.speaker_parser = FilenameSpeakerParser(3)
+
     def parse_discourse(self, word_path):
         '''
         Parse a Buckeye file for later importing.
@@ -53,9 +63,14 @@ class BuckeyeParser(BaseParser):
             phone_ext = '.PHONES'
         phone_path = os.path.splitext(word_path)[0] + phone_ext
 
+        if self.speaker_parser is not None:
+            speaker = self.speaker_parser.parse_path(word_path)
+        else:
+            speaker = None
+
         for a in self.annotation_types:
             a.reset()
-            a.speaker = name[:3]
+            a.speaker = speaker
 
         try:
             words = read_words(word_path)

@@ -80,6 +80,11 @@ class PathAnnotation(AnnotationAttribute):
             return PositionalAnnotation(self, -2)
         elif key == 'antepenultimate':
             return PositionalAnnotation(self, -3)
+        elif self.hierarchy is not None \
+                and self.type in self.hierarchy.subannotations \
+                and key in self.hierarchy.subannotations[self.type]:
+            from .subannotation import SubAnnotation
+            return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
         return PathAttribute(self, key)
 
 class SubPathAnnotation(PathAnnotation):
@@ -92,6 +97,14 @@ class SubPathAnnotation(PathAnnotation):
         self.annotation = super_annotation
         self.sub = sub_annotation
 
+    @property
+    def hierarchy(self):
+        return self.annotation.hierarchy
+
+    @property
+    def type(self):
+        return self.sub.type
+
     def __hash__(self):
         return hash((self.annotation, self.sub))
 
@@ -100,6 +113,10 @@ class SubPathAnnotation(PathAnnotation):
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         path_type_alias = self.path_type_alias, def_path_type_alias = self.def_path_type_alias,
                         def_path_alias = self.def_path_alias, path_alias = self.path_alias)
+
+    @property
+    def withs(self):
+        return [self.path_alias, self.path_type_alias]
 
     def with_statement(self):
         template = 'collect({a}) as {a}'
@@ -142,6 +159,24 @@ class SubPathAnnotation(PathAnnotation):
     @property
     def alias(self):
         return self.sub.alias
+
+    def __getattr__(self, key):
+        if key == 'annotation':
+            raise(AttributeError('Annotations cannot have annotations.'))
+        if key == 'initial':
+            return PositionalAnnotation(self, 0)
+        elif key == 'final':
+            return PositionalAnnotation(self, -1)
+        elif key == 'penultimate':
+            return PositionalAnnotation(self, -2)
+        elif key == 'antepenultimate':
+            return PositionalAnnotation(self, -3)
+        elif self.hierarchy is not None \
+                and self.type in self.hierarchy.subannotations \
+                and key in self.hierarchy.subannotations[self.type]:
+            from .subannotation import SubAnnotation
+            return SubAnnotation(self, AnnotationAttribute(key, self.annotation.pos, corpus = self.annotation.corpus))
+        return PathAttribute(self, key)
 
 class PositionalAnnotation(SubPathAnnotation):
     def __init__(self, path_annotation, pos):

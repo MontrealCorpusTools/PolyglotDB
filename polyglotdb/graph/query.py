@@ -6,7 +6,7 @@ from .elements import (ContainsClauseElement,
                     RightAlignedClauseElement, LeftAlignedClauseElement,
                     NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
-from .attributes import HierarchicalAnnotation
+from .attributes import HierarchicalAnnotation, SubPathAnnotation, SubAnnotation as QuerySubAnnotation
 
 from .func import Count
 
@@ -17,6 +17,8 @@ from .cypher import query_to_cypher, query_to_params
 from polyglotdb.io import save_results
 
 from polyglotdb.exceptions import SubannotationError
+
+from .models import LinguisticAnnotation, SubAnnotation
 
 class GraphQuery(object):
     """
@@ -35,12 +37,11 @@ class GraphQuery(object):
         self.corpus = corpus
         self.to_find = to_find
         self._criterion = []
-        self._columns = [self.to_find.id.column_name('id'),
-                        self.to_find.label.column_name('label')]
-        self._additional_columns = []
+        self._columns = []
         self._order_by = []
         self._group_by = []
         self._aggregate = []
+        self._preload = []
 
         self._set_type_labels = []
         self._set_token_labels = []
@@ -93,10 +94,9 @@ class GraphQuery(object):
 
         Columns should be :class:`polyglotdb.graph.attributes.Attribute` objects.
         """
-        column_set = set(self._additional_columns)
-        column_set.update(self._columns)
+        column_set = set(self._columns)
         args = [x for x in args if x not in column_set]
-        self._additional_columns.extend(args)
+        self._columns.extend(args)
         return self
 
     def filter_left_aligned(self, annotation_type):
@@ -203,6 +203,7 @@ class GraphQuery(object):
         Used for constructing Cypher statements.
         """
         annotation_levels = defaultdict(set)
+        annotation_levels[self.to_find].add(self.to_find)
         for c in self._criterion:
             for a in c.annotations:
                 if isinstance(a, HierarchicalAnnotation):
@@ -212,15 +213,54 @@ class GraphQuery(object):
                     key = key.subset_type(*a.subset_type_labels)
                     key = key.subset_token(*a.subset_token_labels)
                     annotation_levels[key].add(a)
-        for a in self._columns + self._group_by + self._additional_columns:
-            t = a.base_annotation
-            if isinstance(t, HierarchicalAnnotation):
-                annotation_levels[t].add(t)
-            else:
-                key = getattr(self.corpus, t.type)
-                key = key.subset_type(*t.subset_type_labels)
-                key = key.subset_token(*t.subset_token_labels)
-                annotation_levels[key].add(t)
+        if self._columns:
+            for a in self._columns:
+                t = a.base_annotation
+                if isinstance(t, HierarchicalAnnotation):
+                    annotation_levels[t].add(t)
+                else:
+                    key = getattr(self.corpus, t.type)
+                    key = key.subset_type(*t.subset_type_labels)
+                    key = key.subset_token(*t.subset_token_labels)
+                    annotation_levels[key].add(t)
+        elif self._aggregate:
+            for a in self._group_by:
+                t = a.base_annotation
+                if isinstance(t, HierarchicalAnnotation):
+                    annotation_levels[t].add(t)
+                else:
+                    key = getattr(self.corpus, t.type)
+                    key = key.subset_type(*t.subset_type_labels)
+                    key = key.subset_token(*t.subset_token_labels)
+                    annotation_levels[key].add(t)
+        else:
+
+            type_set = set([self.to_find.type])
+            for a in self._preload:
+                if isinstance(a, QuerySubAnnotation):
+                    continue
+                elif isinstance(a, SubPathAnnotation):
+                    type_set.add(a.sub.type)
+                else:
+                    type_set.add(a.type)
+            for a in self._preload:
+                if isinstance(a, HierarchicalAnnotation):
+                    annotation_levels[a].add(a)
+                elif isinstance(a, QuerySubAnnotation):
+                    if a.annotation.type not in type_set:
+                        raise(SubannotationError('Preloading subannotations must also preload the annotations they are associated with.'))
+                elif isinstance(a, SubPathAnnotation):
+                    a = a.annotation
+                    key = getattr(self.corpus, a.type)
+                    key = key.subset_type(*a.subset_type_labels)
+                    key = key.subset_token(*a.subset_token_labels)
+                    annotation_levels[key].add(a)
+                else:
+                    key = getattr(self.corpus, a.type)
+                    key = key.subset_type(*a.subset_type_labels)
+                    key = key.subset_token(*a.subset_token_labels)
+                    annotation_levels[key].add(a)
+
         return annotation_levels
 
     def times(self, begin_name = None, end_name = None):
@@ -250,21 +290,87 @@ class GraphQuery(object):
         Add a column for the durations of the annotations to the output
         named "duration".
         """
-        self._additional_columns.append(self.to_find.duration.column_name('duration'))
+        self.columns(self.to_find.duration.column_name('duration'))
         return self
 
     def all(self):
         """
         Returns all results for the query
         """
-        return self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+        res_list = self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+        if self._columns:
+            return res_list
+        new_res_list = []
+        for r in res_list:
+            a = LinguisticAnnotation(self.corpus)
+            a.node = r[self.to_find.alias]
+            a.type_node = r[self.to_find.type_alias]
+            for pre in self._preload:
+                if isinstance(pre, HierarchicalAnnotation):
+                    pa = LinguisticAnnotation(self.corpus)
+                    pa.node = r[pre.alias]
+                    pa.type_node = r[pre.type_alias]
+
+                    a._supers[pre.type] = pa
+                elif isinstance(pre, QuerySubAnnotation):
+                    pass
+                elif isinstance(pre, SubPathAnnotation):
+                    subs = r[pre.path_alias]
+                    sub_types = r[pre.path_type_alias]
+                    subbed = []
+                    for i,e in enumerate(subs):
+                        pa = LinguisticAnnotation(self.corpus)
+                        pa.node = e
+                        pa.type_node = sub_types[i]
+                        subbed.append(pa)
+                    a._subs[pre.sub.type] = subbed
+            new_res_list.append(a)
+        #Find subannotations
+        done = []
+        for pre in self._preload:
+            if not isinstance(pre, QuerySubAnnotation):
+                continue
+            if pre.annotation.type in done:
+                continue
+            if self.to_find.type == pre.annotation.type:
+                ids = [x.id for x in new_res_list]
+            else:
+                ids = []
+                for a in new_res_list:
+                    ids.extend(x.id for x in getattr(a, pre.annotation.type))
+            statement = '''MATCH (n:{corpus})<-[:annotates]-(sub) WHERE n.id IN {{ids}} RETURN n.id as id, sub ORDER BY sub.begin'''.format(corpus = self.corpus.corpus_name)
+            id_results = list(self.corpus.execute_cypher(statement, ids = ids))
+            while len(id_results) > 0:
+                i = id_results.pop(0)
+                if self.to_find.type == pre.annotation.type:
+                    for a in new_res_list:
+                        if a.id == i.id:
+                            pa = SubAnnotation(self.corpus)
+                            pa._annotation = a
+                            pa.node = i.sub
+                            if pa._type not in a._subannotations:
+                                a._subannotations[pa._type] = []
+                            a._subannotations[pa._type].append(pa)
+                else:
+                    for a in new_res_list:
+                        for e in getattr(a, pre.annotation.type):
+                            if e.id == i.id:
+                                pa = SubAnnotation(self.corpus)
+                                pa._annotation = e
+                                pa.node = i.sub
+                                if pa._type not in a._subannotations:
+                                    a._subannotations[pa._type] = []
+                                a._subannotations[pa._type].append(pa)
+            done.append(pre.annotation.type)
+
+        return new_res_list
 
     def to_csv(self, path):
         """
         Same as ``all``, but the results of the query are output to the
         specified path as a CSV file.
         """
-        save_results(self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params()), path)
+        save_results(self.corpus.execute_cypher(self.cypher(), **self.cypher_params()), path)
 
     def count(self):
         """
@@ -272,7 +378,7 @@ class GraphQuery(object):
         """
         self._aggregate = [Count()]
         cypher = self.cypher()
-        value = self.corpus.graph.cypher.execute(cypher, **self.cypher_params())
+        value = self.corpus.execute_cypher(cypher, **self.cypher_params())
         self._aggregate = []
         return value.one
 
@@ -284,7 +390,7 @@ class GraphQuery(object):
         """
         self._aggregate = args
         cypher = self.cypher()
-        value = self.corpus.graph.cypher.execute(cypher, **self.cypher_params())
+        value = self.corpus.execute_cypher(cypher, **self.cypher_params())
         if self._group_by or any(not x.collapsing for x in self._aggregate):
             return value
         else:
@@ -297,7 +403,7 @@ class GraphQuery(object):
         for k,v in kwargs.items():
             self._set_type[k] = v
         self._set_type_labels.extend(args)
-        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
         self._set_type = {}
         self._set_type_labels = []
 
@@ -308,7 +414,7 @@ class GraphQuery(object):
         for k,v in kwargs.items():
             self._set_token[k] = v
         self._set_token_labels.extend(args)
-        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
         self._set_token = {}
         self._set_token_labels = []
 
@@ -318,15 +424,8 @@ class GraphQuery(object):
         irreversible.
         """
         self._delete = True
-        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
-    def add_subannotation(self, type, begin, end, label = None):
-        #Check if it's a id-based query
-        for c in self._criterion:
-            if c.attribute.label == 'id':
-                break
-        else:
-            if begin <= 1 and begin >= 0 and end <= 1 and end >= 0:
-                raise(SubannotationError('Subannotations can only be added using queries with an \'id\' filter.'))
-        self._add_subannotations.append((type, begin, end, label))
-        self.corpus.graph.cypher.execute(self.cypher(), **self.cypher_params())
+    def preload(self, *args):
+        self._preload.extend(args)
+        return self

@@ -14,6 +14,10 @@ class SubAnnotation(SubPathAnnotation):
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         def_path_alias = self.def_path_alias, path_alias = self.path_alias)
 
+    @property
+    def withs(self):
+        return [self.path_alias]
+
     def with_statement(self):
         template = 'collect({a}) as {a}'
         return template.format(a=self.path_alias)

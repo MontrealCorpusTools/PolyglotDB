@@ -4,9 +4,12 @@ from polyglotdb.corpus import CorpusContext
 
 from polyglotdb.graph.models import LinguisticAnnotation, SubAnnotation
 
+from polyglotdb.exceptions import SubannotationError
+
 def test_models(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         q = c.query_graph(c.phone).order_by(c.phone.begin)
+        q = q.columns(c.phone.id.column_name('id'))
 
         results = q.all()
         id = results[0].id
@@ -23,6 +26,7 @@ def test_models(acoustic_config):
 def test_type_properties(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         q = c.query_graph(c.word).order_by(c.word.begin)
+        q = q.columns(c.word.id.column_name('id'))
 
         results = q.all()
         id = results[1].id
@@ -35,6 +39,7 @@ def test_type_properties(acoustic_config):
 def test_hierarchical(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         q = c.query_graph(c.word).order_by(c.word.begin)
+        q = q.columns(c.word.id.column_name('id'))
 
         results = q.all()
         id = results[1].id
@@ -45,6 +50,7 @@ def test_hierarchical(acoustic_config):
         assert([x.label for x in model.phone] == ['dh','ih','s'])
 
         q = c.query_graph(c.phone).order_by(c.phone.begin)
+        q = q.columns(c.phone.id.column_name('id'))
 
         results = q.all()
         id = results[1].id
@@ -68,13 +74,14 @@ def test_subannotations(subannotation_config):
 def test_add_subannotation(subannotation_config):
     with CorpusContext(subannotation_config) as c:
         q = c.query_graph(c.phone).order_by(c.phone.id)
+        q = q.columns(c.phone.id.column_name('id'))
         res = q.all()
         id = res[0].id
         model = LinguisticAnnotation(c)
         model.load(id)
         assert(model.voicing_during_closure == [])
 
-        model.add_subannotation('voicing_during_closure', 100, 101)
+        model.add_subannotation('voicing_during_closure', begin = 100, end = 101)
         model.save()
         print(model._subannotations)
         print(model.voicing_during_closure)
@@ -95,3 +102,54 @@ def test_add_subannotation(subannotation_config):
         model.load(id)
 
         assert(model.voicing_during_closure[0].begin == 99)
+
+def test_preload(acoustic_config):
+    with CorpusContext(acoustic_config) as c:
+        q = c.query_graph(c.phone)
+        q = q.order_by(c.phone.begin).preload(c.phone.word)
+        print(q.cypher())
+        results = q.all()
+
+        for r in results:
+            assert('word' in r._supers)
+            assert(r._supers['word'] is not None)
+
+        q = c.query_graph(c.word)
+        q = q.order_by(c.word.begin).preload(c.word.phone)
+        print(q.cypher())
+        results = q.all()
+
+        for r in results:
+            assert('phone' in r._subs)
+            assert(r._subs['phone'] is not None)
+
+def test_preload_sub(subannotation_config):
+    with CorpusContext(subannotation_config) as c:
+        q = c.query_graph(c.phone)
+        q = q.order_by(c.phone.begin).preload(c.phone.voicing_during_closure)
+        print(q.cypher())
+        results = q.all()
+
+        for r in results:
+            assert('voicing_during_closure' in r._subannotations)
+            assert(r._subannotations['voicing_during_closure'] is not None)
+
+        with pytest.raises(SubannotationError):
+
+            q = c.query_graph(c.word)
+            q = q.order_by(c.word.begin).preload(c.word.phone.voicing_during_closure)
+            print(q.cypher())
+        q = c.query_graph(c.word)
+        q = q.order_by(c.word.begin).preload(
+                    c.word.phone,
+                    c.word.phone.voicing_during_closure)
+        print(q.cypher())
+        results = q.all()
+
+        for r in results:
+            assert('phone' in r._subs)
+            assert(r._subs['phone'] is not None)
+
+        assert(any('voicing_during_closure' in e._subannotations for r in results for e in r._subs['phone'] ))
+        assert(any(e._subannotations['voicing_during_closure'] is not None for r in results for e in r._subs['phone']))
+

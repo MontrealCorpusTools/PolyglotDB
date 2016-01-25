@@ -1,9 +1,11 @@
 
 from ..helper import type_attributes, key_for_cypher, value_for_cypher
 
-aggregate_template = '''RETURN {aggregates}{additional_columns}{order_by}'''
+from ..attributes import SubPathAnnotation
 
-distinct_template = '''RETURN {columns}{additional_columns}{order_by}'''
+aggregate_template = '''RETURN {aggregates}{order_by}'''
+
+distinct_template = '''RETURN {columns}{order_by}'''
 
 set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
 REMOVE {alias}:speech
@@ -29,53 +31,24 @@ remove_property_template = '''{alias}.{attribute}'''
 
 delete_template = '''DETACH DELETE {alias}'''
 
-create_subannotation_template = '''CREATE (:{type}:{corpus_name}:speech {{{properties}}})-[:annotates]->({node_alias})'''
-property_template = '''{key}: {value}'''
-
-def generate_create_subannotation(query):
-    from uuid import uuid1
-    id_query = True
-    for c in self._criterion:
-        if c.attribute.label == 'id':
-            break
-    else:
-        id_query = False
-    properties = []
-    for sa in query._add_subannotations:
-        kwargs = {'corpus_name': query.corpus.corpus_name,
-                    'type': sa[0],
-                    'node_alias':query.to_find.alias}
-        if id_query:
-            props = []
-            props.append(property_template.format(key = 'id', value = value_for_cypher(uuid1())))
-            props.append(property_template.format(key = 'begin', value = value_for_cypher(sa[1])))
-            props.append(property_template.format(key = 'end', value = value_for_cypher(sa[2])))
-            if sa[-1] is not None:
-                props.append(property_template.format(key = 'label', value = value_for_cypher(sa[-1])))
-            kwargs['properties'] = ', '.join(props)
-        else:
-
-            pass # need to figure out how to get ids for these
-        string = create_subannotation_template.format(**kwargs)
-
 def generate_order_by(query):
     properties = []
     for c in query._order_by:
-        ac_set = set(query._additional_columns)
+        ac_set = set(query._columns)
         gb_set = set(query._group_by)
         h_c = hash(c[0])
         for col in ac_set:
             if h_c == hash(col):
-                element = col.output_alias
+                element = col.for_cypher()
                 break
         else:
             for col in gb_set:
                 if h_c == hash(col):
-                    element = col.output_alias
+                    element = col.for_cypher()
                     break
             else:
-                query._additional_columns.append(c[0])
-                element = c[0].output_alias
+                element = c[0].for_cypher()
+                #query.columns(c[0])
         if c[1]:
             element += ' DESC'
         properties.append(element)
@@ -103,9 +76,22 @@ def generate_aggregate(query):
         properties.append(a.for_cypher())
     return ', '.join(properties)
 
+def generate_distinct(query):
+
+    properties = []
+    for c in query._columns:
+        properties.append(c.aliased_for_output())
+    if properties:
+        return ', '.join(properties)
+    else:
+        properties = [query.to_find.alias, query.to_find.type_alias]
+        for a in query._preload:
+            properties.extend(a.withs)
+        return ', '.join(properties)
+
 
 def generate_return(query):
-    kwargs = {'order_by': '', 'additional_columns':'', 'columns':''}
+    kwargs = {'order_by': '', 'columns':''}
     return_statement = ''
     if query._delete:
         return generate_delete(query)
@@ -158,22 +144,6 @@ def generate_return(query):
         kwargs['aggregates'] = generate_aggregate(query)
     else:
         template = distinct_template
-        properties = []
-        for c in query._columns:
-            properties.append(c.aliased_for_output())
-        if properties:
-            kwargs['columns'] = ', '.join(properties)
-
+        kwargs['columns'] = generate_distinct(query)
     kwargs['order_by'] = generate_order_by(query)
-
-    properties = []
-    for c in query._additional_columns:
-        if c in query._group_by:
-            continue
-        properties.append(c.aliased_for_output())
-    if properties:
-        string = ', '.join(properties)
-        if kwargs['columns'] or ('aggregates' in kwargs and kwargs['aggregates']):
-            string = ', ' + string
-        kwargs['additional_columns'] += string
     return template.format(**kwargs)

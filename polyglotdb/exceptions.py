@@ -10,6 +10,12 @@ class PGError(Exception):
     """
     Base class for all exceptions explicitly raised in corpustools.
     """
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return '{}: {}'.format(type(self).__name__, self.value)
+
     def __str__(self):
         return self.value
 
@@ -138,14 +144,7 @@ class NoSoundFileError(PGError):
     pass
 
 class GraphQueryError(PGError):
-    def __init__(self, value):
-        self.value = value
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return 'GraphyQueryError: {}'.format(self.value)
+    pass
 
 class CorpusConfigError(PGError):
     pass
@@ -154,4 +153,7 @@ class SubannotationError(PGError):
     pass
 
 class GraphModelError(PGError):
+    pass
+
+class ConnectionError(PGError):
     pass
