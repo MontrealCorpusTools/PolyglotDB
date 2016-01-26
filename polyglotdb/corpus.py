@@ -167,6 +167,8 @@ class CorpusContext(object):
     def __getattr__(self, key):
         if key == 'pause':
             return PauseAnnotation(corpus = self.corpus_name)
+        if key + 's' in self.hierarchy.annotation_types:
+            key += 's' # FIXME
         if key in self.hierarchy.annotation_types:
             return AnnotationAttribute(key, corpus = self.corpus_name, hierarchy = self.hierarchy)
         raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.hierarchy.annotation_types)))))
