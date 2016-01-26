@@ -131,8 +131,11 @@ def test_preload_sub(subannotation_config):
         results = q.all()
 
         for r in results:
-            assert('voicing_during_closure' in r._subannotations)
-            assert(r._subannotations['voicing_during_closure'] is not None)
+            if (r.label == 'g' and r.begin == 2.2) or r.begin == 0:
+                assert('voicing_during_closure' in r._subannotations)
+                assert(r._subannotations['voicing_during_closure'] is not None)
+            else:
+                assert('voicing_during_closure' not in r._subannotations)
 
         with pytest.raises(SubannotationError):
 
@@ -145,10 +148,14 @@ def test_preload_sub(subannotation_config):
                     c.word.phone.voicing_during_closure)
         print(q.cypher())
         results = q.all()
-
+        print(len(results))
         for r in results:
             assert('phone' in r._subs)
             assert(r._subs['phone'] is not None)
+            for e in r._subs['phone']:
+                if e.label == 'k' and e.begin == 0:
+                    assert('burst' in e._subannotations)
+                    assert(e._subannotations['burst'][0].begin == 0)
 
         assert(any('voicing_during_closure' in e._subannotations for r in results for e in r._subs['phone'] ))
         assert(any(e._subannotations['voicing_during_closure'] is not None for r in results for e in r._subs['phone']))

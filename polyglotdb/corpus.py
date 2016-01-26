@@ -6,6 +6,7 @@ import logging
 import time
 from collections import defaultdict
 
+import py2neo
 from py2neo import Graph
 from py2neo.packages.httpstream import http
 http.socket_timeout = 9999
@@ -35,7 +36,7 @@ from .sql.query import Lexicon, Inventory
 
 from .graph.cypher import discourse_query
 
-from .exceptions import CorpusConfigError, GraphQueryError, ConnectionError
+from .exceptions import CorpusConfigError, GraphQueryError, ConnectionError, AuthorizationError
 
 class CorpusContext(object):
     """
@@ -63,12 +64,49 @@ class CorpusContext(object):
         self.corpus_name = self.config.corpus_name
         self.init_sql()
 
-        self.annotation_types = set()
         self.hierarchy = Hierarchy({})
 
         self.lexicon = Lexicon(self)
 
         self.inventory = Inventory(self)
+
+    def generate_hierarchy(self):
+        all_labels = self.graph.node_labels
+        linguistic_labels = []
+        discourses = set(self.discourses)
+        reserved = set(['Speaker', 'Discourse', 'speech', 'pause'])
+        exists_statement = '''MATCH (n:«labels») RETURN 1 LIMIT 1'''
+        for label in all_labels:
+            if label in discourses:
+                continue
+            if label in reserved:
+                continue
+            if label == self.corpus_name:
+                continue
+            if not self.execute_cypher(exists_statement, labels = [self.corpus_name, label]):
+                continue
+            linguistic_labels.append(label)
+        h = {}
+        subs = {}
+        contain_statement = '''MATCH (t:{corpus_name}:«super_label»)<-[:contained_by]-(n:{corpus_name}:«sub_label») RETURN 1 LIMIT 1'''.format(corpus_name = self.corpus_name)
+        annotate_statement = '''MATCH (t:{corpus_name}:«super_label»)<-[:annotates]-(n:{corpus_name}:«sub_label») RETURN 1 LIMIT 1'''.format(corpus_name = self.corpus_name)
+        for sub_label in linguistic_labels:
+            for sup_label in linguistic_labels:
+                if sub_label == sup_label:
+                    continue
+                if self.execute_cypher(contain_statement, super_label = sup_label, sub_label = sub_label):
+                    h[sub_label] = sup_label
+                    break
+                if self.execute_cypher(annotate_statement, super_label = sup_label, sub_label = sub_label):
+                    if sup_label not in subs:
+                        subs[sup_label] = set([])
+                    subs[sup_label].add(sub_label)
+                    break
+            else:
+                h[sub_label] = None
+        h = Hierarchy(h)
+        h.subannotations = subs
+        return h
 
     def init_sql(self):
         self.engine = create_engine(self.config.sql_connection_string)
@@ -81,6 +119,8 @@ class CorpusContext(object):
             return self.graph.cypher.execute(statement, **parameters)
         except http.SocketError:
             raise(ConnectionError('PolyglotDB could not connect to the server specified.'))
+        except py2neo.error.Unauthorized:
+            raise(AuthorizationError('The specified user and password were not authorized by the server.'))
         except Exception:
             raise
 
@@ -96,16 +136,14 @@ class CorpusContext(object):
         try:
             with open(os.path.join(self.config.data_dir, 'variables'), 'rb') as f:
                 var = pickle.load(f)
-            self.annotation_types = var['annotation_types']
             self.hierarchy = var['hierarchy']
         except FileNotFoundError:
-            self.annotation_types = set()
-            self.hierarchy = Hierarchy({})
+            if self.corpus_name:
+                self.hierarchy = self.generate_hierarchy()
 
     def save_variables(self):
         with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
-            pickle.dump({'annotation_types':self.annotation_types,
-                        'hierarchy': self.hierarchy}, f)
+            pickle.dump({'hierarchy': self.hierarchy}, f)
 
     def __enter__(self):
         self.load_variables()
@@ -129,9 +167,9 @@ class CorpusContext(object):
     def __getattr__(self, key):
         if key == 'pause':
             return PauseAnnotation(corpus = self.corpus_name)
-        if key in self.annotation_types:
+        if key in self.hierarchy.annotation_types:
             return AnnotationAttribute(key, corpus = self.corpus_name, hierarchy = self.hierarchy)
-        raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.annotation_types)))))
+        raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.hierarchy.annotation_types)))))
 
     def reset_graph(self):
         '''
@@ -141,7 +179,6 @@ class CorpusContext(object):
 
         self.execute_cypher('''MATCH (n:%s) DETACH DELETE n''' % (self.corpus_name))
 
-        self.annotation_types = set()
         self.hierarchy = Hierarchy({})
 
     def reset(self):
@@ -188,9 +225,13 @@ class CorpusContext(object):
         annotation_type : str
             The type of annotation to look for in the corpus
         '''
-        if annotation_type.type not in self.annotation_types:
-            raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.annotation_types)))))
+        if annotation_type.type not in self.hierarchy.annotation_types:
+            raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.hierarchy.annotation_types)))))
         return GraphQuery(self, annotation_type)
+
+    @property
+    def annotation_types(self):
+        return self.hierarchy.annotation_types
 
     @property
     def lowest_annotation(self):
@@ -198,11 +239,7 @@ class CorpusContext(object):
         Returns the annotation type that is the lowest in the hierarchy
         of containment.
         '''
-        values = self.hierarchy.values()
-        for k in self.hierarchy.keys():
-            if k not in values:
-                return getattr(self, k)
-        return None
+        return self.hierarchy.lowest
 
 
     def add_types(self, parsed_data):
@@ -216,7 +253,6 @@ class CorpusContext(object):
             objects
         '''
         data = list(parsed_data.values())[0]
-        self.annotation_types.update(data.annotation_types)
         data_to_type_csvs(parsed_data, self.config.temporary_directory('csv'))
         import_type_csvs(self, list(parsed_data.values())[0])
 

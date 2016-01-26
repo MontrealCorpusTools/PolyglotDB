@@ -157,3 +157,6 @@ class GraphModelError(PGError):
 
 class ConnectionError(PGError):
     pass
+
+class AuthorizationError(PGError):
+    pass

@@ -1,4 +1,6 @@
 
+from ..attributes import SubAnnotation
+
 def generate_withs(query, all_withs):
     statements = [withs_to_string(all_withs)]
     for c in query._criterion:
@@ -33,6 +35,8 @@ def generate_withs(query, all_withs):
                 all_withs.update(a.with_aliases)
     elif query._preload:
         for a in query._preload:
+            if isinstance(a, SubAnnotation):
+                continue
             if a.with_alias not in all_withs:
                 statement = a.subquery(all_withs)
                 statements.append(statement)

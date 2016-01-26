@@ -11,7 +11,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.corpusConfig = None
 
-        self.connectWidget = ConnectWidget(self)
+        self.connectWidget = ConnectWidget(parent = self)
         self.connectWidget.configChanged.connect(self.updateConfig)
         self.viewWidget = ViewWidget(self)
         self.importWidget = ImportWidget(self)

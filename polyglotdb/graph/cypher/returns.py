@@ -1,7 +1,7 @@
 
 from ..helper import type_attributes, key_for_cypher, value_for_cypher
 
-from ..attributes import SubPathAnnotation
+from ..attributes import SubPathAnnotation, SubAnnotation
 
 aggregate_template = '''RETURN {aggregates}{order_by}'''
 
@@ -86,6 +86,8 @@ def generate_distinct(query):
     else:
         properties = [query.to_find.alias, query.to_find.type_alias]
         for a in query._preload:
+            if isinstance(a, SubAnnotation):
+                continue
             properties.extend(a.withs)
         return ', '.join(properties)
 

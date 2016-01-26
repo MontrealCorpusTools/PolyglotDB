@@ -358,9 +358,9 @@ class GraphQuery(object):
                                 pa = SubAnnotation(self.corpus)
                                 pa._annotation = e
                                 pa.node = i.sub
-                                if pa._type not in a._subannotations:
-                                    a._subannotations[pa._type] = []
-                                a._subannotations[pa._type].append(pa)
+                                if pa._type not in e._subannotations:
+                                    e._subannotations[pa._type] = []
+                                e._subannotations[pa._type].append(pa)
             done.append(pre.annotation.type)
 
         return new_res_list

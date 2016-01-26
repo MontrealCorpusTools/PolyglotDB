@@ -83,6 +83,10 @@ class Hierarchy(object):
             self.subannotations.update(other.subannotations)
 
     @property
+    def annotation_types(self):
+        return set(self._data.keys())
+
+    @property
     def lowest(self):
         for k in self.keys():
             if k not in self.values():
