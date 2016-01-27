@@ -23,6 +23,7 @@ class Hierarchy(object):
             data = {}
         self._data = data
         self.subannotations = {}
+        self.annotation_types = set()
 
     def keys(self):
         '''
@@ -62,6 +63,7 @@ class Hierarchy(object):
 
     def __setitem__(self, key, value):
         self._data[key] = value
+        self.annotation_types.add(key)
 
     def __contains__(self, item):
         return item in self._data
@@ -81,10 +83,7 @@ class Hierarchy(object):
         else:
             self._data.update(other._data)
             self.subannotations.update(other.subannotations)
-
-    @property
-    def annotation_types(self):
-        return set(self._data.keys())
+        self.annotation_types.update(self._data.keys())
 
     @property
     def lowest(self):
