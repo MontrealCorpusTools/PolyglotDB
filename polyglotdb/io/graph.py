@@ -60,7 +60,7 @@ def data_to_graph_csvs(data, directory):
     rel_writers = {}
 
     for k,v in rfs.items():
-        token_header = ['begin', 'end', 'type_id', 'id', 'previous_id']
+        token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse']
         token_header += data[k].token_property_keys
         supertype = data[k].supertype
         if supertype is not None:
@@ -74,7 +74,7 @@ def data_to_graph_csvs(data, directory):
         for s in v:
             path = os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s))
             subanno_files[k,s] = open(path, 'w', encoding = 'utf8')
-            header = ['begin', 'end', 'annotation_id', 'label']
+            header = ['id', 'begin', 'end', 'annotation_id', 'label']
             subanno_writers[k,s] = csv.DictWriter(subanno_files[k,s], header, delimiter = ',')
             subanno_writers[k,s].writeheader()
 
@@ -87,13 +87,13 @@ def data_to_graph_csvs(data, directory):
             if d.super_id is not None:
                 token_additional[data[level].supertype] = d.super_id
             rel_writers[level].writerow(dict(begin = d.begin, end = d.end,
-                             type_id = d.sha(), id = d.id,
-                             previous_id = d.previous_id,
+                             type_id = d.sha(), id = d.id, speaker = d.speaker,
+                             previous_id = d.previous_id, discourse = data.name,
                             **token_additional))
             if d.subannotations:
                 for sub in d.subannotations:
                     row = {'begin': sub.begin, 'end':sub.end, 'label': sub.label,
-                            'annotation_id': d.id}
+                            'annotation_id': d.id, 'id': sub.id}
                     subanno_writers[level, sub.type].writerow(row)
 
     for x in rfs.values():
@@ -103,7 +103,7 @@ def data_to_graph_csvs(data, directory):
 
 def import_type_csvs(corpus_context, discourse_data):
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
-    annotation_types = corpus_context.annotation_types
+    annotation_types = discourse_data.annotation_types
     prop_temp = '''{name}: csvLine.{name}'''
     for at in annotation_types:
         type_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_type.csv'.format(at)).replace('\\','/'))
@@ -129,7 +129,7 @@ MERGE (n:{annotation_type}_type {{ id: csvLine.id{type_property_string} }})
         statement = type_import_statement.format(**kwargs)
         log.info('Loading {} types...'.format(at))
         begin = time.time()
-        corpus_context.graph.cypher.execute(statement)
+        corpus_context.execute_cypher(statement)
         log.info('Finished loading {} types!'.format(at))
         log.debug('{} type loading took: {} seconds.'.format(at, time.time() - begin))
 
@@ -139,7 +139,6 @@ def import_csvs(corpus_context, data):
     initial_begin = time.time()
     name, annotation_types = data.name, data.annotation_types
 
-    corpus_context.graph.cypher.execute('''MERGE (n:Discourse:{} {{name: {{discourse_name}}}})'''.format(corpus_context.corpus_name), discourse_name = data.name)
     prop_temp = '''{name}: csvLine.{name}'''
 
     directory = corpus_context.config.temporary_directory('csv')
@@ -172,8 +171,15 @@ CREATE (t:{annotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.id, b
                             end: toFloat(csvLine.end), discourse: '{discourse}'{token_property_string} }})
 CREATE (t)-[:is_a]->(n)
 WITH t, csvLine
+MERGE (d:Discourse:{corpus_name} {{name: csvLine.discourse}})
+CREATE (t)-[:spoken_in]->(d)
+WITH t, csvLine
+MERGE (s:Speaker:{corpus_name} {{ name: CASE csvLine.speaker WHEN NULL THEN 'unknown' ELSE csvLine.speaker END }})
+CREATE (t)-[:spoken_by]->(s)
+WITH t, csvLine
 MATCH (p:{annotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.previous_id}})
-CREATE (p)-[:precedes]->(t)'''
+CREATE (p)-[:precedes]->(t)
+'''
         kwargs = {'path': rel_path, 'annotation_type': at,
                     'token_property_string': token_prop_string,
                     'corpus_name': corpus_context.corpus_name,
@@ -209,12 +215,13 @@ CREATE (p)-[:precedes]->(t)'''
 
     for k,v in data.hierarchy.subannotations.items():
         for s in v:
+            corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
             path = 'file:///{}'.format(os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s)).replace('\\','/'))
 
             rel_import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
-CREATE (t:{subannotation_type}:{corpus_name}:{discourse}:speech {{begin: toFloat(csvLine.begin),
+CREATE (t:{subannotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
                             end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
 CREATE (t)-[:annotates]->(n)'''
             kwargs = {'path': path, 'annotation_type': k,

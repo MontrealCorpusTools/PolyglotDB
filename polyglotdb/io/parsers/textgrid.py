@@ -49,11 +49,19 @@ class TextgridParser(BaseParser):
         if len(tg.tiers) != len(self.annotation_types):
             raise(TextGridError("The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(path)))
         name = os.path.splitext(os.path.split(path)[1])[0]
+
+        if self.speaker_parser is not None:
+            speaker = self.speaker_parser.parse_path(path)
+        else:
+            speaker = None
+
         for a in self.annotation_types:
             a.reset()
+            a.speaker = speaker
 
         #Parse the tiers
         for i, ti in enumerate(tg.tiers):
+
             if isinstance(ti, IntervalTier):
                 self.annotation_types[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             else:

@@ -24,7 +24,7 @@ def word_probability(average_duration):
 
 def segment_probability(average_duration):
     mean = 0.08327773 # Taken from the Buckeye corpus
-    sd = 0.009260103
+    sd = 0.03175723 #Actually=0.009260103
     return calculate_probability(average_duration, mean, sd)
 
 
@@ -47,6 +47,14 @@ def averageLabelLen(tier):
         return 0
     return sum(len(lab) for lab in labels)/len(labels)
 
+def figure_linguistic_type(labels):
+    if len(labels) == 0:
+        return None
+    elif len(labels) == 1:
+        return labels[0][0]
+    label = min(labels, key = lambda x: x[1])
+    return label[0]
+
 def guess_tiers(tg):
     tier_properties = {}
     tier_guesses = {}
@@ -61,10 +69,22 @@ def guess_tiers(tg):
         word_p = word_probability(v[1])
         phone_p = segment_probability(v[1])
         if word_p > phone_p:
-            tier_guesses[k] = (k, 'word')
+            tier_guesses[k] = ('word', v[0])
         else:
-            tier_guesses[k] = (k, 'segment')
-    hierarchy = Hierarchy({'phone': 'word', 'word': None})
+            tier_guesses[k] = ('segment', v[0])
+    word_labels = [(k,v[1]) for k,v in tier_guesses.items() if v[0] == 'word']
+    phone_labels = [(k,v[1]) for k,v in tier_guesses.items() if v[0] == 'segment']
+    word_type = figure_linguistic_type(word_labels)
+    phone_type = figure_linguistic_type(phone_labels)
+    for k,v in tier_guesses.items():
+        if v[0] == 'word':
+            tier_guesses[k] = word_type
+        else:
+            tier_guesses[k] = phone_type
+    h = {word_type: None}
+    if phone_type is not None:
+        h[phone_type] = word_type
+    hierarchy = Hierarchy(h)
     return tier_guesses, hierarchy
 
 def inspect_textgrid(path):
@@ -101,28 +121,28 @@ def inspect_textgrid(path):
                 if ti.name not in tier_guesses:
                     a = OrthographyTier('word', 'word')
                     a.ignored = True
-                elif tier_guesses[ti.name][1] == 'segment':
-                    a = SegmentTier(ti.name, tier_guesses[ti.name][0])
+                elif tier_guesses[ti.name] == 'segment':
+                    a = SegmentTier(ti.name, tier_guesses[ti.name])
                 else:
                     labels = uniqueLabels(ti)
                     cat = guess_type(labels, trans_delimiters)
                     if cat == 'transcription':
-                        a = TranscriptionTier(ti.name, tier_guesses[ti.name][0])
+                        a = TranscriptionTier(ti.name, tier_guesses[ti.name])
                         a.trans_delimiter = guess_trans_delimiter(labels)
                     elif cat == 'numeric':
                         if isinstance(ti, IntervalTier):
                             raise(NotImplementedError)
                         else:
-                            a = BreakIndexTier(ti.name, tier_guesses[ti.name][0])
+                            a = BreakIndexTier(ti.name, tier_guesses[ti.name])
                     elif cat == 'orthography':
                         if isinstance(ti, IntervalTier):
-                            a = OrthographyTier(ti.name, tier_guesses[ti.name][0])
+                            a = OrthographyTier(ti.name, tier_guesses[ti.name])
                         else:
-                            a = TextOrthographyTier(ti.name, tier_guesses[ti.name][0])
+                            a = TextOrthographyTier(ti.name, tier_guesses[ti.name])
                     elif cat == 'tobi':
-                        a = TobiTier(ti.name, tier_guesses[ti.name][0])
+                        a = TobiTier(ti.name, tier_guesses[ti.name])
                     elif cat == 'grouping':
-                        a = GroupingTier(ti.name, tier_guesses[ti.name][0])
+                        a = GroupingTier(ti.name, tier_guesses[ti.name])
                     else:
                         print(ti.name)
                         print(cat)
