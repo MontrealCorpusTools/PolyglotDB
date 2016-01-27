@@ -68,12 +68,10 @@ def guess_tiers(tg):
             continue
         word_p = word_probability(v[1])
         phone_p = segment_probability(v[1])
-        print(word_p, phone_p, k, v[1])
         if word_p > phone_p:
             tier_guesses[k] = ('word', v[0])
         else:
             tier_guesses[k] = ('segment', v[0])
-    print(tier_guesses)
     word_labels = [(k,v[1]) for k,v in tier_guesses.items() if v[0] == 'word']
     phone_labels = [(k,v[1]) for k,v in tier_guesses.items() if v[0] == 'segment']
     word_type = figure_linguistic_type(word_labels)

@@ -103,7 +103,7 @@ def data_to_graph_csvs(data, directory):
 
 def import_type_csvs(corpus_context, discourse_data):
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
-    annotation_types = corpus_context.annotation_types
+    annotation_types = discourse_data.annotation_types
     prop_temp = '''{name}: csvLine.{name}'''
     for at in annotation_types:
         type_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_type.csv'.format(at)).replace('\\','/'))
@@ -129,7 +129,7 @@ MERGE (n:{annotation_type}_type {{ id: csvLine.id{type_property_string} }})
         statement = type_import_statement.format(**kwargs)
         log.info('Loading {} types...'.format(at))
         begin = time.time()
-        corpus_context.graph.cypher.execute(statement)
+        corpus_context.execute_cypher(statement)
         log.info('Finished loading {} types!'.format(at))
         log.debug('{} type loading took: {} seconds.'.format(at, time.time() - begin))
 
