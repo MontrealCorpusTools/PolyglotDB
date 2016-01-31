@@ -5,7 +5,7 @@ from ..attributes import SubPathAnnotation, SubAnnotation
 
 aggregate_template = '''RETURN {aggregates}{order_by}'''
 
-distinct_template = '''RETURN {columns}{order_by}'''
+distinct_template = '''RETURN {columns}{order_by}{limit}'''
 
 set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
 REMOVE {alias}:speech
@@ -86,9 +86,9 @@ def generate_distinct(query):
     else:
         properties = [query.to_find.alias, query.to_find.type_alias]
         for a in query._preload:
-            if isinstance(a, SubAnnotation):
-                continue
             properties.extend(a.withs)
+            if isinstance(a, SubAnnotation):
+                pass
         return ', '.join(properties)
 
 
@@ -147,5 +147,9 @@ def generate_return(query):
     else:
         template = distinct_template
         kwargs['columns'] = generate_distinct(query)
+        if query._limit is not None:
+            kwargs['limit'] = '\nLIMIT {}'.format(query._limit)
+        else:
+            kwargs['limit'] = ''
     kwargs['order_by'] = generate_order_by(query)
     return template.format(**kwargs)

@@ -475,10 +475,11 @@ class ConnectWidget(QtWidgets.QWidget):
         if config is not None:
             self.connectToServer()
 
-    def connectToServer(self):
+    def connectToServer(self, ignore = False):
         host = self.hostEdit.text()
         if host == '':
-            reply = QtWidgets.QMessageBox.critical(self,
+            if not ignore:
+                reply = QtWidgets.QMessageBox.critical(self,
                     "Invalid information", "IP address must be specified or named 'localhost'.")
             return
         #elif host != 'localhost':
@@ -490,7 +491,8 @@ class ConnectWidget(QtWidgets.QWidget):
         try:
             port = int(port)
         except ValueError:
-            reply = QtWidgets.QMessageBox.critical(self,
+            if not ignore:
+                reply = QtWidgets.QMessageBox.critical(self,
                     "Invalid information", "Port must be an integer.")
             return
         user = self.userEdit.text()
@@ -508,13 +510,15 @@ class ConnectWidget(QtWidgets.QWidget):
             self.configChanged.emit(config)
         except ConnectionError:
             self.configChanged.emit(None)
-            reply = QtWidgets.QMessageBox.critical(self,
+            if not ignore:
+                reply = QtWidgets.QMessageBox.critical(self,
                     "Could not connect to server", "Please ensure that the server is running and the information is valid.")
             return
         except AuthorizationError:
             self.configChanged.emit(None)
-            reply = QtWidgets.QMessageBox.critical(self,
-                    "Could not authenticate", "Please ensure that the username and password are correct.")
+            if not ignore:
+                reply = QtWidgets.QMessageBox.critical(self,
+                        "Could not authenticate", "Please ensure that the username and password are correct.")
             return
 
     def changeConfig(self, name):

@@ -129,8 +129,17 @@ class CorpusContext(object):
         '''
         Return a list of all discourses in the corpus.
         '''
-        res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.corpus_name))
-        return [d.discourse for d in res]
+        q = self.sql_session.query(Discourse).all()
+        if not len(q):
+            res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.corpus_name))
+            discourses = []
+            for d in res:
+                instance = Discourse(name = d.discourse)
+                self.sql_session.add(instance)
+                discourses.append(d.discourse)
+            self.sql_session.flush()
+            return discourses
+        return [x.name for x in q]
 
     def load_variables(self):
         try:
@@ -146,8 +155,8 @@ class CorpusContext(object):
             pickle.dump({'hierarchy': self.hierarchy}, f)
 
     def __enter__(self):
-        self.load_variables()
         self.sql_session = Session()
+        self.load_variables()
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):

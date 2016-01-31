@@ -4,6 +4,8 @@ from py2neo import Node, Relationship
 
 from polyglotdb.exceptions import GraphModelError
 
+from .helper import key_for_cypher, value_for_cypher
+
 class BaseAnnotation(object):
 
     def load(self, id):
@@ -56,6 +58,8 @@ class LinguisticAnnotation(BaseAnnotation):
         self._subs = {}
         self._speaker = None
         self._discourse = None
+
+        self._preloaded = False
 
     def __getattr__(self, key):
         if self.corpus_context is None:
@@ -130,7 +134,9 @@ class LinguisticAnnotation(BaseAnnotation):
             return self._supers[key]
         try:
             if key in self.corpus_context.hierarchy.subannotations[self._type]:
-                if key not in self._subannotations:
+                if self._preloaded and key not in self._subannotations:
+                    return []
+                elif key not in self._subannotations:
                     res = self.corpus_context.execute_cypher('''Match (sub:{a_type})-[:annotates]->(token {{id: {{id}}}}) RETURN sub'''.format(a_type = key), id = self._id)
 
                     self._subannotations[key] = []
@@ -172,29 +178,62 @@ class LinguisticAnnotation(BaseAnnotation):
     def type_node(self, item):
         self._type_node = item
 
-    def add_subannotation(self, type, **properties):
-        sa = SubAnnotation(self.corpus_context)
-        sa._annotation = self
-        sa._unsaved = True
-        sa._type = type
-        if properties is None:
-            properties = {}
+    def delete_subannotation(self, subannotation):
+        for i, sa in enumerate(self._subannotations[subannotation._type]):
+            if sa.id == subannotation.id:
+                break
+        else:
+            raise(GraphModelError('Can\'t delete a subannotation that doesn\'t belong to this annotation.'))
+        subannotation = self._subannotations[subannotation._type].pop(i)
+
+        statement = '''MATCH (n:{type} {{id: {{id}}}}) DETACH DELETE n'''.format(type = subannotation._type)
+
+        self.corpus_context.execute_cypher(statement, id = subannotation.id)
+
+    def add_subannotation(self, type, commit = True, transaction = None, **properties):
+
+        if 'begin' not in properties:
             properties['begin'] = self.begin
+        if 'end' not in properties:
             properties['end'] = self.end
         properties['id'] = str(uuid1())
 
         discourse = self.discourse.name
 
         self.corpus_context.hierarchy.add_subannotation_type(self._type, type)
-        sa.node = Node(type, self.corpus_context.corpus_name, discourse, **properties)
-        self.corpus_context.graph.create(sa.node)
-        rel = Relationship(sa.node, 'annotates', self.node)
-        self.corpus_context.graph.create(rel)
 
-        if type not in self._subannotations:
-            self._subannotations[type] = []
-        self._subannotations[type].append(sa)
-        self._subannotations[type].sort(key = lambda x: x.begin)
+        if transaction is not None:
+            statement = '''MATCH (n:{type}:{corpus}:{discourse} {{id:{{id}}}})
+            CREATE (n)<-[:annotates]-(sub:{sub_type}:{corpus}:{discourse} {{{props}}})'''
+            props = ['{}: {}'.format(key_for_cypher(k),value_for_cypher(v))
+                            for k,v in properties.items()]
+            statement = statement.format(type = self.type, sub_type = type,
+                            corpus=self.corpus_context.corpus_name,
+                            discourse = discourse,props = ', '.join(props))
+            transaction.append(statement, id = self._id)
+        else:
+            to_return = []
+            sa = SubAnnotation(self.corpus_context)
+            sa._annotation = self
+            sa._unsaved = True
+            sa._type = type
+            sa.node = Node(type, self.corpus_context.corpus_name,
+                                discourse, **properties)
+            rel = Relationship(sa.node, 'annotates', self.node)
+
+            if commit:
+                self.corpus_context.graph.create(sa.node)
+                self.corpus_context.graph.create(rel)
+            else:
+                to_return.append(sa.node)
+                to_return.append(rel)
+
+            if type not in self._subannotations:
+                self._subannotations[type] = []
+            self._subannotations[type].append(sa)
+            self._subannotations[type].sort(key = lambda x: x.begin)
+            if not commit:
+                return to_return
 
 class SubAnnotation(BaseAnnotation):
     def __init__(self, corpus_context = None):
@@ -213,6 +252,8 @@ class SubAnnotation(BaseAnnotation):
             return self._annotation
         if key in self._node.properties:
             return self._node.properties[key]
+        if key == 'label':
+            return None
         raise(AttributeError)
 
     def update_properties(self,**kwargs):

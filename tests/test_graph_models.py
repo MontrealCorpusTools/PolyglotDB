@@ -137,15 +137,9 @@ def test_preload_sub(subannotation_config):
             else:
                 assert('voicing_during_closure' not in r._subannotations)
 
-        with pytest.raises(SubannotationError):
-
-            q = c.query_graph(c.word)
-            q = q.order_by(c.word.begin).preload(c.word.phone.voicing_during_closure)
-            print(q.cypher())
         q = c.query_graph(c.word)
         q = q.order_by(c.word.begin).preload(
-                    c.word.phone,
-                    c.word.phone.voicing_during_closure)
+                    c.word.phone)
         print(q.cypher())
         results = q.all()
         print(len(results))
@@ -160,3 +154,23 @@ def test_preload_sub(subannotation_config):
         assert(any('voicing_during_closure' in e._subannotations for r in results for e in r._subs['phone'] ))
         assert(any(e._subannotations['voicing_during_closure'] is not None for r in results for e in r._subs['phone']))
 
+def test_delete(subannotation_config):
+    with CorpusContext(subannotation_config) as c:
+
+        q = c.query_graph(c.phone).order_by(c.phone.id)
+        res = q.all()
+        id = res[0].id
+        model = LinguisticAnnotation(c)
+        model.load(id)
+
+        assert(model.voicing_during_closure[0].begin == 99)
+
+        model.delete_subannotation(model.voicing_during_closure[0])
+
+        q = c.query_graph(c.phone).order_by(c.phone.id)
+        res = q.all()
+        id = res[0].id
+        model = LinguisticAnnotation(c)
+        model.load(id)
+
+        assert(model.voicing_during_closure == [])

@@ -22,6 +22,15 @@ def test_basic(subannotation_config):
         assert(res[0].label == 'g')
         assert(round(res[0].voicing_during_closure, 2) == 0.04)
 
+@pytest.mark.xfail
+def test_filter(subannotation_config):
+    with CorpusContext(subannotation_config) as c:
+
+        q = c.query_graph(c.phone)
+        q = q.filter(c.phone.burst.begin == 0)
+        print(q.cypher())
+        assert(q.all()[0].label == 'k')
+
 def test_add_token_label(subannotation_config):
     with CorpusContext(subannotation_config) as c:
         q = c.query_graph(c.phone).filter(c.phone.label == 'ae')

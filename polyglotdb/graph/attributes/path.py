@@ -90,9 +90,14 @@ class PathAnnotation(AnnotationAttribute):
 class SubPathAnnotation(PathAnnotation):
     subquery_template = '''MATCH ({def_path_type_alias})<-[:is_a]-({def_path_alias})-[:contained_by*]->({alias})
         WITH {input_with_string}, {path_type_alias}, {path_alias}
+        {subannotation_query}
         ORDER BY {path_alias}.begin
         WITH {output_with_string}'''
 
+    subannotation_subquery_template = '''OPTIONAL MATCH ({def_subannotation_alias})-[:annotates]->({path_alias})
+        WITH {output_with_string}'''
+
+    collect_template = 'collect({a}) as {a}'
     def __init__(self, super_annotation, sub_annotation):
         self.annotation = super_annotation
         self.sub = sub_annotation
@@ -109,19 +114,36 @@ class SubPathAnnotation(PathAnnotation):
         return hash((self.annotation, self.sub))
 
     def generate_subquery(self, output_with_string, input_with_string):
+        subannotation_query = self.generate_subannotation_query(input_with_string)
         return self.subquery_template.format(alias = self.annotation.alias,
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         path_type_alias = self.path_type_alias, def_path_type_alias = self.def_path_type_alias,
-                        def_path_alias = self.def_path_alias, path_alias = self.path_alias)
+                        def_path_alias = self.def_path_alias, path_alias = self.path_alias,
+                        subannotation_query = subannotation_query)
+
+    def generate_subannotation_query(self, input_with_string):
+        output_with_string = ','.join([input_with_string, self.path_alias,
+                                self.path_type_alias,
+                                self.collect_template.format(a = self.subannotation_alias)])
+        return self.subannotation_subquery_template.format(def_subannotation_alias = self.def_subannotation_alias,
+                            path_alias = self.path_alias, output_with_string = output_with_string)
+
+    @property
+    def subannotation_alias(self):
+        return 'subannotation_'+ self.path_alias
+
+    @property
+    def def_subannotation_alias(self):
+        return '{}:{}'.format(self.subannotation_alias, self.sub.corpus)
 
     @property
     def withs(self):
-        return [self.path_alias, self.path_type_alias]
+        return [self.path_alias, self.path_type_alias,self.subannotation_alias]
 
     def with_statement(self):
-        template = 'collect({a}) as {a}'
-        return ', '.join([template.format(a=self.path_alias),
-                    template.format(a=self.path_type_alias)])
+        return ', '.join([self.collect_template.format(a=self.path_alias),
+                    self.collect_template.format(a=self.path_type_alias),
+                    self.collect_template.format(a=self.subannotation_alias)])
 
     @property
     def def_path_type_alias(self):
@@ -194,7 +216,12 @@ class PositionalAnnotation(SubPathAnnotation):
         return self.subquery_template.format(alias = self.annotation.annotation.alias,
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         path_type_alias = self.path_type_alias, def_path_type_alias = self.def_path_type_alias,
-                        def_path_alias = self.def_path_alias, path_alias = self.path_alias)
+                        def_path_alias = self.def_path_alias, path_alias = self.path_alias,
+                        subannotation_query = '')
+
+    def with_statement(self):
+        return ', '.join([self.collect_template.format(a=self.path_alias),
+                    self.collect_template.format(a=self.path_type_alias)])
 
     @property
     def type(self):
@@ -211,6 +238,10 @@ class PositionalAnnotation(SubPathAnnotation):
     @property
     def type_alias(self):
         return self.annotation.type_alias
+
+    @property
+    def withs(self):
+        return [self.path_alias, self.path_type_alias]
 
     @property
     def path_type_alias(self):
