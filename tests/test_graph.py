@@ -73,13 +73,49 @@ def test_query_previous(timed_config):
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
+def test_query_previous_previous(timed_config):
+    with CorpusContext(timed_config) as g:
+        q = g.query_graph(g.word).filter(g.word.label == 'cute')
+        q = q.filter(g.word.previous.label == 'are')
+        q = q.filter(g.word.previous.previous.label == 'cats')
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+
+        q = g.query_graph(g.word).filter(g.word.label == 'cute')
+        q = q.columns(g.word.previous.label.column_name('previous_label'),
+                        g.word.previous.previous.label.column_name('previous_previous_label'))
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].previous_label == 'are')
+        assert(results[0].previous_previous_label == 'cats')
+
 def test_query_following(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
         q = q.filter(g.word.following.label == 'too')
         print(q.cypher())
-        print(list(q.all()))
-        assert(len(list(q.all())) == 1)
+        results = q.all()
+        assert(len(results) == 1)
+
+def test_query_following_following(timed_config):
+    with CorpusContext(timed_config) as g:
+        q = g.query_graph(g.word).filter(g.word.label == 'cats')
+        q = q.filter(g.word.following.label == 'are')
+        q = q.filter(g.word.following.following.label == 'cute')
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+
+        q = g.query_graph(g.word).filter(g.word.label == 'cats')
+        q = q.columns(g.word.following.label.column_name('following_label'),
+                        g.word.following.following.label.column_name('following_following_label'))
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].following_label == 'are')
+        assert(results[0].following_following_label == 'cute')
 
 def test_query_time(timed_config):
     with CorpusContext(timed_config) as g:

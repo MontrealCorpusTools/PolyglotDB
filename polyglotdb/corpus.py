@@ -121,6 +121,8 @@ class CorpusContext(object):
             raise(ConnectionError('PolyglotDB could not connect to the server specified.'))
         except py2neo.error.Unauthorized:
             raise(AuthorizationError('The specified user and password were not authorized by the server.'))
+        except http.NetworkAddressError:
+            raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos.'))
         except Exception:
             raise
 

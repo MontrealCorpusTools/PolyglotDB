@@ -282,11 +282,11 @@ class PathAttribute(Attribute):
 
     @property
     def with_aliases(self):
-        return [self.annotation.path_alias, self.annotation.path_type_alias]
+        return self.annotation.withs
 
     @property
     def with_alias(self):
-        return self.annotation.path_type_alias
+        return self.annotation.path_alias
 
 class PositionalAttribute(PathAttribute):
     type_return_template = 'extract(n in {alias}|n.{property})[{pos}]'

@@ -23,8 +23,6 @@ def make_safe(value, delimiter):
 
 
 def save_results(results, path, header = None):
-    if len(results) == 0:
-        raise(IndexError)
     if header is None:
         try:
             header = results.columns
