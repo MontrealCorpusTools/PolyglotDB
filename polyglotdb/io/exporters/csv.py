@@ -19,6 +19,8 @@ def make_safe(value, delimiter):
     """
     if isinstance(value,list):
         return delimiter.join(map(lambda x: make_safe(x, delimiter),value))
+    if value is None:
+        return ''
     return str(value)
 
 
