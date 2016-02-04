@@ -5,7 +5,8 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 
 from polyglotdb.config import CorpusConfig, is_valid_ipv4_address
 from polyglotdb.corpus import CorpusContext, get_corpora_list
-from polyglotdb.exceptions import ConnectionError, PGError, AuthorizationError
+from polyglotdb.exceptions import (ConnectionError, PGError,
+                            AuthorizationError,NetworkAddressError)
 
 from polyglotdb.gui.workers import ImportCorpusWorker
 
@@ -508,17 +509,11 @@ class ConnectWidget(QtWidgets.QWidget):
             corpora = get_corpora_list(config)
             self.corporaList.add(corpora)
             self.configChanged.emit(config)
-        except ConnectionError:
+        except (ConnectionError, AuthorizationError, NetworkAddressError) as e:
             self.configChanged.emit(None)
             if not ignore:
                 reply = QtWidgets.QMessageBox.critical(self,
-                    "Could not connect to server", "Please ensure that the server is running and the information is valid.")
-            return
-        except AuthorizationError:
-            self.configChanged.emit(None)
-            if not ignore:
-                reply = QtWidgets.QMessageBox.critical(self,
-                        "Could not authenticate", "Please ensure that the username and password are correct.")
+                    "Could not connect to server", str(e))
             return
 
     def changeConfig(self, name):

@@ -9,7 +9,7 @@ from collections import defaultdict
 import py2neo
 from py2neo import Graph
 from py2neo.packages.httpstream import http
-http.socket_timeout = 9999
+http.socket_timeout = 15
 from py2neo.cypher.error.schema import IndexAlreadyExists
 
 from .config import CorpusConfig
@@ -36,7 +36,9 @@ from .sql.query import Lexicon, Inventory
 
 from .graph.cypher import discourse_query
 
-from .exceptions import CorpusConfigError, GraphQueryError, ConnectionError, AuthorizationError
+from .exceptions import (CorpusConfigError, GraphQueryError,
+        ConnectionError, AuthorizationError, TemporaryConnectionError,
+        NetworkAddressError)
 
 class CorpusContext(object):
     """
@@ -122,7 +124,11 @@ class CorpusContext(object):
         except py2neo.error.Unauthorized:
             raise(AuthorizationError('The specified user and password were not authorized by the server.'))
         except http.NetworkAddressError:
-            raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos.'))
+            raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
+        except (py2neo.cypher.TransientError,
+                py2neo.cypher.error.network.UnknownFailure,
+                py2neo.cypher.error.statement.ExternalResourceFailure):
+            raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
         except Exception:
             raise
 

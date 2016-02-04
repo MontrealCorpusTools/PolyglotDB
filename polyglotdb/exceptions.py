@@ -163,3 +163,6 @@ class AuthorizationError(PGError):
 
 class NetworkAddressError(PGError):
     pass
+
+class TemporaryConnectionError(PGError):
+    pass
