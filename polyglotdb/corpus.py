@@ -9,7 +9,7 @@ from collections import defaultdict
 import py2neo
 from py2neo import Graph
 from py2neo.packages.httpstream import http
-http.socket_timeout = 15
+http.socket_timeout = 60
 from py2neo.cypher.error.schema import IndexAlreadyExists
 
 from .config import CorpusConfig
@@ -157,6 +157,7 @@ class CorpusContext(object):
         except FileNotFoundError:
             if self.corpus_name:
                 self.hierarchy = self.generate_hierarchy()
+                self.save_variables()
 
     def save_variables(self):
         with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
@@ -168,7 +169,6 @@ class CorpusContext(object):
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):
-        self.save_variables()
         if exc_type is None:
             try:
                 shutil.rmtree(self.config.temp_dir)

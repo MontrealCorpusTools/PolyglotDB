@@ -93,6 +93,7 @@ class CorpusConfig(object):
 
     def init(self):
         os.makedirs(self.log_dir, exist_ok = True)
+        return
         setup_logger('{}_loading'.format(self.corpus_name), os.path.join(self.log_dir, 'load.log'), level = self.log_level)
         setup_logger('{}_querying'.format(self.corpus_name), os.path.join(self.log_dir, 'query.log'), level = self.log_level)
         setup_logger('{}_acoustics'.format(self.corpus_name), os.path.join(self.log_dir, 'acoustics.log'), level = self.log_level)
