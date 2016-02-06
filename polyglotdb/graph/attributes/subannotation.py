@@ -4,7 +4,7 @@ from ..helper import key_for_cypher
 from .path import SubPathAnnotation
 
 class SubAnnotation(SubPathAnnotation):
-    subquery_template = '''MATCH ({def_path_alias})-[:annotates]->({alias})
+    subquery_template = '''OPTIONAL MATCH ({def_path_alias})-[:annotates]->({alias})
         WITH {input_with_string}, {path_alias}
         ORDER BY {path_alias}.begin
         WITH {output_with_string}'''
