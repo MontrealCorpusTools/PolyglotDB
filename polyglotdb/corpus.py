@@ -24,7 +24,7 @@ from .graph.func import Max, Min
 from .graph.attributes import AnnotationAttribute, PauseAnnotation
 
 from .sql.models import (Base, Word, WordProperty, WordNumericProperty, WordPropertyType,
-                    InventoryItem, AnnotationType, Discourse)
+                    InventoryItem, AnnotationType, Discourse,Speaker)
 
 from sqlalchemy import create_engine
 
@@ -126,7 +126,7 @@ class CorpusContext(object):
         except http.NetworkAddressError:
             raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
         except (py2neo.cypher.TransientError,
-                py2neo.cypher.error.network.UnknownFailure,
+                #py2neo.cypher.error.network.UnknownFailure,
                 py2neo.cypher.error.statement.ExternalResourceFailure):
             raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
         except Exception:
@@ -147,6 +147,20 @@ class CorpusContext(object):
                 discourses.append(d.discourse)
             self.sql_session.flush()
             return discourses
+        return [x.name for x in q]
+
+    @property
+    def speakers(self):
+        q = self.sql_session.query(Speaker).all()
+        if not len(q):
+            res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.corpus_name))
+            speakers = []
+            for s in res:
+                instance = Speaker(name = s.speaker)
+                self.sql_session.add(instance)
+                discourses.append(s.speaker)
+            self.sql_session.flush()
+            return speakers
         return [x.name for x in q]
 
     def load_variables(self):

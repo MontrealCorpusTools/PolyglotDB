@@ -101,6 +101,7 @@ class SubPathAnnotation(PathAnnotation):
     def __init__(self, super_annotation, sub_annotation):
         self.annotation = super_annotation
         self.sub = sub_annotation
+        self.with_subannotations = False
 
     @property
     def hierarchy(self):
@@ -114,7 +115,10 @@ class SubPathAnnotation(PathAnnotation):
         return hash((self.annotation, self.sub))
 
     def generate_subquery(self, output_with_string, input_with_string):
-        subannotation_query = self.generate_subannotation_query(input_with_string)
+        if self.with_subannotations:
+            subannotation_query = self.generate_subannotation_query(input_with_string)
+        else:
+            subannotation_query = ''
         return self.subquery_template.format(alias = self.annotation.alias,
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         path_type_alias = self.path_type_alias, def_path_type_alias = self.def_path_type_alias,
@@ -138,12 +142,18 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def withs(self):
-        return [self.path_alias, self.path_type_alias,self.subannotation_alias]
+        withs = [self.path_alias,self.path_type_alias]
+        if self.with_subannotations:
+            withs.append(self.subannotation_alias)
+        return withs
 
     def with_statement(self):
-        return ', '.join([self.collect_template.format(a=self.path_alias),
-                    self.collect_template.format(a=self.path_type_alias),
-                    self.collect_template.format(a=self.subannotation_alias)])
+        withs = [self.collect_template.format(a=self.path_alias),
+                    self.collect_template.format(a=self.path_type_alias)
+                    ]
+        if self.with_subannotations:
+            withs.append(self.collect_template.format(a=self.subannotation_alias))
+        return ', '.join(withs)
 
     @property
     def def_path_type_alias(self):

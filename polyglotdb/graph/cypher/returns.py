@@ -91,12 +91,27 @@ def generate_distinct(query):
                 pass
         return ', '.join(properties)
 
+def generate_cache(query):
+    properties = []
+    for c in query._cache:
+        kwargs = {'alias': c.base_annotation.alias,
+                'attribute': c.output_alias,
+                'value': c.for_cypher()
+                }
+        set_string = set_property_template.format(**kwargs)
+        properties.append(set_string)
+    if properties:
+        return 'SET {}'.format(', '.join(properties))
+    else:
+        return ''
 
 def generate_return(query):
     kwargs = {'order_by': '', 'columns':''}
     return_statement = ''
     if query._delete:
         return generate_delete(query)
+    if query._cache:
+        return generate_cache(query)
     set_strings = []
     set_label_strings = []
     remove_label_strings = []

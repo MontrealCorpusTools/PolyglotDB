@@ -55,6 +55,7 @@ class GraphQuery(object):
         self._limit = None
 
         self._add_subannotations = []
+        self._cache = []
 
     def clear_columns(self):
         """
@@ -217,6 +218,16 @@ class GraphQuery(object):
                     annotation_levels[key].add(a)
         if self._columns:
             for a in self._columns:
+                t = a.base_annotation
+                if isinstance(t, HierarchicalAnnotation):
+                    annotation_levels[t].add(t)
+                else:
+                    key = getattr(self.corpus, t.type)
+                    key = key.subset_type(*t.subset_type_labels)
+                    key = key.subset_token(*t.subset_token_labels)
+                    annotation_levels[key].add(t)
+        elif self._cache:
+            for a in self._cache:
                 t = a.base_annotation
                 if isinstance(t, HierarchicalAnnotation):
                     annotation_levels[t].add(t)
@@ -409,3 +420,7 @@ class GraphQuery(object):
     def limit(self, limit):
         self._limit = limit
         return self
+
+    def cache(self, *args):
+        self._cache.extend(args)
+        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())

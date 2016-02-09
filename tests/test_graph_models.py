@@ -64,8 +64,10 @@ def test_subannotations(subannotation_config):
     with CorpusContext(subannotation_config) as c:
         q = c.query_graph(c.phone).columns(c.phone.voicing_during_closure.id.column_name('voicing_ids'))
         res = q.all()
-
-        id = res[0].voicing_ids[0]
+        for x in res:
+            if len(x.voicing_ids) > 0:
+                id = x.voicing_ids[0]
+                break
         model = SubAnnotation(c)
         model.load(id)
         assert(model._type == 'voicing_during_closure')

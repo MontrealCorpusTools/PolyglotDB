@@ -28,6 +28,7 @@ def test_strings(timed_config):
                     g.word.phone.label.column_name('phones'))
         print(q.cypher())
         results = q.all()
+
         assert(all(x.label == 'are' for x in results))
         assert(all(x.phones == ['aa','r'] for x in results))
 
@@ -147,6 +148,11 @@ def test_query_columns_contained(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.columns(g.phone.word.label)
+        print(q.cypher())
+        assert(len(list(q.all())) == 3)
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.columns(g.phone.word.label, g.phone.word.line.label)
         print(q.cypher())
         assert(len(list(q.all())) == 3)
 
@@ -371,3 +377,23 @@ def test_mirrored(acoustic_config):
         results = q.all()
         print(results)
         assert(len(results) == 2)
+
+
+def test_cached(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+
+        q = g.query_graph(g.word)
+        q.cache(g.word.phone.subset_type('syllabic').count.column_name('num_syllables'))
+        print(q.cypher())
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.filter(g.phone.following.label == 'k')
+
+        q = q.columns(g.phone.word.num_syllables.column_name('num_syllables_in_word'),
+                    g.phone.word.phone.count.column_name('num_segments_in_word'),)
+        q = q.order_by(g.phone.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 2)
+        assert(results[0].num_segments_in_word == 5)
+        assert(results[0].num_syllables_in_word == 2)
