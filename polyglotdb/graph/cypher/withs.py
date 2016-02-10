@@ -17,6 +17,13 @@ def generate_withs(query, all_withs):
                 statements.append(statement)
 
                 all_withs.update(a.with_aliases)
+    elif query._cache:
+        for a in query._cache:
+            if a.with_alias not in all_withs:
+                statement = a.annotation.subquery(all_withs)
+                statements.append(statement)
+
+                all_withs.update(a.with_aliases)
     elif query._aggregate:
         for a in query._group_by:
             if a.with_alias not in all_withs:
@@ -35,9 +42,8 @@ def generate_withs(query, all_withs):
                 all_withs.update(a.with_aliases)
     elif query._preload:
         for a in query._preload:
-            if isinstance(a, SubAnnotation):
-                continue
             if a.with_alias not in all_withs:
+                a.with_subannotations = True
                 statement = a.subquery(all_withs)
                 statements.append(statement)
 

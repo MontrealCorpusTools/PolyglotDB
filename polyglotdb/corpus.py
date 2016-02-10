@@ -9,7 +9,7 @@ from collections import defaultdict
 import py2neo
 from py2neo import Graph
 from py2neo.packages.httpstream import http
-http.socket_timeout = 9999
+http.socket_timeout = 60
 from py2neo.cypher.error.schema import IndexAlreadyExists
 
 from .config import CorpusConfig
@@ -24,7 +24,7 @@ from .graph.func import Max, Min
 from .graph.attributes import AnnotationAttribute, PauseAnnotation
 
 from .sql.models import (Base, Word, WordProperty, WordNumericProperty, WordPropertyType,
-                    InventoryItem, AnnotationType, Discourse)
+                    InventoryItem, AnnotationType, Discourse,Speaker)
 
 from sqlalchemy import create_engine
 
@@ -36,7 +36,9 @@ from .sql.query import Lexicon, Inventory
 
 from .graph.cypher import discourse_query
 
-from .exceptions import CorpusConfigError, GraphQueryError, ConnectionError, AuthorizationError
+from .exceptions import (CorpusConfigError, GraphQueryError,
+        ConnectionError, AuthorizationError, TemporaryConnectionError,
+        NetworkAddressError)
 
 class CorpusContext(object):
     """
@@ -121,6 +123,12 @@ class CorpusContext(object):
             raise(ConnectionError('PolyglotDB could not connect to the server specified.'))
         except py2neo.error.Unauthorized:
             raise(AuthorizationError('The specified user and password were not authorized by the server.'))
+        except http.NetworkAddressError:
+            raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
+        except (py2neo.cypher.TransientError,
+                #py2neo.cypher.error.network.UnknownFailure,
+                py2neo.cypher.error.statement.ExternalResourceFailure):
+            raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
         except Exception:
             raise
 
@@ -129,8 +137,31 @@ class CorpusContext(object):
         '''
         Return a list of all discourses in the corpus.
         '''
-        res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.corpus_name))
-        return [d.discourse for d in res]
+        q = self.sql_session.query(Discourse).all()
+        if not len(q):
+            res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.corpus_name))
+            discourses = []
+            for d in res:
+                instance = Discourse(name = d.discourse)
+                self.sql_session.add(instance)
+                discourses.append(d.discourse)
+            self.sql_session.flush()
+            return discourses
+        return [x.name for x in q]
+
+    @property
+    def speakers(self):
+        q = self.sql_session.query(Speaker).all()
+        if not len(q):
+            res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.corpus_name))
+            speakers = []
+            for s in res:
+                instance = Speaker(name = s.speaker)
+                self.sql_session.add(instance)
+                speakers.append(s.speaker)
+            self.sql_session.flush()
+            return speakers
+        return [x.name for x in q]
 
     def load_variables(self):
         try:
@@ -140,18 +171,18 @@ class CorpusContext(object):
         except FileNotFoundError:
             if self.corpus_name:
                 self.hierarchy = self.generate_hierarchy()
+                self.save_variables()
 
     def save_variables(self):
         with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
             pickle.dump({'hierarchy': self.hierarchy}, f)
 
     def __enter__(self):
-        self.load_variables()
         self.sql_session = Session()
+        self.load_variables()
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):
-        self.save_variables()
         if exc_type is None:
             try:
                 shutil.rmtree(self.config.temp_dir)
@@ -275,6 +306,7 @@ class CorpusContext(object):
         self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
     def finalize_import(self, data):
+        self.save_variables()
         return
         #import_csvs(self, data)
 

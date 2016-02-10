@@ -5,7 +5,8 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 
 from polyglotdb.config import CorpusConfig, is_valid_ipv4_address
 from polyglotdb.corpus import CorpusContext, get_corpora_list
-from polyglotdb.exceptions import ConnectionError, PGError, AuthorizationError
+from polyglotdb.exceptions import (ConnectionError, PGError,
+                            AuthorizationError,NetworkAddressError)
 
 from polyglotdb.gui.workers import ImportCorpusWorker
 
@@ -475,10 +476,11 @@ class ConnectWidget(QtWidgets.QWidget):
         if config is not None:
             self.connectToServer()
 
-    def connectToServer(self):
+    def connectToServer(self, ignore = False):
         host = self.hostEdit.text()
         if host == '':
-            reply = QtWidgets.QMessageBox.critical(self,
+            if not ignore:
+                reply = QtWidgets.QMessageBox.critical(self,
                     "Invalid information", "IP address must be specified or named 'localhost'.")
             return
         #elif host != 'localhost':
@@ -490,7 +492,8 @@ class ConnectWidget(QtWidgets.QWidget):
         try:
             port = int(port)
         except ValueError:
-            reply = QtWidgets.QMessageBox.critical(self,
+            if not ignore:
+                reply = QtWidgets.QMessageBox.critical(self,
                     "Invalid information", "Port must be an integer.")
             return
         user = self.userEdit.text()
@@ -506,15 +509,11 @@ class ConnectWidget(QtWidgets.QWidget):
             corpora = get_corpora_list(config)
             self.corporaList.add(corpora)
             self.configChanged.emit(config)
-        except ConnectionError:
+        except (ConnectionError, AuthorizationError, NetworkAddressError) as e:
             self.configChanged.emit(None)
-            reply = QtWidgets.QMessageBox.critical(self,
-                    "Could not connect to server", "Please ensure that the server is running and the information is valid.")
-            return
-        except AuthorizationError:
-            self.configChanged.emit(None)
-            reply = QtWidgets.QMessageBox.critical(self,
-                    "Could not authenticate", "Please ensure that the username and password are correct.")
+            if not ignore:
+                reply = QtWidgets.QMessageBox.critical(self,
+                    "Could not connect to server", str(e))
             return
 
     def changeConfig(self, name):

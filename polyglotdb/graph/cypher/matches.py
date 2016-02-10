@@ -3,8 +3,8 @@ from ..attributes import PauseAnnotation, AnnotationAttribute
 
 
 anchor_template = '''({token_alias})-[:is_a]->({type_alias})'''
-prec_template = '''({prev_type_alias})<-[:is_a]-({prev_alias})-[:precedes]->({node_alias})'''
-foll_template = '''({node_alias})-[:precedes]->({foll_alias})-[:is_a]->({foll_type_alias})'''
+prec_template = '''({prev_type_alias})<-[:is_a]-({prev_alias})-[:precedes{dist}]->({node_alias})'''
+foll_template = '''({node_alias})-[:precedes{dist}]->({foll_alias})-[:is_a]->({foll_type_alias})'''
 
 prec_pause_template = '''{path_alias} = (:speech:word)-[:precedes_pause*0..]->({node_alias})'''
 foll_pause_template = '''{path_alias} = ({node_alias})-[:precedes_pause*0..]->(:speech:word)'''
@@ -12,6 +12,7 @@ foll_pause_template = '''{path_alias} = ({node_alias})-[:precedes_pause*0..]->(:
 
 def generate_match(annotation_type, annotation_list, filter_annotations):
     annotation_list = sorted(annotation_list, key = lambda x: x.pos)
+    positions = set(x.pos for x in annotation_list)
     prec_condition = ''
     foll_condition = ''
     defined = set()
@@ -47,7 +48,16 @@ def generate_match(annotation_type, annotation_list, filter_annotations):
                 kwargs['path_alias'] = a.path_alias
                 where = a.additional_where()
             else:
-                kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                if a.pos + 1 in positions:
+                    kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos+1,a.corpus).alias
+
+                    kwargs['dist'] = ''
+                else:
+                    kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                    if a.pos == -1:
+                        kwargs['dist'] = ''
+                    else:
+                        kwargs['dist'] = '*{}'.format(a.pos)
                 kwargs['prev_alias'] = a.define_alias
                 kwargs['prev_type_alias'] = a.define_type_alias
             anchor_string = prec.format(**kwargs)
@@ -59,7 +69,17 @@ def generate_match(annotation_type, annotation_list, filter_annotations):
                 kwargs['path_alias'] = a.path_alias
                 where = a.additional_where()
             else:
-                kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                if a.pos - 1 in positions:
+                    kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos-1,a.corpus).alias
+
+                    kwargs['dist'] = ''
+                else:
+                    kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                    if a.pos == 1:
+                        kwargs['dist'] = ''
+                    else:
+                        kwargs['dist'] = '*{}'.format(a.pos)
+
                 kwargs['foll_alias'] = a.define_alias
                 kwargs['foll_type_alias'] = a.define_type_alias
             anchor_string = foll.format(**kwargs)

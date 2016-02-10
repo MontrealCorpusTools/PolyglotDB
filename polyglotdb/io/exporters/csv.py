@@ -19,12 +19,12 @@ def make_safe(value, delimiter):
     """
     if isinstance(value,list):
         return delimiter.join(map(lambda x: make_safe(x, delimiter),value))
+    if value is None:
+        return ''
     return str(value)
 
 
 def save_results(results, path, header = None):
-    if len(results) == 0:
-        raise(IndexError)
     if header is None:
         try:
             header = results.columns

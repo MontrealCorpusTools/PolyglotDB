@@ -23,7 +23,7 @@ class Hierarchy(object):
             data = {}
         self._data = data
         self.subannotations = {}
-        self.annotation_types = set()
+        self.annotation_types = set(data.keys())
 
     def keys(self):
         '''
@@ -64,6 +64,12 @@ class Hierarchy(object):
     def __setitem__(self, key, value):
         self._data[key] = value
         self.annotation_types.add(key)
+
+    def __delitem__(self, key):
+        del self._data[key]
+        for k,v in self._data.items():
+            if v == key:
+                self._data[k] = None
 
     def __contains__(self, item):
         return item in self._data
@@ -107,6 +113,13 @@ class Hierarchy(object):
                     break
         return ats
 
+    @property
+    def lowest_to_highest(self):
+        ats = [self.lowest]
+        while len(ats) < len(self.keys()):
+            ats.append(self[ats[-1]])
+        return ats
+
     def contained_by(self, key):
         supertype = self[key]
         supertypes = [supertype]
@@ -137,11 +150,11 @@ class Hierarchy(object):
     def get_higher_types(self, key):
         higher = []
         found = False
-        for t in self.highest_to_lowest:
+        for t in self.lowest_to_highest:
             if t == key:
                 found = True
                 continue
-            if not found:
+            if found:
                 higher.append(t)
         return higher
 

@@ -160,3 +160,9 @@ class ConnectionError(PGError):
 
 class AuthorizationError(PGError):
     pass
+
+class NetworkAddressError(PGError):
+    pass
+
+class TemporaryConnectionError(PGError):
+    pass

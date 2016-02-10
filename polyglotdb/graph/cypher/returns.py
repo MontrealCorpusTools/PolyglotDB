@@ -5,7 +5,7 @@ from ..attributes import SubPathAnnotation, SubAnnotation
 
 aggregate_template = '''RETURN {aggregates}{order_by}'''
 
-distinct_template = '''RETURN {columns}{order_by}'''
+distinct_template = '''RETURN {columns}{order_by}{limit}'''
 
 set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
 REMOVE {alias}:speech
@@ -86,17 +86,32 @@ def generate_distinct(query):
     else:
         properties = [query.to_find.alias, query.to_find.type_alias]
         for a in query._preload:
-            if isinstance(a, SubAnnotation):
-                continue
             properties.extend(a.withs)
+            if isinstance(a, SubAnnotation):
+                pass
         return ', '.join(properties)
 
+def generate_cache(query):
+    properties = []
+    for c in query._cache:
+        kwargs = {'alias': c.base_annotation.alias,
+                'attribute': c.output_alias,
+                'value': c.for_cypher()
+                }
+        set_string = set_property_template.format(**kwargs)
+        properties.append(set_string)
+    if properties:
+        return 'SET {}'.format(', '.join(properties))
+    else:
+        return ''
 
 def generate_return(query):
     kwargs = {'order_by': '', 'columns':''}
     return_statement = ''
     if query._delete:
         return generate_delete(query)
+    if query._cache:
+        return generate_cache(query)
     set_strings = []
     set_label_strings = []
     remove_label_strings = []
@@ -147,5 +162,9 @@ def generate_return(query):
     else:
         template = distinct_template
         kwargs['columns'] = generate_distinct(query)
+        if query._limit is not None:
+            kwargs['limit'] = '\nLIMIT {}'.format(query._limit)
+        else:
+            kwargs['limit'] = ''
     kwargs['order_by'] = generate_order_by(query)
     return template.format(**kwargs)

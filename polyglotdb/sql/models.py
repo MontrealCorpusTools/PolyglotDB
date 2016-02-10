@@ -93,7 +93,7 @@ class Speaker(Base):
 
     id = Column(Integer, primary_key = True)
 
-    label = Column(String(250), nullable = False)
+    name = Column(String(250), nullable = False)
 
 class SpeakerProperty(Base):
     __tablename__ = 'speaker_property'
