@@ -4,6 +4,8 @@ import sys
 import logging
 import socket
 
+BASE_DIR = os.path.expanduser('~/Documents/SCT')
+
 def setup_logger(logger_name, log_file, level=logging.INFO):
     l = logging.getLogger(logger_name)
     formatter = logging.Formatter('%(asctime)s : %(message)s')
@@ -54,7 +56,7 @@ class CorpusConfig(object):
         self.graph_host = 'localhost'
         self.graph_port = 7474
 
-        self.base_dir = os.path.join(os.path.expanduser('~/Documents/SCT'), self.corpus_name)
+        self.base_dir = os.path.join(BASE_DIR, self.corpus_name)
 
         self.log_level = logging.DEBUG
 

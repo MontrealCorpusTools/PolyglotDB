@@ -5,7 +5,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 
 from polyglotdb.config import CorpusConfig, is_valid_ipv4_address
 from polyglotdb.corpus import CorpusContext, get_corpora_list
-from polyglotdb.exceptions import SocketError, PGError
+from polyglotdb.exceptions import ConnectionError, PGError, AuthorizationError
 
 from polyglotdb.gui.workers import ImportCorpusWorker
 
@@ -401,7 +401,7 @@ class CorporaList(QtWidgets.QGroupBox):
         layout = QtWidgets.QVBoxLayout()
 
         self.corporaList = QtWidgets.QListWidget()
-        self.corporaList.currentTextChanged.connect(self.changed)
+        self.corporaList.itemSelectionChanged.connect(self.changed)
         layout.addWidget(self.corporaList)
         self.setLayout(layout)
 
@@ -413,45 +413,67 @@ class CorporaList(QtWidgets.QGroupBox):
             self.corporaList.addItem(i)
 
     def changed(self):
-        c = self.corporaList.currentItem()
+        c = self.text()
         if c is None:
             c = ''
-        else:
-            c = c.text()
         self.selectionChanged.emit(c)
+
+    def text(self):
+        sel = self.corporaList.selectedItems()
+        if not sel:
+            return None
+        return sel[0].text()
 
 
 class ConnectWidget(QtWidgets.QWidget):
     configChanged = QtCore.pyqtSignal(object)
-    def __init__(self, parent = None):
+    def __init__(self, config = None, parent = None):
         super(ConnectWidget, self).__init__(parent)
 
         layout = QtWidgets.QHBoxLayout()
-        flayout = QtWidgets.QFormLayout()
+        self.formlayout = QtWidgets.QFormLayout()
 
         self.hostEdit = QtWidgets.QLineEdit()
-        self.hostEdit.setText('localhost')
+        if config is not None:
+            self.hostEdit.setText(config.graph_host)
+        else:
+            self.hostEdit.setText('localhost')
         self.portEdit = QtWidgets.QLineEdit()
-        self.portEdit.setText('7474')
+        if config is not None:
+            self.portEdit.setText(str(config.graph_port))
+        else:
+            self.portEdit.setText('7474')
         self.userEdit = QtWidgets.QLineEdit()
+        if config is not None:
+            self.userEdit.setText(config.graph_user)
         self.passwordEdit = QtWidgets.QLineEdit()
+        if config is not None:
+            self.passwordEdit.setText(config.graph_password)
+        self.passwordEdit.setEchoMode(QtWidgets.QLineEdit.Password)
 
-        flayout.addRow('IP address (or localhost)', self.hostEdit)
-        flayout.addRow('Port', self.portEdit)
-        flayout.addRow('Username (optional)', self.userEdit)
-        flayout.addRow('Password (optional)', self.passwordEdit)
+        self.formlayout.addRow('IP address (or localhost)', self.hostEdit)
+        self.formlayout.addRow('Port', self.portEdit)
+        self.formlayout.addRow('Username (optional)', self.userEdit)
+        self.formlayout.addRow('Password (optional)', self.passwordEdit)
 
         connectButton = QtWidgets.QPushButton('Connect')
         connectButton.clicked.connect(self.connectToServer)
-        flayout.addRow(connectButton)
 
-        layout.addLayout(flayout)
+        self.hostEdit.returnPressed.connect(connectButton.click)
+        self.portEdit.returnPressed.connect(connectButton.click)
+        self.userEdit.returnPressed.connect(connectButton.click)
+        self.passwordEdit.returnPressed.connect(connectButton.click)
+        self.formlayout.addRow(connectButton)
+
+        layout.addLayout(self.formlayout)
 
         self.corporaList = CorporaList()
         self.corporaList.selectionChanged.connect(self.changeConfig)
         layout.addWidget(self.corporaList)
 
         self.setLayout(layout)
+        if config is not None:
+            self.connectToServer()
 
     def connectToServer(self):
         host = self.hostEdit.text()
@@ -459,11 +481,11 @@ class ConnectWidget(QtWidgets.QWidget):
             reply = QtWidgets.QMessageBox.critical(self,
                     "Invalid information", "IP address must be specified or named 'localhost'.")
             return
-        elif host != 'localhost':
-            if not is_valid_ipv4_address(host):
-                reply = QtWidgets.QMessageBox.critical(self,
-                        "Invalid information", "IP address must be properly specified.")
-                return
+        #elif host != 'localhost':
+            #if not is_valid_ipv4_address(host):
+            #    reply = QtWidgets.QMessageBox.critical(self,
+            #            "Invalid information", "IP address must be properly specified.")
+            #    return
         port = self.portEdit.text()
         try:
             port = int(port)
@@ -484,10 +506,15 @@ class ConnectWidget(QtWidgets.QWidget):
             corpora = get_corpora_list(config)
             self.corporaList.add(corpora)
             self.configChanged.emit(config)
-        except SocketError:
+        except ConnectionError:
             self.configChanged.emit(None)
             reply = QtWidgets.QMessageBox.critical(self,
                     "Could not connect to server", "Please ensure that the server is running and the information is valid.")
+            return
+        except AuthorizationError:
+            self.configChanged.emit(None)
+            reply = QtWidgets.QMessageBox.critical(self,
+                    "Could not authenticate", "Please ensure that the username and password are correct.")
             return
 
     def changeConfig(self, name):

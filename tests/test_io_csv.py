@@ -17,7 +17,10 @@ def test_to_csv(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export.csv')
     with CorpusContext('acoustic', **graph_db) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
-        q = q.order_by(g.phone.begin.column_name('begin')).duration()
+        q = q.columns(g.phone.label.column_name('label'),
+                    g.phone.duration.column_name('duration'),
+                    g.phone.begin.column_name('begin'))
+        q = q.order_by(g.phone.begin.column_name('begin'))
         q.to_csv(export_path)
 
     #ignore ids
@@ -33,7 +36,7 @@ def test_to_csv(graph_db, export_test_dir):
                 continue
             line = line.split(',')
             print(line)
-            assert(line[1:] == expected[i])
+            assert(line == expected[i])
             i += 1
 
 

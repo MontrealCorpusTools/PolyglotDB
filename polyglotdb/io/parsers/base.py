@@ -26,11 +26,13 @@ class BaseParser(object):
     '''
     _extensions = ['.txt']
     def __init__(self, annotation_types, hierarchy, make_transcription = True,
+                    make_label = False,
                     stop_check = None, call_back = None):
+        self.speaker_parser = None
         self.annotation_types = annotation_types
         self.hierarchy = hierarchy
         self.make_transcription = make_transcription
-        self.make_label = False
+        self.make_label = make_label
         self.stop_check = stop_check
         self.call_back = call_back
 
@@ -48,7 +50,7 @@ class BaseParser(object):
         for k, v in self.hierarchy.items():
             annotation_types[k] = PGAnnotationType(k)
             annotation_types[k].supertype = v
-            if k == 'word':
+            if 'word' in k:
                 annotation_types[k].is_word = True # FIXME?
             if k not in self.hierarchy.values() and not annotation_types[k].is_word:
                 segment_type = k

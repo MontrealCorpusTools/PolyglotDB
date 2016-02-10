@@ -4,6 +4,8 @@ from .base import BaseParser, DiscourseData
 
 from ..helper import find_wav_path
 
+from .speaker import DirectorySpeakerParser
+
 class TimitParser(BaseParser):
     '''
     Parser for the TIMIT corpus.
@@ -22,6 +24,13 @@ class TimitParser(BaseParser):
         Function to output progress messages
     '''
     _extensions = ['.wrd']
+
+    def __init__(self, annotation_types, hierarchy,
+                    stop_check = None, call_back = None):
+        super(TimitParser, self).__init__(annotation_types, hierarchy,
+                    make_transcription = True, make_label = False,
+                    stop_check = stop_check, call_back = call_back)
+        self.speaker_parser = DirectorySpeakerParser()
 
     def parse_discourse(self, word_path):
         '''
@@ -43,8 +52,13 @@ class TimitParser(BaseParser):
             phone_path = os.path.splitext(word_path)[0] + '.PHN'
         else:
             phone_path = os.path.splitext(word_path)[0] + '.phn'
-        speaker = os.path.basename(os.path.dirname(word_path))
-        name = speaker + '_' + name
+
+        if self.speaker_parser is not None:
+            speaker = self.speaker_parser.parse_path(word_path)
+            name = speaker + '_' + name
+        else:
+            speaker = None
+
         for a in self.annotation_types:
             a.reset()
             a.speaker = speaker

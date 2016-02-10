@@ -65,6 +65,12 @@ def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
         q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 's')
         assert(q.count() == 3)
 
+        q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
+        print(q.cypher())
+        results = q.all()
+        print(results)
+        assert(all(x.speaker == 'tes' for x in results))
+
 def test_load_directory_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
         c.reset()
@@ -73,3 +79,9 @@ def test_load_directory_buckeye(graph_db, buckeye_test_dir):
 
         q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 's')
         assert(q.count() == 3)
+
+        q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
+        print(q.cypher())
+        results = q.all()
+        print(results)
+        assert(all(x.speaker == 'tes' for x in results))

@@ -51,8 +51,7 @@ def test_load_phones(timit_test_dir):
                             ('y', 48200/ 16000,49996 / 16000),
                             ('ix',49996 / 16000,51876 / 16000),
                             ('axr', 51876/ 16000,53756 / 16000),
-                            ('h#',53756 / 16000,55840 / 16000),
-                            ]
+                            ('h#',53756 / 16000,55840 / 16000)]
     phones = read_phones(os.path.join(timit_test_dir,'test.PHN'))
     for i,p in enumerate(expected_phones):
         assert(p == phones[i])
@@ -88,6 +87,10 @@ def test_load_discourse_timit(graph_db, timit_test_dir):
         q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 'dcl')
         assert(q.count() == 2)
 
+        q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
+        results = q.all()
+        assert(all(x.speaker == 'timit' for x in results))
+
 def test_load_directory_timit(graph_db, timit_test_dir):
     parser = inspect_timit(timit_test_dir)
     with CorpusContext('directory_timit', **graph_db) as c:
@@ -96,3 +99,7 @@ def test_load_directory_timit(graph_db, timit_test_dir):
 
         q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 'dcl')
         assert(q.count() == 2)
+
+        q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
+        results = q.all()
+        assert(all(x.speaker == 'timit' for x in results))

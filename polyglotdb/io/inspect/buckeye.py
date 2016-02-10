@@ -29,4 +29,4 @@ def inspect_buckeye(word_path):
     annotation_types[-1].type_property = False
     hierarchy = Hierarchy({'surface_transcription': 'word', 'word': None})
 
-    return BuckeyeParser(annotation_types, hierarchy, make_transcription = False)
+    return BuckeyeParser(annotation_types, hierarchy)
