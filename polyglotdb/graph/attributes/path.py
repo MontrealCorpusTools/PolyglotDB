@@ -11,11 +11,6 @@ class PathAnnotation(AnnotationAttribute):
         OPTIONAL MATCH (n)-[:is_a]->({path_type_alias})
         WITH {output_with_string}'''
 
-    def additional_where(self):
-        if self.key == 'pause':
-            return 'NONE (x in nodes({})[1..-1] where x:speech)'.format(self.path_alias)
-        return None
-
     def subquery(self, withs):
         input_with = ', '.join(withs)
         new_withs = withs - set([self.path_alias])
