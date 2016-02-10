@@ -45,9 +45,10 @@ class Attribute(object):
     def for_cypher(self):
         if self.label == 'duration':
             return '{a}.end - {a}.begin'.format(a = self.annotation.alias)
-        if self.label not in type_attributes:
-            return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
-        return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
+        if self.label  in type_attributes:
+            return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
+        return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
+
 
     @property
     def base_annotation(self):
@@ -150,6 +151,7 @@ class AnnotationAttribute(Attribute):
     has_subquery = False
     alias_prefix = ''
     template = '''({token_alias})-[:is_a]->({type_alias})'''
+    #template = '''({token_alias})'''
     begin_template = '{}_{}_begin'
     end_template = '{}_{}_end'
     alias_template = '{prefix}node_{t}'
