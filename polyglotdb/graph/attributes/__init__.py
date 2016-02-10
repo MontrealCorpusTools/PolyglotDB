@@ -10,8 +10,6 @@ from .discourse import DiscourseAnnotation
 
 from .speaker import SpeakerAnnotation
 
-from .pause import PauseAnnotation
-
 from .subannotation import SubAnnotation
 
 from .hierarchical import HierarchicalAnnotation

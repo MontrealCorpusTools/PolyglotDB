@@ -21,7 +21,7 @@ from .io.graph import (data_to_graph_csvs, import_csvs,
 
 from .graph.query import GraphQuery
 from .graph.func import Max, Min
-from .graph.attributes import AnnotationAttribute, PauseAnnotation
+from .graph.attributes import AnnotationAttribute
 
 from .sql.models import (Base, Word, WordProperty, WordNumericProperty, WordPropertyType,
                     InventoryItem, AnnotationType, Discourse,Speaker)
@@ -33,8 +33,6 @@ from .sql.config import Session
 from .sql.helper import get_or_create
 
 from .sql.query import Lexicon, Inventory
-
-from .graph.cypher import discourse_query
 
 from .exceptions import (CorpusConfigError, GraphQueryError,
         ConnectionError, AuthorizationError, TemporaryConnectionError,
@@ -196,8 +194,6 @@ class CorpusContext(object):
         self.sql_session.close()
 
     def __getattr__(self, key):
-        if key == 'pause':
-            return PauseAnnotation(corpus = self.corpus_name)
         if key + 's' in self.hierarchy.annotation_types:
             key += 's' # FIXME
         if key in self.hierarchy.annotation_types:
@@ -234,17 +230,6 @@ class CorpusContext(object):
         '''
         self.execute_cypher('''MATCH (n:%s:%s)-[r]->() DELETE n, r'''
                                     % (self.corpus_name, name))
-
-    def discourse(self, name, annotations = None):
-        '''
-        Get all words spoken in a discourse.
-
-        Parameters
-        ----------
-        name : str
-            Name of the discourse
-        '''
-        return discourse_query(self, name, annotations)
 
     def query_graph(self, annotation_type):
         '''

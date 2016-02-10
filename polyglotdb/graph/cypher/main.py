@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from ..helper import type_attributes, key_for_cypher, value_for_cypher
 
-from ..attributes import AnnotationAttribute, PathAnnotation, Attribute, PathAttribute, PauseAnnotation
+from ..attributes import AnnotationAttribute, PathAnnotation, Attribute, PathAttribute
 
 from .matches import generate_match
 
@@ -77,32 +77,3 @@ def query_to_params(query):
         except AttributeError:
             pass
     return params
-
-def discourse_query(corpus_context, discourse, annotations):
-    if annotations is None:
-        annotations = ['label']
-    template = '''MATCH (discourse_b0:word:{corpus}:{discourse})
-WITH min(discourse_b0.begin) as mintime, discourse_b0
-WHERE discourse_b0.begin = mintime
-WITH discourse_b0
-MATCH p = (discourse_b0)-[:precedes*0..]->(:word:{corpus}:{discourse})
-WITH COLLECT(p) AS paths, MAX(length(p)) AS maxLength
-WITH FILTER(path IN paths
-  WHERE length(path)= maxLength) AS longestPath
-WITH nodes(head(longestPath)) as np
-UNWIND np as wt
-MATCH (wt)-[:is_a]->(w:word_type)
-RETURN {returns}'''
-    type_extract_template = '''w.{annotation} as {annotation}'''
-    token_extract_template = '''wt.{annotation} as {annotation}'''
-    extracts = []
-    word = corpus_context.word
-    for a in annotations:
-        if a in type_attributes:
-            extract_string = type_extract_template.format(annotation = a)
-        else:
-            extract_string = token_extract_template.format(annotation = a)
-        extracts.append(extract_string)
-    query = template.format(discourse = discourse, corpus = corpus_context.corpus_name,
-                            returns = ', '.join(extracts))
-    return corpus_context.graph.cypher.execute(query)
