@@ -306,6 +306,7 @@ class CorpusContext(object):
         self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
     def finalize_import(self, data):
+        self.save_variables()
         return
         #import_csvs(self, data)
 
