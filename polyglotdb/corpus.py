@@ -158,7 +158,7 @@ class CorpusContext(object):
             for s in res:
                 instance = Speaker(name = s.speaker)
                 self.sql_session.add(instance)
-                discourses.append(s.speaker)
+                speakers.append(s.speaker)
             self.sql_session.flush()
             return speakers
         return [x.name for x in q]
