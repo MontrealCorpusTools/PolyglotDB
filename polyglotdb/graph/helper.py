@@ -3,8 +3,7 @@ import re
 
 non_letter_finder = re.compile('\W')
 
-anchor_attributes = ['begin', 'end', 'duration']
-type_attributes = ['label', 'transcription']
+type_attributes = ['transcription']
 
 def value_for_cypher(value):
     if isinstance(value, str):
