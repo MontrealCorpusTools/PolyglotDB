@@ -9,7 +9,7 @@ from collections import defaultdict
 import py2neo
 from py2neo import Graph
 from py2neo.packages.httpstream import http
-http.socket_timeout = 60
+http.socket_timeout = 999
 from py2neo.cypher.error.schema import IndexAlreadyExists
 
 from .config import CorpusConfig
