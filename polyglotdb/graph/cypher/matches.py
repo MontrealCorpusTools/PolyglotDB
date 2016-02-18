@@ -31,11 +31,16 @@ def generate_match(annotation_type, annotation_list, filter_annotations):
 
             kwargs = {}
             if a.pos + 1 in positions:
-                kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos+1,a.corpus).alias
+                kwargs['node_alias'] = a.following.alias
 
                 kwargs['dist'] = ''
             else:
-                kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                n = a.following
+                while n.pos < 0:
+                    if n.pos in positions:
+                        break
+                    n = n.following
+                kwargs['node_alias'] = n.alias
                 if a.pos == -1:
                     kwargs['dist'] = ''
                 else:
@@ -47,11 +52,16 @@ def generate_match(annotation_type, annotation_list, filter_annotations):
 
             kwargs = {}
             if a.pos - 1 in positions:
-                kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos-1,a.corpus).alias
+                kwargs['node_alias'] = a.previous.alias
 
                 kwargs['dist'] = ''
             else:
-                kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                n = a.previous
+                while n.pos > 0:
+                    if n.pos in positions:
+                        break
+                    n = n.previous
+                kwargs['node_alias'] = n.alias
                 if a.pos == 1:
                     kwargs['dist'] = ''
                 else:
