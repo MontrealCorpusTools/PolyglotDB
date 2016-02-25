@@ -7,6 +7,8 @@ from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
+special_attributes = ['duration', 'count', 'rate', 'position']
+
 class Attribute(object):
     """
     Class for information about the attributes of annotations in a graph
@@ -28,10 +30,11 @@ class Attribute(object):
     output_label : str or None
         User-specified label to use in query results
     """
-    def __init__(self, annotation, label):
+    def __init__(self, annotation, label, type):
         self.annotation = annotation
         self.label = label
         self.output_label = None
+        self.type = type
 
     def __hash__(self):
         return hash((self.annotation, self.label))
@@ -45,7 +48,7 @@ class Attribute(object):
     def for_cypher(self):
         if self.label == 'duration':
             return '{a}.end - {a}.begin'.format(a = self.annotation.alias)
-        if self.label  in type_attributes:
+        if self.type:
             return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
 
@@ -263,7 +266,17 @@ class AnnotationAttribute(Attribute):
             from .subannotation import SubAnnotation
             return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
         else:
-            return Attribute(self, key)
+            if self.hierarchy is None or key in special_attributes:
+                type = False
+            else:
+                if self.hierarchy.has_token_property(self.type, key):
+                    type = False
+                elif self.hierarchy.has_type_property(self.type, key):
+                    type = True
+                else:
+                    raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
+
+            return Attribute(self, key, type)
 
     @property
     def key(self):

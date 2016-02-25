@@ -1,7 +1,7 @@
 
 from ..helper import key_for_cypher
 
-from .base import AnnotationAttribute, Attribute
+from .base import AnnotationAttribute, Attribute, special_attributes
 
 class HierarchicalAnnotation(AnnotationAttribute):
     template = '''({contained_alias})-[:contained_by{depth}]->({containing_alias})-[:is_a]->({containing_type_alias})'''
@@ -59,7 +59,16 @@ class HierarchicalAnnotation(AnnotationAttribute):
             from .subannotation import SubAnnotation
             return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
         else:
-            return Attribute(self, key)
+            if self.hierarchy is None or key in special_attributes:
+                type = False
+            else:
+                if self.hierarchy.has_token_property(self.type, key):
+                    type = False
+                elif self.hierarchy.has_type_property(self.type, key):
+                    type = True
+                else:
+                    raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
+            return Attribute(self, key, type)
 
     @property
     def alias(self):
