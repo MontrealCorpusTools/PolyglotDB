@@ -71,6 +71,20 @@ class CorpusContext(object):
 
         self.inventory = Inventory(self)
 
+    def load_variables(self):
+        try:
+            with open(os.path.join(self.config.data_dir, 'variables'), 'rb') as f:
+                var = pickle.load(f)
+            self.hierarchy = var['hierarchy']
+        except FileNotFoundError:
+            if self.corpus_name:
+                self.hierarchy = self.generate_hierarchy()
+                self.save_variables()
+
+    def save_variables(self):
+        with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
+            pickle.dump({'hierarchy': self.hierarchy}, f)
+
     def generate_hierarchy(self):
         exists_statement = '''MATCH (c:Corpus)<-[:contained_by]-(s)
         WHERE c.name = {corpus_name} RETURN c LIMIT 1'''
@@ -210,9 +224,9 @@ class CorpusContext(object):
 
     def __enter__(self):
         self.sql_session = Session()
-        #self.load_variables()
-        if self.corpus_name:
-            self.hierarchy = self.generate_hierarchy()
+        self.load_variables()
+        #if self.corpus_name:
+        #    self.hierarchy = self.generate_hierarchy()
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):
