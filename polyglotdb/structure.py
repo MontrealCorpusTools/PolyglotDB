@@ -259,12 +259,16 @@ class Hierarchy(object):
         self.subannotations[linguistic_type].add(subannotation_type)
 
     def has_token_property(self, type, key):
+        if type not in self.token_properties:
+            return False
         for name, t in self.token_properties[type]:
             if name == key:
                 return True
         return False
 
     def has_type_property(self, type, key):
+        if type not in self.type_properties:
+            return False
         for name, t in self.type_properties[type]:
             if name == key:
                 return True

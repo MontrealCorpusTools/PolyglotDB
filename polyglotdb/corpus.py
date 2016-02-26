@@ -6,6 +6,7 @@ import logging
 import time
 from collections import defaultdict
 
+import sqlalchemy
 import py2neo
 from py2neo import Graph
 from py2neo.packages.httpstream import http
@@ -63,7 +64,8 @@ class CorpusContext(object):
         self.config.init()
         self.graph = Graph(self.config.graph_connection_string)
         self.corpus_name = self.config.corpus_name
-        self.init_sql()
+        if self.corpus_name:
+            self.init_sql()
 
         self.hierarchy = Hierarchy({})
 
@@ -343,7 +345,10 @@ class CorpusContext(object):
         Reset the graph and SQL databases for a corpus.
         '''
         self.reset_graph()
-        Base.metadata.drop_all(self.engine)
+        try:
+            Base.metadata.drop_all(self.engine)
+        except sqlalchemy.exc.OperationalError:
+            pass
         Base.metadata.create_all(self.engine)
 
     def remove_discourse(self, name):
@@ -421,6 +426,7 @@ class CorpusContext(object):
     def finalize_import(self, data):
         self.encode_hierarchy()
         self.hierarchy = self.generate_hierarchy()
+        self.save_variables()
         return
         #import_csvs(self, data)
 

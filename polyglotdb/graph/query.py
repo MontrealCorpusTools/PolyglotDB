@@ -447,7 +447,6 @@ class GraphQuery(object):
         self._preload.extend(args)
         return self
 
-
     def limit(self, limit):
         self._limit = limit
         return self
@@ -460,7 +459,7 @@ class GraphQuery(object):
         for k in args:
             k = k.output_label
             if not self.corpus.hierarchy.has_token_property(self.to_find.type, k):
-                props_to_add.append((k, type(0.0)))
+                props_to_add.append((k, float))
 
         if props_to_add:
             self.corpus.hierarchy.add_token_properties(self.corpus, self.to_find.type, props_to_add)

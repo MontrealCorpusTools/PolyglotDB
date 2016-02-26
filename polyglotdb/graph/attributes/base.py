@@ -5,9 +5,11 @@ from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
                         InClauseElement, ContainsClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
-                        NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
+                        NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
+                        SubsetClauseElement)
 
-special_attributes = ['duration', 'count', 'rate', 'position']
+special_attributes = ['duration', 'count', 'rate', 'position', 'type_subset',
+                    'token_subset']
 
 class Attribute(object):
     """
@@ -75,7 +77,7 @@ class Attribute(object):
 
     @property
     def with_alias(self):
-        if self.label in type_attributes:
+        if self.type:
             return self.annotation.type_alias
         else:
             return self.annotation.alias
@@ -90,6 +92,8 @@ class Attribute(object):
                 return LeftAlignedClauseElement(self.annotation, other.annotation)
             elif self.label == 'end' and other.label == 'end':
                 return RightAlignedClauseElement(self.annotation, other.annotation)
+            elif self.label in ['token_subset', 'type_subset']:
+                return SubsetClauseElement(self, other)
         except AttributeError:
             pass
         return EqualClauseElement(self, other)

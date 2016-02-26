@@ -352,6 +352,15 @@ def test_subset(acoustic_config):
         assert(results[0].num_segments_in_word == 5)
         assert(results[0].num_syllables_in_word == 2)
 
+        q = g.query_graph(g.phone).filter(g.phone.label == 't')
+        q = q.filter(g.phone.following.type_subset == '+syllabic')
+        q = q.columns(g.phone.following.label.column_name('following'))
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 2)
+        assert(results[0].following == 'aa')
+
+
 def test_mirrored(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         vowels = ['ih']

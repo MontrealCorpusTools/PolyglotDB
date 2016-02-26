@@ -12,4 +12,4 @@ def test_generate_hierarchy_subannotations(subannotation_config):
     with CorpusContext(subannotation_config) as c:
         h = c.generate_hierarchy()
         assert(h._data == c.hierarchy._data)
-        assert(h.subannotations == c.hierarchy.subannotations)
+        assert(h.subannotations['phone'] == c.hierarchy.subannotations['phone'])
