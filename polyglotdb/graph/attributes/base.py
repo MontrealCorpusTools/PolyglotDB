@@ -1,12 +1,12 @@
 
-from ..helper import key_for_cypher, type_attributes
+from ..helper import key_for_cypher
 
 from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
                         InClauseElement, ContainsClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
-                        SubsetClauseElement)
+                        SubsetClauseElement, NullClauseElement, NotNullClauseElement)
 
 special_attributes = ['duration', 'count', 'rate', 'position', 'type_subset',
                     'token_subset']
@@ -96,6 +96,8 @@ class Attribute(object):
                 return SubsetClauseElement(self, other)
         except AttributeError:
             pass
+        if other is None:
+            return NullClauseElement(self, other)
         return EqualClauseElement(self, other)
 
     def __ne__(self, other):
@@ -106,6 +108,8 @@ class Attribute(object):
                 return NotRightAlignedClauseElement(self.annotation, other.annotation)
         except AttributeError:
             pass
+        if other is None:
+            return NotNullClauseElement(self, other)
         return NotEqualClauseElement(self, other)
 
     def __gt__(self, other):

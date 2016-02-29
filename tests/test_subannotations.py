@@ -46,6 +46,13 @@ def test_add_token_label(subannotation_config):
         assert(len(results) > 0)
         assert(results[0].label == 'ae')
 
+        q = c.query_graph(c.phone).filter(c.phone.aeness == None)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) > 0)
+        assert(all(x.label != 'ae' for x in results))
+
+        q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')
         q.set_token(aeness = None)
 
         q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')

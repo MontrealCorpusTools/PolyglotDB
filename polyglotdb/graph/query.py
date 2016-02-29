@@ -10,8 +10,6 @@ from .attributes import HierarchicalAnnotation, SubPathAnnotation, SubAnnotation
 
 from .func import Count
 
-from .helper import type_attributes
-
 from .cypher import query_to_cypher, query_to_params
 
 from polyglotdb.io import save_results

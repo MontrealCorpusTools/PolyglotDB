@@ -71,6 +71,17 @@ class SubsetClauseElement(ClauseElement):
         return self.template.format(key,
                                 value)
 
+class NullClauseElement(ClauseElement):
+    template = '{} is null'
+    def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
+        return self.template.format(self.attribute.for_cypher())
+
+class NotNullClauseElement(NullClauseElement):
+    template = '{} is not null'
+
 
 class EqualClauseElement(ClauseElement):
     """
