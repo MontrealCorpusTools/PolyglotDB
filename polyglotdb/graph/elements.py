@@ -125,6 +125,12 @@ class InClauseElement(ClauseElement):
     """
     sign = 'IN'
 
+class NotInClauseElement(InClauseElement):
+    """
+    Clause for asserting membership in a filter.
+    """
+    template = "NOT {} {} {}"
+
 class RegexClauseElement(ClauseElement):
     """
     Clause for filtering based on regular expressions.

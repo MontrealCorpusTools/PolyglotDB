@@ -3,7 +3,7 @@ from ..helper import key_for_cypher
 
 from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
-                        InClauseElement, ContainsClauseElement, RegexClauseElement,
+                        InClauseElement, NotInClauseElement, ContainsClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
                         SubsetClauseElement, NullClauseElement, NotNullClauseElement)
@@ -133,6 +133,16 @@ class Attribute(object):
         else:
             t = other
         return InClauseElement(self, t)
+
+    def not_in_(self, other):
+        if hasattr(other, 'cypher'):
+            results = other.all()
+            t = []
+            for x in results:
+                t.append(getattr(x, self.label))
+        else:
+            t = other
+        return NotInClauseElement(self, t)
 
     def regex(self, pattern):
         return RegexClauseElement(self, pattern)
