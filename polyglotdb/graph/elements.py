@@ -57,6 +57,32 @@ class ClauseElement(object):
                                 self.sign,
                                 value)
 
+class SubsetClauseElement(ClauseElement):
+    template = "{}:{}"
+    def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
+        value = key_for_cypher(self.value)
+        if self.attribute.label == 'token_subset':
+            key = self.attribute.annotation.alias
+        elif self.attribute.label == 'type_subset':
+            key = self.attribute.annotation.type_alias
+        return self.template.format(key,
+                                value)
+
+class NullClauseElement(ClauseElement):
+    template = '{} is null'
+    def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
+        return self.template.format(self.attribute.for_cypher())
+
+class NotNullClauseElement(NullClauseElement):
+    template = '{} is not null'
+
+
 class EqualClauseElement(ClauseElement):
     """
     Clause for asserting equality in a filter.
@@ -98,6 +124,12 @@ class InClauseElement(ClauseElement):
     Clause for asserting membership in a filter.
     """
     sign = 'IN'
+
+class NotInClauseElement(InClauseElement):
+    """
+    Clause for asserting membership in a filter.
+    """
+    template = "NOT {} {} {}"
 
 class RegexClauseElement(ClauseElement):
     """

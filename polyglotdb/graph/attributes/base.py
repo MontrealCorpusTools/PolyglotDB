@@ -1,11 +1,15 @@
 
-from ..helper import key_for_cypher, type_attributes
+from ..helper import key_for_cypher
 
 from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
-                        InClauseElement, ContainsClauseElement, RegexClauseElement,
+                        InClauseElement, NotInClauseElement, ContainsClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
-                        NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
+                        NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
+                        SubsetClauseElement, NullClauseElement, NotNullClauseElement)
+
+special_attributes = ['duration', 'count', 'rate', 'position', 'type_subset',
+                    'token_subset']
 
 class Attribute(object):
     """
@@ -28,10 +32,11 @@ class Attribute(object):
     output_label : str or None
         User-specified label to use in query results
     """
-    def __init__(self, annotation, label):
+    def __init__(self, annotation, label, type):
         self.annotation = annotation
         self.label = label
         self.output_label = None
+        self.type = type
 
     def __hash__(self):
         return hash((self.annotation, self.label))
@@ -45,7 +50,7 @@ class Attribute(object):
     def for_cypher(self):
         if self.label == 'duration':
             return '{a}.end - {a}.begin'.format(a = self.annotation.alias)
-        if self.label  in type_attributes:
+        if self.type:
             return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
 
@@ -72,7 +77,7 @@ class Attribute(object):
 
     @property
     def with_alias(self):
-        if self.label in type_attributes:
+        if self.type:
             return self.annotation.type_alias
         else:
             return self.annotation.alias
@@ -87,8 +92,12 @@ class Attribute(object):
                 return LeftAlignedClauseElement(self.annotation, other.annotation)
             elif self.label == 'end' and other.label == 'end':
                 return RightAlignedClauseElement(self.annotation, other.annotation)
+            elif self.label in ['token_subset', 'type_subset']:
+                return SubsetClauseElement(self, other)
         except AttributeError:
             pass
+        if other is None:
+            return NullClauseElement(self, other)
         return EqualClauseElement(self, other)
 
     def __ne__(self, other):
@@ -99,6 +108,8 @@ class Attribute(object):
                 return NotRightAlignedClauseElement(self.annotation, other.annotation)
         except AttributeError:
             pass
+        if other is None:
+            return NotNullClauseElement(self, other)
         return NotEqualClauseElement(self, other)
 
     def __gt__(self, other):
@@ -122,6 +133,16 @@ class Attribute(object):
         else:
             t = other
         return InClauseElement(self, t)
+
+    def not_in_(self, other):
+        if hasattr(other, 'cypher'):
+            results = other.all()
+            t = []
+            for x in results:
+                t.append(getattr(x, self.label))
+        else:
+            t = other
+        return NotInClauseElement(self, t)
 
     def regex(self, pattern):
         return RegexClauseElement(self, pattern)
@@ -263,7 +284,17 @@ class AnnotationAttribute(Attribute):
             from .subannotation import SubAnnotation
             return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
         else:
-            return Attribute(self, key)
+            if self.hierarchy is None or key in special_attributes:
+                type = False
+            else:
+                if self.hierarchy.has_token_property(self.type, key):
+                    type = False
+                elif self.hierarchy.has_type_property(self.type, key):
+                    type = True
+                else:
+                    raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
+
+            return Attribute(self, key, type)
 
     @property
     def key(self):

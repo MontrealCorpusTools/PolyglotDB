@@ -1,4 +1,5 @@
 
+from .graph.helper import value_for_cypher
 
 class Hierarchy(object):
     '''
@@ -24,6 +25,100 @@ class Hierarchy(object):
         self._data = data
         self.subannotations = {}
         self.annotation_types = set(data.keys())
+        self.subset_types = {}
+        self.token_properties = {}
+        self.subset_tokens = {}
+        self.type_properties = {}
+
+
+    def add_type_labels(self, corpus_context, annotation_type, labels):
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
+        RETURN n'''.format(type = annotation_type)
+        res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
+        try:
+            cur_subsets = res[0].n.subsets
+        except AttributeError:
+            cur_subsets = []
+        updated = set(cur_subsets + labels)
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
+        SET n.subsets = {{subsets}}'''.format(type = annotation_type)
+        corpus_context.execute_cypher(statement, subsets=sorted(updated),
+                                corpus_name = corpus_context.corpus_name)
+
+    def add_token_labels(self, corpus_context, annotation_type, labels):
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(n:{type})
+        RETURN n'''.format(type = annotation_type)
+        res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
+        try:
+            cur_subsets = res[0].n.subsets
+        except AttributeError:
+            cur_subsets = []
+        updated = set(cur_subsets + labels)
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(n:{type})
+        SET n.subsets = {{subsets}}'''.format(type = annotation_type)
+        corpus_context.execute_cypher(statement, subsets=sorted(updated),
+                                corpus_name = corpus_context.corpus_name)
+
+    def add_type_properties(self, corpus_context, annotation_type, properties):
+        set_template = 'n.{0} = {{{0}}}'
+        ps = []
+        kwargs = {}
+        for k,v in properties:
+            if v == int:
+                v = 0
+            elif v == list:
+                v = []
+            elif v == float:
+                v = 0.0
+            elif v == str:
+                v = ''
+            elif v == bool:
+                v = False
+            ps.append(set_template.format(k))
+            kwargs[k] = v
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
+        SET {sets}'''.format(type = annotation_type, sets = ', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                corpus_name = corpus_context.corpus_name, **kwargs)
+
+        if annotation_type not in self.type_properties:
+            self.type_properties[annotation_type] = set([('id',str)])
+        self.type_properties[annotation_type].update(k for k in properties)
+
+    def add_token_properties(self, corpus_context, annotation_type, properties):
+        set_template = 'n.{0} = {{{0}}}'
+        ps = []
+        kwargs = {}
+        for k,v in properties:
+            if v == int:
+                v = 0
+            elif v == list:
+                v = []
+            elif v == float:
+                v = 0.0
+            elif v == str:
+                v = ''
+            elif v == bool:
+                v = False
+            elif v == type(None):
+                v = None
+            ps.append(set_template.format(k))
+            kwargs[k] = v
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(n:{type})
+        SET {sets}'''.format(type = annotation_type, sets = ', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                corpus_name = corpus_context.corpus_name, **kwargs)
+        if annotation_type not in self.token_properties:
+            self.token_properties[annotation_type] = set([('id', str)])
+        self.token_properties[annotation_type].update(k for k in properties)
 
     def keys(self):
         '''
@@ -162,3 +257,19 @@ class Hierarchy(object):
         if linguistic_type not in self.subannotations:
             self.subannotations[linguistic_type] = set()
         self.subannotations[linguistic_type].add(subannotation_type)
+
+    def has_token_property(self, type, key):
+        if type not in self.token_properties:
+            return False
+        for name, t in self.token_properties[type]:
+            if name == key:
+                return True
+        return False
+
+    def has_type_property(self, type, key):
+        if type not in self.type_properties:
+            return False
+        for name, t in self.type_properties[type]:
+            if name == key:
+                return True
+        return False

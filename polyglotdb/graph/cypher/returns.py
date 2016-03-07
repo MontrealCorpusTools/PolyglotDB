@@ -1,5 +1,5 @@
 
-from ..helper import type_attributes, key_for_cypher, value_for_cypher
+from ..helper import key_for_cypher, value_for_cypher
 
 from ..attributes import SubPathAnnotation, SubAnnotation
 
@@ -73,7 +73,7 @@ def generate_aggregate(query):
     if len(query._order_by) == 0 and len(query._group_by) > 0:
         query._order_by.append((query._group_by[0], False))
     for a in query._aggregate:
-        properties.append(a.for_cypher())
+        properties.append(a.aliased_for_output())
     return ', '.join(properties)
 
 def generate_distinct(query):

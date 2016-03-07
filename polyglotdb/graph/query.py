@@ -10,8 +10,6 @@ from .attributes import HierarchicalAnnotation, SubPathAnnotation, SubAnnotation
 
 from .func import Count
 
-from .helper import type_attributes
-
 from .cypher import query_to_cypher, query_to_params
 
 from polyglotdb.io import save_results
@@ -389,7 +387,23 @@ class GraphQuery(object):
         for k,v in kwargs.items():
             self._set_type[k] = v
         self._set_type_labels.extend(args)
+
+        props_to_add = []
+        for k in kwargs.keys():
+            if not self.corpus.hierarchy.has_type_property(self.to_find.type, k):
+                props_to_add.append((k, type(kwargs[k])))
+        labels_to_add = []
+        for l in args:
+            if self.to_find.type not in self.corpus.hierarchy.subset_types or \
+                l not in self.corpus.hierarchy.subset_types:
+                labels_to_add.append(l)
+
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+
+        if labels_to_add:
+            self.corpus.hierarchy.add_type_labels(self.corpus, self.to_find.type, labels_to_add)
+        if props_to_add:
+            self.corpus.hierarchy.add_type_properties(self.corpus, self.to_find.type, props_to_add)
         self._set_type = {}
         self._set_type_labels = []
 
@@ -400,7 +414,22 @@ class GraphQuery(object):
         for k,v in kwargs.items():
             self._set_token[k] = v
         self._set_token_labels.extend(args)
+
+        props_to_add = []
+        for k in kwargs.keys():
+            if not self.corpus.hierarchy.has_token_property(self.to_find.type, k):
+                props_to_add.append((k, type(kwargs[k])))
+
+        labels_to_add = []
+        for l in args:
+            if self.to_find.type not in self.corpus.hierarchy.subset_tokens or \
+                l not in self.corpus.hierarchy.subset_tokens:
+                labels_to_add.append(l)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+        if labels_to_add:
+            self.corpus.hierarchy.add_token_labels(self.corpus, self.to_find.type, labels_to_add)
+        if props_to_add:
+            self.corpus.hierarchy.add_token_properties(self.corpus, self.to_find.type, props_to_add)
         self._set_token = {}
         self._set_token_labels = []
 
@@ -416,7 +445,6 @@ class GraphQuery(object):
         self._preload.extend(args)
         return self
 
-
     def limit(self, limit):
         self._limit = limit
         return self
@@ -424,3 +452,12 @@ class GraphQuery(object):
     def cache(self, *args):
         self._cache.extend(args)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+
+        props_to_add = []
+        for k in args:
+            k = k.output_label
+            if not self.corpus.hierarchy.has_token_property(self.to_find.type, k):
+                props_to_add.append((k, float))
+
+        if props_to_add:
+            self.corpus.hierarchy.add_token_properties(self.corpus, self.to_find.type, props_to_add)
