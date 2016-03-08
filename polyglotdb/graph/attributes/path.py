@@ -1,7 +1,7 @@
 
-from ..helper import key_for_cypher, type_attributes
+from ..helper import key_for_cypher
 
-from .base import AnnotationAttribute, Attribute
+from .base import AnnotationAttribute, Attribute, special_attributes
 
 class PathAnnotation(AnnotationAttribute):
     has_subquery = True
@@ -80,7 +80,17 @@ class PathAnnotation(AnnotationAttribute):
                 and key in self.hierarchy.subannotations[self.type]:
             from .subannotation import SubAnnotation
             return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
-        return PathAttribute(self, key)
+
+        if self.hierarchy is None or key in special_attributes:
+            type = False
+        else:
+            if self.hierarchy.has_token_property(self.type, key):
+                type = False
+            elif self.hierarchy.has_type_property(self.type, key):
+                type = True
+            else:
+                raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
+        return PathAttribute(self, key, type)
 
 class SubPathAnnotation(PathAnnotation):
     subquery_template = '''MATCH ({def_path_type_alias})<-[:is_a]-({def_path_alias})-[:contained_by*]->({alias})
@@ -203,7 +213,17 @@ class SubPathAnnotation(PathAnnotation):
                 and key in self.hierarchy.subannotations[self.type]:
             from .subannotation import SubAnnotation
             return SubAnnotation(self, AnnotationAttribute(key, self.annotation.pos, corpus = self.annotation.corpus))
-        return PathAttribute(self, key)
+
+        if self.hierarchy is None or key in special_attributes:
+            type = False
+        else:
+            if self.hierarchy.has_token_property(self.type, key):
+                type = False
+            elif self.hierarchy.has_type_property(self.type, key):
+                type = True
+            else:
+                raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
+        return PathAttribute(self, key, type)
 
 class PositionalAnnotation(SubPathAnnotation):
     def __init__(self, path_annotation, pos):
@@ -215,7 +235,7 @@ class PositionalAnnotation(SubPathAnnotation):
     def __getattr__(self, key):
         if key == 'annotation':
             raise(AttributeError('Annotations cannot have annotations.'))
-        return PositionalAttribute(self, key)
+        return PositionalAttribute(self, key, False)
 
     def generate_subquery(self, output_with_string, input_with_string):
         return self.subquery_template.format(alias = self.annotation.annotation.alias,
@@ -267,7 +287,7 @@ class PathAttribute(Attribute):
             return self.annotation
 
     def for_cypher(self):
-        if self.label in type_attributes:
+        if self.type:
             return self.type_return_template.format(alias = self.annotation.path_type_alias, property = self.label)
 
         if self.label == 'duration':
@@ -302,13 +322,13 @@ class PositionalAttribute(PathAttribute):
 
     @property
     def with_alias(self):
-        if self.label in type_attributes + ['rate', 'count']:
+        if self.type:
             return self.annotation.annotation.path_type_alias
         return self.annotation.annotation.path_alias
 
     def for_cypher(self):
         pos = self.annotation.pos
-        if self.label in type_attributes:
+        if self.type:
             alias = self.annotation.path_type_alias
         else:
             alias = self.annotation.path_alias

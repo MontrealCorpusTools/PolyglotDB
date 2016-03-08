@@ -1,7 +1,7 @@
 
 from collections import defaultdict
 
-from ..helper import type_attributes, key_for_cypher, value_for_cypher
+from ..helper import key_for_cypher, value_for_cypher
 
 from ..attributes import AnnotationAttribute, PathAnnotation, Attribute, PathAttribute
 

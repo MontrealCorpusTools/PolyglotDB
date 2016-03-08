@@ -158,6 +158,8 @@ class LinguisticAnnotation(BaseAnnotation):
             if k in self._type_node.properties:
                  self._type_node.properties[k] = v
             self._node.properties[k] = v
+        if self._node['begin'] > self._node['end']:
+            self._node['begin'], self._node['end'] = self._node['end'], self._node['begin']
 
     def save(self):
         self.corpus_context.graph.push(self.node)
@@ -259,6 +261,8 @@ class SubAnnotation(BaseAnnotation):
     def update_properties(self,**kwargs):
         for k,v in kwargs.items():
              self._node.properties[k] = v
+        if self._node['begin'] > self._node['end']:
+            self._node['begin'], self._node['end'] = self._node['end'], self._node['begin']
 
     @property
     def node(self):

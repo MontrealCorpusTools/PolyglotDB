@@ -6,15 +6,35 @@ from .attributes import AggregateAttribute, PathAttribute
 
 class AggregateFunction(object):
     function = ''
-    template = '{function}({property}) AS {output_name}'
-    collection_templates = {'sum': 'reduce(count = 0, n in {property} | count + n) AS {output_name}',
-                            'avg': 'reduce(count = 0, n in {property} | count + n) / toFloat(size({property})) AS {output_name}',
-                            'count': 'size({property}) AS {output_name}'}
+    template = '{function}({property})'
+    collection_templates = {'sum': 'reduce(count = 0, n in {property} | count + n)',
+                            'avg': 'reduce(count = 0, n in {property} | count + n) / toFloat(size({property}))',
+                            'count': 'size({property})'}
     def __init__(self, attribute = None):
         self.attribute = attribute
         self.output_label = None
 
-    def aliased_for_output(self):
+    def __hash__(self):
+        return hash((self.function, self.attribute))
+
+    @property
+    def base_annotation(self):
+        return self.attribute.base_annotation
+
+    @property
+    def with_alias(self):
+        return self.attribute.with_alias
+
+    @property
+    def with_aliases(self):
+        return self.attribute.with_aliases
+
+    @property
+    def annotation(self):
+        return self.attribute.annotation
+
+    @property
+    def output_alias(self):
         if self.output_label is None:
             if self.attribute is not None:
                 name = self.attribute.label
@@ -23,6 +43,12 @@ class AggregateFunction(object):
             return '{}_{}'.format(self.__class__.__name__.lower(), name)
         else:
             return self.output_label
+
+
+    def aliased_for_output(self):
+        prop = self.for_cypher()
+        output = self.output_alias
+        return '{} AS {}'.format(prop, output)
 
     @property
     def collapsing(self):
@@ -37,15 +63,13 @@ class AggregateFunction(object):
     def for_cypher(self):
         if not self.collapsing:
             return self.collection_templates[self.function].format(
-                                property = self.attribute.for_cypher(),
-                                output_name = self.aliased_for_output())
+                                property = self.attribute.for_cypher())
         elif self.attribute is not None:
             element = self.attribute.for_cypher()
         else:
             element = '*'
         return self.template.format(function = self.function,
-                                property = element,
-                                output_name = self.aliased_for_output())
+                                property = element)
 
     def __eq__(self, other):
         return EqualClauseElement(AggregateAttribute(self), other)
@@ -85,7 +109,7 @@ class Min(AggregateFunction):
 
 class Quantile(AggregateFunction):
     function = 'percentileDisc'
-    template = '{function}({property}, {percentile}) AS {output_name}'
+    template = '{function}({property}, {percentile})'
     def __init__(self, attribute, percentile = 0.5):
         self.attribute = attribute
         self.percentile = percentile
@@ -98,7 +122,6 @@ class Quantile(AggregateFunction):
             raise(AttributeError)
         return self.template.format(function = self.function,
                                 percentile = self.percentile,
-                                output_name = self.aliased_for_output(),
                                 property = element)
 
 class Median(Quantile):
@@ -106,12 +129,11 @@ class Median(Quantile):
         Quantile.__init__(self, attribute, 0.5)
 
 class InterquartileRange(AggregateFunction):
-    template = 'percentileDisc({property}, 0.75) - percentileDisc({property}, 0.25) AS {output_name}'
+    template = 'percentileDisc({property}, 0.75) - percentileDisc({property}, 0.25)'
 
     def for_cypher(self):
         if self.attribute is not None:
             element = self.attribute.for_cypher()
         else:
             raise(AttributeError)
-        return self.template.format(output_name = self.aliased_for_output(),
-                                property = element)
+        return self.template.format(property = element)
