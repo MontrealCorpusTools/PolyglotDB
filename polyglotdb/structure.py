@@ -184,6 +184,15 @@ class Hierarchy(object):
         else:
             self._data.update(other._data)
             self.subannotations.update(other.subannotations)
+            for k,v in other.type_properties.items():
+                if k not in self.type_properties.items():
+                    self.type_properties[k] = v
+                else:
+                    self.type_properties[k] = self.type_properties[k] & v
+                if k not in self.token_properties.items():
+                    self.token_properties[k] = other.token_properties[k]
+                else:
+                    self.type_properties[k] = self.type_properties[k] & other.token_properties[k]
         self.annotation_types.update(self._data.keys())
 
     @property
