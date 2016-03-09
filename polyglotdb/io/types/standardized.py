@@ -64,12 +64,16 @@ class PGAnnotationType(object):
         self.supertype = None
         self.type_property_keys = set()
         self.token_property_keys = set()
+        self.type_properties = set()
+        self.token_properties = set()
         self.is_word = False
 
     def add(self, annotation):
         self._list.append(annotation)
         self.type_property_keys.update(annotation.type_keys())
+        self.type_properties.update((k, type(v)) for k,v in annotation.type_properties.items())
         self.token_property_keys.update(annotation.token_keys())
+        self.token_properties.update((k, type(v)) for k,v in annotation.token_properties.items())
 
     @property
     def speakers(self):

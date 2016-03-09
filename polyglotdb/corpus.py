@@ -295,7 +295,10 @@ class CorpusContext(object):
                     elif t in (list, tuple, set):
                         v = []
                     token_props.append('{}: {}'.format(name, value_for_cypher(v)))
-                token_props = ', '+ ', '.join(token_props)
+                if token_props:
+                    token_props = ', '+ ', '.join(token_props)
+                else:
+                    token_props = ''
             except KeyError:
                 token_props = ''
             try:
@@ -311,6 +314,8 @@ class CorpusContext(object):
                     type_props.append('{}: {}'.format(name, value_for_cypher(v)))
                 if type_props:
                     type_props = ', '+ ', '.join(type_props)
+                else:
+                    type_props = ''
             except KeyError:
                 type_props = ''
 
