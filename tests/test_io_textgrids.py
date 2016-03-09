@@ -83,4 +83,14 @@ def test_load_pronunciation(textgrid_test_dir, graph_db):
     with CorpusContext('test_pronunc', **graph_db) as c:
         c.reset()
         parser = inspect_textgrid(path)
+        parser.annotation_types[2].type_property = False
         c.load(parser, path)
+
+        q = c.query_graph(c.words).filter(c.words.label == 'probably')
+        q = q.order_by(c.words.begin)
+        q = q.columns(c.words.label,
+                c.words.dictionaryPron.column_name('dict_pron'),
+                c.words.actualPron.column_name('act_pron'))
+        results = q.all()
+        assert(results[0].dict_pron == 'p.r.aa.b.ah.b.l.iy')
+        assert(results[0].act_pron == 'p.r.aa.b.ah.b.l.iy')

@@ -28,12 +28,16 @@ class DiscourseData(object):
     def __init__(self, name, annotation_types, hierarchy):
         self.name = name
         self.data = annotation_types
+
         self.segment_type = None
         for k,v in self.data.items():
             if k not in hierarchy.values() and not v.is_word:
                 self.segment_type = k
         self.hierarchy = hierarchy
         self.wav_path = None
+        for k, at in self.data.items():
+            self.hierarchy.type_properties[at.name] = at.type_properties
+            self.hierarchy.token_properties[at.name] = at.token_properties
 
     def __getitem__(self, key):
         return self.data[key]
