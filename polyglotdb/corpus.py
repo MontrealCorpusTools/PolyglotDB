@@ -18,7 +18,8 @@ from .config import CorpusConfig
 from .structure import Hierarchy
 
 from .io.graph import (data_to_graph_csvs, import_csvs,
-                    data_to_type_csvs, import_type_csvs)
+                    data_to_type_csvs, import_type_csvs, lexicon_data_to_csvs,
+                    import_lexicon_csvs)
 
 from .graph.query import GraphQuery
 from .graph.func import Max, Min
@@ -188,7 +189,8 @@ class CorpusContext(object):
             raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
         except (py2neo.cypher.TransientError,
                 #py2neo.cypher.error.network.UnknownFailure,
-                py2neo.cypher.error.statement.ExternalResourceFailure):
+                #py2neo.cypher.error.statement.ExternalResourceFailure
+                ):
             raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
         except Exception:
             raise
@@ -250,6 +252,12 @@ class CorpusContext(object):
         if key in self.hierarchy.annotation_types:
             return AnnotationAttribute(key, corpus = self.corpus_name, hierarchy = self.hierarchy)
         raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.hierarchy.annotation_types)))))
+
+    @property
+    def word_name(self):
+        for at in self.hierarchy.annotation_types:
+            if at.startswith('word'): #FIXME need a better way for storing word name
+                return at
 
     def reset_graph(self):
         '''
@@ -409,7 +417,7 @@ class CorpusContext(object):
             objects
         '''
         data = list(parsed_data.values())[0]
-        data_to_type_csvs(parsed_data, self.config.temporary_directory('csv'))
+        data_to_type_csvs(self, parsed_data)
         import_type_csvs(self, list(parsed_data.values())[0])
 
     def initialize_import(self, data):
@@ -456,7 +464,7 @@ class CorpusContext(object):
                 '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.corpus_name),
                         speaker_name = s)
         data.corpus_name = self.corpus_name
-        data_to_graph_csvs(data, self.config.temporary_directory('csv'))
+        data_to_graph_csvs(self, data)
         import_csvs(self, data)
         self.update_sql_database(data)
         self.hierarchy.update(data.hierarchy)
@@ -594,6 +602,13 @@ class CorpusContext(object):
                 p, _ = self.inventory.get_or_create_item(seg, base_type)
         log.info('Finished importing {} to the SQL database!'.format(data.name))
         log.debug('SQL importing took: {} seconds'.format(time.time() - initial_begin))
+
+    def enrich_lexicon(self, lexicon_data):
+        type_data = {k: type(v) for k,v in next(iter(lexicon_data.values())).items()}
+        lexicon_data_to_csvs(self, lexicon_data)
+        import_lexicon_csvs(self, type_data)
+        self.hierarchy.type_properties[self.word_name].update(type_data.items())
+        self.encode_hierarchy()
 
 
 def get_corpora_list(config):

@@ -8,7 +8,8 @@ from collections import defaultdict
 
 from .helper import normalize_values_for_neo4j
 
-def data_to_type_csvs(parsed_data, directory):
+def data_to_type_csvs(corpus_context, parsed_data):
+    directory = corpus_context.config.temporary_directory('csv')
     type_paths = {}
     data = list(parsed_data.values())[0]
     for x in data.annotation_types:
@@ -29,7 +30,7 @@ def data_to_type_csvs(parsed_data, directory):
         for k,v in data.items():
             for d in v:
                 type_additional = dict(zip(d.type_keys(), d.type_values()))
-                row = [d.sha()]
+                row = [d.sha(corpus=corpus_context.corpus_name)]
                 for th in type_headers[k]:
                     if th not in ['id']:
                         row.append(type_additional[th])
@@ -40,8 +41,7 @@ def data_to_type_csvs(parsed_data, directory):
     for x in tfs.values():
         x.close()
 
-
-def data_to_graph_csvs(data, directory):
+def data_to_graph_csvs(corpus_context, data):
     """
     Convert a DiscourseData object into CSV files for efficient loading
     of graph nodes and relationships
@@ -53,6 +53,7 @@ def data_to_graph_csvs(data, directory):
     directory: str
         Full path to a directory to store CSV files
     """
+    directory = corpus_context.config.temporary_directory('csv')
     rfs = {}
     for x in data.annotation_types:
         path = os.path.join(directory,'{}_{}.csv'.format(data.name, x))
@@ -87,7 +88,8 @@ def data_to_graph_csvs(data, directory):
             if d.super_id is not None:
                 token_additional[data[level].supertype] = d.super_id
             rel_writers[level].writerow(dict(begin = d.begin, end = d.end,
-                             type_id = d.sha(), id = d.id, speaker = d.speaker,
+                             type_id = d.sha(corpus = corpus_context.corpus_name),
+                             id = d.id, speaker = d.speaker,
                              previous_id = d.previous_id, discourse = data.name,
                             **token_additional))
             if d.subannotations:
@@ -121,7 +123,7 @@ def import_type_csvs(corpus_context, discourse_data):
             type_prop_string = ''
         type_import_statement = '''USING PERIODIC COMMIT 1000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-MERGE (n:{annotation_type}_type {{ id: csvLine.id{type_property_string} }})
+MERGE (n:{annotation_type}_type:{corpus_name} {{ id: csvLine.id{type_property_string} }})
         '''
         kwargs = {'path': type_path, 'annotation_type': at,
                     'type_property_string': type_prop_string,
@@ -148,13 +150,13 @@ def import_csvs(corpus_context, data):
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
         properties = []
-        corpus_context.graph.cypher.execute('CREATE INDEX ON :%s(discourse)' % (at,))
-        corpus_context.graph.cypher.execute('CREATE INDEX ON :%s(begin)' % (at,))
-        corpus_context.graph.cypher.execute('CREATE INDEX ON :%s(end)' % (at,))
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(discourse)' % (at,))
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(begin)' % (at,))
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(end)' % (at,))
 
         for x in data[at].token_property_keys:
             properties.append(prop_temp.format(name=x))
-            corpus_context.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at, x))
+            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (at, x))
         st = data[at].supertype
         if st is not None:
             properties.append(prop_temp.format(name = st))
@@ -163,7 +165,7 @@ def import_csvs(corpus_context, data):
         else:
             token_prop_string = ''
         if st is not None:
-            corpus_context.graph.cypher.execute('CREATE INDEX ON :%s(%s)' % (at,st))
+            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (at,st))
         rel_import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MATCH (n:{annotation_type}_type {{id: csvLine.type_id}})
@@ -230,3 +232,44 @@ CREATE (t)-[:annotates]->(n)'''
                         'discourse': data.name}
             statement = rel_import_statement.format(**kwargs)
             corpus_context.graph.cypher.execute(statement)
+
+def lexicon_data_to_csvs(corpus_context, data):
+    directory = corpus_context.config.temporary_directory('csv')
+    with open(os.path.join(directory, 'lexicon_import.csv'), 'w') as f:
+        header = ['label'] + sorted(next(iter(data.values())).keys())
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for k,v in sorted(data.items()):
+            v['label'] = k
+            writer.writerow(v)
+
+def import_lexicon_csvs(corpus_context, typed_data):
+    string_set_template = 'n.{name} = csvLine.{name}'
+    float_set_template = 'n.{name} = toFloat(csvLine.{name})'
+    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
+    properties = []
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.word_name,h))
+        if v == int:
+            template = int_set_template
+        elif v == bool:
+            template = bool_set_template
+        elif v == float:
+            template = float_set_template
+        else:
+            template = string_set_template
+        properties.append(template.format(name = h))
+    properties = ',\n'.join(properties)
+    directory = corpus_context.config.temporary_directory('csv')
+    path = 'file:///{}'.format(os.path.join(directory,'lexicon_import.csv').replace('\\','/'))
+    import_statement = '''USING PERIODIC COMMIT 3000
+LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+MATCH (n:{word_type}_type:{corpus_name}) where n.label = csvLine.label
+SET {new_properties}'''
+    statement = import_statement.format(path = path,
+                                corpus_name = corpus_context.corpus_name,
+                                word_type = corpus_context.word_name,
+                                new_properties = properties)
+    print(statement)
+    corpus_context.execute_cypher(statement)
