@@ -5,6 +5,8 @@ from ..helper import key_for_cypher, value_for_cypher
 
 from ..attributes import AnnotationAttribute, PathAnnotation, Attribute, PathAttribute
 
+from ..elements import ComplexClause
+
 from .matches import generate_match
 
 from .withs import generate_withs
@@ -71,9 +73,12 @@ def query_to_cypher(query):
 def query_to_params(query):
     params = {}
     for c in query._criterion:
-        try:
-            if not isinstance(c.value, Attribute):
-                params[c.attribute.alias] = c.value
-        except AttributeError:
-            pass
+        if isinstance(c, ComplexClause):
+            params.update(c.generate_params())
+        else:
+            try:
+                if not isinstance(c.value, Attribute):
+                    params[c.attribute.alias] = c.value
+            except AttributeError:
+                pass
     return params
