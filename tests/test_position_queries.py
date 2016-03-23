@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 def test_position_query(timed_config):
     with CorpusContext(timed_config) as g:

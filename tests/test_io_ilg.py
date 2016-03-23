@@ -8,7 +8,7 @@ from polyglotdb.io.helper import guess_type
 
 from polyglotdb.exceptions import DelimiterError, ILGWordMismatchError
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 def test_inspect_ilg(ilg_test_dir):
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')

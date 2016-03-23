@@ -5,6 +5,8 @@ from ..helper import key_for_cypher, value_for_cypher
 
 from ..attributes import AnnotationAttribute, PathAnnotation, Attribute, PathAttribute
 
+from ..elements import ComplexClause
+
 from .matches import generate_match
 
 from .withs import generate_withs
@@ -49,9 +51,6 @@ def query_to_cypher(query):
         optional_where_strings.extend(optional_wheres)
         where_strings.extend(wheres)
 
-    #statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
-    #match_strings.extend(statements)
-
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
 
     if optional_match_strings:
@@ -63,7 +62,6 @@ def query_to_cypher(query):
 
     kwargs['with'] = generate_withs(query, all_withs)
 
-
     kwargs['return'] = generate_return(query)
     cypher = template.format(**kwargs)
     return cypher
@@ -71,9 +69,12 @@ def query_to_cypher(query):
 def query_to_params(query):
     params = {}
     for c in query._criterion:
-        try:
-            if not isinstance(c.value, Attribute):
-                params[c.attribute.alias] = c.value
-        except AttributeError:
-            pass
+        if isinstance(c, ComplexClause):
+            params.update(c.generate_params())
+        else:
+            try:
+                if not isinstance(c.value, Attribute):
+                    params[c.attribute.alias] = c.value
+            except AttributeError:
+                pass
     return params

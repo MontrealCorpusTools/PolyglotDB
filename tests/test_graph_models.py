@@ -1,6 +1,6 @@
 import pytest
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 from polyglotdb.graph.models import LinguisticAnnotation, SubAnnotation
 
