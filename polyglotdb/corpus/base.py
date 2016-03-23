@@ -70,7 +70,7 @@ class BaseContext(object):
         if getattr(sys, 'frozen', False):
             self.config.reaper_path = os.path.join(sys.path[-1],'reaper')
         else:
-            self.config.reaper_path = 'reaper'
+            self.config.reaper_path = shutil.which('reaper')
 
         self.config.query_behavior = 'speaker'
 
