@@ -6,7 +6,7 @@ from polyglotdb.io import inspect_orthography
 
 from polyglotdb.exceptions import DelimiterError
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 
 def test_load_spelling_no_ignore(graph_db, text_spelling_test_dir):

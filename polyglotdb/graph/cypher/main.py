@@ -51,9 +51,6 @@ def query_to_cypher(query):
         optional_where_strings.extend(optional_wheres)
         where_strings.extend(wheres)
 
-    #statements = generate_hierarchical_match(annotation_levels, query.corpus.hierarchy)
-    #match_strings.extend(statements)
-
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
 
     if optional_match_strings:
@@ -64,7 +61,6 @@ def query_to_cypher(query):
     kwargs['where'] = generate_wheres(query._criterion, wheres)
 
     kwargs['with'] = generate_withs(query, all_withs)
-
 
     kwargs['return'] = generate_return(query)
     cypher = template.format(**kwargs)

@@ -6,7 +6,7 @@ from polyglotdb.io import inspect_transcription
 
 from polyglotdb.exceptions import DelimiterError
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 @pytest.mark.xfail
 def test_export_transcription(graph_db, export_test_dir):

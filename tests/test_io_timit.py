@@ -6,7 +6,7 @@ from polyglotdb.io import inspect_timit
 
 from polyglotdb.io.parsers.timit import read_phones, read_words
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 def test_load_phones(timit_test_dir):
     expected_phones = [('h#',0, 2400 / 16000),

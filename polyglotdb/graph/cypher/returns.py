@@ -115,6 +115,13 @@ def generate_return(query):
     set_strings = []
     set_label_strings = []
     remove_label_strings = []
+    if 'pause' in query._set_token:
+        kwargs = {}
+        kwargs['alias'] = query.to_find.alias
+        kwargs['type_alias'] = query.to_find.type_alias
+
+        return_statement = set_pause_template.format(**kwargs)
+        return return_statement
     for k,v in query._set_token.items():
         if v is None:
             v = 'NULL'
@@ -166,5 +173,7 @@ def generate_return(query):
             kwargs['limit'] = '\nLIMIT {}'.format(query._limit)
         else:
             kwargs['limit'] = ''
+
     kwargs['order_by'] = generate_order_by(query)
+
     return template.format(**kwargs)

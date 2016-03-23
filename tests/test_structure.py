@@ -1,7 +1,7 @@
 
 import pytest
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 def test_generate_hierarchy(acoustic_config):
     with CorpusContext(acoustic_config) as c:

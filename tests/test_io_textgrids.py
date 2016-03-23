@@ -6,7 +6,7 @@ from polyglotdb.io import inspect_textgrid
 
 from polyglotdb.io.types.parsing import TobiTier, OrthographyTier
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 from polyglotdb.exceptions import TextGridError, GraphQueryError
 

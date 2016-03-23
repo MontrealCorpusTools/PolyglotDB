@@ -48,7 +48,7 @@ class PausePathAnnotation(PathAnnotation):
         return PausePathAttribute(self, key, False)
 
 class PausePathAttribute(PathAttribute):
-    duration_return_template = 'extract(n in nodes({alias})[-1..]| n.end)[0] - extract(n in nodes({alias})[0..1]| n.begin)[0]'
+    duration_return_template = 'extract(n in {alias}[-1..]| n.end)[0] - extract(n in {alias}[0..1]| n.begin)[0]'
 
     @property
     def with_alias(self):

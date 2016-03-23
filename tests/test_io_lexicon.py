@@ -2,7 +2,7 @@
 import pytest
 import os
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 def test_enrich_lexicon(timed_config, lexicon_test_data):
     with CorpusContext(timed_config) as c:

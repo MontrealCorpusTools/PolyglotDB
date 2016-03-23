@@ -1,7 +1,8 @@
 import os
 import pytest
 
-from polyglotdb.corpus import CorpusContext, get_corpora_list
+from polyglotdb import CorpusContext
+from polyglotdb.utils import  get_corpora_list
 from polyglotdb.graph.func import Count
 
 from polyglotdb.graph.elements import or_, and_
