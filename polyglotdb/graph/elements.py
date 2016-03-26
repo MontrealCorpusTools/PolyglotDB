@@ -10,6 +10,7 @@ class ClauseElement(object):
     def __init__(self, attribute, value):
         self.attribute = attribute
         self.value = value
+        self.value_alias_prefix = ''
 
     def __repr__(self):
         return '<ClauseElement \'{}\'>'.format(self.for_cypher())
@@ -21,7 +22,7 @@ class ClauseElement(object):
         """
         Create a Cypher parameter for the value of the clause.
         """
-        return '{%s}' % self.attribute.alias
+        return '{%s%s}' % (self.value_alias_prefix, self.attribute.alias)
 
     @property
     def annotations(self):
@@ -206,4 +207,75 @@ class NotLeftAlignedClauseElement(LeftAlignedClauseElement):
     Clause for filtering based on not being left aligned.
     """
     template = '''({first_node_alias})<-[:precedes]-()-[:contained_by*]->({second_node_alias})'''
+
+class ComplexClause(object):
+    type_string = ''
+    def __init__(self, *args):
+        self.clauses = args
+        self.add_prefix(self.type_string)
+
+    @property
+    def annotations(self):
+        """
+        Get all annotations involved in the clause.
+        """
+        annotations = []
+        for a in self.clauses:
+            annotations.extend(a.annotations)
+        return annotations
+
+    @property
+    def attributes(self):
+        """
+        Get all attributes involved in the clause.
+        """
+        attributes = []
+        for a in self.clauses:
+            attributes.extend(a.attributes)
+        return attributes
+
+    def add_prefix(self, prefix):
+        for i, c in enumerate(self.clauses):
+            if isinstance(c, ComplexClause):
+                c.add_prefix(prefix+ str(i))
+            else:
+                try:
+                    c.value_alias_prefix += prefix + str(i)
+                except AttributeError:
+                    pass
+
+    def generate_params(self):
+        from .attributes import Attribute
+        params = {}
+        for c in self.clauses:
+            if isinstance(c, ComplexClause):
+                params.update(c.generate_params())
+            else:
+                try:
+                    if not isinstance(c.value, Attribute):
+                        params[c.cypher_value_string()[1:-1]] = c.value
+                except AttributeError:
+                    pass
+        return params
+
+class or_(ComplexClause):
+    type_string = 'or_'
+
+    def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
+        temp = ' OR '.join(x.for_cypher() for x in self.clauses)
+        temp = "(" + temp + ")"
+        return temp
+
+class and_(ComplexClause):
+    type_string = 'and_'
+    def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
+        temp = ' AND '.join(x.for_cypher() for x in self.clauses)
+        temp = "(" + temp + ")"
+        return temp
 

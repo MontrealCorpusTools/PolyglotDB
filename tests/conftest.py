@@ -340,6 +340,13 @@ def subannotation_config(graph_db, subannotation_data):
         c.finalize_import(subannotation_data)
     return config
 
+@pytest.fixture(scope = 'session')
+def lexicon_test_data():
+    data = {'cats': {'POS': 'NNS'}, 'are':{'POS':'VB'}, 'cute':{'POS': 'JJ'},
+            'dogs':{'POS': 'NNS'}, 'too':{'POS':'IN'}, 'i':{'POS':'PRP'},
+            'guess':{'POS':'VB'}}
+    return data
+
 @pytest.fixture(scope='session')
 def acoustic_config(graph_db, textgrid_test_dir):
     config = CorpusConfig('acoustic', **graph_db)

@@ -11,7 +11,7 @@ from polyglotdb.io.types.content import (OrthographyAnnotationType,
 from polyglotdb.io.helper import guess_type
 
 from polyglotdb.exceptions import DelimiterError
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 def test_to_csv(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export.csv')

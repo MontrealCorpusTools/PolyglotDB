@@ -6,7 +6,7 @@ from polyglotdb.io import inspect_buckeye
 
 from polyglotdb.io.parsers.buckeye import read_phones, read_words
 
-from polyglotdb.corpus import CorpusContext
+from polyglotdb import CorpusContext
 
 def test_load_phones(buckeye_test_dir):
     expected_phones = [('{B_TRANS}',0.0, 2.609000),

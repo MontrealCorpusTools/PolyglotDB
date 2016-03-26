@@ -23,9 +23,12 @@ class PGAnnotation(object):
 
         self.subannotations = []
 
-    def sha(self):
+    def sha(self, corpus = None):
         m = hashlib.sha1()
-        m.update(' '.join(map(str, self.type_values())).encode())
+        value = ' '.join(map(str, self.type_values()))
+        if corpus is not None:
+            value += ' ' + corpus
+        m.update(value.encode())
         return m.hexdigest()
 
     def type_keys(self):

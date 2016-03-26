@@ -14,6 +14,8 @@ import polyglotdb.sql as sql
 
 import polyglotdb.corpus as corpus
 
+CorpusContext = corpus.CorpusContext
+
 import polyglotdb.exceptions as exceptions
 
 import polyglotdb.config as config

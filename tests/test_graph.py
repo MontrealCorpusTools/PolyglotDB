@@ -1,8 +1,11 @@
 import os
 import pytest
 
-from polyglotdb.corpus import CorpusContext, get_corpora_list
+from polyglotdb import CorpusContext
+from polyglotdb.utils import  get_corpora_list
 from polyglotdb.graph.func import Count
+
+from polyglotdb.graph.elements import or_, and_
 
 def test_basic_query(timed_config):
     with CorpusContext(timed_config) as g:
@@ -414,3 +417,35 @@ def test_cached(acoustic_config):
         assert(len(results) == 2)
         assert(results[0].num_segments_in_word == 5)
         assert(results[0].num_syllables_in_word == 2)
+
+
+def test_or_clause(timed_config):
+    with CorpusContext(timed_config) as g:
+        q = g.query_graph(g.word).filter(or_(g.word.label == 'are', and_(g.word.begin >= 3.3, g.word.end < 100)))
+        q = q.order_by(g.word.begin)
+        q = q.columns(g.word.label.column_name('label'), g.word.begin.column_name('begin'))
+        print(q.cypher())
+        results = q.all()
+
+        q = g.query_graph(g.word).filter(g.word.label.in_(['are','guess']))
+        q = q.order_by(g.word.begin)
+        q = q.columns(g.word.label.column_name('label'), g.word.begin.column_name('begin'))
+        expected = q.all()
+
+        assert(len(expected) == len(results))
+
+        for i, r in enumerate(results):
+            assert(r.label == expected[i].label)
+            assert(r.begin == expected[i].begin)
+
+        q = g.query_graph(g.word).filter(or_(g.word.label == 'are', g.word.label == 'guess'))
+        q = q.order_by(g.word.begin)
+        q = q.columns(g.word.label.column_name('label'), g.word.begin.column_name('begin'))
+        print(q.cypher())
+        results = q.all()
+
+        assert(len(expected) == len(results))
+
+        for i, r in enumerate(results):
+            assert(r.label == expected[i].label)
+            assert(r.begin == expected[i].begin)
