@@ -151,10 +151,10 @@ class BaseContext(object):
 
     def __exit__(self, exc_type, exc, exc_tb):
         if exc_type is None:
-            try:
-                shutil.rmtree(self.config.temp_dir)
-            except:
-                pass
+            #try:
+            #    shutil.rmtree(self.config.temp_dir)
+            #except:
+            #    pass
             self.sql_session.commit()
             return True
         else:
