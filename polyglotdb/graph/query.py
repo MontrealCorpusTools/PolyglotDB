@@ -8,7 +8,9 @@ from .elements import (ContainsClauseElement,
                     RightAlignedClauseElement, LeftAlignedClauseElement,
                     NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
-from .attributes import HierarchicalAnnotation, SubPathAnnotation, SubAnnotation as QuerySubAnnotation
+from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
+                            SubAnnotation as QuerySubAnnotation,
+                            SpeakerAnnotation, DiscourseAnnotation)
 
 from .func import Count
 
@@ -18,7 +20,7 @@ from polyglotdb.io import save_results
 
 from polyglotdb.exceptions import SubannotationError
 
-from .models import LinguisticAnnotation, SubAnnotation
+from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 
 class GraphQuery(object):
     """
@@ -324,7 +326,16 @@ class GraphQuery(object):
             a.type_node = r[self.to_find.type_alias]
             a._preloaded = True
             for pre in self._preload:
-                if isinstance(pre, HierarchicalAnnotation):
+                if isinstance(pre, DiscourseAnnotation):
+                    pa = Discourse(self.corpus)
+                    pa.node = r[pre.alias]
+                    a._discourse = pa
+                elif isinstance(pre, SpeakerAnnotation):
+                    pa = Speaker(self.corpus)
+                    pa.node = r[pre.alias]
+                    a._speaker = pa
+
+                elif isinstance(pre, HierarchicalAnnotation):
                     pa = LinguisticAnnotation(self.corpus)
                     pa.node = r[pre.alias]
                     pa.type_node = r[pre.type_alias]
