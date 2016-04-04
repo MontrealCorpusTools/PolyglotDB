@@ -62,10 +62,10 @@ def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
         parser = inspect_buckeye(word_path)
         c.load(parser, word_path)
 
-        q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 's')
+        q = c.query_graph(c.phone).filter(c.phone.label == 's')
         assert(q.count() == 3)
 
-        q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
+        q = q.columns(c.phone.speaker.name.column_name('speaker'))
         print(q.cypher())
         results = q.all()
         print(results)
@@ -77,10 +77,10 @@ def test_load_directory_buckeye(graph_db, buckeye_test_dir):
         parser = inspect_buckeye(buckeye_test_dir)
         c.load(parser, buckeye_test_dir)
 
-        q = c.query_graph(c.surface_transcription).filter(c.surface_transcription.label == 's')
+        q = c.query_graph(c.phone).filter(c.phone.label == 's')
         assert(q.count() == 3)
 
-        q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
+        q = q.columns(c.phone.speaker.name.column_name('speaker'))
         print(q.cypher())
         results = q.all()
         print(results)

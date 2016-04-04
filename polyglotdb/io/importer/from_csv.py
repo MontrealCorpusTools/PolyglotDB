@@ -3,27 +3,29 @@ import os
 import logging
 import time
 
-def import_type_csvs(corpus_context, discourse_data):
+def import_type_csvs(corpus_context, type_headers):
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
-    annotation_types = discourse_data.annotation_types
     prop_temp = '''{name}: csvLine.{name}'''
-    for at in annotation_types:
-        type_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_type.csv'.format(at)).replace('\\','/'))
+    for at, h in type_headers.items():
+        type_path = 'file:///{}'.format(
+                os.path.join(corpus_context.config.temporary_directory('csv'),
+                            '{}_type.csv'.format(at)).replace('\\','/'))
 
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
 
         corpus_context.graph.cypher.execute('CREATE INDEX ON :%s_type(label)' % (at,))
         properties = []
-        for x in discourse_data[at].type_property_keys:
+        for x in h:
             properties.append(prop_temp.format(name=x))
-            corpus_context.graph.cypher.execute('CREATE INDEX ON :%s_type(%s)' % (at, x))
+            if x != 'id':
+                corpus_context.graph.cypher.execute('CREATE INDEX ON :%s_type(%s)' % (at, x))
         if properties:
-            type_prop_string = ', ' + ', '.join(properties)
+            type_prop_string = ', '.join(properties)
         else:
             type_prop_string = ''
         type_import_statement = '''USING PERIODIC COMMIT 1000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-MERGE (n:{annotation_type}_type:{corpus_name} {{ id: csvLine.id{type_property_string} }})
+MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         '''
         kwargs = {'path': type_path, 'annotation_type': at,
                     'type_property_string': type_prop_string,

@@ -19,6 +19,21 @@ class Hierarchy(object):
     subannotations : dict
         Information about what subannotations a linguistic type contains
     '''
+
+    get_type_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
+        RETURN n'''
+    set_type_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
+        SET n.subsets = {{subsets}}'''
+
+    get_token_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(n:{type})
+        RETURN n'''
+    set_token_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(n:{type})
+        SET n.subsets = {{subsets}}'''
+
     def __init__(self, data = None):
         if data is None:
             data = {}
@@ -30,38 +45,57 @@ class Hierarchy(object):
         self.subset_tokens = {}
         self.type_properties = {}
 
-
     def add_type_labels(self, corpus_context, annotation_type, labels):
-        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
-        MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        RETURN n'''.format(type = annotation_type)
+        statement = self.get_type_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
             cur_subsets = res[0].n.subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets + labels)
-        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
-        MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        SET n.subsets = {{subsets}}'''.format(type = annotation_type)
+        statement = self.set_type_subset_template.format(type = annotation_type)
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
                                 corpus_name = corpus_context.corpus_name)
+        self.subset_types[annotation_type] = updated
+
+    def remove_type_labels(self, corpus_context, annotation_type, labels):
+        statement = self.get_type_subset_template.format(type = annotation_type)
+        res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
+        try:
+            cur_subsets = res[0].n.subsets
+        except AttributeError:
+            cur_subsets = []
+        updated = set(cur_subsets) - set(labels)
+        statement = self.set_type_subset_template.format(type = annotation_type)
+        corpus_context.execute_cypher(statement, subsets=sorted(updated),
+                                corpus_name = corpus_context.corpus_name)
+        self.subset_types[annotation_type] = updated
 
     def add_token_labels(self, corpus_context, annotation_type, labels):
-        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
-        MATCH (c)<-[:contained_by*]-(n:{type})
-        RETURN n'''.format(type = annotation_type)
+        statement = self.get_token_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
             cur_subsets = res[0].n.subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets + labels)
-        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
-        MATCH (c)<-[:contained_by*]-(n:{type})
-        SET n.subsets = {{subsets}}'''.format(type = annotation_type)
+        statement = self.set_token_subset_template.format(type = annotation_type)
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
                                 corpus_name = corpus_context.corpus_name)
+        self.subset_tokens[annotation_type] = updated
+
+    def remove_token_labels(self, corpus_context, annotation_type, labels):
+        statement = self.get_token_subset_template.format(type = annotation_type)
+        res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
+        try:
+            cur_subsets = res[0].n.subsets
+        except AttributeError:
+            cur_subsets = []
+        updated = set(cur_subsets) - set(labels)
+        statement = self.set_token_subset_template.format(type = annotation_type)
+        corpus_context.execute_cypher(statement, subsets=sorted(updated),
+                                corpus_name = corpus_context.corpus_name)
+        self.subset_tokens[annotation_type] = updated
 
     def add_type_properties(self, corpus_context, annotation_type, properties):
         set_template = 'n.{0} = {{{0}}}'
@@ -91,6 +125,24 @@ class Hierarchy(object):
             self.type_properties[annotation_type] = set([('id',str)])
         self.type_properties[annotation_type].update(k for k in properties)
 
+    def remove_type_properties(self, corpus_context, annotation_type, properties):
+        remove_template = 'n.{0}'
+        ps = []
+        for k in properties:
+            ps.append(remove_template.format(k))
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
+        REMOVE {removes}'''.format(type = annotation_type, removes = ', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                corpus_name = corpus_context.corpus_name)
+        if annotation_type not in self.type_properties:
+            self.type_properties[annotation_type] = set([('id',str)])
+
+        to_remove = set(x for x in self.type_properties[annotation_type] if x[0] in properties)
+        self.type_properties[annotation_type].difference_update(to_remove)
+
+
     def add_token_properties(self, corpus_context, annotation_type, properties):
         set_template = 'n.{0} = {{{0}}}'
         ps = []
@@ -119,6 +171,22 @@ class Hierarchy(object):
         if annotation_type not in self.token_properties:
             self.token_properties[annotation_type] = set([('id', str)])
         self.token_properties[annotation_type].update(k for k in properties)
+
+    def remove_token_properties(self, corpus_context, annotation_type, properties):
+        remove_template = 'n.{0}'
+        ps = []
+        for k in properties:
+            ps.append(remove_template.format(k))
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(n:{type})
+        REMOVE {removes}'''.format(type = annotation_type, removes = ', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                corpus_name = corpus_context.corpus_name)
+        if annotation_type not in self.token_properties:
+            self.token_properties[annotation_type] = set([('id', str)])
+        to_remove = set(x for x in self.token_properties[annotation_type] if x[0] in properties)
+        self.token_properties[annotation_type].difference_update(to_remove)
 
     def keys(self):
         '''
@@ -279,6 +347,22 @@ class Hierarchy(object):
         if type not in self.type_properties:
             return False
         for name, t in self.type_properties[type]:
+            if name == key:
+                return True
+        return False
+
+    def has_type_subset(self, type, key):
+        if type not in self.subset_types:
+            return False
+        for name in self.subset_types[type]:
+            if name == key:
+                return True
+        return False
+
+    def has_token_subset(self, type, key):
+        if type not in self.subset_token:
+            return False
+        for name in self.subset_token[type]:
             if name == key:
                 return True
         return False

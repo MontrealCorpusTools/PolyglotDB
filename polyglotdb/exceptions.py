@@ -166,3 +166,6 @@ class NetworkAddressError(PGError):
 
 class TemporaryConnectionError(PGError):
     pass
+
+class SubsetError(PGError):
+    pass

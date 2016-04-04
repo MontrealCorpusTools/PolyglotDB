@@ -3,36 +3,20 @@ import os
 from uuid import uuid1
 from collections import defaultdict
 
-def data_to_type_csvs(corpus_context, parsed_data):
+def data_to_type_csvs(corpus_context, types, type_headers):
     directory = corpus_context.config.temporary_directory('csv')
-    type_paths = {}
-    data = list(parsed_data.values())[0]
-    for x in data.annotation_types:
-        type_paths[x] = os.path.join(directory,'{}_type.csv'.format(x))
-    tfs = {k: open(v, 'w', encoding = 'utf8') for k,v in type_paths.items()}
-    type_writers = {}
-    type_headers = {}
-    segment_type = data.segment_type
-    for k,v in tfs.items():
-        type_headers[k] = ['id']
-        type_headers[k] += sorted(data[k].type_property_keys)
-        type_writers[k] = csv.DictWriter(tfs[k], type_headers[k], delimiter = ',')
-    for x in type_writers.values():
-        x.writeheader()
-    types = defaultdict(set)
+    tfs = {}
 
-    for data in parsed_data.values():
-        for k,v in data.items():
-            for d in v:
-                type_additional = dict(zip(d.type_keys(), d.type_values()))
-                row = [d.sha(corpus=corpus_context.corpus_name)]
-                for th in type_headers[k]:
-                    if th not in ['id']:
-                        row.append(type_additional[th])
-                types[k].add(tuple(row))
-    for k, v in types.items():
-        for d in v:
-            type_writers[k].writerow(dict(zip(type_headers[k],d)))
+    for k in type_headers.keys():
+        tfs[k] = open(os.path.join(directory,'{}_type.csv'.format(k)), 'w', encoding = 'utf8')
+    type_writers = {}
+    for k,v in type_headers.items():
+        type_writers[k] = csv.DictWriter(tfs[k], type_headers[k], delimiter = ',')
+        type_writers[k].writeheader()
+
+    for k,v in types.items():
+        for t in v:
+            type_writers[k].writerow(dict(zip(type_headers[k],t)))
     for x in tfs.values():
         x.close()
 

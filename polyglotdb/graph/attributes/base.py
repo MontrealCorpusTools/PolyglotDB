@@ -8,6 +8,8 @@ from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
                         SubsetClauseElement, NullClauseElement, NotNullClauseElement)
 
+from ...exceptions import SubsetError
+
 special_attributes = ['duration', 'count', 'rate', 'position', 'type_subset',
                     'token_subset']
 
@@ -210,10 +212,18 @@ class AnnotationAttribute(Attribute):
         return self.template.format(**kwargs)
 
     def subset_type(self, *args):
+        if self.hierarchy is not None:
+            for a in args:
+                if not self.hierarchy.has_type_subset(self.type, a):
+                    raise(SubsetError('{} is not a subset of {} types.'.format(a, self.type)))
         self.subset_type_labels.extend(args)
         return self
 
     def subset_token(self, *args):
+        if self.hierarchy is not None:
+            for a in args:
+                if not self.hierarchy.has_token_subset(self.type, a):
+                    raise(SubsetError('{} is not a subset of {} tokens.'.format(a, self.type)))
         self.subset_token_labels.extend(args)
         return self
 
