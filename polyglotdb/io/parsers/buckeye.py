@@ -42,47 +42,6 @@ class BuckeyeParser(BaseParser):
                     stop_check = stop_check, call_back = call_back)
         self.speaker_parser = FilenameSpeakerParser(3)
 
-    def parse_types(self, word_path, corpus_name):
-        name, ext = os.path.splitext(os.path.split(word_path)[1])
-        if ext == '.words':
-            phone_ext = '.phones'
-        elif ext == '.WORDS':
-            phone_ext = '.PHONES'
-        phone_path = os.path.splitext(word_path)[0] + phone_ext
-
-        try:
-            words = read_words(word_path)
-            phones = read_phones(phone_path)
-        except Exception as e:
-            print(e)
-            return
-
-        type_headers = {'phone':['id', 'label'],
-                        'word': ['id', 'label','transcription']}
-        types = {'phone': set(), 'word':set()}
-        for w in words:
-            if self.stop_check is not None and self.stop_check():
-                return
-            if w['transcription'] is None:
-                w['transcription'] = '?'
-            m = hashlib.sha1()
-            type_props = [ w['spelling'], str(w['transcription'])]
-            value = ' '.join(type_props)
-            value += ' ' + corpus_name
-            m.update(value.encode())
-            type_props.insert(0,m.hexdigest())
-            types['word'].add(tuple(type_props))
-
-        for p in phones:
-
-            m = hashlib.sha1()
-            value =  p[0] + ' ' + corpus_name
-            m.update(value.encode())
-
-            types['phone'].add((m.hexdigest(), p[0]))
-
-        return types, type_headers
-
     def parse_discourse(self, word_path):
         '''
         Parse a Buckeye file for later importing.
@@ -160,7 +119,7 @@ class BuckeyeParser(BaseParser):
             if w['surface_transcription'] is None:
                 w['surface_transcription'] = '?'
             self.annotation_types[1].add([(w['transcription'], beg, end)])
-            self.annotation_types[2].add([(w['surface_transcription'], beg, end)])
+            self.annotation_types[2].add([(' '.join(w['surface_transcription']), beg, end)])
             self.annotation_types[3].add([(w['category'], beg, end)])
             self.annotation_types[4].add(found)
 
@@ -209,7 +168,7 @@ def read_words(path):
                 end = float(line[0])
                 word = sys.intern(line[1])
                 if word[0] != "<" and word[0] != "{":
-                    citation = line[2].split(' ')
+                    citation = line[2]
                     phonetic = line[3].split(' ')
                     if len(line) > 4:
                         category = line[4]

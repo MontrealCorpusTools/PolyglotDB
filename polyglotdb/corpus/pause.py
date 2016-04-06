@@ -24,6 +24,9 @@ class PauseContext(BaseContext):
         else:
             raise(NotImplementedError)
         q.set_pause()
+
+        if call_back is not None:
+            call_back('Finishing up...')
         statement = '''MATCH (prec:{corpus}:{word_type}:speech)
         WHERE not (prec)-[:precedes]->()
         WITH prec

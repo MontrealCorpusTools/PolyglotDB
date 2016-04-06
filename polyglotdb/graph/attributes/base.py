@@ -63,7 +63,7 @@ class Attribute(object):
 
     @property
     def alias(self):
-        return '{}_{}'.format(self.annotation.alias, self.label)
+        return '`{}_{}`'.format(self.annotation.alias.replace('`',''), self.label)
 
     def aliased_for_cypher(self):
         return '{} AS {}'.format(self.for_cypher(), self.alias)

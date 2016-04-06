@@ -537,10 +537,16 @@ class SplitQuery(GraphQuery):
             if self.stop_check is not None and self.stop_check():
                 return None
             r = q.all()
-            results.extend(r.records)
+            if isinstance(r, list):
+                results.extend(r)
+            else:
+                results.extend(r.records)
+        if isinstance(r, list):
+            return results
+        else:
             if columns is None:
                 columns = r.columns
-        return RecordList(columns, results)
+            return RecordList(columns, results)
 
 
     def delete(self):
@@ -580,8 +586,8 @@ class SplitQuery(GraphQuery):
         data = RecordList(columns, results)
         save_results(data, path)
 
-class SpeakerGraphQuery(GraphQuery):
+class SpeakerGraphQuery(SplitQuery):
     splitter = 'speakers'
 
-class DiscourseGraphQuery(GraphQuery):
+class DiscourseGraphQuery(SplitQuery):
     splitter = 'discourses'

@@ -52,7 +52,7 @@ def acoustic_analysis(corpus_context, pitch_algorithm = 'reaper',
             log.info('Exiting acoustic analysis! Stopping on {}.'.format(sf.filepath))
             break
         if call_back is not None:
-            call_back('Analyzing  file {} of {} ({})...'.format(i, num_sound_files, sf.filepath))
+            call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.filepath))
             call_back(i)
         log.info('Begin acoustic analysis for {}...'.format(sf.filepath))
         log_begin = time.time()

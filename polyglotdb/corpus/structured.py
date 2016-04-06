@@ -95,7 +95,7 @@ class StructuredContext(BaseContext):
                                 WHERE c.name = '{}'
                                 WITH n, t, c
                                 OPTIONAL MATCH (t)<-[:annotates]-(a)
-                                DETACH DELETE a, t, n'''.format(self.corpus_name))
+                                DETACH DELETE a, t, n, c'''.format(self.corpus_name))
 
     def encode_hierarchy(self):
         self.reset_hierarchy()

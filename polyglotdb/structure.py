@@ -360,9 +360,9 @@ class Hierarchy(object):
         return False
 
     def has_token_subset(self, type, key):
-        if type not in self.subset_token:
+        if type not in self.subset_tokens:
             return False
-        for name in self.subset_token[type]:
+        for name in self.subset_tokens[type]:
             if name == key:
                 return True
         return False

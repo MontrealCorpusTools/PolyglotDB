@@ -85,3 +85,8 @@ def test_query_with_pause(acoustic_config):
         assert(results[0].following == 'and')
         assert(results[0].following_pause == ['sil'])
         assert(abs(results[0].following_pause_duration - 1.152438) < 0.001)
+
+
+def test_buckeye_pause(graph_db):
+    with CorpusContext('discourse_buckeye', **graph_db) as c:
+        c.encode_pauses('^[<{].*$')
