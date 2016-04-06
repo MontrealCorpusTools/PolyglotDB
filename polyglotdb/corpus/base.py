@@ -263,7 +263,9 @@ class BaseContext(object):
         name : str
             Name of the discourse
         '''
-        w = getattr(self, 'word') #FIXME make more general
-        q = self.query_graph(w).filter(w.discourse.name == name)
+
+        w = getattr(self, self.word_name) #FIXME make more general
+        q = GraphQuery(self, w)
+        q = q.filter(w.discourse.name == name)
         q = q.order_by(w.begin)
         return q.all()
