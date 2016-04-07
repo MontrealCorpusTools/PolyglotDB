@@ -67,6 +67,8 @@ class StructuredContext(BaseContext):
                     continue
                 if not self.execute_cypher(exists_statement, labels = [self.corpus_name, label]):
                     continue
+                if label.endswith('_type'):
+                    continue
                 linguistic_labels.append(label)
             h = {}
             subs = {}
@@ -95,7 +97,7 @@ class StructuredContext(BaseContext):
                                 WHERE c.name = '{}'
                                 WITH n, t, c
                                 OPTIONAL MATCH (t)<-[:annotates]-(a)
-                                DETACH DELETE a, t, n, c'''.format(self.corpus_name))
+                                DETACH DELETE a, t, n'''.format(self.corpus_name))
 
     def encode_hierarchy(self):
         self.reset_hierarchy()
