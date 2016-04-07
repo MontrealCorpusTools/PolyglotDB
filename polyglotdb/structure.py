@@ -366,3 +366,14 @@ class Hierarchy(object):
             if name == key:
                 return True
         return False
+
+    @property
+    def word_name(self):
+        for at in self.annotation_types:
+            if at.startswith('word'):
+                return at
+        return None
+
+    @property
+    def phone_name(self):
+        return self.lowest
