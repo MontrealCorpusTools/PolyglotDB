@@ -282,14 +282,14 @@ def graph_db(graph_host, graph_port, graph_user, graph_pw):
 
 
 @pytest.fixture(scope='session')
-def untimed_config(graph_db,corpus_data_untimed):
+def untimed_config(graph_db, corpus_data_untimed):
     config = CorpusConfig('untimed', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
-        c.add_types({corpus_data_untimed.name: corpus_data_untimed})
-        c.initialize_import(corpus_data_untimed)
+        c.add_types(*corpus_data_untimed.types('untimed'))
+        c.initialize_import()
         c.add_discourse(corpus_data_untimed)
-        c.finalize_import(corpus_data_untimed)
+        c.finalize_import()
     return config
 
 @pytest.fixture(scope='session')
@@ -297,10 +297,10 @@ def timed_config(graph_db, corpus_data_timed):
     config = CorpusConfig('timed', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
-        c.add_types({corpus_data_timed.name: corpus_data_timed})
-        c.initialize_import(corpus_data_timed)
+        c.add_types(*corpus_data_timed.types('timed'))
+        c.initialize_import()
         c.add_discourse(corpus_data_timed)
-        c.finalize_import(corpus_data_timed)
+        c.finalize_import()
     return config
 
 @pytest.fixture(scope='session')
@@ -308,10 +308,10 @@ def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme):
     config = CorpusConfig('syllable_morpheme', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
-        c.add_types({corpus_data_syllable_morpheme.name: corpus_data_syllable_morpheme})
-        c.initialize_import(corpus_data_syllable_morpheme)
+        c.add_types(*corpus_data_syllable_morpheme.types('syllable_morpheme'))
+        c.initialize_import()
         c.add_discourse(corpus_data_syllable_morpheme)
-        c.finalize_import(corpus_data_syllable_morpheme)
+        c.finalize_import()
     return config
 
 
@@ -323,10 +323,10 @@ def ursr_config(graph_db, corpus_data_ur_sr):
     config = CorpusConfig('ur_sr', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
-        c.add_types({corpus_data_ur_sr.name: corpus_data_ur_sr})
-        c.initialize_import(corpus_data_ur_sr)
+        c.add_types(*corpus_data_ur_sr.types('ur_sr'))
+        c.initialize_import()
         c.add_discourse(corpus_data_ur_sr)
-        c.finalize_import(corpus_data_ur_sr)
+        c.finalize_import()
     return config
 
 @pytest.fixture(scope='session')
@@ -334,10 +334,10 @@ def subannotation_config(graph_db, subannotation_data):
     config = CorpusConfig('subannotations', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
-        c.add_types({subannotation_data.name: subannotation_data})
-        c.initialize_import(subannotation_data)
+        c.add_types(*subannotation_data.types('subannotations'))
+        c.initialize_import()
         c.add_discourse(subannotation_data)
-        c.finalize_import(subannotation_data)
+        c.finalize_import()
     return config
 
 @pytest.fixture(scope = 'session')

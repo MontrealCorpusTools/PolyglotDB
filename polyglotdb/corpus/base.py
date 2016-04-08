@@ -151,10 +151,10 @@ class BaseContext(object):
 
     def __exit__(self, exc_type, exc, exc_tb):
         if exc_type is None:
-            try:
-                shutil.rmtree(self.config.temp_dir)
-            except:
-                pass
+            #try:
+            #    shutil.rmtree(self.config.temp_dir)
+            #except:
+            #    pass
             self.sql_session.commit()
             return True
         else:
@@ -177,13 +177,21 @@ class BaseContext(object):
             if at.startswith('word'): #FIXME need a better way for storing word name
                 return at
 
+    @property
+    def phone_name(self):
+        return self.hierarchy.lowest
+
     def reset_graph(self):
         '''
         Remove all nodes and relationships in the graph that are apart
         of this corpus.
         '''
-
-        self.execute_cypher('''MATCH (n:%s) DETACH DELETE n''' % (self.corpus_name))
+        deleted = 1000
+        while deleted > 0:
+            deleted = self.execute_cypher('''MATCH (n:%s)-[r]->() with r LIMIT 50000 DELETE r return count(r) as deleted_count ''' % (self.corpus_name)).one
+        deleted = 1000
+        while deleted > 0:
+            deleted = self.execute_cypher('''MATCH (n:%s) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' % (self.corpus_name)).one
         self.reset_hierarchy()
         self.hierarchy = Hierarchy({})
 
@@ -255,7 +263,9 @@ class BaseContext(object):
         name : str
             Name of the discourse
         '''
-        w = getattr(self, 'word') #FIXME make more general
-        q = self.query_graph(w).filter(w.discourse.name == name)
+
+        w = getattr(self, self.word_name) #FIXME make more general
+        q = GraphQuery(self, w)
+        q = q.filter(w.discourse.name == name)
         q = q.order_by(w.begin)
         return q.all()

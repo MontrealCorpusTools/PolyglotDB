@@ -77,3 +77,16 @@ class DiscourseData(object):
 
     def items(self):
         return ((x, self.data[x]) for x in self.keys())
+
+    def types(self, corpus_name):
+        types = {}
+        type_headers = {}
+        for k, v in self.items():
+            types[k] = set()
+            for w in v:
+                if k not in type_headers:
+                    type_headers[k] = ['id'] + w.type_keys()
+                id = w.sha(corpus_name)
+                props = tuple([id] + [x for x in w.type_values()])
+                types[k].add(props)
+        return types, type_headers

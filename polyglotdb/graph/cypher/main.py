@@ -74,7 +74,7 @@ def query_to_params(query):
         else:
             try:
                 if not isinstance(c.value, Attribute):
-                    params[c.attribute.alias] = c.value
+                    params[c.attribute.alias.replace('`','')] = c.value
             except AttributeError:
                 pass
     return params

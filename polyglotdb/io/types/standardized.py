@@ -74,7 +74,12 @@ class PGAnnotationType(object):
     def add(self, annotation):
         self._list.append(annotation)
         self.type_property_keys.update(annotation.type_keys())
-        self.type_properties.update((k, type(v)) for k,v in annotation.type_properties.items())
+        for k,v in annotation.type_properties.items():
+            if isinstance(v, list):
+                t = str
+            else:
+                t = type(v)
+            self.type_properties.add((k, t))
         self.token_property_keys.update(annotation.token_keys())
         self.token_properties.update((k, type(v)) for k,v in annotation.token_properties.items())
 
