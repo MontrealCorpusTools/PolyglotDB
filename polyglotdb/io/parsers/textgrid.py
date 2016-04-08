@@ -74,4 +74,3 @@ class TextgridParser(BaseParser):
 
         data.wav_path = find_wav_path(path)
         return data
-

@@ -24,7 +24,8 @@ class UtteranceCorpus(BaseContext):
         except GraphQueryError:
             pass
 
-    def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0):
+    def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0,
+                            call_back = None, stop_check = None):
         """
         Encode utterance annotations based on minimum pause length and minimum
         utterance length.  See `get_pauses` for more information about
@@ -47,16 +48,24 @@ class UtteranceCorpus(BaseContext):
         self.execute_cypher('CREATE INDEX ON :utterance(begin)')
         self.execute_cypher('CREATE INDEX ON :utterance(end)')
 
-        for i, d in enumerate(self.discourses):
-            utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
-            time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
-            import_utterance_csv(self, d)
-
         self.hierarchy[self.word_name] = 'utterance'
         self.hierarchy['utterance'] = None
         self.encode_hierarchy()
         self.hierarchy = self.generate_hierarchy()
         self.save_variables()
+
+        discourses = self.discourses
+        if call_back is not None:
+            call_back(0, len(discourses))
+        for i, d in enumerate(discourses):
+            if stop_check is not None and stop_check():
+                return
+            if call_back is not None:
+                call_back(i)
+                call_back('Encoding utterances for discourse {} of {} ({})...'.format(i, len(discourses), d))
+            utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
+            time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
+            import_utterance_csv(self, d)
 
     def get_utterances(self, discourse,
                 min_pause_length = 0.5, min_utterance_length = 0):
@@ -140,13 +149,12 @@ ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse, word_
             utterances[0] = (times.min_begin, utterances[0][1])
         return utterances
 
-    def encode_utterance_position(self):
-        w_type = getattr(self, 'word')
-        w_type = w_type.type
+    def encode_utterance_position(self, call_back = None, stop_check = None):
+        w_type = self.word_name
         if self.config.query_behavior == 'speaker':
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name})-[:spoken_by]->(speaker:Speaker:{corpus_name}),
             (node_word_in_node_utterance:{w_type}:{corpus_name})-[:contained_by]->(node_utterance)
-            WHERE speaker.name = {{speaker_name}}
+            WHERE speaker.name = {{split_name}}
             WITH node_utterance, node_word_in_node_utterance
             ORDER BY node_word_in_node_utterance.begin
             WITH node_utterance,collect(node_word_in_node_utterance) as nodes
@@ -156,12 +164,11 @@ ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse, word_
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
             '''.format(w_type = w_type, corpus_name = self.corpus_name)
-            for s in self.speakers:
-                self.execute_cypher(statement, speaker_name = s)
+            split_names = self.speakers
         elif self.config.query_behavior == 'discourse':
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name})-[:spoken_in]->(discourse:Discourse:{corpus_name}),
             (node_word_in_node_utterance:{w_type}:{corpus_name})-[:contained_by]->(node_utterance)
-            WHERE discourse.name = {{discourse_name}}
+            WHERE discourse.name = {{split_name}}
             WITH node_utterance, node_word_in_node_utterance
             ORDER BY node_word_in_node_utterance.begin
             WITH node_utterance, collect(node_word_in_node_utterance) as nodes
@@ -171,8 +178,6 @@ ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse, word_
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
             '''.format(w_type = w_type, corpus_name = self.corpus_name)
-            for d in self.discourses:
-                self.execute_cypher(statement, discourse_name = d)
         else:
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name}),
             (node_word_in_node_utterance:{w_type}:{corpus_name})-[:contained_by]->(node_utterance)
@@ -185,9 +190,38 @@ ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse, word_
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
             '''.format(w_type = w_type, corpus_name = self.corpus_name)
+
+
+        if split_names is None:
+            if call_back is not None:
+                call_back('Encoding utterance position...')
+                call_back(0,0)
             self.execute_cypher(statement)
+        else:
+            if call_back is not None:
+                call_back(0,len(split_names))
+            for i, s in enumerate(split_names):
+                if stop_check is not None and stop_check():
+                    return
+                if call_back is not None:
+                    call_back(i)
+                    call_back('Encoding utterance positions for {} {} of {} ({})...'.format(self.config.query_behavior,
+                                                                i, len(split_names), s))
+                self.execute_cypher(statement, split_name = s)
         self.hierarchy.add_token_properties(self, w_type, [('position_in_utterance', int)])
         self.save_variables()
 
-    def encode_speech_rate(self):
-        pass
+    def reset_utterance_position(self):
+        q = self.query_graph(getattr(self, self.word_name))
+        q.set_token(position_in_utterance = None)
+        self.hierarchy.remove_token_properties(self, self.word_name, ['position_in_utterance'])
+
+    def encode_speech_rate(self, subset_label, call_back = None, stop_check = None):
+        q = self.query_graph(self.utterance)
+
+        q.cache(getattr(self.utterance, self.phone_name).subset_type(subset_label).rate.column_name('speech_rate'))
+
+    def reset_speech_rate(self):
+        q = self.query_graph(self.utterance)
+        q.set_token(speech_rate = None)
+        self.hierarchy.remove_token_properties(self, 'utterance', ['speech_rate'])

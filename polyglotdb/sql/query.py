@@ -39,6 +39,11 @@ class Lexicon(object):
             created = True
         return self.cache[(orthography, transcription)], created
 
+    def all(self):
+        q =  self.corpus_context.sql_session.query(Word)
+        return sorted([x.orthography for x in q.all()])
+
+
 class Inventory(object):
     def __init__(self, corpus_context):
         self.corpus_context = corpus_context
@@ -71,3 +76,7 @@ class Inventory(object):
             self.cache[(label, annotation_type)] = p
             created = True
         return self.cache[(label, annotation_type)], created
+
+    def all(self):
+        q =  self.corpus_context.sql_session.query(InventoryItem)
+        return sorted([x.label for x in q.all()])

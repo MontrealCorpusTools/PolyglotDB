@@ -154,6 +154,9 @@ class BaseParser(object):
                         annotation_types[k].token_property_keys.add('label')
         return annotation_types
 
+    def parse_types(self, path, corpus_name):
+        data = self.parse_discourse(path)
+        return data.types(corpus_name)
 
     def parse_discourse(self, name):
         '''

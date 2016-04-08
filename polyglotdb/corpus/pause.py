@@ -2,7 +2,7 @@
 from .base import BaseContext
 
 class PauseContext(BaseContext):
-    def encode_pauses(self, pause_words):
+    def encode_pauses(self, pause_words, call_back = None, stop_check = None):
         """
         Set words to be pauses, as opposed to speech.
 
@@ -15,6 +15,8 @@ class PauseContext(BaseContext):
         self.reset_pauses()
         word = getattr(self, self.word_name)
         q = self.query_graph(word)
+        q.call_back = call_back
+        q.stop_check = stop_check
         if isinstance(pause_words, (list, tuple, set)):
             q = q.filter(word.label.in_(pause_words))
         elif isinstance(pause_words, str):
@@ -22,6 +24,9 @@ class PauseContext(BaseContext):
         else:
             raise(NotImplementedError)
         q.set_pause()
+
+        if call_back is not None:
+            call_back('Finishing up...')
         statement = '''MATCH (prec:{corpus}:{word_type}:speech)
         WHERE not (prec)-[:precedes]->()
         WITH prec

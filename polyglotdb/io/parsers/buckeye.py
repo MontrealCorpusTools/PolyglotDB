@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import hashlib
 
 from polyglotdb.exceptions import BuckeyeParseError
 
@@ -115,9 +116,12 @@ class BuckeyeParser(BaseParser):
             self.annotation_types[0].add([(word, beg, end)])
             if w['transcription'] is None:
                 w['transcription'] = '?'
+            if w['surface_transcription'] is None:
+                w['surface_transcription'] = '?'
             self.annotation_types[1].add([(w['transcription'], beg, end)])
-            self.annotation_types[2].add([(w['category'], beg, end)])
-            self.annotation_types[3].add(found)
+            self.annotation_types[2].add([(' '.join(w['surface_transcription']), beg, end)])
+            self.annotation_types[3].add([(w['category'], beg, end)])
+            self.annotation_types[4].add(found)
 
         pg_annotations = self._parse_annotations()
 
@@ -164,7 +168,7 @@ def read_words(path):
                 end = float(line[0])
                 word = sys.intern(line[1])
                 if word[0] != "<" and word[0] != "{":
-                    citation = line[2].split(' ')
+                    citation = line[2]
                     phonetic = line[3].split(' ')
                     if len(line) > 4:
                         category = line[4]

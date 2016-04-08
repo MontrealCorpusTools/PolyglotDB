@@ -8,7 +8,9 @@ from .elements import (ContainsClauseElement,
                     RightAlignedClauseElement, LeftAlignedClauseElement,
                     NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
-from .attributes import HierarchicalAnnotation, SubPathAnnotation, SubAnnotation as QuerySubAnnotation
+from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
+                            SubAnnotation as QuerySubAnnotation,
+                            SpeakerAnnotation, DiscourseAnnotation)
 
 from .func import Count
 
@@ -18,7 +20,7 @@ from polyglotdb.io import save_results
 
 from polyglotdb.exceptions import SubannotationError
 
-from .models import LinguisticAnnotation, SubAnnotation
+from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 
 class GraphQuery(object):
     """
@@ -61,6 +63,8 @@ class GraphQuery(object):
 
         self._add_subannotations = []
         self._cache = []
+        self.call_back = None
+        self.stop_check = None
 
     def set_pause(self):
         self._set_token['pause'] = True
@@ -324,7 +328,16 @@ class GraphQuery(object):
             a.type_node = r[self.to_find.type_alias]
             a._preloaded = True
             for pre in self._preload:
-                if isinstance(pre, HierarchicalAnnotation):
+                if isinstance(pre, DiscourseAnnotation):
+                    pa = Discourse(self.corpus)
+                    pa.node = r[pre.alias]
+                    a._discourse = pa
+                elif isinstance(pre, SpeakerAnnotation):
+                    pa = Speaker(self.corpus)
+                    pa.node = r[pre.alias]
+                    a._speaker = pa
+
+                elif isinstance(pre, HierarchicalAnnotation):
                     pa = LinguisticAnnotation(self.corpus)
                     pa.node = r[pre.alias]
                     pa.type_node = r[pre.type_alias]
@@ -445,6 +458,20 @@ class GraphQuery(object):
         self._set_token = {}
         self._set_token_labels = []
 
+    def remove_type_labels(self, *args):
+        self._remove_type_labels.extend(args)
+        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+
+        self.corpus.hierarchy.remove_type_labels(self.corpus, self.to_find.type, args)
+        self._remove_type_labels = []
+
+    def remove_token_labels(self, *args):
+        self._remove_token_labels.extend(args)
+        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+
+        self.corpus.hierarchy.remove_token_labels(self.corpus, self.to_find.type, args)
+        self._remove_token_labels = []
+
     def delete(self):
         """
         Remove the results of a query from the graph.  CAUTION: this is
@@ -486,46 +513,72 @@ class SplitQuery(GraphQuery):
     def split_queries(self):
         attribute_name = self.splitter[:-1] #remove 's', fixme maybe?
         splitter_attribute = getattr(getattr(self.to_find, attribute_name), 'name')
-        for x in getattr(self.corpus, self.splitter):
+        splitter_names = getattr(self.corpus, self.splitter)
+        if self.call_back is not None:
+            self.call_back(0,len(splitter_names))
+        for i, x in enumerate(splitter_names):
+            if self.call_back is not None:
+                self.call_back(i)
+                self.call_back('Processing {} {} of {} ({})...'.format(attribute_name, i, len(splitter_names), x))
             base = self.base_query()
             base = base.filter(splitter_attribute == x)
             yield base
 
     def set_pause(self):
         for q in self.split_queries():
+            if self.stop_check is not None and self.stop_check():
+                return
             q.set_pause()
 
     def all(self):
         results = []
         columns = None
         for q in self.split_queries():
+            if self.stop_check is not None and self.stop_check():
+                return None
             r = q.all()
-            results.extend(r.records)
+            if isinstance(r, list):
+                results.extend(r)
+            else:
+                results.extend(r.records)
+        if isinstance(r, list):
+            return results
+        else:
             if columns is None:
                 columns = r.columns
-        return RecordList(columns, results)
+            return RecordList(columns, results)
 
 
     def delete(self):
         for q in self.split_queries():
+            if self.stop_check is not None and self.stop_check():
+                return
             q.delete()
 
     def cache(self, *args):
         for q in self.split_queries():
+            if self.stop_check is not None and self.stop_check():
+                return
             q.cache(*args)
 
     def set_type(self, *args, **kwargs):
         for q in self.split_queries():
+            if self.stop_check is not None and self.stop_check():
+                return
             q.set_type(*args, **kwargs)
 
     def set_token(self, *args, **kwargs):
         for q in self.split_queries():
+            if self.stop_check is not None and self.stop_check():
+                return
             q.set_token(*args, **kwargs)
 
     def to_csv(self, path):
         results = []
         columns = None
         for q in self.split_queries():
+            if self.stop_check is not None and self.stop_check():
+                return
             r = self.corpus.execute_cypher(q.cypher(), **q.cypher_params())
             results.extend(r.records)
             if columns is None:
@@ -533,8 +586,8 @@ class SplitQuery(GraphQuery):
         data = RecordList(columns, results)
         save_results(data, path)
 
-class SpeakerGraphQuery(GraphQuery):
+class SpeakerGraphQuery(SplitQuery):
     splitter = 'speakers'
 
-class DiscourseGraphQuery(GraphQuery):
+class DiscourseGraphQuery(SplitQuery):
     splitter = 'discourses'

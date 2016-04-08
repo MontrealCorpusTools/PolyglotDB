@@ -26,7 +26,12 @@ class PauseAnnotation(AnnotationAttribute):
             else:
                 pos = self.pos + 1
             return PausePathAnnotation(self.type, pos, corpus = self.corpus, hierarchy = self.hierarchy)
-
+        elif key == 'speaker':
+            from .speaker import SpeakerAnnotation
+            return SpeakerAnnotation(self, corpus = self.corpus)
+        elif key == 'discourse':
+            from .discourse import DiscourseAnnotation
+            return DiscourseAnnotation(self, corpus = self.corpus)
         return PauseAttribute(self, key, False)
 
     @property

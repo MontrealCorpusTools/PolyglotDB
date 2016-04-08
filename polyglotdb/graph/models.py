@@ -61,6 +61,10 @@ class LinguisticAnnotation(BaseAnnotation):
 
         self._preloaded = False
 
+    @property
+    def properties(self):
+        return sorted(set(self._node.properties.keys()) | set(self._type_node.properties.keys()))
+
     def __getattr__(self, key):
         if self.corpus_context is None:
             raise(GraphModelError('This object is not bound to a corpus context.'))

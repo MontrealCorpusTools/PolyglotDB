@@ -19,7 +19,7 @@ from ..io.importer import (data_to_graph_csvs, import_csvs,
 from py2neo.cypher.error.schema import IndexAlreadyExists
 
 class ImportContext(BaseContext):
-    def add_types(self, parsed_data):
+    def add_types(self, types, type_headers):
         '''
         This function imports types of annotations into the corpus.
 
@@ -29,11 +29,10 @@ class ImportContext(BaseContext):
             Dictionary with keys for discourse names and values of :class:`polyglotdb.io.helper.DiscourseData`
             objects
         '''
-        data = list(parsed_data.values())[0]
-        data_to_type_csvs(self, parsed_data)
-        import_type_csvs(self, list(parsed_data.values())[0])
+        data_to_type_csvs(self, types, type_headers)
+        import_type_csvs(self, type_headers)
 
-    def initialize_import(self, data):
+    def initialize_import(self):
         try:
             self.execute_cypher('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
         except IndexAlreadyExists:
@@ -49,7 +48,7 @@ class ImportContext(BaseContext):
             pass
         self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
-    def finalize_import(self, data):
+    def finalize_import(self):
         self.encode_hierarchy()
         self.hierarchy = self.generate_hierarchy()
         self.save_variables()
@@ -95,15 +94,17 @@ class ImportContext(BaseContext):
 
     def load_discourse(self, parser, path):
         data = parser.parse_discourse(path)
-        self.add_types({data.name: data})
-        self.initialize_import(data)
+        self.initialize_import()
+        self.add_types(*data.types(self.corpus_name))
         self.add_discourse(data)
-        self.finalize_import(data)
+        self.finalize_import()
 
     def load_directory(self, parser, path):
-        if parser.call_back is not None:
-            parser.call_back('Finding  files...')
-            parser.call_back(0, 0)
+        call_back = parser.call_back
+        parser.call_back = None
+        if call_back is not None:
+            call_back('Finding  files...')
+            call_back(0, 0)
         file_tuples = []
         for root, subdirs, files in os.walk(path, followlinks = True):
             for filename in files:
@@ -112,35 +113,48 @@ class ImportContext(BaseContext):
                 if not parser.match_extension(filename):
                     continue
                 file_tuples.append((root, filename))
-        if parser.call_back is not None:
-            parser.call_back('Parsing files...')
-            parser.call_back(0,len(file_tuples))
+        self.initialize_import()
+        if call_back is not None:
+            call_back('Parsing types...')
+            call_back(0,len(file_tuples))
             cur = 0
-        parsed_data = {}
+        types = defaultdict(set)
+        type_headers = None
+        for i, t in enumerate(file_tuples):
+            if parser.stop_check is not None and parser.stop_check():
+                return
+            if call_back is not None:
+                call_back('Parsing types from file {} of {}...'.format(i+1, len(file_tuples)))
+                call_back(i)
+            root, filename = t
+            path = os.path.join(root,filename)
+            discourse_types, headers = parser.parse_types(path, self.corpus_name)
+            if type_headers is None:
+                type_headers = headers
+            for k, v in discourse_types.items():
+                types[k].update(v)
+        if call_back is not None:
+            call_back('Importing types...')
+        self.add_types(types, type_headers)
+
+        if call_back is not None:
+            call_back('Parsing files...')
+            call_back(0,len(file_tuples))
+            cur = 0
 
         for i, t in enumerate(file_tuples):
             if parser.stop_check is not None and parser.stop_check():
                 return
-            if parser.call_back is not None:
-                parser.call_back('Parsing file {} of {}...'.format(i+1, len(file_tuples)))
-                parser.call_back(i)
             root, filename = t
             name = os.path.splitext(filename)[0]
+            if call_back is not None:
+                call_back('Parsing file {} of {} ({})...'.format(i+1, len(file_tuples), name))
+                call_back(i)
             path = os.path.join(root,filename)
             data = parser.parse_discourse(path)
-            parsed_data[t] = data
-
-        if parser.call_back is not None:
-            parser.call_back('Parsing annotation types...')
-        self.add_types(parsed_data)
-        self.initialize_import(data)
-        for i,(t,data) in enumerate(sorted(parsed_data.items(), key = lambda x: x[0])):
-            if parser.call_back is not None:
-                name = t[1]
-                parser.call_back('Importing discourse {} of {} ({})...'.format(i+1, len(file_tuples), name))
-                parser.call_back(i)
             self.add_discourse(data)
-        self.finalize_import(data)
+        self.finalize_import()
+        parser.call_back = call_back
 
     def update_sql_database(self, data):
         '''

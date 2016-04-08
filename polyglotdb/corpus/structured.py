@@ -67,6 +67,8 @@ class StructuredContext(BaseContext):
                     continue
                 if not self.execute_cypher(exists_statement, labels = [self.corpus_name, label]):
                     continue
+                if label.endswith('_type'):
+                    continue
                 linguistic_labels.append(label)
             h = {}
             subs = {}
