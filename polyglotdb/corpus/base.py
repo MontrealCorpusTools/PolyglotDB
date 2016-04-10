@@ -181,25 +181,40 @@ class BaseContext(object):
     def phone_name(self):
         return self.hierarchy.lowest
 
-    def reset_graph(self):
+    def reset_graph(self, call_back = None, stop_check = None):
         '''
         Remove all nodes and relationships in the graph that are apart
         of this corpus.
         '''
+        if call_back is not None:
+            call_back('Resetting database...')
+            number = self.execute_cypher('''MATCH (n:%s)-[r]->() return count(*) as number ''' % (self.corpus_name)).one
+            call_back(0, number * 2)
+        num_deleted = 0
         deleted = 1000
         while deleted > 0:
+            if stop_check is not None and stop_check():
+                break
             deleted = self.execute_cypher('''MATCH (n:%s)-[r]->() with r LIMIT 50000 DELETE r return count(r) as deleted_count ''' % (self.corpus_name)).one
+            num_deleted += deleted
+            if call_back is not None:
+                call_back(num_deleted)
         deleted = 1000
         while deleted > 0:
+            if stop_check is not None and stop_check():
+                break
             deleted = self.execute_cypher('''MATCH (n:%s) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' % (self.corpus_name)).one
+            num_deleted += deleted
+            if call_back is not None:
+                call_back(num_deleted)
         self.reset_hierarchy()
         self.hierarchy = Hierarchy({})
 
-    def reset(self):
+    def reset(self, call_back = None, stop_check = None):
         '''
         Reset the graph and SQL databases for a corpus.
         '''
-        self.reset_graph()
+        self.reset_graph(call_back, stop_check)
         try:
             Base.metadata.drop_all(self.engine)
         except sqlalchemy.exc.OperationalError:
