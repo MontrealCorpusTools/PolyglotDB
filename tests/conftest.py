@@ -66,7 +66,7 @@ def corpus_data_timed():
                 GroupingTier('line', 'line')]
     phones = [('k', 0.0, 0.1), ('ae', 0.1, 0.2), ('t', 0.2, 0.3), ('s', 0.3, 0.4),
             ('aa', 0.5, 0.6), ('r',  0.6, 0.7),
-            ('k', 0.8, 0.9), ('u', 0.9, 1.0), ('t', 1.0, 1.1),
+            ('k', 0.8, 0.9), ('uw', 0.9, 1.0), ('t', 1.0, 1.1),
             ('d', 2.0,  2.1), ('aa', 2.1, 2.2), ('g', 2.2, 2.3), ('z', 2.3, 2.4),
             ('aa', 2.4, 2.5), ('r', 2.5, 2.6),
             ('t', 2.6, 2.7), ('uw', 2.7, 2.8),
@@ -356,4 +356,6 @@ def acoustic_config(graph_db, textgrid_test_dir):
         c.reset()
         parser = inspect_textgrid(acoustic_path)
         c.load(parser, acoustic_path)
+    config.pitch_algorithm = 'acousticsim'
+    config.formant_algorithm = 'acousticsim'
     return config

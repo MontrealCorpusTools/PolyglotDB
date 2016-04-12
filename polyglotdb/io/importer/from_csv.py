@@ -7,9 +7,9 @@ def import_type_csvs(corpus_context, type_headers):
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
     prop_temp = '''{name}: csvLine.{name}'''
     for at, h in type_headers.items():
-        type_path = 'file:///{}'.format(
-                os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_type.csv'.format(at)).replace('\\','/'))
+        path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                            '{}_type.csv'.format(at))
+        type_path = 'file:///{}'.format(path.replace('\\','/'))
 
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
 
@@ -36,6 +36,7 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         corpus_context.execute_cypher(statement)
         log.info('Finished loading {} types!'.format(at))
         log.debug('{} type loading took: {} seconds.'.format(at, time.time() - begin))
+        #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_csvs(corpus_context, data):
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
@@ -47,7 +48,8 @@ def import_csvs(corpus_context, data):
 
     directory = corpus_context.config.temporary_directory('csv')
     for at in data.highest_to_lowest():
-        rel_path = 'file:///{}'.format(os.path.join(directory, '{}_{}.csv'.format(data.name, at)).replace('\\','/'))
+        path = os.path.join(directory, '{}_{}.csv'.format(data.name, at))
+        rel_path = 'file:///{}'.format(path.replace('\\','/'))
 
         corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
@@ -94,7 +96,7 @@ CREATE (p)-[:precedes]->(t)
         corpus_context.graph.cypher.execute(statement)
         log.info('Finished loading {} relationships!'.format(at))
         log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
-
+        #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
     log.info('Creating containing relationships...')
     begin = time.time()
@@ -119,8 +121,9 @@ CREATE (p)-[:precedes]->(t)
 
     for k,v in data.hierarchy.subannotations.items():
         for s in v:
+            path = os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s))
             corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
-            path = 'file:///{}'.format(os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s)).replace('\\','/'))
+            sub_path = 'file:///{}'.format(path.replace('\\','/'))
 
             rel_import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
@@ -128,13 +131,13 @@ MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
 CREATE (t:{subannotation_type}:{corpus_name}:{discourse}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
                             end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
 CREATE (t)-[:annotates]->(n)'''
-            kwargs = {'path': path, 'annotation_type': k,
+            kwargs = {'path': sub_path, 'annotation_type': k,
                         'subannotation_type': s,
                         'corpus_name': corpus_context.corpus_name,
                         'discourse': data.name}
             statement = rel_import_statement.format(**kwargs)
             corpus_context.graph.cypher.execute(statement)
-
+            #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 
 def import_lexicon_csvs(corpus_context, typed_data):
@@ -156,22 +159,23 @@ def import_lexicon_csvs(corpus_context, typed_data):
         properties.append(template.format(name = h))
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
-    path = 'file:///{}'.format(os.path.join(directory,'lexicon_import.csv').replace('\\','/'))
+    path = os.path.join(directory,'lexicon_import.csv')
+    lex_path = 'file:///{}'.format(path.replace('\\','/'))
     import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MATCH (n:{word_type}_type:{corpus_name}) where n.label = csvLine.label
 SET {new_properties}'''
-    statement = import_statement.format(path = path,
+    statement = import_statement.format(path = lex_path,
                                 corpus_name = corpus_context.corpus_name,
                                 word_type = corpus_context.word_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
+    #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
-def import_utterance_csv(corpus_context, discourse, transaction = None):
-    csv_path = 'file:///{}'.format(os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse)).replace('\\','/'))
+def import_utterance_csv(corpus_context, discourse):
+    path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse))
+    csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
-    word = getattr(corpus_context, 'word') #FIXME make word more general
-    word_type = word.type
     statement = '''LOAD CSV FROM "{path}" AS csvLine
             MATCH (begin:{word_type}:{corpus}:{discourse} {{begin: toFloat(csvLine[0])}})-[:spoken_by]->(s:Speaker:{corpus}),
             (end:{word_type}:{corpus}:{discourse} {{end: toFloat(csvLine[1])}}),
@@ -187,15 +191,13 @@ def import_utterance_csv(corpus_context, discourse, transaction = None):
     statement = statement.format(path = csv_path,
                 corpus = corpus_context.corpus_name,
                     discourse = discourse,
-                    word_type = word_type)
-    if transaction is None:
-        corpus_context.execute_cypher(statement)
-    else:
-        transaction.append(statement)
+                    word_type = corpus_context.word_name)
+    corpus_context.execute_cypher(statement)
+    #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 
 
-def import_subannotation_csv(corpus_context, type, annotated_type, props, transaction = None):
+def import_subannotation_csv(corpus_context, type, annotated_type, props):
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_subannotations.csv'.format(type))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
@@ -227,7 +229,5 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props, transa
                     a_type = annotated_type,
                     type = type,
                     properties = properties)
-    if transaction is None:
-        corpus_context.execute_cypher(statement)
-    else:
-        transaction.append(statement)
+    corpus_context.execute_cypher(statement)
+    #os.remove(path) # FIXME Neo4j 2.3 does not release files

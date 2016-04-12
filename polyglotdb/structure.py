@@ -22,14 +22,14 @@ class Hierarchy(object):
 
     get_type_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        RETURN n'''
+        RETURN n.subsets as subsets'''
     set_type_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
         SET n.subsets = {{subsets}}'''
 
     get_token_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(n:{type})
-        RETURN n'''
+        RETURN n.subsets as subsets'''
     set_token_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(n:{type})
         SET n.subsets = {{subsets}}'''
@@ -49,7 +49,7 @@ class Hierarchy(object):
         statement = self.get_type_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
-            cur_subsets = res[0].n.subsets
+            cur_subsets = res[0].subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets + labels)
@@ -62,7 +62,7 @@ class Hierarchy(object):
         statement = self.get_type_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
-            cur_subsets = res[0].n.subsets
+            cur_subsets = res[0].subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets) - set(labels)
@@ -75,7 +75,7 @@ class Hierarchy(object):
         statement = self.get_token_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
-            cur_subsets = res[0].n.subsets
+            cur_subsets = res[0].subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets + labels)
@@ -88,7 +88,7 @@ class Hierarchy(object):
         statement = self.get_token_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
-            cur_subsets = res[0].n.subsets
+            cur_subsets = res[0].subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets) - set(labels)

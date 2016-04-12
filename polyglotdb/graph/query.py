@@ -45,6 +45,8 @@ class GraphQuery(object):
         self.to_find = to_find
         self._criterion = []
         self._columns = []
+        self._hidden_columns = []
+        self._acoustic_columns = []
         self._order_by = []
         self._group_by = []
         self._aggregate = []
@@ -111,9 +113,15 @@ class GraphQuery(object):
 
         Columns should be :class:`polyglotdb.graph.attributes.Attribute` objects.
         """
-        column_set = set(self._columns)
-        args = [x for x in args if x not in column_set]
-        self._columns.extend(args)
+        column_set = set(self._columns) & set(self._acoustic_columns) & set(self._hidden_columns)
+        for c in args:
+            if c in column_set:
+                continue
+            if c.acoustic:
+                self._acoustic_columns.append(c)
+            else:
+                self._columns.append(c)
+            #column_set.add(c) #FIXME failing tests
         return self
 
     def filter_left_aligned(self, annotation_type):
@@ -319,7 +327,8 @@ class GraphQuery(object):
         Returns all results for the query
         """
         res_list = self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
-        if self._columns:
+        if self._columns or self._acoustic_columns:
+
             return res_list
         new_res_list = []
         for r in res_list:

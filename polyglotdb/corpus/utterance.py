@@ -215,11 +215,15 @@ ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse, word_
         q = self.query_graph(getattr(self, self.word_name))
         q.set_token(position_in_utterance = None)
         self.hierarchy.remove_token_properties(self, self.word_name, ['position_in_utterance'])
+        self.save_variables()
 
     def encode_speech_rate(self, subset_label, call_back = None, stop_check = None):
         q = self.query_graph(self.utterance)
 
         q.cache(getattr(self.utterance, self.phone_name).subset_type(subset_label).rate.column_name('speech_rate'))
+
+        self.hierarchy.add_token_properties(self, 'utterance', [('speech_rate', float)])
+        self.save_variables()
 
     def reset_speech_rate(self):
         q = self.query_graph(self.utterance)

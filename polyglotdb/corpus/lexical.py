@@ -10,3 +10,6 @@ class LexicalContext(BaseContext):
         import_lexicon_csvs(self, type_data)
         self.hierarchy.type_properties[self.word_name].update(type_data.items())
         self.encode_hierarchy()
+
+    def reset_lexicon(self):
+        pass

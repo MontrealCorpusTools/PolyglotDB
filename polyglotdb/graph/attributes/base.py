@@ -39,6 +39,7 @@ class Attribute(object):
         self.label = label
         self.output_label = None
         self.type = type
+        self.acoustic = False
 
     def __hash__(self):
         return hash((self.annotation, self.label))

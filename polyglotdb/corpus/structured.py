@@ -92,6 +92,11 @@ class StructuredContext(BaseContext):
             h.subannotations = subs
         return h
 
+    def refresh_hierarchy(self):
+        h = self.generate_hierarchy()
+        self.hierarchy = h
+        self.save_variables()
+
     def reset_hierarchy(self):
         self.execute_cypher('''MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t)
                                 WHERE c.name = '{}'
