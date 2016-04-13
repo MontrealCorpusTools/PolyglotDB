@@ -59,11 +59,36 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
     def encode_number_of_syllables(self):
         pass
 
-    def encode_syllables(self):
+    def encode_syllables(self, call_back = None, stop_check = None):
+        import math
         onsets = self.find_onsets()
-        onsets = {k: v / sum(onsets.values()) for k,v in onsets.items()}
+        onsets[None] = len(onsets.keys()) / 10
+        onsets = {k: math.log(v / sum(onsets.values())) for k,v in onsets.items()}
         codas = self.find_codas()
-        codas = {k: v / sum(codas.values()) for k,v in codas.items()}
+        codas[None] = len(codas.keys()) / 5
+        codas = {k: math.log(v / sum(codas.values())) for k,v in codas.items()}
+
+        def split_ons_coda(string):
+            if len(string) == 0:
+                return None
+            max_prob = -10000
+            best = None
+            for i in range(len(string) + 1):
+                prob = 0
+                ons = string[:i]
+                cod = string[i:]
+                if ons not in onsets:
+                    prob += onsets[None]
+                else:
+                    prob += onsets[ons]
+                if cod not in codas:
+                    prob += codas[None]
+                else:
+                    prob += codas[cod]
+                if prob > max_prob:
+                    max_prob = prob
+                    best = i
+            return best
 
         statement = '''MATCH (n:{corpus_name}:syllabic) return n.label as label'''.format(self.corpus_name)
         res = self.execute_cypher(statement)
@@ -71,27 +96,64 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
 
         word = getattr(self, self.word_name)
         phones = getattr(word, self.phone_name)
-        q = self.query_graph(word)
-        q = q.columns(word.id.column_name('id'), phones.id.column_name('phone_id'),
-                    phones.label.column_name('phones'))
-        results = q.all()
-        boundaries = []
-        for w in results:
-            cons = []
-            cur_vow_id = None
-            cur_ons_id = None
-            cur_coda_id = None
-            phones = [x for x in w.phones]
-            phone_ids = [x for x in w.phone_id]
-            intervocalic = []
-            while len(phones) > 0:
-                p = phones.pop(0)
-                id = phone_ids.pop(0)
-                if p in syllabics:
-                    if cur_vow_id is None:
-                        cur_vow_id = id
+        if self.config.query_behavior == 'discourse':
+            splits = self.discourses
+            process_string = 'Processing discourse {} of {} ({})...'
+        else:
+            splits = self.speakers
+            process_string = 'Processing speaker {} of {} ({})...'
+        if call_back is not None:
+            call_back(0, len(splits))
+        for i, s in enumerate(splits):
+            if stop_check is not None and stop_check():
+                break
+            if call_back is not None:
+                call_back(i)
+                call_back(process_string.format(i, len(splits), s))
+            q = self.query_graph(word)
+            if self.config.query_behavior == 'discourse':
+                q.filter(word.discourse.name == s)
+            else:
+                q.filter(word.speaker.name == s)
+            q = q.columns(word.id.column_name('id'), phones.id.column_name('phone_id'),
+                        phones.label.column_name('phones'))
+            results = q.all()
+            boundaries = []
+            for w in results:
+                phones = w.phones
+                phone_ids = w.phone_id
+                vow_inds = [i for i,x in enumerate(phones) if x in syllabic]
+                for j, i in enumerate(vow_inds):
+                    cur_vow_id = phone_ids[i]
+                    if j == 0:
+                        if i != 0:
+                            cur_ons_id = phone_ids[0]
+                        else:
+                            cur_ons_id = None
                     else:
-                        #syllabic
-                        pass
-                elif cur_ons_id is None:
-                    cur_ons_id = id
+                        prev_vowel_ind = vow_inds[j - 1]
+                        cons_string = phones[prev_vowel_ind + 1:i]
+                        split = split_ons_coda(cons_string)
+                        if split is None:
+                            cur_ons_id = None
+                        else:
+                            cur_ons_id = phone_ids[prev_vowel_ind + 1 + split]
+
+                    if j == len(vow_inds) < 1:
+                        if i != len(phones) - 1:
+                            cur_coda_id = phone_ids[-1]
+                        else:
+                            cur_coda_id = None
+                    else:
+                        foll_vowel_ind = vow_inds[j + 1]
+                        cons_string = phones[i + 1:foll_vowel_ind]
+                        split = split_ons_coda(cons_string)
+                        if split is None:
+                            cur_coda_id = None
+                        else:
+                            cur_coda_id = phone_ids[i + split]
+                    row = {'vowel_id': cur_vow_id, 'onset_id': cur_ons_id,
+                            'coda_id':cur_coda_id}
+                    boundaries.append(row)
+            syllables_data_to_csvs(self, boundaries, s)
+

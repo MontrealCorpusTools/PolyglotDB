@@ -87,6 +87,17 @@ def time_data_to_csvs(type, directory, discourse, timed_data):
         for t in timed_data:
             f.write('{},{},{}\n'.format(t[0], t[1], uuid1()))
 
+def syllables_data_to_csvs(corpus_context, data, split_name):
+    path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                        '{}_syllable.csv'.format(split_name))
+    header = ['vowel_id', 'onset_id', 'coda_id']
+    with open(path, 'w') as f:
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for d in data:
+            writer.writerow(d)
+
+
 def subannotations_data_to_csv(corpus_context, type, data):
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_subannotations.csv'.format(type))

@@ -195,7 +195,23 @@ def import_utterance_csv(corpus_context, discourse):
     corpus_context.execute_cypher(statement)
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
+def import_syllable_csv(corpus_context, split_name):
+    path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                        '{}_syllable.csv'.format(split_name))
+    csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
+    statement = '''USING PERIODIC COMMIT 500
+    LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+    MATCH (onset:{phone_name}:{corpus} {{id: csvLine.onset_id}}),
+            (nucleus:{phone_name}:{corpus} {{id: csvLine.vowel_id}}),
+            (coda:{phone_name}:{corpus} {{id: csvLine.coda_id}})
+    MATCH onspath = shortestPath((onset)-[:precedes*1..10]->(nucleus)),
+        codapath = shortestPath((nucleus)-[:precedes*1..10]->(coda))''' ## FIXME
+
+    statement = statement.format(path = csv_path,
+                corpus = corpus_context.corpus_name,
+                    phone_name = corpus_context.phone_name)
+    corpus_context.execute_cypher(statement)
 
 def import_subannotation_csv(corpus_context, type, annotated_type, props):
     path = os.path.join(corpus_context.config.temporary_directory('csv'),

@@ -12,7 +12,7 @@ class FeaturedContext(BaseContext):
         self.refresh_hierarchy()
 
     def reset_class(self, label):
-        statement = '''MATCH (n:{phone_name}_type:{corpus_name})
+        statement = '''MATCH (n:{phone_name}_type:{corpus_name}:{label})
         REMOVE n:{label}'''.format(phone_name = self.phone_name, corpus_name = self.corpus_name,
                                 label = label)
         self.execute_cypher(statement)

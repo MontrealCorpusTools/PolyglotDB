@@ -104,8 +104,8 @@ class BaseContext(object):
         except http.NetworkAddressError:
             raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
         except (py2neo.cypher.TransientError,
-                #py2neo.cypher.error.network.UnknownFailure,
-                #py2neo.cypher.error.statement.ExternalResourceFailure
+                py2neo.cypher.error.network.UnknownFailure,
+                py2neo.cypher.error.statement.ExternalResourceFailure
                 ):
             raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
         except Exception:
