@@ -86,6 +86,20 @@ def test_query_with_pause(acoustic_config):
         assert(results[0].following_pause == ['sil'])
         assert(abs(results[0].following_pause_duration - 1.152438) < 0.001)
 
+def test_hierarchical_pause_query(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        q = g.query_graph(g.phone).filter(g.phone.word.label == 'words')
+        q = q.filter(g.phone.label == 'w')
+        q = q.columns(g.phone.word.following.label.column_name('following'),
+                    g.pause.following.label.column_name('following_pause'),
+                    g.pause.following.duration.column_name('following_pause_duration'))
+        q = q.order_by(g.phone.word.begin)
+        print(q.cypher())
+        results = q.all()
+        assert(results[0].following == 'and')
+        assert(results[0].following_pause == ['sil'])
+        assert(abs(results[0].following_pause_duration - 1.152438) < 0.001)
+
 
 def test_buckeye_pause(graph_db):
     with CorpusContext('discourse_buckeye', **graph_db) as c:

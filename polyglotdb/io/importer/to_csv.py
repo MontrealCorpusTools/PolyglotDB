@@ -90,7 +90,17 @@ def time_data_to_csvs(type, directory, discourse, timed_data):
 def syllables_data_to_csvs(corpus_context, data, split_name):
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_syllable.csv'.format(split_name))
-    header = ['vowel_id', 'onset_id', 'coda_id']
+    header = ['id', 'prev_id', 'vowel_id', 'onset_id', 'coda_id', 'begin', 'end']
+    with open(path, 'w') as f:
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for d in data:
+            writer.writerow(d)
+
+def nonsyls_data_to_csvs(corpus_context, data, split_name):
+    path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                        '{}_nonsyl.csv'.format(split_name))
+    header = ['id', 'prev_id', 'break', 'onset_id', 'coda_id', 'begin', 'end']
     with open(path, 'w') as f:
         writer = csv.DictWriter(f, header, delimiter = ',')
         writer.writeheader()

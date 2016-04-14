@@ -12,6 +12,9 @@ import py2neo
 
 from py2neo import Graph
 from py2neo.packages.httpstream import http
+
+from py2neo.cypher.error.network import UnknownFailure
+from py2neo.cypher.error.statement import ExternalResourceFailure
 http.socket_timeout = 999
 
 from sqlalchemy import create_engine
@@ -104,8 +107,8 @@ class BaseContext(object):
         except http.NetworkAddressError:
             raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
         except (py2neo.cypher.TransientError,
-                py2neo.cypher.error.network.UnknownFailure,
-                py2neo.cypher.error.statement.ExternalResourceFailure
+                UnknownFailure,
+                ExternalResourceFailure
                 ):
             raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
         except Exception:

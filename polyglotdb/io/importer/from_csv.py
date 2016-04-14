@@ -11,14 +11,14 @@ def import_type_csvs(corpus_context, type_headers):
                             '{}_type.csv'.format(at))
         type_path = 'file:///{}'.format(path.replace('\\','/'))
 
-        corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
 
-        corpus_context.graph.cypher.execute('CREATE INDEX ON :%s_type(label)' % (at,))
+        corpus_context.execute_cypher('CREATE INDEX ON :%s_type(label)' % (at,))
         properties = []
         for x in h:
             properties.append(prop_temp.format(name=x))
             if x != 'id':
-                corpus_context.graph.cypher.execute('CREATE INDEX ON :%s_type(%s)' % (at, x))
+                corpus_context.execute_cypher('CREATE INDEX ON :%s_type(%s)' % (at, x))
         if properties:
             type_prop_string = ', '.join(properties)
         else:
@@ -93,7 +93,7 @@ CREATE (p)-[:precedes]->(t)
         statement = rel_import_statement.format(**kwargs)
         log.info('Loading {} relationships...'.format(at))
         begin = time.time()
-        corpus_context.graph.cypher.execute(statement)
+        corpus_context.execute_cypher(statement)
         log.info('Finished loading {} relationships!'.format(at))
         log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
         #os.remove(path) # FIXME Neo4j 2.3 does not release files
@@ -112,7 +112,7 @@ CREATE (p)-[:precedes]->(t)
                                 CREATE (a)-[:contained_by]->(s)'''.format(atype = at,
                                     stype = st, corpus = corpus_context.corpus_name,
                                     discourse = data.name)
-        corpus_context.graph.cypher.execute(statement)
+        corpus_context.execute_cypher(statement)
     log.info('Finished creating containing relationships!')
     log.info('Creating containing relationships took: {}.seconds'.format(time.time() - begin))
     log.info('Finished importing {} into the graph database!'.format(data.name))
@@ -122,7 +122,7 @@ CREATE (p)-[:precedes]->(t)
     for k,v in data.hierarchy.subannotations.items():
         for s in v:
             path = os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s))
-            corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
+            corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
             sub_path = 'file:///{}'.format(path.replace('\\','/'))
 
             rel_import_statement = '''USING PERIODIC COMMIT 3000
@@ -136,7 +136,7 @@ CREATE (t)-[:annotates]->(n)'''
                         'corpus_name': corpus_context.corpus_name,
                         'discourse': data.name}
             statement = rel_import_statement.format(**kwargs)
-            corpus_context.graph.cypher.execute(statement)
+            corpus_context.execute_cypher(statement)
             #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 
@@ -176,11 +176,14 @@ def import_utterance_csv(corpus_context, discourse):
     path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
+    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
+    corpus_context.execute_cypher('CREATE INDEX ON :utterance(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :utterance(end)')
     statement = '''LOAD CSV FROM "{path}" AS csvLine
             MATCH (begin:{word_type}:{corpus}:{discourse} {{begin: toFloat(csvLine[0])}})-[:spoken_by]->(s:Speaker:{corpus}),
             (end:{word_type}:{corpus}:{discourse} {{end: toFloat(csvLine[1])}}),
             (d:Discourse:{corpus} {{name: '{discourse}'}})
-            CREATE (utt:utterance:{corpus}:{discourse}:speech {{id: csvLine[2], begin: toFloat(csvLine[0]), end: toFloat(csvLine[1])}})-[:is_a]->(u_type:utterance_type),
+            CREATE (utt:utterance:{corpus}:{discourse}:speech {{id: csvLine[2], begin: toFloat(csvLine[0]), end: toFloat(csvLine[1])}})-[:is_a]->(u_type:utterance_type:{corpus}),
                 (d)<-[:spoken_in]-(utt),
                 (s)<-[:spoken_by]-(utt)
             WITH utt, begin, end
@@ -200,17 +203,110 @@ def import_syllable_csv(corpus_context, split_name):
                         '{}_syllable.csv'.format(split_name))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+
     statement = '''USING PERIODIC COMMIT 500
     LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-    MATCH (onset:{phone_name}:{corpus} {{id: csvLine.onset_id}}),
-            (nucleus:{phone_name}:{corpus} {{id: csvLine.vowel_id}}),
-            (coda:{phone_name}:{corpus} {{id: csvLine.coda_id}})
-    MATCH onspath = shortestPath((onset)-[:precedes*1..10]->(nucleus)),
-        codapath = shortestPath((nucleus)-[:precedes*1..10]->(coda))''' ## FIXME
+    MATCH (n:{phone_name}:{corpus}:speech {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
+            (n)-[:spoken_by]->(sp:Speaker),
+            (n)-[:spoken_in]->(d:Discourse)
+    WITH n, w, csvLine, sp, d, r
+    SET n :nucleus
+    WITH n, w, csvLine, sp, d, r
+    DELETE r
+    WITH n, w, csvLine, sp, d
+    CREATE (s:syllable:{corpus}:{discourse}:speech {{id: csvLine.id, prev_id:csvLine.prev_id,
+                        begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}})-[:is_a]->(s_type:syllable_type:{corpus}),
+            (s)-[:contained_by]->(w),
+            (n)-[:contained_by]->(s),
+            (s)-[:spoken_by]->(sp),
+            (s)-[:spoken_in]->(d)
+    with n, w, csvLine, s
+    OPTIONAL MATCH
+            (onset:{phone_name}:{corpus} {{id: csvLine.onset_id}}),
+            onspath = (onset)-[:precedes*1..10]->(n)
+
+    with n, w,s, csvLine, onspath
+    UNWIND (case when onspath is not null then nodes(onspath)[0..-1] else [null] end) as o
+
+    OPTIONAL MATCH (o)-[r:contained_by]->(w)
+    with n, w,s, csvLine, filter(x in collect(o) WHERE x is not NULL) as ons,
+    filter(x in collect(r) WHERE x is not NULL) as rels
+    FOREACH (o in ons | SET o :onset)
+    FOREACH (o in ons | CREATE (o)-[:contained_by]->(s))
+    FOREACH (r in rels | DELETE r)
+    with distinct n, w, s, csvLine
+    Optional match
+            (coda:{phone_name}:{corpus} {{id: csvLine.coda_id}}),
+        codapath = (n)-[:precedes*1..10]->(coda)
+    with n, w, s, codapath
+    UNWIND (case when codapath is not null then nodes(codapath)[1..] else [null] end) as c
+
+    OPTIONAL MATCH (c)-[r:contained_by]->(w)
+    with n, w,s, filter(x in collect(c) WHERE x is not NULL) as cod,
+    filter(x in collect(r) WHERE x is not NULL) as rels
+    FOREACH (c in cod | SET c :coda)
+    FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
+    FOREACH (r in rels | DELETE r)'''
 
     statement = statement.format(path = csv_path,
                 corpus = corpus_context.corpus_name,
-                    phone_name = corpus_context.phone_name)
+                word_name = corpus_context.word_name,
+                    phone_name = corpus_context.phone_name,
+                    discourse = split_name)
+    corpus_context.execute_cypher(statement)
+
+def import_nonsyl_csv(corpus_context, split_name):
+    path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                        '{}_nonsyl.csv'.format(split_name))
+    csv_path = 'file:///{}'.format(path.replace('\\','/'))
+
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+
+    statement = '''USING PERIODIC COMMIT 500
+    LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
+            (o)-[:spoken_by]->(sp:Speaker),
+            (o)-[:spoken_in]->(d:Discourse)
+WITH o, w, csvLine, sp, d, r
+DELETE r
+WITH o, w, csvLine, sp, d
+CREATE (s:syllable:{discourse}:{corpus}:speech {{id: csvLine.id, prev_id:csvLine.prev_id,
+                                begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}})-[:is_a]->(s_type:syllable_type:{corpus}),
+        (s)-[:contained_by]->(w),
+        (s)-[:spoken_by]->(sp),
+        (s)-[:spoken_in]->(d)
+with o, w, csvLine, s
+OPTIONAL MATCH
+(c:{phone_name}:{corpus}:speech {{id: csvLine.coda_id}})-[:contained_by]->(w),
+p = (o)-[:precedes*..10]->(c)
+with o, w, s, p, csvLine
+    UNWIND (case when p is not null then nodes(p) else [o] end) as c
+
+    OPTIONAL MATCH (c)-[r:contained_by]->(w)
+    with w,s, toInt(csvLine.break) as break, filter(x in collect(c) WHERE x is not NULL) as cod,
+    filter(x in collect(r) WHERE x is not NULL) as rels
+    FOREACH (c in cod[break..] | SET c :coda)
+    FOREACH (c in cod[..break] | SET c :onset)
+    FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
+    FOREACH (r in rels | DELETE r)'''
+
+    statement = statement.format(path = csv_path,
+                corpus = corpus_context.corpus_name,
+                word_name = corpus_context.word_name,
+                    phone_name = corpus_context.phone_name,
+                    discourse = split_name
+                )
     corpus_context.execute_cypher(statement)
 
 def import_subannotation_csv(corpus_context, type, annotated_type, props):

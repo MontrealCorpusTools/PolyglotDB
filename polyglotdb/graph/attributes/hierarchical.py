@@ -72,7 +72,12 @@ class HierarchicalAnnotation(AnnotationAttribute):
 
     @property
     def alias(self):
-        return key_for_cypher(self.contained_annotation.alias.replace('`','') + '_' + self.type)
+        pre = ''
+        if self.pos < 0:
+            pre += 'prev_{}_'.format(-1 * self.pos)
+        elif self.pos > 0:
+            pre += 'foll_{}_'.format(self.pos)
+        return key_for_cypher(pre + self.contained_annotation.alias.replace('`','') + '_' + self.type)
 
     def for_match(self):
         kwargs = {}

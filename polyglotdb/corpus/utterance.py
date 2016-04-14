@@ -19,8 +19,7 @@ class UtteranceCorpus(BaseContext):
             self.hierarchy.annotation_types.remove('utterance')
             del self.hierarchy['utterance']
             self.encode_hierarchy()
-            self.hierarchy = self.generate_hierarchy()
-            self.save_variables()
+            self.refresh_hierarchy()
         except GraphQueryError:
             pass
 
@@ -45,14 +44,11 @@ class UtteranceCorpus(BaseContext):
             speech to count as an utterance
         """
         self.reset_utterances()
-        self.execute_cypher('CREATE INDEX ON :utterance(begin)')
-        self.execute_cypher('CREATE INDEX ON :utterance(end)')
 
         self.hierarchy[self.word_name] = 'utterance'
         self.hierarchy['utterance'] = None
         self.encode_hierarchy()
-        self.hierarchy = self.generate_hierarchy()
-        self.save_variables()
+        self.refresh_hierarchy()
 
         discourses = self.discourses
         if call_back is not None:

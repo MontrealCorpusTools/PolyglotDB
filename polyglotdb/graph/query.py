@@ -231,8 +231,15 @@ class GraphQuery(object):
         annotation_levels[self.to_find].add(self.to_find)
         for c in self._criterion:
             for a in c.annotations:
-                if isinstance(a, HierarchicalAnnotation):
-                    annotation_levels[a].add(a)
+                if isinstance(a, DiscourseAnnotation):
+                    key = getattr(self.to_find, 'discourse')
+                    annotation_levels[key].add(a)
+                elif isinstance(a, SpeakerAnnotation):
+                    key = getattr(self.to_find, 'speaker')
+                    annotation_levels[key].add(a)
+                elif isinstance(a, HierarchicalAnnotation):
+                    key = getattr(a.contained_annotation, a.type)
+                    annotation_levels[key].add(a)
                 else:
                     key = getattr(self.corpus, a.type)
                     key = key.subset_type(*a.subset_type_labels)
@@ -241,8 +248,15 @@ class GraphQuery(object):
         if self._columns:
             for a in self._columns:
                 t = a.base_annotation
-                if isinstance(t, HierarchicalAnnotation):
-                    annotation_levels[t].add(t)
+                if isinstance(t, DiscourseAnnotation):
+                    key = getattr(self.to_find, 'discourse')
+                    annotation_levels[key].add(t)
+                elif isinstance(t, SpeakerAnnotation):
+                    key = getattr(self.to_find, 'speaker')
+                    annotation_levels[key].add(t)
+                elif isinstance(t, HierarchicalAnnotation):
+                    key = getattr(t.contained_annotation, t.type)
+                    annotation_levels[key].add(t)
                 else:
                     key = getattr(self.corpus, t.type)
                     key = key.subset_type(*t.subset_type_labels)
@@ -251,8 +265,15 @@ class GraphQuery(object):
         elif self._cache:
             for a in self._cache:
                 t = a.base_annotation
-                if isinstance(t, HierarchicalAnnotation):
-                    annotation_levels[t].add(t)
+                if isinstance(t, DiscourseAnnotation):
+                    key = getattr(self.to_find, 'discourse')
+                    annotation_levels[key].add(t)
+                elif isinstance(t, SpeakerAnnotation):
+                    key = getattr(self.to_find, 'speaker')
+                    annotation_levels[key].add(t)
+                elif isinstance(t, HierarchicalAnnotation):
+                    key = getattr(t.contained_annotation, t.type)
+                    annotation_levels[key].add(t)
                 else:
                     key = getattr(self.corpus, t.type)
                     key = key.subset_type(*t.subset_type_labels)
@@ -261,8 +282,15 @@ class GraphQuery(object):
         elif self._aggregate:
             for a in self._group_by:
                 t = a.base_annotation
-                if isinstance(t, HierarchicalAnnotation):
-                    annotation_levels[t].add(t)
+                if isinstance(t, DiscourseAnnotation):
+                    key = getattr(self.to_find, 'discourse')
+                    annotation_levels[key].add(t)
+                elif isinstance(t, SpeakerAnnotation):
+                    key = getattr(self.to_find, 'speaker')
+                    annotation_levels[key].add(t)
+                elif isinstance(t, HierarchicalAnnotation):
+                    key = getattr(t.contained_annotation, t.type)
+                    annotation_levels[key].add(t)
                 else:
                     key = getattr(self.corpus, t.type)
                     key = key.subset_type(*t.subset_type_labels)
@@ -270,8 +298,15 @@ class GraphQuery(object):
                     annotation_levels[key].add(t)
         else:
             for a in self._preload:
-                if isinstance(a, HierarchicalAnnotation):
-                    annotation_levels[a].add(a)
+                if isinstance(a, DiscourseAnnotation):
+                    key = getattr(self.to_find, 'discourse')
+                    annotation_levels[key].add(a)
+                elif isinstance(a, SpeakerAnnotation):
+                    key = getattr(self.to_find, 'speaker')
+                    annotation_levels[key].add(a)
+                elif isinstance(a, HierarchicalAnnotation):
+                    key = getattr(a.contained_annotation, a.type)
+                    annotation_levels[key].add(a)
                 elif isinstance(a, QuerySubAnnotation):
                     a = a.annotation
                     if isinstance(a, SubPathAnnotation):
