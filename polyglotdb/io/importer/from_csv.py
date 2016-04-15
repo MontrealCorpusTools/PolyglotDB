@@ -109,7 +109,9 @@ CREATE (p)-[:precedes]->(t)
                                 WITH a
                                 MATCH (s:{stype}:{corpus}:{discourse} {{id: a.{stype}}})
                                 WITH a, s
-                                CREATE (a)-[:contained_by]->(s)'''.format(atype = at,
+                                CREATE (a)-[:contained_by]->(s)
+                                WITH a
+                                REMOVE a.{stype}'''.format(atype = at,
                                     stype = st, corpus = corpus_context.corpus_name,
                                     discourse = data.name)
         corpus_context.execute_cypher(statement)
@@ -180,8 +182,8 @@ def import_utterance_csv(corpus_context, discourse):
     corpus_context.execute_cypher('CREATE INDEX ON :utterance(begin)')
     corpus_context.execute_cypher('CREATE INDEX ON :utterance(end)')
     statement = '''LOAD CSV FROM "{path}" AS csvLine
-            MATCH (begin:{word_type}:{corpus}:{discourse} {{begin: toFloat(csvLine[0])}})-[:spoken_by]->(s:Speaker:{corpus}),
-            (end:{word_type}:{corpus}:{discourse} {{end: toFloat(csvLine[1])}}),
+            MATCH (begin:{word_type}:{corpus}:{discourse}:speech {{begin: toFloat(csvLine[0])}})-[:spoken_by]->(s:Speaker:{corpus}),
+            (end:{word_type}:{corpus}:{discourse}:speech {{end: toFloat(csvLine[1])}}),
             (d:Discourse:{corpus} {{name: '{discourse}'}})
             CREATE (utt:utterance:{corpus}:{discourse}:speech {{id: csvLine[2], begin: toFloat(csvLine[0]), end: toFloat(csvLine[1])}})-[:is_a]->(u_type:utterance_type:{corpus}),
                 (d)<-[:spoken_in]-(utt),
@@ -190,7 +192,7 @@ def import_utterance_csv(corpus_context, discourse):
             MATCH path = shortestPath((begin)-[:precedes*0..]->(end))
             WITH utt, begin, end, nodes(path) as words
             UNWIND words as w
-            MERGE (w)-[:contained_by]->(utt)'''
+            CREATE (w)-[:contained_by]->(utt)'''
     statement = statement.format(path = csv_path,
                 corpus = corpus_context.corpus_name,
                     discourse = discourse,
@@ -216,7 +218,7 @@ def import_syllable_csv(corpus_context, split_name):
             (n)-[:spoken_by]->(sp:Speaker),
             (n)-[:spoken_in]->(d:Discourse)
     WITH n, w, csvLine, sp, d, r
-    SET n :nucleus
+    SET n :nucleus, n.syllable_position = 'nucleus'
     WITH n, w, csvLine, sp, d, r
     DELETE r
     WITH n, w, csvLine, sp, d
@@ -237,7 +239,7 @@ def import_syllable_csv(corpus_context, split_name):
     OPTIONAL MATCH (o)-[r:contained_by]->(w)
     with n, w,s, csvLine, filter(x in collect(o) WHERE x is not NULL) as ons,
     filter(x in collect(r) WHERE x is not NULL) as rels
-    FOREACH (o in ons | SET o :onset)
+    FOREACH (o in ons | SET o :onset, o.syllable_position = 'onset')
     FOREACH (o in ons | CREATE (o)-[:contained_by]->(s))
     FOREACH (r in rels | DELETE r)
     with distinct n, w, s, csvLine
@@ -250,7 +252,7 @@ def import_syllable_csv(corpus_context, split_name):
     OPTIONAL MATCH (c)-[r:contained_by]->(w)
     with n, w,s, filter(x in collect(c) WHERE x is not NULL) as cod,
     filter(x in collect(r) WHERE x is not NULL) as rels
-    FOREACH (c in cod | SET c :coda)
+    FOREACH (c in cod | SET c :coda, c.syllable_position = 'coda')
     FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
     FOREACH (r in rels | DELETE r)'''
 
@@ -296,8 +298,8 @@ with o, w, s, p, csvLine
     OPTIONAL MATCH (c)-[r:contained_by]->(w)
     with w,s, toInt(csvLine.break) as break, filter(x in collect(c) WHERE x is not NULL) as cod,
     filter(x in collect(r) WHERE x is not NULL) as rels
-    FOREACH (c in cod[break..] | SET c :coda)
-    FOREACH (c in cod[..break] | SET c :onset)
+    FOREACH (c in cod[break..] | SET c :coda, c.syllable_position = 'coda')
+    FOREACH (c in cod[..break] | SET c :onset, c.syllable_position = 'onset')
     FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
     FOREACH (r in rels | DELETE r)'''
 

@@ -77,9 +77,9 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                 WITH p, s, w, st
                 CREATE (p)-[:contained_by]->(w)
                 with p, s, st
-                DELETE s, st
+                DETACH DELETE s, st
                 with p
-                REMOVE p:onset, p:nucleus, p:coda
+                REMOVE p:onset, p:nucleus, p:coda, p.syllable_position
                 '''.format(corpus = self.corpus_name,
                         word_name = self.word_name,
                         phone_name = self.phone_name)
@@ -88,6 +88,8 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
         try:
             self.hierarchy.annotation_types.remove('syllable')
             self.hierarchy[self.phone_name] = self.hierarchy['syllable']
+            self.hierarchy.remove_token_labels(self, 'phone', ['onset','coda','nucleus'])
+            self.hierarchy.remove_token_properties(self, 'phone', ['syllable_position'])
             del self.hierarchy['syllable']
             self.encode_hierarchy()
             self.refresh_hierarchy()
@@ -120,6 +122,8 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
 
         self.hierarchy[self.phone_name] = 'syllable'
         self.hierarchy['syllable'] = self.word_name
+        self.hierarchy.add_token_labels(self, 'phone', ['onset','coda','nucleus'])
+        self.hierarchy.add_token_properties(self, 'phone', [('syllable_position', str)])
         self.encode_hierarchy()
         self.refresh_hierarchy()
         for i, s in enumerate(splits):
