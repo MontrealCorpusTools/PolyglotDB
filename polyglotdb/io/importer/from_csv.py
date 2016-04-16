@@ -142,7 +142,7 @@ CREATE (t)-[:annotates]->(n)'''
             #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 
-def import_lexicon_csvs(corpus_context, typed_data):
+def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
     int_set_template = 'n.{name} = toInt(csvLine.{name})'
@@ -163,10 +163,17 @@ def import_lexicon_csvs(corpus_context, typed_data):
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory,'lexicon_import.csv')
     lex_path = 'file:///{}'.format(path.replace('\\','/'))
-    import_statement = '''USING PERIODIC COMMIT 3000
-LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-MATCH (n:{word_type}_type:{corpus_name}) where n.label = csvLine.label
-SET {new_properties}'''
+    if case_sensitive:
+        import_statement = '''USING PERIODIC COMMIT 3000
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    MATCH (n:{word_type}_type:{corpus_name}) where n.label = csvLine.label
+    SET {new_properties}'''
+    else:
+        import_statement = '''USING PERIODIC COMMIT 3000
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    MATCH (n:{word_type}_type:{corpus_name}) where n.label =~ csvLine.label
+    SET {new_properties}'''
+
     statement = import_statement.format(path = lex_path,
                                 corpus_name = corpus_context.corpus_name,
                                 word_type = corpus_context.word_name,

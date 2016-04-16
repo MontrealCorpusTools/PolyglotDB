@@ -118,12 +118,14 @@ def subannotations_data_to_csv(corpus_context, type, data):
         for d in data:
             writer.writerow(d)
 
-def lexicon_data_to_csvs(corpus_context, data):
+def lexicon_data_to_csvs(corpus_context, data, case_sensitive = False):
     directory = corpus_context.config.temporary_directory('csv')
     with open(os.path.join(directory, 'lexicon_import.csv'), 'w') as f:
         header = ['label'] + sorted(next(iter(data.values())).keys())
         writer = csv.DictWriter(f, header, delimiter = ',')
         writer.writeheader()
         for k,v in sorted(data.items()):
+            if not case_sensitive:
+                k = '(?i)' + k
             v['label'] = k
             writer.writerow(v)
