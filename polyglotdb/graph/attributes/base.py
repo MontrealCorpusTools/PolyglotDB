@@ -62,6 +62,10 @@ class Attribute(object):
     def base_annotation(self):
         return self.annotation
 
+    @base_annotation.setter
+    def base_annotation(self, value):
+        self.annotation = value
+
     @property
     def alias(self):
         return '`{}_{}`'.format(self.annotation.alias.replace('`',''), self.label)
@@ -92,6 +96,7 @@ class Attribute(object):
     def __eq__(self, other):
         try:
             if self.label == 'begin' and other.label == 'begin':
+                print(other.annotation.depth)
                 return LeftAlignedClauseElement(self.annotation, other.annotation)
             elif self.label == 'end' and other.label == 'end':
                 return RightAlignedClauseElement(self.annotation, other.annotation)
@@ -298,10 +303,10 @@ class AnnotationAttribute(Attribute):
             if self.hierarchy is None or key in special_attributes:
                 type = False
             else:
-                if self.hierarchy.has_token_property(self.type, key):
-                    type = False
-                elif self.hierarchy.has_type_property(self.type, key):
+                if self.hierarchy.has_type_property(self.type, key):
                     type = True
+                elif self.hierarchy.has_token_property(self.type, key):
+                    type = False
                 else:
                     raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
 

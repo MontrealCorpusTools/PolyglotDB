@@ -26,11 +26,12 @@ class OrthographyAnnotation(BaseAnnotation):
 
 class OrthographyAnnotationType(BaseAnnotationType):
     annotation_class = OrthographyAnnotation
-    def __init__(self, name, linguistic_type):
+    def __init__(self, name, linguistic_type, label = False):
         self.characters = set()
         self.ignored_characters = set()
 
         BaseAnnotationType.__init__(self, name, linguistic_type)
+        self.label = label
 
     @property
     def punctuation(self):

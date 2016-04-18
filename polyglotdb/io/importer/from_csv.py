@@ -216,21 +216,30 @@ def import_syllable_csv(corpus_context, split_name):
         corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     except py2neo.cypher.error.schema.ConstraintAlreadyExists:
         pass
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
     statement = '''USING PERIODIC COMMIT 500
     LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+    MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
+    ON CREATE SET s_type.label = csvLine.label
+    WITH s_type, csvLine
     MATCH (n:{phone_name}:{corpus}:speech {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
             (n)-[:spoken_by]->(sp:Speaker),
             (n)-[:spoken_in]->(d:Discourse)
-    WITH n, w, csvLine, sp, d, r
+    WITH n, w, csvLine, sp, d, r,s_type
     SET n :nucleus, n.syllable_position = 'nucleus'
-    WITH n, w, csvLine, sp, d, r
+    WITH n, w, csvLine, sp, d, r,s_type
     DELETE r
-    WITH n, w, csvLine, sp, d
+    WITH n, w, csvLine, sp, d,s_type
     CREATE (s:syllable:{corpus}:{discourse}:speech {{id: csvLine.id, prev_id:csvLine.prev_id,
-                        begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}})-[:is_a]->(s_type:syllable_type:{corpus}),
+                        begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}})-[:is_a]->(s_type),
             (s)-[:contained_by]->(w),
             (n)-[:contained_by]->(s),
             (s)-[:spoken_by]->(sp),
@@ -279,19 +288,29 @@ def import_nonsyl_csv(corpus_context, split_name):
         corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     except py2neo.cypher.error.schema.ConstraintAlreadyExists:
         pass
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
     statement = '''USING PERIODIC COMMIT 500
     LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+    MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
+    ON CREATE SET s_type.label = csvLine.label
+    WITH s_type, csvLine
 MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
             (o)-[:spoken_by]->(sp:Speaker),
             (o)-[:spoken_in]->(d:Discourse)
-WITH o, w, csvLine, sp, d, r
+WITH o, w, csvLine, sp, d, r, s_type
 DELETE r
-WITH o, w, csvLine, sp, d
+WITH o, w, csvLine, sp, d, s_type
 CREATE (s:syllable:{discourse}:{corpus}:speech {{id: csvLine.id, prev_id:csvLine.prev_id,
-                                begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}})-[:is_a]->(s_type:syllable_type:{corpus}),
+                                begin: toFloat(csvLine.begin), end: toFloat(csvLine.end),
+                                label: csvLine.label}})-[:is_a]->(s_type),
         (s)-[:contained_by]->(w),
         (s)-[:spoken_by]->(sp),
         (s)-[:spoken_in]->(d)

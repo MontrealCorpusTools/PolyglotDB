@@ -286,6 +286,13 @@ class PathAttribute(Attribute):
         else:
             return self.annotation
 
+    @base_annotation.setter
+    def base_annotation(self, value):
+        if isinstance(self.annotation, SubPathAnnotation):
+            self.annotation.annotation = value
+        else:
+            self.annotation = value
+
     def for_cypher(self):
         if self.type:
             return self.type_return_template.format(alias = self.annotation.path_type_alias, property = self.label)
@@ -319,6 +326,10 @@ class PositionalAttribute(PathAttribute):
     @property
     def base_annotation(self):
         return self.annotation.annotation.annotation
+
+    @base_annotation.setter
+    def base_annotation(self, value):
+        self.annotation.annotation.annotation = value
 
     @property
     def with_alias(self):

@@ -6,6 +6,8 @@ from .featured import FeaturedContext
 from ..io.importer import (syllables_data_to_csvs, import_syllable_csv,
                             nonsyls_data_to_csvs, import_nonsyl_csv)
 
+from ..io.helper import make_type_id
+
 from ..syllabification.probabilistic import norm_count_dict, split_nonsyllabic_prob, split_ons_coda_prob
 from ..syllabification.maxonset import split_nonsyllabic_maxonset, split_ons_coda_maxonset
 
@@ -68,9 +70,12 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
     def reset_syllables(self, call_back = None, stop_check = None):
         if call_back is not None:
             call_back('Resetting syllables...')
-            call_back(0, 0)
+            number = self.execute_cypher('''MATCH (n:syllable:%s) return count(*) as number ''' % (self.corpus_name)).one
+            call_back(0, number)
         statement = '''MATCH (p:{phone_name}:{corpus})-[r1:contained_by]->(s:syllable:{corpus})-[r4:is_a]->(st:syllable_type:{corpus}),
                 (s)-[r2:contained_by]->(w:{word_name}:{corpus})
+                with p,s,r1,st,r4,r2,w
+                LIMIT 2000
                 OPTIONAL MATCH
                 (s)-[r3:precedes]->()
                 DELETE r1, r2, r3, r4
@@ -78,13 +83,20 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                 CREATE (p)-[:contained_by]->(w)
                 with p, s, st
                 DETACH DELETE s, st
-                with p
+                with p,s
                 REMOVE p:onset, p:nucleus, p:coda, p.syllable_position
-                '''.format(corpus = self.corpus_name,
+                RETURN count(s) as deleted_count'''.format(corpus = self.corpus_name,
                         word_name = self.word_name,
                         phone_name = self.phone_name)
-        self.execute_cypher(statement)
-
+        num_deleted = 0
+        deleted = 1000
+        while deleted > 0:
+            if stop_check is not None and stop_check():
+                break
+            deleted = self.execute_cypher(statement).one
+            num_deleted += deleted
+            if call_back is not None:
+                call_back(num_deleted)
         try:
             self.hierarchy.annotation_types.remove('syllable')
             self.hierarchy[self.phone_name] = self.hierarchy['syllable']
@@ -155,11 +167,14 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                         split = split_nonsyllabic_prob(phones, onsets, codas)
                     elif algorithm == 'maxonset':
                         split = split_nonsyllabic_maxonset(phones, onsets)
+                    label = '.'.join(phones)
                     row = {'id': cur_id, 'prev_id': prev_id,
                         'onset_id': phone_ids[0],
                             'break': split,
                             'coda_id':phone_ids[-1],
                             'begin': phone_begins[0],
+                            'label': label,
+                            'type_id': make_type_id([label], self.corpus_name),
                             'end': phone_ends[-1]}
                     non_syls.append(row)
                     prev_id = cur_id
@@ -170,9 +185,10 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                     begin = phone_begins[i]
                     end = phone_ends[i]
                     if j == 0:
+                        begin_ind = 0
                         if i != 0:
-                            cur_ons_id = phone_ids[0]
-                            begin = phone_begins[0]
+                            cur_ons_id = phone_ids[begin_ind]
+                            begin = phone_begins[begin_ind]
                         else:
                             cur_ons_id = None
                     else:
@@ -185,13 +201,15 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                         if split is None:
                             cur_ons_id = None
                         else:
-                            cur_ons_id = phone_ids[prev_vowel_ind + 1 + split]
-                            begin = phone_begins[prev_vowel_ind + 1 + split]
+                            begin_ind = prev_vowel_ind + 1 + split
+                            cur_ons_id = phone_ids[begin_ind]
+                            begin = phone_begins[begin_ind]
 
                     if j == len(vow_inds) - 1:
+                        end_ind = len(phones) - 1
                         if i != len(phones) - 1:
-                            cur_coda_id = phone_ids[-1]
-                            end = phone_ends[-1]
+                            cur_coda_id = phone_ids[end_ind]
+                            end = phone_ends[end_ind]
                         else:
                             cur_coda_id = None
                     else:
@@ -204,10 +222,14 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                         if split is None:
                             cur_coda_id = None
                         else:
-                            cur_coda_id = phone_ids[i + split]
-                            end = phone_ends[i + split]
+                            end_ind = i + split
+                            cur_coda_id = phone_ids[end_ind]
+                            end = phone_ends[end_ind]
+                    label = '.'.join(phones[begin_ind:end_ind + 1])
                     row = {'id': cur_id, 'prev_id': prev_id,
                         'vowel_id': cur_vow_id, 'onset_id': cur_ons_id,
+                        'label': label,
+                        'type_id': make_type_id([label], self.corpus_name),
                             'coda_id':cur_coda_id, 'begin': begin, 'end': end}
                     boundaries.append(row)
                     prev_id = cur_id

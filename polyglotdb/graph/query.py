@@ -95,18 +95,6 @@ class GraphQuery(object):
         self._criterion.extend(args)
         return self
 
-    def filter_contains(self, *args):
-        """
-        Deprecated, use ``filter`` instead.
-        """
-        return self.filter(*args)
-
-    def filter_contained_by(self, *args):
-        """
-        Deprecated, use ``filter`` instead.
-        """
-        return self.filter(*args)
-
     def columns(self, *args):
         """
         Add one or more additional columns to the results.
@@ -220,6 +208,18 @@ class GraphQuery(object):
         self = self.columns(self.to_find.discourse.name.column_name(output_name))
         return self
 
+    def filter_contains(self, *args):
+        """
+        Deprecated, use ``filter`` instead.
+        """
+        return self.filter(*args)
+
+    def filter_contained_by(self, *args):
+        """
+        Deprecated, use ``filter`` instead.
+        """
+        return self.filter(*args)
+
     def annotation_levels(self):
         """
         Returns a dictionary with annotation types as keys and positional
@@ -229,6 +229,74 @@ class GraphQuery(object):
         """
         annotation_levels = defaultdict(set)
         annotation_levels[self.to_find].add(self.to_find)
+
+        #Fix up bug for paths containing multiple routes (i.e. phone.utterance and phone.word)
+        hierarchical_depths = set()
+        annotations = [a for c in self._criterion for a in c.annotations]
+        annotations += [a.base_annotation for a in self._columns]
+        annotations += [a.base_annotation for a in self._cache]
+        annotations += [a.base_annotation for a in self._group_by]
+        annotations += [a[0].base_annotation for a in self._order_by]
+        annotations += [a for a in self._preload]
+
+        for a in annotations:
+            if isinstance (a, (SpeakerAnnotation, DiscourseAnnotation)):
+                continue
+            if not isinstance(a, HierarchicalAnnotation):
+                continue
+            hierarchical_depths.add(a.depth)
+        #Fix up hierarchical annotations
+        if any(x > 1 for x in hierarchical_depths):
+            def create_new_hierarchical(base):
+                cur = base.hierarchy[self.to_find.type]
+                a = getattr(self.to_find, cur)
+                while a.type != base.type:
+                    cur = base.hierarchy[cur]
+                    if cur is None:
+                        break
+                    a = getattr(a, cur)
+                a.pos = base.pos
+                return a
+            for c in self._criterion:
+                try:
+                    k = c.attribute.base_annotation
+                    if isinstance(k, HierarchicalAnnotation) and \
+                        not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                        c.attribute.base_annotation = create_new_hierarchical(k)
+                    try:
+                        k = c.value.base_annotation
+                        if isinstance(k, HierarchicalAnnotation) and \
+                            not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                            c.attribute.base_annotation = create_new_hierarchical(k)
+                    except AttributeError:
+                        pass
+                except AttributeError:
+                    k = c.first
+                    if isinstance(k, HierarchicalAnnotation) and \
+                        not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                        c.first = create_new_hierarchical(k)
+                    k = c.second
+                    if isinstance(k, HierarchicalAnnotation) and \
+                        not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                        c.second = create_new_hierarchical(k)
+
+            for a in self._columns + self._cache + self._group_by:
+                k = a.base_annotation
+                if isinstance(k, HierarchicalAnnotation) and \
+                    not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                    a.base_annotation = create_new_hierarchical(k)
+
+            for i, k in enumerate(self._preload):
+                if isinstance(k, HierarchicalAnnotation) and \
+                    not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                    self._preload[i] = create_new_hierarchical(k)
+
+            for i, a in enumerate(self._order_by):
+                k = a[0].base_annotation
+                if isinstance(k, HierarchicalAnnotation) and \
+                    not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                    self._order_by[i] = (getattr(create_new_hierarchical(k), a[0].label), a[1])
+
         for c in self._criterion:
             for a in c.annotations:
                 if isinstance(a, DiscourseAnnotation):
@@ -240,6 +308,13 @@ class GraphQuery(object):
                 elif isinstance(a, HierarchicalAnnotation):
                     key = getattr(a.contained_annotation, a.type)
                     annotation_levels[key].add(a)
+                    contained = key.contained_annotation
+                    while True:
+                        if not isinstance(contained, HierarchicalAnnotation):
+                            break
+                        if contained not in annotation_levels:
+                            annotation_levels[contained] = set()
+                        contained = contained.contained_annotation
                 else:
                     key = getattr(self.corpus, a.type)
                     key = key.subset_type(*a.subset_type_labels)
@@ -257,6 +332,14 @@ class GraphQuery(object):
                 elif isinstance(t, HierarchicalAnnotation):
                     key = getattr(t.contained_annotation, t.type)
                     annotation_levels[key].add(t)
+                    hierarchical_depths.add(t.depth)
+                    contained = key.contained_annotation
+                    while True:
+                        if not isinstance(contained, HierarchicalAnnotation):
+                            break
+                        if contained not in annotation_levels:
+                            annotation_levels[contained] = set()
+                        contained = contained.contained_annotation
                 else:
                     key = getattr(self.corpus, t.type)
                     key = key.subset_type(*t.subset_type_labels)
@@ -274,6 +357,13 @@ class GraphQuery(object):
                 elif isinstance(t, HierarchicalAnnotation):
                     key = getattr(t.contained_annotation, t.type)
                     annotation_levels[key].add(t)
+                    contained = key.contained_annotation
+                    while True:
+                        if not isinstance(contained, HierarchicalAnnotation):
+                            break
+                        if contained not in annotation_levels:
+                            annotation_levels[contained] = set()
+                        contained = contained.contained_annotation
                 else:
                     key = getattr(self.corpus, t.type)
                     key = key.subset_type(*t.subset_type_labels)
@@ -291,6 +381,13 @@ class GraphQuery(object):
                 elif isinstance(t, HierarchicalAnnotation):
                     key = getattr(t.contained_annotation, t.type)
                     annotation_levels[key].add(t)
+                    contained = key.contained_annotation
+                    while True:
+                        if not isinstance(contained, HierarchicalAnnotation):
+                            break
+                        if contained not in annotation_levels:
+                            annotation_levels[contained] = set()
+                        contained = contained.contained_annotation
                 else:
                     key = getattr(self.corpus, t.type)
                     key = key.subset_type(*t.subset_type_labels)
@@ -307,6 +404,13 @@ class GraphQuery(object):
                 elif isinstance(a, HierarchicalAnnotation):
                     key = getattr(a.contained_annotation, a.type)
                     annotation_levels[key].add(a)
+                    contained = key.contained_annotation
+                    while True:
+                        if not isinstance(contained, HierarchicalAnnotation):
+                            break
+                        if contained not in annotation_levels:
+                            annotation_levels[contained] = set()
+                        contained = contained.contained_annotation
                 elif isinstance(a, QuerySubAnnotation):
                     a = a.annotation
                     if isinstance(a, SubPathAnnotation):
@@ -618,17 +722,16 @@ class SplitQuery(GraphQuery):
             q.set_token(*args, **kwargs)
 
     def to_csv(self, path):
-        results = []
-        columns = None
+        write = True
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
                 return
             r = self.corpus.execute_cypher(q.cypher(), **q.cypher_params())
-            results.extend(r.records)
-            if columns is None:
-                columns = r.columns
-        data = RecordList(columns, results)
-        save_results(data, path)
+            if write:
+                save_results(r, path, mode = 'w')
+                write = False
+            else:
+                save_results(r, path, mode = 'a')
 
 class SpeakerGraphQuery(SplitQuery):
     splitter = 'speakers'

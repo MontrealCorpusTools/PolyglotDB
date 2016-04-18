@@ -3,6 +3,7 @@ import os
 import string
 import logging
 import operator
+import hashlib
 
 from collections import Counter
 
@@ -206,3 +207,10 @@ def log_annotation_types(annotation_types):
     logging.info('')
     for a in annotation_types:
         logging.info(a.pretty_print())
+
+def make_type_id(type_values, corpus):
+    m = hashlib.sha1()
+    value = ' '.join(map(str, type_values))
+    value += ' ' + corpus
+    m.update(value.encode())
+    return m.hexdigest()

@@ -3,6 +3,7 @@ import os
 
 from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
                                         GroupingTier, TextOrthographyTier,
+                                        TranscriptionTier,
                                         TextTranscriptionTier, TextMorphemeTier,
                                         MorphemeTier)
 
@@ -202,7 +203,7 @@ def lexicon_data():
 
 @pytest.fixture(scope='session')
 def corpus_data_syllable_morpheme_srur():
-    levels = [SegmentTier('sr', 'phone'),
+    levels = [SegmentTier('sr', 'phone', label = True),
                 TranscriptionTier('ur', 'word'),
                 GroupingTier('syllable', 'syllable'),
                 MorphemeTier('morphemes', 'word'),
@@ -304,13 +305,13 @@ def timed_config(graph_db, corpus_data_timed):
     return config
 
 @pytest.fixture(scope='session')
-def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme):
+def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme_srur):
     config = CorpusConfig('syllable_morpheme', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
-        c.add_types(*corpus_data_syllable_morpheme.types('syllable_morpheme'))
+        c.add_types(*corpus_data_syllable_morpheme_srur.types('syllable_morpheme'))
         c.initialize_import()
-        c.add_discourse(corpus_data_syllable_morpheme)
+        c.add_discourse(corpus_data_syllable_morpheme_srur)
         c.finalize_import()
     return config
 
