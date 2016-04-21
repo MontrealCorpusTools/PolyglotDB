@@ -2,6 +2,8 @@
 
 from .base import BaseContext
 
+from ..io.importer import feature_data_to_csvs, import_feature_csvs
+
 class FeaturedContext(BaseContext):
     def encode_class(self, phones, label):
         statement = '''MATCH (n:{phone_name}_type:{corpus_name}) where n.label in {{phones}}
@@ -30,3 +32,13 @@ class FeaturedContext(BaseContext):
         q = self.query_graph(phone)
         q.set_type(**{x: None for x in feature_names})
         self.hierarchy.remove_type_properties(self, self.phone_name, feature_names)
+
+    def enrich_features(self, feature_data, type_data = None):
+        if type_data is None:
+            type_data = {k: type(v) for k,v in next(iter(feature_data.values())).items()}
+        labels = set(self.inventory.all())
+        feature_data = {k: v for k,v in feature_data.items() if k in labels}
+        feature_data_to_csvs(self, feature_data)
+        import_feature_csvs(self, type_data)
+        self.hierarchy.type_properties[self.phone_name].update(type_data.items())
+        self.encode_hierarchy()

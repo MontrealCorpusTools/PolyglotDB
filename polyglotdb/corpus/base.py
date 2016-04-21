@@ -71,9 +71,19 @@ class BaseContext(object):
         self._has_sound_files = None
         self._has_all_sound_files = None
         if getattr(sys, 'frozen', False):
-            self.config.reaper_path = os.path.join(sys.path[-1],'reaper')
+            self.config.reaper_path = os.path.join(sys.path[-1], 'reaper')
         else:
             self.config.reaper_path = shutil.which('reaper')
+
+        if sys.platform == 'win32':
+            praat_exe = 'praatcon.exe'
+        else:
+            praat_exe = 'praat'
+
+        if getattr(sys, 'frozen', False):
+            self.config.praat_path = os.path.join(sys.path[-1], praat_exe)
+        else:
+            self.config.praat_path = shutil.which(praat_exe)
 
         self.config.query_behavior = 'speaker'
 

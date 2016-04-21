@@ -315,10 +315,6 @@ def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme_srur):
         c.finalize_import()
     return config
 
-
-    #with CorpusContext(graph_user, graph_pw, 'syllable_morpheme_srur', graph_host, graph_port) as c:
-    #    c.add_discourse(corpus_data_syllable_morpheme_srur)
-
 @pytest.fixture(scope='session')
 def ursr_config(graph_db, corpus_data_ur_sr):
     config = CorpusConfig('ur_sr', **graph_db)
@@ -357,6 +353,23 @@ def acoustic_config(graph_db, textgrid_test_dir):
         c.reset()
         parser = inspect_textgrid(acoustic_path)
         c.load(parser, acoustic_path)
+    config.pitch_algorithm = 'acousticsim'
+    config.formant_algorithm = 'acousticsim'
+    return config
+
+@pytest.fixture(scope='session')
+def acoustic_utt_config(graph_db, textgrid_test_dir):
+    config = CorpusConfig('acoustic_utt', **graph_db)
+
+    acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_textgrid(acoustic_path)
+        c.load(parser, acoustic_path)
+
+        c.encode_pauses(['sil'])
+        c.encode_utterances(min_pause_length = 0)
+
     config.pitch_algorithm = 'acousticsim'
     config.formant_algorithm = 'acousticsim'
     return config

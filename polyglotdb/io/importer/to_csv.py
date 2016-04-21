@@ -129,3 +129,13 @@ def lexicon_data_to_csvs(corpus_context, data, case_sensitive = False):
                 k = '(?i)' + k
             v['label'] = k
             writer.writerow(v)
+
+def feature_data_to_csvs(corpus_context, data):
+    directory = corpus_context.config.temporary_directory('csv')
+    with open(os.path.join(directory, 'feature_import.csv'), 'w') as f:
+        header = ['label'] + sorted(next(iter(data.values())).keys())
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for k,v in sorted(data.items()):
+            v['label'] = k
+            writer.writerow(v)

@@ -79,7 +79,7 @@ def generate_aggregate(query):
 def generate_distinct(query):
 
     properties = []
-    for c in query._columns:
+    for c in query._columns + query._hidden_columns:
         properties.append(c.aliased_for_output())
     if properties:
         return ', '.join(properties)

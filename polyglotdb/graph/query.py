@@ -39,7 +39,7 @@ class GraphQuery(object):
                     '_preload', '_set_type_labels', '_set_token_labels',
                     '_remove_type_labels', '_remove_token_labels',
                     '_set_type', '_set_token', '_delete', '_limit',
-                    '_cache']
+                    '_cache', '_acoustic_columns']
     def __init__(self, corpus, to_find):
         self.corpus = corpus
         self.to_find = to_find
@@ -234,6 +234,7 @@ class GraphQuery(object):
         hierarchical_depths = set()
         annotations = [a for c in self._criterion for a in c.annotations]
         annotations += [a.base_annotation for a in self._columns]
+        annotations += [a.base_annotation for a in self._hidden_columns]
         annotations += [a.base_annotation for a in self._cache]
         annotations += [a.base_annotation for a in self._group_by]
         annotations += [a[0].base_annotation for a in self._order_by]
@@ -280,7 +281,7 @@ class GraphQuery(object):
                         not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
                         c.second = create_new_hierarchical(k)
 
-            for a in self._columns + self._cache + self._group_by:
+            for a in self._columns + self._hidden_columns + self._cache + self._group_by:
                 k = a.base_annotation
                 if isinstance(k, HierarchicalAnnotation) and \
                     not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
@@ -321,7 +322,7 @@ class GraphQuery(object):
                     key = key.subset_token(*a.subset_token_labels)
                     annotation_levels[key].add(a)
         if self._columns:
-            for a in self._columns:
+            for a in self._columns + self._hidden_columns:
                 t = a.base_annotation
                 if isinstance(t, DiscourseAnnotation):
                     key = getattr(self.to_find, 'discourse')
@@ -465,9 +466,45 @@ class GraphQuery(object):
         """
         Returns all results for the query
         """
+        if self._acoustic_columns:
+            for a in self._acoustic_columns:
+                discourse_found = False
+                begin_found = False
+                end_found = False
+                for c in self._columns:
+                    if a.annotation.discourse == c.base_annotation and \
+                        c.label == 'name':
+                        a.discourse_alias = c.output_label
+                        discourse_found = True
+                    elif a.annotation == c.base_annotation and \
+                        c.label == 'begin':
+                        a.begin_alias = c.output_label
+                        begin_found = True
+                    elif a.annotation == c.base_annotation and \
+                        c.label == 'end':
+                        a.end_alias = c.output_label
+                        end_found = True
+                if not discourse_found:
+                    self._hidden_columns.append(a.annotation.discourse.name.column_name(a.discourse_alias))
+                if not begin_found:
+                    self._hidden_columns.append(a.annotation.begin.column_name(a.begin_alias))
+                if not end_found:
+                    self._hidden_columns.append(a.annotation.end.column_name(a.end_alias))
         res_list = self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
-        if self._columns or self._acoustic_columns:
 
+        if self._columns or self._acoustic_columns:
+            if self._acoustic_columns:
+                for a in self._acoustic_columns:
+                    for name in a.output_columns:
+                        res_list.columns.append(name)
+                for i, r in enumerate(res_list):
+                    for a in self._acoustic_columns:
+                        t = a.hydrate(self.corpus, getattr(r, a.discourse_alias),
+                                    getattr(r, a.begin_alias),
+                                    getattr(r, a.end_alias))
+                        for k in a.output_columns:
+                            res_list[i].__values__ = tuple(list(res_list[i].__values__) +[t[k]])
+                            setattr(res_list[i], k, t[k])
             return res_list
         new_res_list = []
         for r in res_list:

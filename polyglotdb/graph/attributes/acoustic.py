@@ -4,43 +4,50 @@ from ...sql.models import Pitch, Formants, SoundFile, Discourse
 from .base import AnnotationAttribute, Attribute
 
 class AcousticAttribute(Attribute):
-    def __init__(self, annotation, corpus):
+    output_columns = []
+    def __init__(self, annotation):
         self.annotation = annotation
-        self.corpus = corpus
         self.acoustic = True
         self.output_label = None
+        self.discourse_alias = annotation.alias + '_discourse'
+        self.begin_alias = annotation.alias + '_begin'
+        self.end_alias = annotation.alias + '_end'
 
-    def hydrate(self, discourse, begin, end):
+    def hydrate(self, corpus, discourse, begin, end):
         pass
 
 class PitchAttribute(AcousticAttribute):
-    def __init__(self, annotation, corpus):
+    output_columns = ['F0']
+    def __init__(self, annotation):
+        super(PitchAttribute, self).__init__(annotation)
         self.label = 'pitch'
-        super(PitchAttribute, self).__init__(annotation, corpus)
 
-    def hydrate(self, discourse, begin, end, aggregation = None):
-        data = {}
-        q = self.corpus.sql_session.query(Pitch).join(SoundFile, Discourse)
+    def hydrate(self, corpus, discourse, begin, end, aggregation = None):
+        data = {'F0':{}}
+        q = corpus.sql_session.query(Pitch).join(SoundFile, Discourse)
         q = q.filter(Pitch.time >= begin, Pitch.time <= end)
         q = q.filter(Discourse.name == discourse)
-        q = q.filter(Pitch.source == self.corpus.config.pitch_algorithm)
+        q = q.filter(Pitch.source == corpus.config.pitch_algorithm)
         results = q.all()
         for line in results:
-            data[line.time] = line.F0
+            data['F0'][line.time] = line.F0
         return data
 
 class FormantAttribute(AcousticAttribute):
-    def __init__(self, annotation, corpus):
+    output_columns = ['F1', 'F2', 'F3']
+    def __init__(self, annotation):
+        super(FormantAttribute, self).__init__(annotation)
         self.label = 'formants'
-        super(FormantAttribute, self).__init__(annotation, corpus)
 
-    def hydrate(self, discourse, begin, end, aggregation = None):
-        data = {}
-        q = self.corpus.sql_session.query(Formants).join(SoundFile, Discourse)
+    def hydrate(self, corpus, discourse, begin, end, aggregation = None):
+        data = {'F1':{}, 'F2':{}, 'F3':{}}
+        q = corpus.sql_session.query(Formants).join(SoundFile, Discourse)
         q = q.filter(Formants.time >= begin, Formants.time <= end)
         q = q.filter(Discourse.name == discourse)
-        q = q.filter(Formants.source == self.corpus.config.formant_algorithm)
+        q = q.filter(Formants.source == corpus.config.formant_algorithm)
         results = q.all()
         for line in results:
-            data[line.time] = (line.F1, line.F2, line.F3)
+            data['F1'][line.time] = line.F1
+            data['F2'][line.time] = line.F2
+            data['F3'][line.time] = line.F3
         return data

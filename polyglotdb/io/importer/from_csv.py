@@ -181,6 +181,40 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
     corpus_context.execute_cypher(statement)
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
+
+def import_feature_csvs(corpus_context, typed_data):
+    string_set_template = 'n.{name} = csvLine.{name}'
+    float_set_template = 'n.{name} = toFloat(csvLine.{name})'
+    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
+    properties = []
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name,h))
+        if v == int:
+            template = int_set_template
+        elif v == bool:
+            template = bool_set_template
+        elif v == float:
+            template = float_set_template
+        else:
+            template = string_set_template
+        properties.append(template.format(name = h))
+    properties = ',\n'.join(properties)
+    directory = corpus_context.config.temporary_directory('csv')
+    path = os.path.join(directory,'feature_import.csv')
+    feat_path = 'file:///{}'.format(path.replace('\\','/'))
+    import_statement = '''
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    MATCH (n:{phone_type}_type:{corpus_name}) where n.label = csvLine.label
+    SET {new_properties}'''
+
+    statement = import_statement.format(path = feat_path,
+                                corpus_name = corpus_context.corpus_name,
+                                phone_type = corpus_context.phone_name,
+                                new_properties = properties)
+    corpus_context.execute_cypher(statement)
+    #os.remove(path) # FIXME Neo4j 2.3 does not release files
+
 def import_utterance_csv(corpus_context, discourse):
     path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))

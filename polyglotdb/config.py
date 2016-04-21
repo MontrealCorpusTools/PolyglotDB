@@ -73,6 +73,9 @@ class CorpusConfig(object):
         self.engine = 'sqlite'
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
 
+        self.pitch_algorithm = 'reaper'
+        self.formant_algorithm = 'acousticsim'
+
         for k,v in kwargs.items():
             setattr(self, k, v)
 
