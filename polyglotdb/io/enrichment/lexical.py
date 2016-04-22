@@ -37,7 +37,8 @@ def enrich_lexicon_from_csv(corpus_context, path, case_sensitive = False):
                 if k not in type_data:
                     type_data[k] = defaultdict(int)
                 v = parse_string(line[f])
-                type_data[k][type(v)] += 1
+                if v != None:
+                    type_data[k][type(v)] += 1
                 data[w][k] = v
     type_data = {k: max(v.keys(), key = lambda x: v[x]) for k, v in type_data.items()}
     corpus_context.enrich_lexicon(data, type_data, case_sensitive = case_sensitive)

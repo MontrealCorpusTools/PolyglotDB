@@ -35,7 +35,8 @@ def enrich_features_from_csv(corpus_context, path):
                 if k not in type_data:
                     type_data[k] = defaultdict(int)
                 v = parse_string(line[f])
-                type_data[k][type(v)] += 1
+                if v != None:
+                    type_data[k][type(v)] += 1
                 data[p][k] = v
     type_data = {k: max(v.keys(), key = lambda x: v[x]) for k, v in type_data.items()}
     corpus_context.enrich_features(data, type_data)

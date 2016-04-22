@@ -40,5 +40,5 @@ class FeaturedContext(BaseContext):
         feature_data = {k: v for k,v in feature_data.items() if k in labels}
         feature_data_to_csvs(self, feature_data)
         import_feature_csvs(self, type_data)
-        self.hierarchy.type_properties[self.phone_name].update(type_data.items())
+        self.hierarchy.add_type_properties(self, self.phone_name, type_data.items())
         self.encode_hierarchy()
