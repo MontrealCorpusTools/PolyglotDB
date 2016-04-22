@@ -112,6 +112,8 @@ class Hierarchy(object):
                 v = ''
             elif v == bool:
                 v = False
+            elif v == type(None):
+                v = None
             ps.append(set_template.format(k))
             kwargs[k] = v
 
