@@ -9,47 +9,6 @@ from sqlalchemy.sql.expression import cast, literal_column, column, and_, text
 
 Base = declarative_base()
 
-class Word(Base):
-    __tablename__ = 'word'
-
-    id = Column(Integer, primary_key = True)
-
-    orthography = Column(String(250), nullable = False)
-    transcription = Column(String(250), nullable = False)
-
-    frequency = Column(Float, nullable = False)
-
-class WordPropertyType(Base):
-    __tablename__ = 'word_property_type'
-    id = Column(Integer, primary_key = True)
-
-    label = Column(String(250), nullable = False)
-
-
-class WordProperty(Base):
-    __tablename__ = 'word_property'
-    id = Column(Integer, primary_key = True)
-
-    word_id = Column(Integer, ForeignKey('word.id'), nullable = False)
-    word = relationship(Word)
-
-    property_id = Column(Integer, ForeignKey('word_property_type.id'), nullable = False)
-    property_type = relationship(WordPropertyType)
-
-    value = Column(String(250), nullable = False)
-
-class WordNumericProperty(Base):
-    __tablename__ = 'word_numeric_property'
-    id = Column(Integer, primary_key = True)
-
-    word_id = Column(Integer, ForeignKey('word.id'), nullable = False)
-    word = relationship(Word)
-
-    property_id = Column(Integer, ForeignKey('word_property_type.id'), nullable = False)
-    property_type = relationship(WordPropertyType)
-
-    value = Column(Float, nullable = False)
-
 class AnnotationType(Base):
     __tablename__ = 'annotation_type'
 
@@ -60,24 +19,67 @@ class AnnotationType(Base):
     def __repr__(self):
         return '<AnnotationType \'{}\'>'.format(self.label)
 
-class InventoryItem(Base):
-    __tablename__ = 'inventory_item'
+class Annotation(Base):
+    __tablename__ = 'annotation'
 
     id = Column(Integer, primary_key = True)
 
     label = Column(String(250), nullable = False)
 
-    type_id = Column(Integer, ForeignKey('annotation_type.id'), nullable = False)
+    annotation_type_id = Column(Integer, ForeignKey('annotation_type.id'), nullable = False)
     annotation_type = relationship(AnnotationType)
 
-class InventoryProperty(Base):
-    __tablename__ = 'inventory_property'
+    properties = relationship('Property', backref = 'annotation')
+
+    numeric_properties = relationship('NumericProperty', backref = 'annotation')
+
+    @property
+    def frequency(self):
+        for a in self.numeric_properties:
+            if a.property_type.label == 'frequency':
+                return a.value
+        return None
+
+    @property
+    def transcription(self):
+        for a in self.properties:
+            if a.property_type.label == 'transcription':
+                return a.value
+        return None
+
+    def __repr__(self):
+        return '<Annotation \'{}\'>'.format(self.label)
+
+
+class PropertyType(Base):
+    __tablename__ = 'property_type'
+
     id = Column(Integer, primary_key = True)
 
-    inventory_id = Column(Integer, ForeignKey('inventory_item.id'), nullable = False)
-    inventory_item = relationship(InventoryItem)
-
     label = Column(String(250), nullable = False)
+
+    def __repr__(self):
+        return '<PropertyType \'{}\'>'.format(self.label)
+
+class NumericProperty(Base):
+    __tablename__ = 'numeric_property'
+    id = Column(Integer, primary_key = True)
+
+    annotation_id = Column(Integer, ForeignKey('annotation.id'), nullable = False)
+
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable = False)
+    property_type = relationship(PropertyType)
+
+    value = Column(Float, nullable = False)
+
+class Property(Base):
+    __tablename__ = 'property'
+    id = Column(Integer, primary_key = True)
+
+    annotation_id = Column(Integer, ForeignKey('annotation.id'), nullable = False)
+
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable = False)
+    property_type = relationship(PropertyType)
 
     value = Column(String(250), nullable = False)
 

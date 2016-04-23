@@ -1,5 +1,6 @@
 
 from collections import defaultdict
+import copy
 
 from py2neo.cypher import RecordList
 
@@ -692,12 +693,17 @@ class SplitQuery(GraphQuery):
     def base_query(self):
         q = GraphQuery(self.corpus, self.to_find)
         for p in q._parameters:
-            setattr(q, p, getattr(self, p))
+            if isinstance(getattr(self, p), list):
+                for x in getattr(self, p):
+                    getattr(q, p).append(x)
+            else:
+                setattr(q, p, copy.deepcopy(getattr(self,p)))
         return q
 
     def split_queries(self):
         attribute_name = self.splitter[:-1] #remove 's', fixme maybe?
-        splitter_attribute = getattr(getattr(self.to_find, attribute_name), 'name')
+        splitter_annotation = getattr(self.to_find, attribute_name)
+        splitter_attribute = getattr(splitter_annotation, 'name')
         splitter_names = getattr(self.corpus, self.splitter)
         if self.call_back is not None:
             self.call_back(0,len(splitter_names))
@@ -706,7 +712,24 @@ class SplitQuery(GraphQuery):
                 self.call_back(i)
                 self.call_back('Processing {} {} of {} ({})...'.format(attribute_name, i, len(splitter_names), x))
             base = self.base_query()
-            base = base.filter(splitter_attribute == x)
+            al = base.annotation_levels()
+            add_filter = True
+            if splitter_annotation in al:
+                skip = False
+                for c in base._criterion:
+                    try:
+                        if c.attribute.annotation == splitter_annotation and \
+                            c.attribute.label == 'name':
+                            add_filter = False
+                            if c.value != x:
+                                skip = True
+                                break
+                    except AttributeError:
+                        pass
+                if skip:
+                    continue
+            if add_filter:
+                base = base.filter(splitter_attribute == x)
             yield base
 
     def set_pause(self):

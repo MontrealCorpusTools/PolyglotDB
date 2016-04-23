@@ -35,6 +35,7 @@ def test_guess_tiers(textgrid_test_dir):
 def test_load(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
     with CorpusContext('test_textgrid', **graph_db) as c:
+        c.reset()
         parser = inspect_textgrid(path)
         parser.annotation_types[1].linguistic_type = 'word'
         parser.annotation_types[2].ignored = True
@@ -46,6 +47,7 @@ def test_load(textgrid_test_dir, graph_db):
 def test_directory(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
     with CorpusContext('test_textgrid_directory', **graph_db) as c:
+        c.reset()
         with pytest.raises(TextGridError):
             parser = inspect_textgrid(path)
             c.load(parser, textgrid_test_dir)

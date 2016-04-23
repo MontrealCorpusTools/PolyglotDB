@@ -5,9 +5,8 @@ from collections import defaultdict
 
 from .base import BaseContext
 
-from ..sql.models import (Base, Word, WordProperty, WordNumericProperty, WordPropertyType,
-                    InventoryItem, AnnotationType, Discourse, Speaker,
-                    SoundFile)
+from ..sql.models import (Base, Annotation, Property, NumericProperty,
+                    AnnotationType, PropertyType, Discourse, Speaker, SoundFile)
 
 from ..sql.helper import get_or_create
 
@@ -52,8 +51,6 @@ class ImportContext(BaseContext):
         self.encode_hierarchy()
         self.hierarchy = self.generate_hierarchy()
         self.save_variables()
-        return
-        #import_csvs(self, data)
 
     def add_discourse(self, data):
         '''
@@ -174,7 +171,6 @@ class ImportContext(BaseContext):
         discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
         phone_cache = defaultdict(set)
         segment_type = data.segment_type
-        created_words = set()
         for level in data.annotation_types:
             if not data[level].is_word:
                 continue
@@ -185,48 +181,24 @@ class ImportContext(BaseContext):
                 if segment_type is not None:
                     base_sequence = data[segment_type].lookup_range(d.begin, d.end, speaker = d.speaker)
                     phone_cache[segment_type].update(x.label for x in base_sequence)
-                elif 'transcription' in d.type_properties:
-                    trans = d.type_properties['transcription']
-                if trans is None:
-                    trans = ''
-                elif isinstance(trans, list):
-                    phone_cache['transcription'].update(trans)
-                    trans = '.'.join(trans)
-                word, created = self.lexicon.get_or_create_word(d.label, trans)
-                if 'frequency' in d.type_properties:
-                    word.frequency = d.type_properties['frequency']
-                else:
-                    word.frequency += 1
+                annotation, created = self.lexicon.get_or_create_annotation(d.label, self.word_name)
                 if created:
-                    created_words.add(d.label)
                     for k,v in d.type_properties.items():
                         if v is None:
                             continue
-                        try:
-                            prop_type = self.lexicon.get_property_type(k)
-                        except:
-                            prop_type = WordPropertyType(label = k)
-                            self.sql_session.add(prop_type)
-                            self.lexicon.prop_type_cache[k] = prop_type
-                        if isinstance(v, (int,float)) and k != 'frequency':
-                            prop, _ = get_or_create(self.sql_session, WordNumericProperty, word = word, property_type = prop_type, value = v)
+                        prop_type = self.lexicon.get_or_create_property_type(k)
+                        if isinstance(v, (int,float)):
+                            prop, _ = get_or_create(self.sql_session, NumericProperty, annotation = annotation, property_type = prop_type, value = v)
                         elif isinstance(v, (list, tuple)):
-                            prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = '.'.join(map(str,v)))
+                            prop, _ = get_or_create(self.sql_session, Property, annotation = annotation, property_type = prop_type, value = '.'.join(map(str,v)))
                         else:
-                            prop, _ = get_or_create(self.sql_session, WordProperty, word = word, property_type = prop_type, value = v)
+                            prop, _ = get_or_create(self.sql_session, Property, annotation = annotation, property_type = prop_type, value = v)
 
             log.info('Finished importing {} annotations!'.format(level))
             log.debug('Importing {} annotations took: {} seconds.'.format(level, time.time()-begin))
 
         for level, phones in phone_cache.items():
-            try:
-                base_type = self.inventory.get_annotation_type(level)
-            except:
-                base_type = AnnotationType(label = level)
-                self.sql_session.add(base_type)
-                self.inventory.type_cache[level] = base_type
-
             for seg in phones:
-                p, _ = self.inventory.get_or_create_item(seg, base_type)
+                p, _ = self.lexicon.get_or_create_annotation(seg, self.phone_name)
         log.info('Finished importing {} to the SQL database!'.format(data.name))
         log.debug('SQL importing took: {} seconds'.format(time.time() - initial_begin))

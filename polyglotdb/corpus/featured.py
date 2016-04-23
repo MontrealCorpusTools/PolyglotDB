@@ -36,8 +36,9 @@ class FeaturedContext(BaseContext):
     def enrich_features(self, feature_data, type_data = None):
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(feature_data.values())).items()}
-        labels = set(self.inventory.all())
+        labels = set(self.lexicon.phones())
         feature_data = {k: v for k,v in feature_data.items() if k in labels}
+        self.lexicon.add_properties(self.phone_name, feature_data, type_data)
         feature_data_to_csvs(self, feature_data)
         import_feature_csvs(self, type_data)
         self.hierarchy.add_type_properties(self, self.phone_name, type_data.items())

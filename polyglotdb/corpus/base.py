@@ -20,7 +20,7 @@ http.socket_timeout = 999
 from sqlalchemy import create_engine
 from ..sql.models import Base, Discourse, Speaker
 from ..sql.config import Session
-from ..sql.query import Lexicon, Inventory
+from ..sql.query import Lexicon
 
 from ..config import CorpusConfig
 
@@ -65,8 +65,6 @@ class BaseContext(object):
         self.hierarchy = Hierarchy({})
 
         self.lexicon = Lexicon(self)
-
-        self.inventory = Inventory(self)
 
         self._has_sound_files = None
         self._has_all_sound_files = None
@@ -189,10 +187,14 @@ class BaseContext(object):
         for at in self.hierarchy.annotation_types:
             if at.startswith('word'): #FIXME need a better way for storing word name
                 return at
+        return 'word'
 
     @property
     def phone_name(self):
-        return self.hierarchy.lowest
+        name = self.hierarchy.lowest
+        if name is None:
+            name = 'phone'
+        return name
 
     def reset_graph(self, call_back = None, stop_check = None):
         '''
