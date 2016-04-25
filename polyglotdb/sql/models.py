@@ -1,13 +1,17 @@
 from sqlalchemy import (Table, Column, Integer, SmallInteger, String, MetaData, ForeignKey,
-                        Boolean,Float, PickleType, types, select )
+                        Boolean,Float, PickleType, types, select, func )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, aliased
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.sql.expression import cast, literal_column, column, and_, text
 
 Base = declarative_base()
+
+class CaseInsensitiveComparator(Comparator):
+    def __eq__(self, other):
+        return func.lower(self.__clause_element__()) == func.lower(other)
 
 class AnnotationType(Base):
     __tablename__ = 'annotation_type'
@@ -50,6 +54,13 @@ class Annotation(Base):
     def __repr__(self):
         return '<Annotation \'{}\'>'.format(self.label)
 
+    @hybrid_property
+    def label_insensitive(self):
+        return self.label.lower()
+
+    @label_insensitive.comparator
+    def label_insensitive(cls):
+        return CaseInsensitiveComparator(cls.label)
 
 class PropertyType(Base):
     __tablename__ = 'property_type'

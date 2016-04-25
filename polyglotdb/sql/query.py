@@ -27,13 +27,18 @@ class Lexicon(object):
         q =  self.corpus_context.sql_session.query(Annotation)
         q = q.join(AnnotationType)
         q = q.filter(AnnotationType.label == annotation_type)
-        q = q.filter(Annotation.label == key)
+        if case_sensitive:
+            q = q.filter(Annotation.label == key)
+        else:
+            q = q.filter(Annotation.label_insensitive == key)
         annotation = q.first()
         return annotation
 
     def add_properties(self, annotation_type, data, types, case_sensitive = False):
         for label, d in data.items():
-            annotation = self.lookup(label, annotation_type, case_sensitive = False)
+            annotation = self.lookup(label, annotation_type, case_sensitive = case_sensitive)
+            if annotation is None:
+                continue
             for k, v in d.items():
                 if v is None:
                     continue

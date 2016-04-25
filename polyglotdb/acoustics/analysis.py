@@ -64,13 +64,13 @@ def acoustic_analysis(corpus_context,
     log.info('Finished acoustic analysis for {} corpus!'.format(corpus_context.corpus_name))
     log.debug('Total time taken: {} seconds'.format(time.time() - initial_begin))
 
-def get_pitch(corpus_context, sound_file):
+def get_pitch(corpus_context, sound_file, calculate = True):
     q = corpus_context.sql_session.query(Pitch).join(SoundFile)
     q = q.filter(SoundFile.id == sound_file.id)
     q = q.filter(Pitch.source == corpus_context.config.pitch_algorithm)
     q = q.order_by(Pitch.time)
     listing = q.all()
-    if len(listing) == 0:
+    if len(listing) == 0 and calculate:
         sound_file = corpus_context.sql_session.query(SoundFile).join(Discourse).filter(SoundFile.id == sound_file.id).first()
 
         analyze_pitch(corpus_context, sound_file)
@@ -81,13 +81,13 @@ def get_pitch(corpus_context, sound_file):
         listing = q.all()
     return listing
 
-def get_formants(corpus_context, sound_file):
+def get_formants(corpus_context, sound_file, calculate = True):
     q = corpus_context.sql_session.query(Formants).join(SoundFile)
     q = q.filter(SoundFile.id == sound_file.id)
     q = q.filter(Formants.source == corpus_context.config.formant_algorithm)
     q = q.order_by(Formants.time)
     listing = q.all()
-    if len(listing) == 0:
+    if len(listing) == 0 and calculate:
         sound_file = corpus_context.sql_session.query(SoundFile).join(Discourse).filter(SoundFile.id == sound_file.id).first()
 
         analyze_formants(corpus_context, sound_file)

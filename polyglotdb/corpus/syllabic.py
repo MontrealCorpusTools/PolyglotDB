@@ -72,14 +72,13 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
             call_back('Resetting syllables...')
             number = self.execute_cypher('''MATCH (n:syllable:%s) return count(*) as number ''' % (self.corpus_name)).one
             call_back(0, number)
-        statement = '''MATCH (p:{phone_name}:{corpus})-[r1:contained_by]->(s:syllable:{corpus})-[r4:is_a]->(st:syllable_type:{corpus}),
-                (s)-[r2:contained_by]->(w:{word_name}:{corpus})
-                with p,s,r1,st,r4,r2,w
-                LIMIT 2000
-                OPTIONAL MATCH
-                (s)-[r3:precedes]->()
-                DELETE r1, r2, r3, r4
-                WITH p, s, w, st
+        statement = '''MATCH (st:syllable_type:{corpus})
+                WITH st
+                LIMIT 100
+                MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s),
+                (s:syllable:{corpus})-[:is_a]->(st),
+                (s)-[:contained_by]->(w:{word_name}:{corpus})
+                with p,s,st,w
                 CREATE (p)-[:contained_by]->(w)
                 with p, s, st
                 DETACH DELETE s, st
@@ -197,13 +196,13 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                         if algorithm == 'probabilistic':
                             split = split_ons_coda_prob(cons_string, onsets, codas)
                         elif algorithm == 'maxonset':
-                            split = split_nonsyllabic_maxonset(cons_string, onsets)
+                            split = split_ons_coda_maxonset(cons_string, onsets)
                         if split is None:
                             cur_ons_id = None
+                            begin_ind = i
                         else:
                             begin_ind = prev_vowel_ind + 1 + split
                             cur_ons_id = phone_ids[begin_ind]
-                            begin = phone_begins[begin_ind]
 
                     if j == len(vow_inds) - 1:
                         end_ind = len(phones) - 1
@@ -218,13 +217,15 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                         if algorithm == 'probabilistic':
                             split = split_ons_coda_prob(cons_string, onsets, codas)
                         elif algorithm == 'maxonset':
-                            split = split_nonsyllabic_maxonset(cons_string, onsets)
+                            split = split_ons_coda_maxonset(cons_string, onsets)
                         if split is None:
                             cur_coda_id = None
+                            end_ind = i
                         else:
                             end_ind = i + split
                             cur_coda_id = phone_ids[end_ind]
-                            end = phone_ends[end_ind]
+                    begin = phone_begins[begin_ind]
+                    end = phone_ends[end_ind]
                     label = '.'.join(phones[begin_ind:end_ind + 1])
                     row = {'id': cur_id, 'prev_id': prev_id,
                         'vowel_id': cur_vow_id, 'onset_id': cur_ons_id,
@@ -238,8 +239,10 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
             nonsyls_data_to_csvs(self, non_syls, s)
             import_nonsyl_csv(self, s)
 
-            statement = '''Match (n:syllable:{corpus})-[:spoken_in]->(d:Discourse {{name: {{discourse_name}}}}),
-            (p:syllable:{corpus} {{id: n.prev_id}})-[:spoken_in]->(d)
-            CREATE (p)-[:precedes]->(n)
-            REMOVE n.prev_id'''
-            self.execute_cypher(statement.format(corpus=self.corpus_name), discourse_name = s)
+            #statement = '''Match (n:syllable:{corpus})-[:spoken_in]->(d:Discourse:{corpus}),
+            #(p:syllable:{corpus} {{id: n.prev_id}})-[:spoken_in]->(d)
+            #where d.name = {{discourse_name}}
+            #CREATE (p)-[:precedes]->(n)
+            #WITH n
+            #REMOVE n.prev_id'''
+            #self.execute_cypher(statement.format(corpus=self.corpus_name), discourse_name = s)

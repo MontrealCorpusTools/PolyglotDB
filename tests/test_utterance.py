@@ -5,57 +5,9 @@ from polyglotdb import CorpusContext
 
 from polyglotdb.io import inspect_textgrid
 
-
-def test_utterance_nosilence(graph_db, textgrid_test_dir):
-    tg_path = os.path.join(textgrid_test_dir, 'phone_word_no_silence.TextGrid')
-    with CorpusContext('word_phone_nosilence', **graph_db) as g:
-        g.reset()
-        parser = inspect_textgrid(tg_path)
-        parser.annotation_types[0].linguistic_type = 'phone'
-        parser.annotation_types[1].linguistic_type = 'word'
-        parser.hierarchy['word'] = None
-        parser.hierarchy['phone'] = 'word'
-        g.load(parser, tg_path)
-
-        g.encode_utterances()
-
-        q = g.query_graph(g.word).filter(g.word.label == 'b')
-
-        q = q.columns(g.word.following.label.column_name('following_word'))
-        print(q.cypher())
-        results = q.all()
-        assert(len(results) == 1)
-        assert(results[0].following_word is None)
-
-        q = g.query_graph(g.word).filter(g.word.begin == g.word.utterance.begin)
-
-        results = q.all()
-
-        assert(len(results) == 1)
-        assert(results[0].label == 'a')
-
-        q = g.query_graph(g.phone).filter(g.phone.begin == g.phone.utterance.begin)
-
-        results = q.all()
-
-        assert(len(results) == 1)
-        assert(results[0].label == 'a')
-
-        #Things like g.phone.word.following are currently broken in PolyglotDB
-        return
-
-        q = g.query_graph(g.phone).filter(g.phone.label == 'b')
-
-        q = q.filter(g.phone.following.label == 'b')
-
-        q = q.columns(g.phone.label,g.phone.id,g.phone.word.following.label.column_name('following_word'))
-        print(q.cypher())
-        results = q.all()
-        assert(len(results) == 1)
-        assert(results[0].following_word is None)
-
 def test_get_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        g.reset_utterances()
         g.encode_pauses(['sil'])
         utterances = g.get_utterances('acoustic_corpus', min_pause_length = 0, min_utterance_length = 0)
 
@@ -111,6 +63,55 @@ def test_get_utterances(acoustic_config):
         for i, u in enumerate(utterances):
             assert(round(u[0],5) == round(expected_utterances[i][0],5))
             assert(round(u[1],5) == round(expected_utterances[i][1],5))
+
+def test_utterance_nosilence(graph_db, textgrid_test_dir):
+    tg_path = os.path.join(textgrid_test_dir, 'phone_word_no_silence.TextGrid')
+    with CorpusContext('word_phone_nosilence', **graph_db) as g:
+        g.reset()
+        parser = inspect_textgrid(tg_path)
+        parser.annotation_types[0].linguistic_type = 'phone'
+        parser.annotation_types[1].linguistic_type = 'word'
+        parser.hierarchy['word'] = None
+        parser.hierarchy['phone'] = 'word'
+        g.load(parser, tg_path)
+
+        g.encode_utterances()
+
+        q = g.query_graph(g.word).filter(g.word.label == 'b')
+
+        q = q.columns(g.word.following.label.column_name('following_word'))
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].following_word is None)
+
+        q = g.query_graph(g.word).filter(g.word.begin == g.word.utterance.begin)
+
+        results = q.all()
+
+        assert(len(results) == 1)
+        assert(results[0].label == 'a')
+
+        q = g.query_graph(g.phone).filter(g.phone.begin == g.phone.utterance.begin)
+
+        results = q.all()
+
+        assert(len(results) == 1)
+        assert(results[0].label == 'a')
+
+        #Things like g.phone.word.following are currently broken in PolyglotDB
+        return
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'b')
+
+        q = q.filter(g.phone.following.label == 'b')
+
+        q = q.columns(g.phone.label,g.phone.id,g.phone.word.following.label.column_name('following_word'))
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].following_word is None)
+
 
 def test_encode_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:

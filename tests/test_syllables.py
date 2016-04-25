@@ -5,6 +5,7 @@ from polyglotdb import CorpusContext
 
 from polyglotdb.syllabification.probabilistic import split_ons_coda_prob, split_nonsyllabic_prob, norm_count_dict
 from polyglotdb.syllabification.maxonset import split_ons_coda_maxonset, split_nonsyllabic_maxonset
+from polyglotdb.syllabification.main import syllabify
 
 def test_find_onsets(timed_config):
     syllabics = ['ae','aa','uw','ay','eh']
@@ -64,6 +65,19 @@ def test_maxonset_syllabification(acoustic_config, timed_config):
         print(s, e, result)
         assert(e == result)
 
+
+def test_syllabify(acoustic_config, timed_config):
+    expected = {('n','ay','iy','v'):[{'label':'n.ay'}, {'label':'iy.v'}],
+                ('l','ow','w','er'):[{'label':'l.ow'}, {'label':'w.er'}]}
+    s = ['ay','iy', 'ow', 'er']
+    o = [('n',),('v',), ('w',), ('l',)]
+    c = [('v',)]
+    for k,v in expected.items():
+        test = syllabify(k,s,o,c,'maxonset')
+        assert(len(test) == len(v))
+        for i, x in enumerate(v):
+            for k2, v2 in x.items():
+                assert(v2 == test[i][k2])
 
 def test_encode_syllables_acoustic(acoustic_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',

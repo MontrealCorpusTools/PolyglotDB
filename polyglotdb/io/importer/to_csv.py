@@ -40,7 +40,7 @@ def data_to_graph_csvs(corpus_context, data):
     rel_writers = {}
 
     for k,v in rfs.items():
-        token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse']
+        token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker']
         token_header += data[k].token_property_keys
         supertype = data[k].supertype
         if supertype is not None:
@@ -69,7 +69,7 @@ def data_to_graph_csvs(corpus_context, data):
             rel_writers[level].writerow(dict(begin = d.begin, end = d.end,
                              type_id = d.sha(corpus = corpus_context.corpus_name),
                              id = d.id, speaker = d.speaker,
-                             previous_id = d.previous_id, discourse = data.name,
+                             previous_id = d.previous_id,
                             **token_additional))
             if d.subannotations:
                 for sub in d.subannotations:

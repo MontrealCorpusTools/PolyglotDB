@@ -63,12 +63,7 @@ class CorpusConfig(object):
         self.log_dir = os.path.join(self.base_dir, 'logs')
 
         self.temp_dir = os.path.join(self.base_dir, 'temp')
-        if self.corpus_name:
-            os.makedirs(self.temp_dir, exist_ok = True)
-
         self.data_dir = os.path.join(self.base_dir, 'data')
-        if self.corpus_name:
-            os.makedirs(self.data_dir, exist_ok = True)
 
         self.engine = 'sqlite'
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
@@ -100,6 +95,8 @@ class CorpusConfig(object):
 
         if self.corpus_name:
             os.makedirs(self.log_dir, exist_ok = True)
+            os.makedirs(self.temp_dir, exist_ok = True)
+            os.makedirs(self.data_dir, exist_ok = True)
         return
         setup_logger('{}_loading'.format(self.corpus_name), os.path.join(self.log_dir, 'load.log'), level = self.log_level)
         setup_logger('{}_querying'.format(self.corpus_name), os.path.join(self.log_dir, 'query.log'), level = self.log_level)

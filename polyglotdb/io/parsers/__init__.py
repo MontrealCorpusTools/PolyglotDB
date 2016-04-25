@@ -6,6 +6,10 @@ from .csv import CsvParser
 
 from .ilg import IlgParser
 
+from .labbcat import LabbCatParser
+
+from .mfa import MfaParser
+
 from .text_orthography import OrthographyTextParser
 
 from .text_transcription import TranscriptionTextParser

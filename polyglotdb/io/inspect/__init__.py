@@ -5,6 +5,10 @@ from .buckeye import inspect_buckeye
 
 from .ilg import inspect_ilg
 
+from .labbcat import inspect_labbcat
+
+from .mfa import inspect_mfa
+
 from .text_orthography import inspect_orthography
 
 from .text_transcription import inspect_transcription

@@ -6,7 +6,7 @@ from textgrid import TextGrid, IntervalTier
 from polyglotdb.exceptions import TextGridError
 from polyglotdb.structure import Hierarchy
 
-from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
+from .base import BaseParser, DiscourseData
 
 from ..helper import find_wav_path
 
