@@ -98,6 +98,8 @@ def generate_cache(query):
                 'attribute': c.output_alias,
                 'value': c.for_cypher()
                 }
+        if c.label == 'position':
+            kwargs['alias'] = query.to_find.alias
         set_string = set_property_template.format(**kwargs)
         properties.append(set_string)
     if properties:

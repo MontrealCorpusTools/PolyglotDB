@@ -178,3 +178,48 @@ class StructuredContext(BaseContext):
 
         statement = statement.format(merge_statement = '\nMERGE '.join(merge_statements))
         self.execute_cypher(statement, corpus_name = self.corpus_name)
+
+    def encode_position(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        lower = getattr(self, lower_annotation_type)
+        if subset is not None:
+            lower = lower.subset_type(subset)
+
+        higher = getattr(getattr(lower, higher_annotation_type), lower_annotation_type)
+        if subset is not None:
+            higher = higher.subset_type(subset)
+
+        q = self.query_graph(lower)
+
+        q.cache(higher.position.column_name(name))
+        self.hierarchy.add_token_properties(self, lower_annotation_type, [(name, float)])
+        self.save_variables()
+
+    def encode_rate(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        higher = getattr(self, higher_annotation_type)
+        lower = getattr(higher, lower_annotation_type)
+        if subset is not None:
+            lower = lower.subset_type(subset)
+        q = self.query_graph(higher)
+
+        q.cache(lower.rate.column_name(name))
+
+        self.hierarchy.add_token_properties(self, higher_annotation_type, [(name, float)])
+        self.save_variables()
+
+    def encode_count(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        higher = getattr(self, higher_annotation_type)
+        lower = getattr(higher, lower_annotation_type)
+        if subset is not None:
+            lower = lower.subset_type(subset)
+        q = self.query_graph(higher)
+
+        q.cache(lower.count.column_name(name))
+
+        self.hierarchy.add_token_properties(self, higher_annotation_type, [(name, float)])
+        self.save_variables()
+
+    def reset_property(self, annotation_type, name):
+        q = self.query_graph(getattr(self, annotation_type))
+        q.set_token(**{name: None})
+        self.hierarchy.remove_token_properties(self, annotation_type, [name])
+        self.save_variables()

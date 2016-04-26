@@ -304,24 +304,14 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
                     call_back('Encoding utterance positions for {} {} of {} ({})...'.format(self.config.query_behavior,
                                                                 i, len(split_names), s))
                 self.execute_cypher(statement, split_name = s)
-        self.hierarchy.add_token_properties(self, w_type, [('position_in_utterance', int)])
+        self.hierarchy.add_token_properties(self, w_type, [('position_in_utterance', float)])
         self.save_variables()
 
     def reset_utterance_position(self):
-        q = self.query_graph(getattr(self, self.word_name))
-        q.set_token(position_in_utterance = None)
-        self.hierarchy.remove_token_properties(self, self.word_name, ['position_in_utterance'])
-        self.save_variables()
+        self.reset_property(self.word_name, 'position_in_utterance')
 
     def encode_speech_rate(self, subset_label, call_back = None, stop_check = None):
-        q = self.query_graph(self.utterance)
-
-        q.cache(getattr(self.utterance, self.phone_name).subset_type(subset_label).rate.column_name('speech_rate'))
-
-        self.hierarchy.add_token_properties(self, 'utterance', [('speech_rate', float)])
-        self.save_variables()
+        self.encode_rate('utterance', self.phone_name, 'speech_rate', subset = subset_label)
 
     def reset_speech_rate(self):
-        q = self.query_graph(self.utterance)
-        q.set_token(speech_rate = None)
-        self.hierarchy.remove_token_properties(self, 'utterance', ['speech_rate'])
+        self.reset_property('utterance', 'speech_rate')

@@ -239,10 +239,4 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
             nonsyls_data_to_csvs(self, non_syls, s)
             import_nonsyl_csv(self, s)
 
-            #statement = '''Match (n:syllable:{corpus})-[:spoken_in]->(d:Discourse:{corpus}),
-            #(p:syllable:{corpus} {{id: n.prev_id}})-[:spoken_in]->(d)
-            #where d.name = {{discourse_name}}
-            #CREATE (p)-[:precedes]->(n)
-            #WITH n
-            #REMOVE n.prev_id'''
-            #self.execute_cypher(statement.format(corpus=self.corpus_name), discourse_name = s)
+            self.execute_cypher('MATCH (n:syllable) where n.prev_id is not Null REMOVE n.prev_id')
