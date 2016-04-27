@@ -15,9 +15,9 @@ class LabbCatParser(TextgridParser):
         found_word = False
         found_phone = False
         for ti in tg.tiers:
-            if ti.name == 'transcrip':
+            if ti.name.startswith('transcrip'):
                 found_word = True
-            elif ti.name == 'segment':
+            elif ti.name.startswith('segment'):
                 found_phone = True
         return found_word and found_phone
 
@@ -35,8 +35,7 @@ class LabbCatParser(TextgridParser):
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
         '''
-        tg = TextGrid()
-        tg.read(path)
+        tg = self.load_textgrid(path)
         if not self._is_valid(tg):
             raise(TextGridError('This file cannot be parsed by the LaBB-CAT parser.'))
         name = os.path.splitext(os.path.split(path)[1])[0]
@@ -52,9 +51,9 @@ class LabbCatParser(TextgridParser):
 
         #Parse the tiers
         for i, ti in enumerate(tg.tiers):
-            if ti.name == 'transcrip':
+            if ti.name.startswith('transcrip'):
                 self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
-            elif ti.name == 'segment':
+            elif ti.name.startswith('segment'):
                 self.annotation_types[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
         pg_annotations = self._parse_annotations()
 

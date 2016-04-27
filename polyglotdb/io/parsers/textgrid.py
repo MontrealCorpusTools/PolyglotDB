@@ -29,6 +29,15 @@ class TextgridParser(BaseParser):
         Function to output progress messages
     '''
     _extensions = ['.textgrid']
+
+    def load_textgrid(self, path):
+        tg = TextGrid()
+        try:
+            tg.read(path)
+        except ValueError as e:
+            raise(TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
+        return tg
+
     def parse_discourse(self, path):
         '''
         Parse a TextGrid file for later importing.
@@ -43,8 +52,7 @@ class TextgridParser(BaseParser):
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
         '''
-        tg = TextGrid()
-        tg.read(path)
+        tg = self.load_textgrid(path)
 
         if len(tg.tiers) != len(self.annotation_types):
             raise(TextGridError("The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(path)))

@@ -9,7 +9,7 @@ from collections import Counter
 
 from textgrid import TextGrid
 
-from polyglotdb.exceptions import DelimiterError
+from polyglotdb.exceptions import DelimiterError, TextGridError
 
 ATT_TYPES = ['orthography', 'transcription', 'numeric',
             'morpheme', 'tobi', 'grouping']
@@ -227,7 +227,10 @@ def guess_textgrid_format(path):
                     continue
                 tg_path = os.path.join(root, f)
                 tg = TextGrid()
-                tg.read(tg_path)
+                try:
+                    tg.read(tg_path)
+                except ValueError as e:
+                    raise(TextGridError('The file {} could not be parsed: {}'.format(tg_path, str(e))))
 
                 labbcat_parser = inspect_labbcat(tg_path)
                 mfa_parser = inspect_mfa(tg_path)
