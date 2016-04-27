@@ -65,37 +65,43 @@ def acoustic_analysis(corpus_context,
     log.debug('Total time taken: {} seconds'.format(time.time() - initial_begin))
 
 def get_pitch(corpus_context, sound_file, calculate = True):
-    q = corpus_context.sql_session.query(Pitch).join(SoundFile)
-    q = q.filter(SoundFile.id == sound_file.id)
-    q = q.filter(Pitch.source == corpus_context.config.pitch_algorithm)
-    q = q.order_by(Pitch.time)
-    listing = q.all()
-    if len(listing) == 0 and calculate:
-        sound_file = corpus_context.sql_session.query(SoundFile).join(Discourse).filter(SoundFile.id == sound_file.id).first()
-
-        analyze_pitch(corpus_context, sound_file)
+    try:
         q = corpus_context.sql_session.query(Pitch).join(SoundFile)
         q = q.filter(SoundFile.id == sound_file.id)
         q = q.filter(Pitch.source == corpus_context.config.pitch_algorithm)
         q = q.order_by(Pitch.time)
         listing = q.all()
+        if len(listing) == 0 and calculate:
+            sound_file = corpus_context.sql_session.query(SoundFile).join(Discourse).filter(SoundFile.id == sound_file.id).first()
+
+            analyze_pitch(corpus_context, sound_file)
+            q = corpus_context.sql_session.query(Pitch).join(SoundFile)
+            q = q.filter(SoundFile.id == sound_file.id)
+            q = q.filter(Pitch.source == corpus_context.config.pitch_algorithm)
+            q = q.order_by(Pitch.time)
+            listing = q.all()
+    except sqlalchemy.exc.OperationalError:
+        return []
     return listing
 
 def get_formants(corpus_context, sound_file, calculate = True):
-    q = corpus_context.sql_session.query(Formants).join(SoundFile)
-    q = q.filter(SoundFile.id == sound_file.id)
-    q = q.filter(Formants.source == corpus_context.config.formant_algorithm)
-    q = q.order_by(Formants.time)
-    listing = q.all()
-    if len(listing) == 0 and calculate:
-        sound_file = corpus_context.sql_session.query(SoundFile).join(Discourse).filter(SoundFile.id == sound_file.id).first()
-
-        analyze_formants(corpus_context, sound_file)
+    try:
         q = corpus_context.sql_session.query(Formants).join(SoundFile)
         q = q.filter(SoundFile.id == sound_file.id)
         q = q.filter(Formants.source == corpus_context.config.formant_algorithm)
         q = q.order_by(Formants.time)
         listing = q.all()
+        if len(listing) == 0 and calculate:
+            sound_file = corpus_context.sql_session.query(SoundFile).join(Discourse).filter(SoundFile.id == sound_file.id).first()
+
+            analyze_formants(corpus_context, sound_file)
+            q = corpus_context.sql_session.query(Formants).join(SoundFile)
+            q = q.filter(SoundFile.id == sound_file.id)
+            q = q.filter(Formants.source == corpus_context.config.formant_algorithm)
+            q = q.order_by(Formants.time)
+            listing = q.all()
+    except sqlalchemy.exc.OperationalError:
+        return []
     return listing
 
 def analyze_pitch(corpus_context, sound_file):
@@ -114,7 +120,6 @@ def analyze_pitch(corpus_context, sound_file):
             return
     else:
         pitch_function = partial(ASPitch, time_step = 0.01, freq_lims = (75,500))
-        algorithm = 'acousticsim'
 
     if sound_file.duration > 5:
         atype = corpus_context.hierarchy.highest
@@ -143,9 +148,6 @@ def analyze_pitch(corpus_context, sound_file):
                 begin = 0
             end = float(end)
             for timepoint, value in v.items():
-                timepoint -= padding * 3
-                if timepoint < 0:
-                    continue
                 timepoint += begin # true timepoint
                 try:
                     value = value[0]
@@ -168,17 +170,19 @@ def analyze_pitch(corpus_context, sound_file):
     corpus_context.sql_session.flush()
 
 def analyze_formants(corpus_context, sound_file):
-    if getattr(corpus_context.config, 'praat_path', None) is not None:
-        formant_function = partial(PraatFormants,
-                            praatpath = corpus_context.config.praat_path,
-                            max_freq = 5500, num_formants = 5, win_len = 0.025,
-                            time_step = 0.01)
-        algorithm = 'praat'
+    algorithm = corpus_context.config.formant_algorithm
+    if algorithm == 'praat':
+        if getattr(corpus_context.config, 'praat_path', None) is not None:
+            formant_function = partial(PraatFormants,
+                                praatpath = corpus_context.config.praat_path,
+                                max_freq = 5500, num_formants = 5, win_len = 0.025,
+                                time_step = 0.01)
+        else:
+            return
     else:
         formant_function = partial(ASFormants, max_freq = 5500,
                             num_formants = 5, win_len = 0.025,
                             time_step = 0.01)
-        algorithm = 'acousticsim'
     if sound_file.duration > 5:
         atype = corpus_context.hierarchy.highest
         prob_utt = getattr(corpus_context, atype)
