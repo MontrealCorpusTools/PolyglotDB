@@ -34,6 +34,18 @@ def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
 
 @pytest.fixture(scope='session')
+def fave_test_dir(textgrid_test_dir):
+    return os.path.join(textgrid_test_dir, 'fave')
+
+@pytest.fixture(scope='session')
+def mfa_test_dir(textgrid_test_dir):
+    return os.path.join(textgrid_test_dir, 'mfa')
+
+@pytest.fixture(scope='session')
+def labbcat_test_dir(textgrid_test_dir):
+    return os.path.join(textgrid_test_dir, 'labbcat')
+
+@pytest.fixture(scope='session')
 def text_transcription_test_dir(test_dir):
     return os.path.join(test_dir, 'text_transcription')
 
