@@ -28,6 +28,7 @@ install:
 # Run test
 script:
   - $HOME/neo4j/neo4j/bin/neo4j start
+  - sleep 10
   - "coverage run --source=polyglotdb setup.py test"
 
 # Calculate coverage
