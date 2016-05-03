@@ -39,6 +39,7 @@ class Attribute(object):
         self.label = label
         self.output_label = None
         self.type = type
+        self.acoustic = False
 
     def __hash__(self):
         return hash((self.annotation, self.label))
@@ -60,6 +61,10 @@ class Attribute(object):
     @property
     def base_annotation(self):
         return self.annotation
+
+    @base_annotation.setter
+    def base_annotation(self, value):
+        self.annotation = value
 
     @property
     def alias(self):
@@ -91,6 +96,7 @@ class Attribute(object):
     def __eq__(self, other):
         try:
             if self.label == 'begin' and other.label == 'begin':
+                print(other.annotation.depth)
                 return LeftAlignedClauseElement(self.annotation, other.annotation)
             elif self.label == 'end' and other.label == 'end':
                 return RightAlignedClauseElement(self.annotation, other.annotation)
@@ -282,6 +288,12 @@ class AnnotationAttribute(Attribute):
         elif key == 'pause':
             from .pause import PauseAnnotation
             return PauseAnnotation(self.pos, corpus = self.corpus, hierarchy = self.hierarchy)
+        elif key == 'pitch':
+            from .acoustic import PitchAttribute
+            return PitchAttribute(self)
+        elif key == 'formants':
+            from .acoustic import FormantAttribute
+            return FormantAttribute(self)
         elif self.hierarchy is not None and key in self.hierarchy.contained_by(self.type):
             from .hierarchical import HierarchicalAnnotation
             return HierarchicalAnnotation(key, self, corpus = self.corpus, hierarchy = self.hierarchy)
@@ -297,10 +309,10 @@ class AnnotationAttribute(Attribute):
             if self.hierarchy is None or key in special_attributes:
                 type = False
             else:
-                if self.hierarchy.has_token_property(self.type, key):
-                    type = False
-                elif self.hierarchy.has_type_property(self.type, key):
+                if self.hierarchy.has_type_property(self.type, key):
                     type = True
+                elif self.hierarchy.has_token_property(self.type, key):
+                    type = False
                 else:
                     raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
 

@@ -6,12 +6,13 @@ from .lexical import LexicalContext
 from .pause import PauseContext
 from .utterance import UtteranceCorpus
 from .structured import StructuredContext
-from .featured import FeaturedContext
+from .syllabic import SyllabicContext
+from .spoken import SpokenContext
 
 
 class CorpusContext(StructuredContext, ImportContext, LexicalContext,
                     PauseContext, UtteranceCorpus, AudioContext,
-                    FeaturedContext):
+                    SyllabicContext, SpokenContext):
     pass
 
 

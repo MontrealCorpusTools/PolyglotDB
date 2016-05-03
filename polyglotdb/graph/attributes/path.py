@@ -276,7 +276,7 @@ class PathAttribute(Attribute):
     type_return_template = 'extract(n in {alias}|n.{property})'
     duration_return_template = 'extract(n in {alias}|n.end - n.begin)'
     count_return_template = 'size({alias})'
-    rate_return_template = 'size({alias}) / ({node_alias}.end - {node_alias}.begin)'
+    rate_return_template = 'case when ({node_alias}.end - {node_alias}.begin) = 0 then null else size({alias}) / ({node_alias}.end - {node_alias}.begin) end'
     position_return_template = 'reduce(count = 1, n in filter(x in {alias} where x.begin < {node_alias}.begin) | count + 1)'
 
     @property
@@ -285,6 +285,13 @@ class PathAttribute(Attribute):
             return self.annotation.annotation
         else:
             return self.annotation
+
+    @base_annotation.setter
+    def base_annotation(self, value):
+        if isinstance(self.annotation, SubPathAnnotation):
+            self.annotation.annotation = value
+        else:
+            self.annotation = value
 
     def for_cypher(self):
         if self.type:
@@ -319,6 +326,10 @@ class PositionalAttribute(PathAttribute):
     @property
     def base_annotation(self):
         return self.annotation.annotation.annotation
+
+    @base_annotation.setter
+    def base_annotation(self, value):
+        self.annotation.annotation.annotation = value
 
     @property
     def with_alias(self):

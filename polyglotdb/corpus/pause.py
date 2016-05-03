@@ -40,8 +40,7 @@ class PauseContext(BaseContext):
         self.hierarchy.annotation_types.add('pause')
         self.hierarchy.subset_tokens[self.word_name].add('pause')
         self.encode_hierarchy()
-        self.hierarchy = self.generate_hierarchy()
-        self.save_variables()
+        self.refresh_hierarchy()
 
     def reset_pauses(self):
         """
@@ -65,7 +64,6 @@ class PauseContext(BaseContext):
             self.hierarchy.annotation_types.remove('pause')
             self.hierarchy.subset_tokens[self.word_name].remove('pause')
             self.encode_hierarchy()
-            self.hierarchy = self.generate_hierarchy()
-            self.save_variables()
+            self.refresh_hierarchy()
         except KeyError:
             pass

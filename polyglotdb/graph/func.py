@@ -18,6 +18,10 @@ class AggregateFunction(object):
         return hash((self.function, self.attribute))
 
     @property
+    def acoustic(self):
+        return self.attribute.acoustic
+
+    @property
     def base_annotation(self):
         return self.attribute.base_annotation
 

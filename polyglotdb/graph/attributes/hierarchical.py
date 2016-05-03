@@ -27,6 +27,19 @@ class HierarchicalAnnotation(AnnotationAttribute):
                     break
                 self.depth += 1
 
+    def hierarchy_path(self, to_find):
+        path = [self.type]
+        a = self.contained_annotation
+        while True:
+            path.insert(0, a.type)
+            if not isinstance(a, HierarchicalAnnotation):
+                break
+            a = a.contained_annotation
+        real_path = [path[0]]
+        while real_path[-1] != self.type:
+            real_path.append(self.hierarchy[real_path[-1]])
+        return real_path
+
     def __repr__(self):
         return '<HierarchicalAnnotation object of \'{}\' type from \'{}\'>'.format(self.type, self.contained_annotation.type)
 
@@ -62,17 +75,22 @@ class HierarchicalAnnotation(AnnotationAttribute):
             if self.hierarchy is None or key in special_attributes:
                 type = False
             else:
-                if self.hierarchy.has_token_property(self.type, key):
-                    type = False
-                elif self.hierarchy.has_type_property(self.type, key):
+                if self.hierarchy.has_type_property(self.type, key):
                     type = True
+                elif self.hierarchy.has_token_property(self.type, key):
+                    type = False
                 else:
                     raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
             return Attribute(self, key, type)
 
     @property
     def alias(self):
-        return key_for_cypher(self.contained_annotation.alias.replace('`','') + '_' + self.type)
+        pre = ''
+        if self.pos < 0:
+            pre += 'prev_{}_'.format(-1 * self.pos)
+        elif self.pos > 0:
+            pre += 'foll_{}_'.format(self.pos)
+        return key_for_cypher(pre + self.contained_annotation.alias.replace('`','') + '_' + self.type)
 
     def for_match(self):
         kwargs = {}

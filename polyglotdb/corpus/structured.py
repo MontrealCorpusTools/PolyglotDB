@@ -5,17 +5,35 @@ from ..structure import Hierarchy
 
 from ..graph.helper import value_for_cypher
 
+def generate_cypher_property_list(property_set):
+    props = []
+    for name, t in property_set:
+        if name == 'id':
+            continue
+        v = ''
+        if t == int:
+            v = 0
+        elif t == float:
+            v = 0.0
+        elif t in (list, tuple, set):
+            v = []
+        props.append('{}: {}'.format(name, value_for_cypher(v)))
+    return ', '.join(props)
+
+
 class StructuredContext(BaseContext):
     def generate_hierarchy(self):
         exists_statement = '''MATCH (c:Corpus)<-[:contained_by]-(s)
         WHERE c.name = {corpus_name} RETURN c LIMIT 1'''
         if self.execute_cypher(exists_statement, corpus_name = self.corpus_name):
             hierarchy_statement = '''MATCH
-            path = (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(nt)
+            path = (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(nt),
+            (c)-[:spoken_by]->(s:Speaker),
+            (c)-[:spoken_in]->(d:Discourse)
             where c.name = {corpus_name}
-            WITH n, nt, path
+            WITH n, nt, path, s, d
             OPTIONAL MATCH (n)<-[:annotates]-(subs)
-            return n,nt, path, collect(subs) as subs
+            return n,nt, path, collect(subs) as subs, s, d
             order by size(nodes(path))'''
             results = self.execute_cypher(hierarchy_statement, corpus_name = self.corpus_name)
             sup = None
@@ -25,7 +43,15 @@ class StructuredContext(BaseContext):
             type_properties = {}
             type_subsets = {}
             token_subsets = {}
+            speaker_properties = set()
+            discourse_properties = set()
             for r in results:
+                if not speaker_properties:
+                    for k, v in r.s.properties.items():
+                        speaker_properties.add((k, type(v)))
+                if not discourse_properties:
+                    for k, v in r.d.properties.items():
+                        discourse_properties.add((k, type(v)))
                 at = list(r.n.labels)[0]
                 data[at] = sup
                 sup = at
@@ -52,6 +78,8 @@ class StructuredContext(BaseContext):
             h.token_properties = token_properties
             h.subset_tokens = token_subsets
             h.type_properties = type_properties
+            h.speaker_properties = speaker_properties
+            h.discourse_properties = discourse_properties
         else:
             all_labels = self.graph.node_labels
             linguistic_labels = []
@@ -92,20 +120,33 @@ class StructuredContext(BaseContext):
             h.subannotations = subs
         return h
 
+    def refresh_hierarchy(self):
+        h = self.generate_hierarchy()
+        self.hierarchy = h
+        self.save_variables()
+
     def reset_hierarchy(self):
-        self.execute_cypher('''MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t)
+        self.execute_cypher('''MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t),
+                                (c)-[:spoken_by]->(s:Speaker),
+                                (c)-[:spoken_in]->(d:Discourse)
                                 WHERE c.name = '{}'
-                                WITH n, t, c
+                                WITH n, t, c, s, d
                                 OPTIONAL MATCH (t)<-[:annotates]-(a)
-                                DETACH DELETE a, t, n'''.format(self.corpus_name))
+                                DETACH DELETE a, t, n, s, d'''.format(self.corpus_name))
 
     def encode_hierarchy(self):
         self.reset_hierarchy()
         hierarchy_template = '''({super})<-[:contained_by]-({sub})-[:is_a]->({sub_type})'''
         subannotation_template = '''({super})<-[:annotates]-({sub})'''
+        speaker_template = '''(c)-[:spoken_by]->(s:Speaker {%s})'''
+        discourse_template = '''(c)-[:spoken_in]->(d:Discourse {%s})'''
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MERGE {merge_statement}'''
         merge_statements = []
+        speaker_props = generate_cypher_property_list(self.hierarchy.speaker_properties)
+        discourse_props = generate_cypher_property_list(self.hierarchy.discourse_properties)
+        merge_statements.append(speaker_template % speaker_props)
+        merge_statements.append(discourse_template % discourse_props)
         for at in self.hierarchy.highest_to_lowest:
             sup = self.hierarchy[at]
             if sup is None:
@@ -113,37 +154,15 @@ class StructuredContext(BaseContext):
             else:
                 sup = '{}'.format(sup)
             try:
-                token_props = []
-                for name, t in self.hierarchy.token_properties[at]:
-                    if name == 'id':
-                        continue
-                    v = ''
-                    if t == int:
-                        v = 0
-                    elif t == float:
-                        v = 0.0
-                    elif t in (list, tuple, set):
-                        v = []
-                    token_props.append('{}: {}'.format(name, value_for_cypher(v)))
+                token_props = generate_cypher_property_list(self.hierarchy.token_properties[at])
                 if token_props:
-                    token_props = ', '+ ', '.join(token_props)
-                else:
-                    token_props = ''
+                    token_props = ', '+ token_props
             except KeyError:
                 token_props = ''
             try:
-                type_props = []
-                for name, t in self.hierarchy.type_properties[at]:
-                    v = ''
-                    if t == int:
-                        v = 0
-                    elif t == float:
-                        v = 0.0
-                    elif t in (list, tuple, set):
-                        v = []
-                    type_props.append('{}: {}'.format(name, value_for_cypher(v)))
+                type_props = generate_cypher_property_list(self.hierarchy.type_properties[at])
                 if type_props:
-                    type_props = ', '+ ', '.join(type_props)
+                    type_props = ', '+ type_props
                 else:
                     type_props = ''
             except KeyError:
@@ -173,3 +192,48 @@ class StructuredContext(BaseContext):
 
         statement = statement.format(merge_statement = '\nMERGE '.join(merge_statements))
         self.execute_cypher(statement, corpus_name = self.corpus_name)
+
+    def encode_position(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        lower = getattr(self, lower_annotation_type)
+        if subset is not None:
+            lower = lower.subset_type(subset)
+
+        higher = getattr(getattr(lower, higher_annotation_type), lower_annotation_type)
+        if subset is not None:
+            higher = higher.subset_type(subset)
+
+        q = self.query_graph(lower)
+
+        q.cache(higher.position.column_name(name))
+        self.hierarchy.add_token_properties(self, lower_annotation_type, [(name, float)])
+        self.save_variables()
+
+    def encode_rate(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        higher = getattr(self, higher_annotation_type)
+        lower = getattr(higher, lower_annotation_type)
+        if subset is not None:
+            lower = lower.subset_type(subset)
+        q = self.query_graph(higher)
+
+        q.cache(lower.rate.column_name(name))
+
+        self.hierarchy.add_token_properties(self, higher_annotation_type, [(name, float)])
+        self.save_variables()
+
+    def encode_count(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        higher = getattr(self, higher_annotation_type)
+        lower = getattr(higher, lower_annotation_type)
+        if subset is not None:
+            lower = lower.subset_type(subset)
+        q = self.query_graph(higher)
+
+        q.cache(lower.count.column_name(name))
+
+        self.hierarchy.add_token_properties(self, higher_annotation_type, [(name, float)])
+        self.save_variables()
+
+    def reset_property(self, annotation_type, name):
+        q = self.query_graph(getattr(self, annotation_type))
+        q.set_token(**{name: None})
+        self.hierarchy.remove_token_properties(self, annotation_type, [name])
+        self.save_variables()
