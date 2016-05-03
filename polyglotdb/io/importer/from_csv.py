@@ -167,11 +167,13 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
     if case_sensitive:
         import_statement = '''USING PERIODIC COMMIT 3000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    with csvLine
     MATCH (n:{word_type}_type:{corpus_name}) where n.label = csvLine.label
     SET {new_properties}'''
     else:
         import_statement = '''USING PERIODIC COMMIT 3000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    with csvLine
     MATCH (n:{word_type}_type:{corpus_name}) where n.label =~ csvLine.label
     SET {new_properties}'''
 
