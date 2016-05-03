@@ -55,9 +55,9 @@ def test_query_with_pause(acoustic_config):
         results = q.all()
         print(results)
         assert(len(results) == 1)
-        assert(results[0].following == 'this')
-        assert(results[0].following_pause == ['sil','um'])
-        assert(abs(results[0].following_pause_duration - 1.035027) < 0.001)
+        assert(results[0]['following'] == 'this')
+        assert(results[0]['following_pause'] == ['sil','um'])
+        assert(abs(results[0]['following_pause_duration'] - 1.035027) < 0.001)
 
         q = g.query_graph(g.word).filter(g.word.label == 'this')
         q = q.columns(g.word.previous.label.column_name('previous'),
@@ -69,9 +69,9 @@ def test_query_with_pause(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
-        assert(results[1].previous == 'cares')
-        assert(results[1].previous_pause == ['sil','um'])
-        assert(abs(results[1].previous_pause_duration - 1.035027) < 0.001)
+        assert(results[1]['previous'] == 'cares')
+        assert(results[1]['previous_pause'] == ['sil','um'])
+        assert(abs(results[1]['previous_pause_duration'] - 1.035027) < 0.001)
 
         g.encode_pauses(['sil'])
         q = g.query_graph(g.word).filter(g.word.label == 'words')
@@ -82,9 +82,9 @@ def test_query_with_pause(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 5)
-        assert(results[0].following == 'and')
-        assert(results[0].following_pause == ['sil'])
-        assert(abs(results[0].following_pause_duration - 1.152438) < 0.001)
+        assert(results[0]['following'] == 'and')
+        assert(results[0]['following_pause'] == ['sil'])
+        assert(abs(results[0]['following_pause_duration'] - 1.152438) < 0.001)
 
 def test_hierarchical_pause_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -96,9 +96,9 @@ def test_hierarchical_pause_query(acoustic_config):
         q = q.order_by(g.phone.word.begin)
         print(q.cypher())
         results = q.all()
-        assert(results[0].following == 'and')
-        assert(results[0].following_pause == ['sil'])
-        assert(abs(results[0].following_pause_duration - 1.152438) < 0.001)
+        assert(results[0]['following'] == 'and')
+        assert(results[0]['following_pause'] == ['sil'])
+        assert(abs(results[0]['following_pause_duration'] - 1.152438) < 0.001)
 
 
         syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
@@ -115,10 +115,10 @@ def test_hierarchical_pause_query(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 5)
-        assert(results[0].following == 'and')
-        assert(results[0].following_pause == ['sil'])
+        assert(results[0]['following'] == 'and')
+        assert(results[0]['following_pause'] == ['sil'])
 
-        assert(abs(results[0].following_pause_duration - 1.152438) < 0.001)
+        assert(abs(results[0]['following_pause_duration'] - 1.152438) < 0.001)
 
         g.reset_syllables()
 

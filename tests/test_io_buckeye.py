@@ -69,7 +69,7 @@ def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
         print(q.cypher())
         results = q.all()
         print(results)
-        assert(all(x.speaker == 'tes' for x in results))
+        assert(all(x['speaker'] == 'tes' for x in results))
 
 def test_load_directory_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
@@ -84,4 +84,4 @@ def test_load_directory_buckeye(graph_db, buckeye_test_dir):
         print(q.cypher())
         results = q.all()
         print(results)
-        assert(all(x.speaker == 'tes' for x in results))
+        assert(all(x['speaker'] == 'tes' for x in results))
