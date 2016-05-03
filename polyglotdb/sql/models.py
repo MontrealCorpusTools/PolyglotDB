@@ -1,54 +1,17 @@
 from sqlalchemy import (Table, Column, Integer, SmallInteger, String, MetaData, ForeignKey,
-                        Boolean,Float, PickleType, types, select )
+                        Boolean,Float, PickleType, types, select, func )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, aliased
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.sql.expression import cast, literal_column, column, and_, text
 
 Base = declarative_base()
 
-class Word(Base):
-    __tablename__ = 'word'
-
-    id = Column(Integer, primary_key = True)
-
-    orthography = Column(String(250), nullable = False)
-    transcription = Column(String(250), nullable = False)
-
-    frequency = Column(Float, nullable = False)
-
-class WordPropertyType(Base):
-    __tablename__ = 'word_property_type'
-    id = Column(Integer, primary_key = True)
-
-    label = Column(String(250), nullable = False)
-
-
-class WordProperty(Base):
-    __tablename__ = 'word_property'
-    id = Column(Integer, primary_key = True)
-
-    word_id = Column(Integer, ForeignKey('word.id'), nullable = False)
-    word = relationship(Word)
-
-    property_id = Column(Integer, ForeignKey('word_property_type.id'), nullable = False)
-    property_type = relationship(WordPropertyType)
-
-    value = Column(String(250), nullable = False)
-
-class WordNumericProperty(Base):
-    __tablename__ = 'word_numeric_property'
-    id = Column(Integer, primary_key = True)
-
-    word_id = Column(Integer, ForeignKey('word.id'), nullable = False)
-    word = relationship(Word)
-
-    property_id = Column(Integer, ForeignKey('word_property_type.id'), nullable = False)
-    property_type = relationship(WordPropertyType)
-
-    value = Column(Float, nullable = False)
+class CaseInsensitiveComparator(Comparator):
+    def __eq__(self, other):
+        return func.lower(self.__clause_element__()) == func.lower(other)
 
 class AnnotationType(Base):
     __tablename__ = 'annotation_type'
@@ -60,26 +23,81 @@ class AnnotationType(Base):
     def __repr__(self):
         return '<AnnotationType \'{}\'>'.format(self.label)
 
-class InventoryItem(Base):
-    __tablename__ = 'inventory_item'
+class Annotation(Base):
+    __tablename__ = 'annotation'
 
     id = Column(Integer, primary_key = True)
 
     label = Column(String(250), nullable = False)
 
-    type_id = Column(Integer, ForeignKey('annotation_type.id'), nullable = False)
+    annotation_type_id = Column(Integer, ForeignKey('annotation_type.id'), nullable = False)
     annotation_type = relationship(AnnotationType)
 
-class InventoryProperty(Base):
-    __tablename__ = 'inventory_property'
-    id = Column(Integer, primary_key = True)
+    properties = relationship('Property', backref = 'annotation')
 
-    inventory_id = Column(Integer, ForeignKey('inventory_item.id'), nullable = False)
-    inventory_item = relationship(InventoryItem)
+    numeric_properties = relationship('NumericProperty', backref = 'annotation')
+
+    @property
+    def frequency(self):
+        for a in self.numeric_properties:
+            if a.property_type.label == 'frequency':
+                return a.value
+        return None
+
+    @property
+    def transcription(self):
+        for a in self.properties:
+            if a.property_type.label == 'transcription':
+                return a.value
+        return None
+
+    def __repr__(self):
+        return '<Annotation \'{}\'>'.format(self.label)
+
+    @hybrid_property
+    def label_insensitive(self):
+        return self.label.lower()
+
+    @label_insensitive.comparator
+    def label_insensitive(cls):
+        return CaseInsensitiveComparator(cls.label)
+
+class PropertyType(Base):
+    __tablename__ = 'property_type'
+
+    id = Column(Integer, primary_key = True)
 
     label = Column(String(250), nullable = False)
 
+    def __repr__(self):
+        return '<PropertyType \'{}\'>'.format(self.label)
+
+class NumericProperty(Base):
+    __tablename__ = 'numeric_property'
+    id = Column(Integer, primary_key = True)
+
+    annotation_id = Column(Integer, ForeignKey('annotation.id'), nullable = False)
+
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable = False)
+    property_type = relationship(PropertyType)
+
+    value = Column(Float, nullable = False)
+
+class Property(Base):
+    __tablename__ = 'property'
+    id = Column(Integer, primary_key = True)
+
+    annotation_id = Column(Integer, ForeignKey('annotation.id'), nullable = False)
+
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable = False)
+    property_type = relationship(PropertyType)
+
     value = Column(String(250), nullable = False)
+
+speaksin_table = Table('speaks_in', Base.metadata,
+    Column('discourse_id', Integer, ForeignKey('discourse.id')),
+    Column('speaker_id', Integer, ForeignKey('speaker.id'))
+)
 
 class Discourse(Base):
     __tablename__ = 'discourse'
@@ -88,6 +106,12 @@ class Discourse(Base):
 
     name = Column(String(250), nullable = False)
 
+    properties = relationship('DiscourseProperty', backref = 'discourse')
+
+    speakers = relationship("Speaker",
+        secondary=speaksin_table,
+        back_populates="discourses")
+
 class Speaker(Base):
     __tablename__ = 'speaker'
 
@@ -95,15 +119,34 @@ class Speaker(Base):
 
     name = Column(String(250), nullable = False)
 
+    properties = relationship('SpeakerProperty', backref = 'speaker')
+
+    discourses = relationship("Discourse",
+        secondary=speaksin_table,
+        back_populates="speakers")
+
 class SpeakerProperty(Base):
     __tablename__ = 'speaker_property'
 
     id = Column(Integer, primary_key = True)
 
     speaker_id = Column(Integer, ForeignKey('speaker.id'), nullable = False)
-    speaker = relationship(Speaker)
 
-    label = Column(String(250), nullable = False)
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable = False)
+    property_type = relationship(PropertyType)
+
+    value = Column(String(250), nullable = False)
+
+
+class DiscourseProperty(Base):
+    __tablename__ = 'discourse_property'
+
+    id = Column(Integer, primary_key = True)
+
+    discourse_id = Column(Integer, ForeignKey('discourse.id'), nullable = False)
+
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable = False)
+    property_type = relationship(PropertyType)
 
     value = Column(String(250), nullable = False)
 

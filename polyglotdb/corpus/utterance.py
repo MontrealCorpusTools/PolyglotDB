@@ -19,8 +19,7 @@ class UtteranceCorpus(BaseContext):
             self.hierarchy.annotation_types.remove('utterance')
             del self.hierarchy['utterance']
             self.encode_hierarchy()
-            self.hierarchy = self.generate_hierarchy()
-            self.save_variables()
+            self.refresh_hierarchy()
         except GraphQueryError:
             pass
 
@@ -45,14 +44,11 @@ class UtteranceCorpus(BaseContext):
             speech to count as an utterance
         """
         self.reset_utterances()
-        self.execute_cypher('CREATE INDEX ON :utterance(begin)')
-        self.execute_cypher('CREATE INDEX ON :utterance(end)')
 
         self.hierarchy[self.word_name] = 'utterance'
         self.hierarchy['utterance'] = None
         self.encode_hierarchy()
-        self.hierarchy = self.generate_hierarchy()
-        self.save_variables()
+        self.refresh_hierarchy()
 
         discourses = self.discourses
         if call_back is not None:
@@ -63,9 +59,107 @@ class UtteranceCorpus(BaseContext):
             if call_back is not None:
                 call_back(i)
                 call_back('Encoding utterances for discourse {} of {} ({})...'.format(i, len(discourses), d))
-            utterances = self.get_utterances(d, min_pause_length, min_utterance_length)
+            utterances = self.get_utterance_ids(d, min_pause_length, min_utterance_length)
             time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
             import_utterance_csv(self, d)
+
+    def get_utterance_ids(self, discourse,
+                min_pause_length = 0.5, min_utterance_length = 0):
+        """
+        Algorithm to find utterance boundaries in a discourse.
+
+        Pauses with duration less than the minimum will
+        not count as utterance boundaries.  Utterances that are shorter
+        than the minimum utterance length (such as 'okay' surrounded by
+        silence) will be merged with the closest utterance.
+
+        Parameters
+        ----------
+        discourse : str
+            String identifier for a discourse
+
+        min_pause_length : float, defaults to 0.5
+            Time in seconds that is the minimum duration of a pause to count
+            as an utterance boundary
+
+        min_utterance_length : float, defaults to 0.0
+            Time in seconds that is the minimum duration of a stretch of
+            speech to count as an utterance
+        """
+        word_type = self.word_name
+        statement = '''MATCH p = (prev_node_word:{word_type}:speech:{corpus})-[:precedes_pause*1..]->(foll_node_word:{word_type}:speech:{corpus}),
+        (prev_node_word)-[:spoken_in]->(d:Discourse:{corpus})
+        WHERE d.name = {{discourse}}
+WITH nodes(p)[1..-1] as ns,foll_node_word, prev_node_word
+WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
+AND NONE (x in ns where x:speech)
+WITH foll_node_word, prev_node_word
+RETURN prev_node_word.end AS begin, prev_node_word.id AS begin_id, foll_node_word.begin AS end, foll_node_word.id AS end_id, foll_node_word.begin - prev_node_word.end AS duration
+ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
+        results = self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse)
+
+        collapsed_results = []
+        for i, r in enumerate(results):
+            if len(collapsed_results) == 0:
+                collapsed_results.append(r)
+                continue
+            if r.begin == collapsed_results[-1].end:
+                collapsed_results[-1].end = r.end
+            else:
+                collapsed_results.append(r)
+        utterances = []
+        word_ids = []
+        word = getattr(self, word_type)
+        statement = '''MATCH (w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
+        where d.name = {{discourse}}
+        with max(w.end) as max_end, min(w.begin) as min_begin, collect(w) as words
+        with filter(x in words where x.begin = min_begin or x.end = max_end) as c UNWIND c as w
+        return w.id as id, w.begin as begin, w.end as end
+        order by w.begin
+        '''.format(corpus = self.corpus_name, word_type = word_type)
+        end_words = self.execute_cypher(statement, discourse = discourse)
+
+        if len(results) < 2:
+            begin = end_words[0].begin
+            begin_id = end_words[0].id
+            if len(results) == 0:
+                return [(begin_id, end_words[1].id)]
+            if results[0].begin == 0:
+                return [(results[0].end_id, end_words[1].id)]
+            if results[0].end == end_words[1].end:
+                return [(begin_id, end_words[1].end_id)]
+
+        if results[0].begin != 0:
+            current = 0
+            current_id = end_words[0].id
+        else:
+            current = None
+            current_id = None
+        min_begin = 1000
+        max_begin = 0
+        for i, r in enumerate(collapsed_results):
+            if current is not None:
+                if current < min_begin:
+                    min_begin = current
+                if r.begin - current > min_utterance_length:
+                    utterances.append((current_id, r.begin_id))
+                elif i == len(results) - 1:
+                    utterances[-1] = (utterances[-1][0], r.begin_id)
+                elif len(utterances) != 0:
+                    dist_to_prev = current - utterances[-1][1]
+                    dist_to_foll = r.end - r.begin
+                    if dist_to_prev <= dist_to_foll:
+                        utterances[-1] = (utterances[-1][0], r.begin_id)
+            current = r.end
+            current_id = r.end_id
+        if current < end_words[1].end:
+            if end_words[1].end - current > min_utterance_length:
+                utterances.append((current_id, end_words[1].id))
+            else:
+                utterances[-1] = (utterances[-1][0], end_words[1].id)
+        #if min_begin < end_words[0].begin:
+        #    utterances[0] = (end_words[0].id, utterances[0][1])
+        return utterances
 
     def get_utterances(self, discourse,
                 min_pause_length = 0.5, min_utterance_length = 0):
@@ -91,14 +185,16 @@ class UtteranceCorpus(BaseContext):
             speech to count as an utterance
         """
         word_type = self.word_name
-        statement = '''MATCH p = (prev_node_word:{word_type}:speech:{corpus}:{discourse})-[:precedes_pause*1..]->(foll_node_word:{word_type}:speech:{corpus}:{discourse})
+        statement = '''MATCH p = (prev_node_word:{word_type}:speech:{corpus})-[:precedes_pause*1..]->(foll_node_word:{word_type}:speech:{corpus}),
+        (prev_node_word)-[:spoken_in]->(d:Discourse:{corpus})
+        WHERE d.name = {{discourse}}
 WITH nodes(p)[1..-1] as ns,foll_node_word, prev_node_word
 WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
 AND NONE (x in ns where x:speech)
 WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, foll_node_word.begin AS end, foll_node_word.begin - prev_node_word.end AS duration
-ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse, word_type = word_type)
-        results = self.execute_cypher(statement, node_pause_duration = min_pause_length)
+ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
+        results = self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse)
 
         collapsed_results = []
         for i, r in enumerate(results):
@@ -208,20 +304,14 @@ ORDER BY begin'''.format(corpus = self.corpus_name, discourse = discourse, word_
                     call_back('Encoding utterance positions for {} {} of {} ({})...'.format(self.config.query_behavior,
                                                                 i, len(split_names), s))
                 self.execute_cypher(statement, split_name = s)
-        self.hierarchy.add_token_properties(self, w_type, [('position_in_utterance', int)])
+        self.hierarchy.add_token_properties(self, w_type, [('position_in_utterance', float)])
         self.save_variables()
 
     def reset_utterance_position(self):
-        q = self.query_graph(getattr(self, self.word_name))
-        q.set_token(position_in_utterance = None)
-        self.hierarchy.remove_token_properties(self, self.word_name, ['position_in_utterance'])
+        self.reset_property(self.word_name, 'position_in_utterance')
 
     def encode_speech_rate(self, subset_label, call_back = None, stop_check = None):
-        q = self.query_graph(self.utterance)
-
-        q.cache(getattr(self.utterance, self.phone_name).subset_type(subset_label).rate.column_name('speech_rate'))
+        self.encode_rate('utterance', self.phone_name, 'speech_rate', subset = subset_label)
 
     def reset_speech_rate(self):
-        q = self.query_graph(self.utterance)
-        q.set_token(speech_rate = None)
-        self.hierarchy.remove_token_properties(self, 'utterance', ['speech_rate'])
+        self.reset_property('utterance', 'speech_rate')

@@ -3,12 +3,13 @@ import os
 
 from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
                                         GroupingTier, TextOrthographyTier,
+                                        TranscriptionTier,
                                         TextTranscriptionTier, TextMorphemeTier,
                                         MorphemeTier)
 
 from polyglotdb.io.parsers.base import BaseParser
 
-from polyglotdb.io import (inspect_textgrid)
+from polyglotdb.io import (inspect_textgrid, inspect_fave)
 
 from polyglotdb.corpus import CorpusContext
 from polyglotdb.structure import Hierarchy
@@ -31,6 +32,18 @@ def timit_test_dir(test_dir):
 @pytest.fixture(scope='session')
 def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
+
+@pytest.fixture(scope='session')
+def fave_test_dir(textgrid_test_dir):
+    return os.path.join(textgrid_test_dir, 'fave')
+
+@pytest.fixture(scope='session')
+def mfa_test_dir(textgrid_test_dir):
+    return os.path.join(textgrid_test_dir, 'mfa')
+
+@pytest.fixture(scope='session')
+def labbcat_test_dir(textgrid_test_dir):
+    return os.path.join(textgrid_test_dir, 'labbcat')
 
 @pytest.fixture(scope='session')
 def text_transcription_test_dir(test_dir):
@@ -66,7 +79,7 @@ def corpus_data_timed():
                 GroupingTier('line', 'line')]
     phones = [('k', 0.0, 0.1), ('ae', 0.1, 0.2), ('t', 0.2, 0.3), ('s', 0.3, 0.4),
             ('aa', 0.5, 0.6), ('r',  0.6, 0.7),
-            ('k', 0.8, 0.9), ('u', 0.9, 1.0), ('t', 1.0, 1.1),
+            ('k', 0.8, 0.9), ('uw', 0.9, 1.0), ('t', 1.0, 1.1),
             ('d', 2.0,  2.1), ('aa', 2.1, 2.2), ('g', 2.2, 2.3), ('z', 2.3, 2.4),
             ('aa', 2.4, 2.5), ('r', 2.5, 2.6),
             ('t', 2.6, 2.7), ('uw', 2.7, 2.8),
@@ -202,7 +215,7 @@ def lexicon_data():
 
 @pytest.fixture(scope='session')
 def corpus_data_syllable_morpheme_srur():
-    levels = [SegmentTier('sr', 'phone'),
+    levels = [SegmentTier('sr', 'phone', label = True),
                 TranscriptionTier('ur', 'word'),
                 GroupingTier('syllable', 'syllable'),
                 MorphemeTier('morphemes', 'word'),
@@ -304,19 +317,15 @@ def timed_config(graph_db, corpus_data_timed):
     return config
 
 @pytest.fixture(scope='session')
-def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme):
+def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme_srur):
     config = CorpusConfig('syllable_morpheme', **graph_db)
     with CorpusContext(config) as c:
         c.reset()
-        c.add_types(*corpus_data_syllable_morpheme.types('syllable_morpheme'))
+        c.add_types(*corpus_data_syllable_morpheme_srur.types('syllable_morpheme'))
         c.initialize_import()
-        c.add_discourse(corpus_data_syllable_morpheme)
+        c.add_discourse(corpus_data_syllable_morpheme_srur)
         c.finalize_import()
     return config
-
-
-    #with CorpusContext(graph_user, graph_pw, 'syllable_morpheme_srur', graph_host, graph_port) as c:
-    #    c.add_discourse(corpus_data_syllable_morpheme_srur)
 
 @pytest.fixture(scope='session')
 def ursr_config(graph_db, corpus_data_ur_sr):
@@ -356,4 +365,34 @@ def acoustic_config(graph_db, textgrid_test_dir):
         c.reset()
         parser = inspect_textgrid(acoustic_path)
         c.load(parser, acoustic_path)
+    config.pitch_algorithm = 'acousticsim'
+    config.formant_algorithm = 'acousticsim'
     return config
+
+@pytest.fixture(scope='session')
+def acoustic_utt_config(graph_db, textgrid_test_dir):
+    config = CorpusConfig('acoustic_utt', **graph_db)
+
+    acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_textgrid(acoustic_path)
+        c.load(parser, acoustic_path)
+
+        c.encode_pauses(['sil'])
+        c.encode_utterances(min_pause_length = 0)
+
+    config.pitch_algorithm = 'acousticsim'
+    config.formant_algorithm = 'acousticsim'
+    return config
+
+@pytest.fixture(scope='session')
+def fave_corpus_config(graph_db, fave_test_dir):
+    config = CorpusConfig('fave_test_corpus', **graph_db)
+
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_fave(fave_test_dir)
+        c.load(parser, fave_test_dir)
+    return config
+

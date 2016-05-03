@@ -3,10 +3,13 @@ import os
 import string
 import logging
 import operator
+import hashlib
 
 from collections import Counter
 
-from polyglotdb.exceptions import DelimiterError
+from textgrid import TextGrid
+
+from polyglotdb.exceptions import DelimiterError, TextGridError
 
 ATT_TYPES = ['orthography', 'transcription', 'numeric',
             'morpheme', 'tobi', 'grouping']
@@ -206,3 +209,51 @@ def log_annotation_types(annotation_types):
     logging.info('')
     for a in annotation_types:
         logging.info(a.pretty_print())
+
+def make_type_id(type_values, corpus):
+    m = hashlib.sha1()
+    value = ' '.join(map(str, type_values))
+    value += ' ' + corpus
+    m.update(value.encode())
+    return m.hexdigest()
+
+def guess_textgrid_format(path):
+    from .inspect import inspect_labbcat, inspect_mfa, inspect_fave
+    if os.path.isdir(path):
+        counts = {'mfa': 0, 'labbcat': 0, 'fave': 0, None: 0}
+        for root, subdirs, files in os.walk(path):
+            for f in files:
+                if not f.lower().endswith('.textgrid'):
+                    continue
+                tg_path = os.path.join(root, f)
+                tg = TextGrid()
+                try:
+                    tg.read(tg_path)
+                except ValueError as e:
+                    raise(TextGridError('The file {} could not be parsed: {}'.format(tg_path, str(e))))
+
+                labbcat_parser = inspect_labbcat(tg_path)
+                mfa_parser = inspect_mfa(tg_path)
+                fave_parser = inspect_fave(tg_path)
+                if labbcat_parser._is_valid(tg):
+                    counts['labbcat'] += 1
+                elif mfa_parser._is_valid(tg):
+                    counts['mfa'] += 1
+                elif fave_parser._is_valid(tg):
+                    counts['fave'] += 1
+                else:
+                    counts[None] += 1
+        return max(counts.keys(), key = lambda x: counts[x])
+    elif path.lower().endswith('.textgrid'):
+        tg = TextGrid()
+        tg.read(path)
+        labbcat_parser = inspect_labbcat(path)
+        mfa_parser = inspect_mfa(path)
+        fave_parser = inspect_fave(path)
+        if labbcat_parser._is_valid(tg):
+            return 'labbcat'
+        elif mfa_parser._is_valid(tg):
+            return 'mfa'
+        elif fave_parser._is_valid(tg):
+            return 'fave'
+    return None

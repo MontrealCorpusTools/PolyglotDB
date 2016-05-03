@@ -187,14 +187,12 @@ class RightAlignedClauseElement(AlignmentClauseElement):
     Clause for filtering based on right alignment.
     """
     template = '''not ({first_node_alias})-[:precedes]->()-[:contained_by*]->({second_node_alias})'''
-    alias_to_use = 'end_alias'
 
 class LeftAlignedClauseElement(AlignmentClauseElement):
     """
     Clause for filtering based on left alignment.
     """
     template = '''not ({first_node_alias})<-[:precedes]-()-[:contained_by*]->({second_node_alias})'''
-    alias_to_use = 'begin_alias'
 
 class NotRightAlignedClauseElement(RightAlignedClauseElement):
     """

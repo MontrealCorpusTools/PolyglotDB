@@ -24,7 +24,7 @@ def make_safe(value, delimiter):
     return str(value)
 
 
-def save_results(results, path, header = None):
+def save_results(results, path, header = None, mode = 'w'):
     if header is None:
         try:
             header = results.columns
@@ -33,9 +33,10 @@ def save_results(results, path, header = None):
                 header = results[0].__producer__.columns
             except AttributeError:
                 raise(Exception('Could not get the column header from the list, please specify the header.'))
-    with open(path, 'w', encoding = 'utf8') as f:
+    with open(path, mode, encoding = 'utf8') as f:
         writer = DictWriter(f, header)
-        writer.writeheader()
+        if mode != 'a':
+            writer.writeheader()
         for line in results:
             writer.writerow({k: make_safe(getattr(line, k), '/') for k in header})
 

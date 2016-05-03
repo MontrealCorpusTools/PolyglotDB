@@ -44,7 +44,7 @@ def query_to_cypher(query):
     for k,v in annotation_levels.items():
         if k.has_subquery:
             continue
-        statements,optional_statements, withs, wheres, optional_wheres = generate_match(k,v, filter_annotations)
+        statements,optional_statements, withs, wheres, optional_wheres = generate_match(query, k,v, filter_annotations)
         all_withs.update(withs)
         match_strings.extend(statements)
         optional_match_strings.extend(optional_statements)

@@ -101,7 +101,7 @@ class BaseParser(object):
                                     end = rl[i].time
                                 except AttributeError:
                                     pass
-                        if rl.name == k or rl.name == 'label':
+                        if rl.name == k or rl.name == 'label' or rl.label:
                             if rl[i].value == '':
                                 label = '<SIL>'
                             elif rl[i].value is not None:

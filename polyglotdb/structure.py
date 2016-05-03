@@ -22,14 +22,14 @@ class Hierarchy(object):
 
     get_type_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        RETURN n'''
+        RETURN n.subsets as subsets'''
     set_type_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
         SET n.subsets = {{subsets}}'''
 
     get_token_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(n:{type})
-        RETURN n'''
+        RETURN n.subsets as subsets'''
     set_token_subset_template = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(n:{type})
         SET n.subsets = {{subsets}}'''
@@ -45,11 +45,14 @@ class Hierarchy(object):
         self.subset_tokens = {}
         self.type_properties = {}
 
+        self.speaker_properties = set([('name', str)])
+        self.discourse_properties = set([('name', str)])
+
     def add_type_labels(self, corpus_context, annotation_type, labels):
         statement = self.get_type_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
-            cur_subsets = res[0].n.subsets
+            cur_subsets = res[0].subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets + labels)
@@ -62,7 +65,7 @@ class Hierarchy(object):
         statement = self.get_type_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
-            cur_subsets = res[0].n.subsets
+            cur_subsets = res[0].subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets) - set(labels)
@@ -75,7 +78,7 @@ class Hierarchy(object):
         statement = self.get_token_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
-            cur_subsets = res[0].n.subsets
+            cur_subsets = res[0].subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets + labels)
@@ -88,7 +91,7 @@ class Hierarchy(object):
         statement = self.get_token_subset_template.format(type = annotation_type)
         res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
-            cur_subsets = res[0].n.subsets
+            cur_subsets = res[0].subsets
         except AttributeError:
             cur_subsets = []
         updated = set(cur_subsets) - set(labels)
@@ -112,6 +115,8 @@ class Hierarchy(object):
                 v = ''
             elif v == bool:
                 v = False
+            elif v == type(None):
+                v = None
             ps.append(set_template.format(k))
             kwargs[k] = v
 
@@ -187,6 +192,90 @@ class Hierarchy(object):
             self.token_properties[annotation_type] = set([('id', str)])
         to_remove = set(x for x in self.token_properties[annotation_type] if x[0] in properties)
         self.token_properties[annotation_type].difference_update(to_remove)
+
+    def add_speaker_properties(self, corpus_context, properties):
+        set_template = 's.{0} = {{{0}}}'
+        ps = []
+        kwargs = {}
+        for k,v in properties:
+            if v == int:
+                v = 0
+            elif v == list:
+                v = []
+            elif v == float:
+                v = 0.0
+            elif v == str:
+                v = ''
+            elif v == bool:
+                v = False
+            elif v == type(None):
+                v = None
+            ps.append(set_template.format(k))
+            kwargs[k] = v
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)-[:spoken_by]->(s:Speaker)
+        SET {sets}'''.format(sets = ', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                corpus_name = corpus_context.corpus_name, **kwargs)
+
+        self.speaker_properties.update(k for k in properties)
+
+    def remove_speaker_properties(self, corpus_context, properties):
+        remove_template = 's.{0}'
+        ps = []
+        for k in properties:
+            ps.append(remove_template.format(k))
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)-[:spoken_by]->(s:Speaker)
+        REMOVE {removes}'''.format(removes = ', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                corpus_name = corpus_context.corpus_name)
+        to_remove = set(x for x in self.speaker_properties if x[0] in properties)
+        self.speaker_properties.difference_update(to_remove)
+
+    def add_discourse_properties(self, corpus_context, properties):
+        set_template = 'd.{0} = {{{0}}}'
+        ps = []
+        kwargs = {}
+        for k,v in properties:
+            if v == int:
+                v = 0
+            elif v == list:
+                v = []
+            elif v == float:
+                v = 0.0
+            elif v == str:
+                v = ''
+            elif v == bool:
+                v = False
+            elif v == type(None):
+                v = None
+            ps.append(set_template.format(k))
+            kwargs[k] = v
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)-[:spoken_in]->(d:Discourse)
+        SET {sets}'''.format(sets = ', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                corpus_name = corpus_context.corpus_name, **kwargs)
+
+        self.discourse_properties.update(k for k in properties)
+
+    def remove_discourse_properties(self, corpus_context, properties):
+        remove_template = 'd.{0}'
+        ps = []
+        for k in properties:
+            ps.append(remove_template.format(k))
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)-[:spoken_in]->(d:Discourse)
+        REMOVE {removes}'''.format(removes = ', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                corpus_name = corpus_context.corpus_name)
+        to_remove = set(x for x in self.discourse_properties if x[0] in properties)
+        self.discourse_properties.difference_update(to_remove)
 
     def keys(self):
         '''

@@ -1,0 +1,14 @@
+phone	place of articulation	manner of articulation	voicing	vowel height	vowel backness	vowel rounding
+k	velar	stop	voiceless	NA	NA	NA
+ae	NA	NA	NA	low	front	unrounded
+t	alveolar	stop	voiceless	NA	NA	NA
+s	alveolar	fricative	voiceless	NA	NA	NA
+aa	NA	NA	NA	low	back	unrounded
+r	retroflex	approximate	voiced	NA	NA	NA
+uw	NA	NA	NA	high	back	rounded
+d	alveolar	stop	voiced	NA	NA	NA
+g	velar	stop	voiced	NA	NA	NA
+z	alveolar	fricative	voiced	NA	NA	NA
+ay	NA	NA	NA	lowhigh	front	unrounded
+eh	NA	NA	NA	mid	front	unrounded
+

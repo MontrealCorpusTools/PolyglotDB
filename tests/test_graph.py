@@ -159,24 +159,31 @@ def test_query_columns_contained(timed_config):
         print(q.cypher())
         assert(len(list(q.all())) == 3)
 
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.columns(g.phone.word.label, g.phone.line.label)
+        print(q.cypher())
+        assert(len(list(q.all())) == 3)
+
 def test_query_alignment(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_left_aligned(g.line).times()
+        q = q.columns(g.phone.word.label)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0].begin == 0)
+
+        print('BEGIN PROBLEM')
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.filter(g.phone.begin == g.phone.line.begin).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
         assert(results[0].begin == 0)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.filter(g.phone.begin == g.line.begin).times()
-        print(q.cypher())
-        results = q.all()
-        assert(len(results) == 1)
-        assert(results[0].begin == 0)
-
-        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.filter(g.phone.begin != g.line.begin).times()
+        q = q.filter(g.phone.begin != g.phone.line.begin).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
@@ -190,14 +197,14 @@ def test_query_alignment(timed_config):
         assert(results[0].begin == 3.5)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 's')
-        q = q.filter(g.phone.end == g.line.end).times()
+        q = q.filter(g.phone.end == g.phone.line.end).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
         assert(results[0].begin == 3.5)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 's')
-        q = q.filter(g.phone.end != g.line.end).times()
+        q = q.filter(g.phone.end != g.phone.line.end).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
@@ -226,52 +233,67 @@ def test_query_word_in(timed_config):
         print(q.cypher())
         assert(len(list(q.all())) == 2)
 
-@pytest.mark.xfail
 def test_query_coda_phone(syllable_morpheme_config):
     with CorpusContext(syllable_morpheme_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_right_aligned(g.syllable)
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        assert(len(list(q.all())) == 2)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter(g.phone.end == g.syllable.end)
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        assert(len(list(q.all())) == 2)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_not_right_aligned(g.syllable)
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        assert(len(list(q.all())) == 0)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter(g.phone.end != g.syllable.end)
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        assert(len(list(q.all())) == 0)
     assert('syllable_morpheme' in get_corpora_list(syllable_morpheme_config))
 
-@pytest.mark.xfail
 def test_query_onset_phone(syllable_morpheme_config):
     with CorpusContext(syllable_morpheme_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_left_aligned(g.syllable)
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        assert(len(list(q.all())) == 0)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter(g.phone.begin == g.syllable.begin)
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        assert(len(list(q.all())) == 0)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter_not_left_aligned(g.syllable)
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        assert(len(list(q.all())) == 2)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter(g.phone.begin != g.syllable.begin)
         print(q.cypher())
-        assert(len(list(q.all())) == 1)
+        assert(len(list(q.all())) == 2)
+
+def test_complex_hierarchy(syllable_morpheme_config):
+    with CorpusContext(syllable_morpheme_config) as g:
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.columns(g.phone.line.begin, g.phone.syllable.begin)
+        results = q.all()
+        print(q.cypher())
+        assert(len(results) == 2)
+
+
+        q = g.query_graph(g.phone).filter(g.phone.label == 'k')
+        q = q.times().columns(g.pause.following.label)
+        results = q.all()
+        print(q.cypher())
+        assert(len(results) == 2)
+
 
 @pytest.mark.xfail
 def test_query_frequency(timed_config):

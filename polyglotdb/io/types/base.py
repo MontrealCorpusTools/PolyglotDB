@@ -13,6 +13,7 @@ class BaseAnnotationType(object):
         self.speaker = None
         self.type_property = True
         self.subannotation = False
+        self.label = False
 
     def reset(self):
         self._list = []

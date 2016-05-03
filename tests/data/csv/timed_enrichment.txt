@@ -1,0 +1,8 @@
+spelling	frequency	part of speech	neighborhood density
+cats	50	NN	12
+are	100	VB	13
+cute	NA	JJ	14
+dogs	40	NN	15
+too	30	IN	16
+I	150	PRP	17
+guess	40	Null	0

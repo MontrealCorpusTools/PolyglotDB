@@ -9,7 +9,7 @@ foll_template = '''({node_alias})-[:precedes{dist}]->({foll_alias})-[:is_a]->({f
 prec_pause_template = '''{path_alias} = (:speech:word)-[:precedes_pause*0..]->({node_alias})'''
 foll_pause_template = '''{path_alias} = ({node_alias})-[:precedes_pause*0..]->(:speech:word)'''
 
-def generate_match(annotation_type, annotation_list, filter_annotations):
+def generate_match(query, annotation_type, annotation_list, filter_annotations):
     annotation_list = sorted(annotation_list, key = lambda x: x.pos)
     positions = set(x.pos for x in annotation_list)
     prec_condition = ''
@@ -19,7 +19,6 @@ def generate_match(annotation_type, annotation_list, filter_annotations):
     statements = []
     wheres = []
     optional_wheres = []
-    current = annotation_list[0].pos
     optional_statements = []
     if isinstance(annotation_type, PauseAnnotation):
         prec = prec_pause_template
@@ -28,8 +27,8 @@ def generate_match(annotation_type, annotation_list, filter_annotations):
         prec = prec_template
         foll = foll_template
         anchor_string = annotation_type.for_match()
-        statements.append(anchor_string)
         defined.update(annotation_type.withs)
+        statements.append(anchor_string)
     for a in annotation_list:
         where = ''
         if a.pos == 0:
@@ -43,16 +42,44 @@ def generate_match(annotation_type, annotation_list, filter_annotations):
 
             kwargs = {}
             if isinstance(annotation_type, PauseAnnotation):
-                kwargs['node_alias'] = AnnotationAttribute('word',0,a.corpus).alias
+                if query.to_find.type == query.corpus.word_name:
+                    kwargs['node_alias'] = AnnotationAttribute(query.corpus.word_name,0,a.corpus).alias #FIXME?
+                else:
+                    anno = query.to_find
+                    while True:
+                        t = query.corpus.hierarchy[anno.type]
+                        anno = getattr(anno, t)
+                        if t == query.corpus.word_name:
+                            break
+                    kwargs['node_alias'] = anno.alias
                 kwargs['path_alias'] = a.path_alias
                 where = a.additional_where()
             else:
                 if a.pos + 1 in positions:
-                    kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos+1,a.corpus).alias
+                    if query.to_find.type != a.type:
+                        anno = query.to_find
+                        while True:
+                            t = query.corpus.hierarchy[anno.type]
+                            anno = getattr(anno, t)
+                            if t == query.corpus.word_name:
+                                break
+                        anno.pos = a.pos+1
+                        kwargs['node_alias'] = anno.alias
+                    else:
+                        kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos+1,a.corpus).alias
 
                     kwargs['dist'] = ''
                 else:
-                    kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                    if query.to_find.type != a.type:
+                        anno = query.to_find
+                        while True:
+                            t = query.corpus.hierarchy[anno.type]
+                            anno = getattr(anno, t)
+                            if t == query.corpus.word_name:
+                                break
+
+                    else:
+                        kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
                     if a.pos == -1:
                         kwargs['dist'] = ''
                     else:
@@ -64,16 +91,45 @@ def generate_match(annotation_type, annotation_list, filter_annotations):
 
             kwargs = {}
             if isinstance(annotation_type, PauseAnnotation):
-                kwargs['node_alias'] = AnnotationAttribute('word',0,a.corpus).alias #FIXME
+                if query.to_find.type == query.corpus.word_name:
+                    kwargs['node_alias'] = AnnotationAttribute(query.corpus.word_name,0,a.corpus).alias #FIXME?
+                else:
+                    anno = query.to_find
+                    while True:
+                        t = query.corpus.hierarchy[anno.type]
+                        anno = getattr(anno, t)
+                        if t == query.corpus.word_name:
+                            break
+                    kwargs['node_alias'] = anno.alias
                 kwargs['path_alias'] = a.path_alias
                 where = a.additional_where()
             else:
                 if a.pos - 1 in positions:
-                    kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos-1,a.corpus).alias
+                    if query.to_find.type != a.type:
+                        anno = query.to_find
+                        while True:
+                            t = query.corpus.hierarchy[anno.type]
+                            anno = getattr(anno, t)
+                            if t == query.corpus.word_name:
+                                break
+                        anno.pos = a.pos-1
+                        kwargs['node_alias'] = anno.alias
+                    else:
+                        kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos-1,a.corpus).alias
 
                     kwargs['dist'] = ''
                 else:
-                    kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                    if query.to_find.type != a.type:
+
+                        anno = query.to_find
+                        while True:
+                            t = query.corpus.hierarchy[anno.type]
+                            anno = getattr(anno, t)
+                            if t == query.corpus.word_name:
+                                break
+                        kwargs['node_alias'] = anno.alias
+                    else:
+                        kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
                     if a.pos == 1:
                         kwargs['dist'] = ''
                     else:

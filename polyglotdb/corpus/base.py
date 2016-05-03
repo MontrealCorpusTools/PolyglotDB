@@ -12,12 +12,15 @@ import py2neo
 
 from py2neo import Graph
 from py2neo.packages.httpstream import http
+
+from py2neo.cypher.error.network import UnknownFailure
+from py2neo.cypher.error.statement import ExternalResourceFailure
 http.socket_timeout = 999
 
 from sqlalchemy import create_engine
 from ..sql.models import Base, Discourse, Speaker
 from ..sql.config import Session
-from ..sql.query import Lexicon, Inventory
+from ..sql.query import Lexicon, Census
 
 from ..config import CorpusConfig
 
@@ -62,15 +65,24 @@ class BaseContext(object):
         self.hierarchy = Hierarchy({})
 
         self.lexicon = Lexicon(self)
-
-        self.inventory = Inventory(self)
+        self.census = Census(self)
 
         self._has_sound_files = None
         self._has_all_sound_files = None
         if getattr(sys, 'frozen', False):
-            self.config.reaper_path = os.path.join(sys.path[-1],'reaper')
+            self.config.reaper_path = os.path.join(sys.path[-1], 'reaper')
         else:
             self.config.reaper_path = shutil.which('reaper')
+
+        if sys.platform == 'win32':
+            praat_exe = 'praatcon.exe'
+        else:
+            praat_exe = 'praat'
+
+        if getattr(sys, 'frozen', False):
+            self.config.praat_path = os.path.join(sys.path[-1], praat_exe)
+        else:
+            self.config.praat_path = shutil.which(praat_exe)
 
         self.config.query_behavior = 'speaker'
 
@@ -104,8 +116,8 @@ class BaseContext(object):
         except http.NetworkAddressError:
             raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
         except (py2neo.cypher.TransientError,
-                #py2neo.cypher.error.network.UnknownFailure,
-                #py2neo.cypher.error.statement.ExternalResourceFailure
+                UnknownFailure,
+                ExternalResourceFailure
                 ):
             raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
         except Exception:
@@ -176,30 +188,49 @@ class BaseContext(object):
         for at in self.hierarchy.annotation_types:
             if at.startswith('word'): #FIXME need a better way for storing word name
                 return at
+        return 'word'
 
     @property
     def phone_name(self):
-        return self.hierarchy.lowest
+        name = self.hierarchy.lowest
+        if name is None:
+            name = 'phone'
+        return name
 
-    def reset_graph(self):
+    def reset_graph(self, call_back = None, stop_check = None):
         '''
         Remove all nodes and relationships in the graph that are apart
         of this corpus.
         '''
+        if call_back is not None:
+            call_back('Resetting database...')
+            number = self.execute_cypher('''MATCH (n:%s)-[r]->() return count(*) as number ''' % (self.corpus_name)).one
+            call_back(0, number * 2)
+        num_deleted = 0
         deleted = 1000
         while deleted > 0:
+            if stop_check is not None and stop_check():
+                break
             deleted = self.execute_cypher('''MATCH (n:%s)-[r]->() with r LIMIT 50000 DELETE r return count(r) as deleted_count ''' % (self.corpus_name)).one
+            num_deleted += deleted
+            if call_back is not None:
+                call_back(num_deleted)
         deleted = 1000
         while deleted > 0:
+            if stop_check is not None and stop_check():
+                break
             deleted = self.execute_cypher('''MATCH (n:%s) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' % (self.corpus_name)).one
+            num_deleted += deleted
+            if call_back is not None:
+                call_back(num_deleted)
         self.reset_hierarchy()
         self.hierarchy = Hierarchy({})
 
-    def reset(self):
+    def reset(self, call_back = None, stop_check = None):
         '''
         Reset the graph and SQL databases for a corpus.
         '''
-        self.reset_graph()
+        self.reset_graph(call_back, stop_check)
         try:
             Base.metadata.drop_all(self.engine)
         except sqlalchemy.exc.OperationalError:
