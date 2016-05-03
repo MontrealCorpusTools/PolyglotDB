@@ -17,8 +17,6 @@ else
   echo "Miniconda already installed."
 fi
 
-
-
 if [ ! -d "$HOME/neo4j/neo4j" ]; then
   mkdir -p $HOME/neo4j
   wget http://dist.neo4j.org/neo4j-community-3.0.0-unix.tar.gz
