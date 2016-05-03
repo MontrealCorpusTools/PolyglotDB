@@ -2,18 +2,42 @@
 
 from sqlalchemy import distinct
 
-from .models import AnnotationType, PropertyType, Property, NumericProperty, Annotation
+from .models import (AnnotationType, PropertyType, Property,
+                        NumericProperty, Annotation, Speaker, Discourse,
+                        SpeakerProperty, DiscourseProperty)
 
 from .helper import get_or_create
 
-class Lexicon(object):
-    """
-    The primary way of querying Word entrieis in a relational database.
-    """
+class BasePropertyStore(object):
     def __init__(self, corpus_context):
         self.corpus_context = corpus_context
         self.cache = {}
         self.prop_type_cache = {}
+
+    def get_or_create_property_type(self, property_type):
+        if property_type not in self.prop_type_cache:
+            pt, _ = get_or_create(self.corpus_context.sql_session,
+                                    PropertyType, label = property_type)
+            self.prop_type_cache[property_type] = pt
+        return self.prop_type_cache[property_type]
+
+    def get_property_type(self, property_type):
+        if property_type not in self.prop_type_cache:
+            q = self.corpus_context.sql_session.query(PropertyType)
+            q = q.filter(PropertyType.label == property_type)
+            pt = q.first()
+            if pt is None:
+                raise(AttributeError('Property type \'{}\' not found.'.format(property_type)))
+            self.prop_type_cache[property_type] = pt
+        return self.prop_type_cache[property_type]
+
+
+class Lexicon(BasePropertyStore):
+    """
+    The primary way of querying Word entrieis in a relational database.
+    """
+    def __init__(self, corpus_context):
+        super(Lexicon, self).__init__(corpus_context)
         self.anno_type_cache = {}
 
     def __getitem__(self, key):
@@ -62,29 +86,12 @@ class Lexicon(object):
             q = q.filter(AnnotationType.label == annotation_type)
         return [x[0] for x in q.all()]
 
-    def get_or_create_property_type(self, property_type):
-        if property_type not in self.prop_type_cache:
-            pt, _ = get_or_create(self.corpus_context.sql_session,
-                                    PropertyType, label = property_type)
-            self.prop_type_cache[property_type] = pt
-        return self.prop_type_cache[property_type]
-
     def get_or_create_annotation_type(self, annotation_type):
         if annotation_type not in self.anno_type_cache:
             at, _ = get_or_create(self.corpus_context.sql_session,
                                     AnnotationType, label = annotation_type)
             self.anno_type_cache[annotation_type] = at
         return self.anno_type_cache[annotation_type]
-
-    def get_property_type(self, property_type):
-        if property_type not in self.prop_type_cache:
-            q = self.corpus_context.sql_session.query(PropertyType)
-            q = q.filter(PropertyType.label == property_type)
-            pt = q.first()
-            if pt is None:
-                raise(AttributeError('Property type \'{}\' not found.'.format(property_type)))
-            self.prop_type_cache[property_type] = pt
-        return self.prop_type_cache[property_type]
 
     def get_annotation_type(self, annotation_type):
         if annotation_type not in self.anno_type_cache:
@@ -126,3 +133,42 @@ class Lexicon(object):
         q = q.join(AnnotationType)
         q = q.filter(AnnotationType.label == self.corpus_context.phone_name)
         return sorted([x[0] for x in q.all()])
+
+class Census(BasePropertyStore):
+    def __getitem__(self, key):
+        if key not in self.cache:
+            q =  self.corpus_context.sql_session.query(Speaker).filter(Speaker.name == key)
+            speaker = q.first()
+            self.cache[key] = speaker
+        return self.cache[key]
+
+    def lookup_discourse(self, name):
+        q =  self.corpus_context.sql_session.query(Discourse).filter(Discourse.name == name)
+        discourse = q.first()
+        return discourse
+
+    def add_speaker_properties(self, data, types):
+        for label, d in data.items():
+            speaker = self[label]
+            if speaker is None:
+                continue
+            for k, v in d.items():
+                if v is None:
+                    continue
+                pt = self.get_or_create_property_type(k)
+                v = str(v)
+                prop, _ = get_or_create(self.corpus_context.sql_session, SpeakerProperty,
+                                    speaker = speaker, property_type = pt, value = v)
+
+    def add_discourse_properties(self, data, types):
+        for label, d in data.items():
+            discourse = self.lookup_discourse(label)
+            if discourse is None:
+                continue
+            for k, v in d.items():
+                if v is None:
+                    continue
+                pt = self.get_or_create_property_type(k)
+                v = str(v)
+                prop, _ = get_or_create(self.corpus_context.sql_session, DiscourseProperty,
+                                    discourse = discourse, property_type = pt, value = v)

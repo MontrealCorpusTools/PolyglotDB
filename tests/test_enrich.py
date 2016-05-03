@@ -4,7 +4,8 @@ import os
 
 from polyglotdb import CorpusContext
 
-from polyglotdb.io.enrichment import enrich_lexicon_from_csv, enrich_features_from_csv
+from polyglotdb.io.enrichment import (enrich_lexicon_from_csv, enrich_features_from_csv,
+                                    enrich_discourses_from_csv, enrich_speakers_from_csv)
 
 def test_lexicon_enrichment(timed_config, csv_test_dir):
     path = os.path.join(csv_test_dir, 'timed_enrichment.txt')
@@ -58,3 +59,31 @@ def test_feature_enrichment(timed_config, csv_test_dir):
         res = q.all()
 
         assert(all(x.label in ['k','g'] for x in res))
+
+def test_speaker_enrichment(fave_corpus_config, csv_test_dir):
+    path = os.path.join(csv_test_dir, 'fave_speaker_info.txt')
+    with CorpusContext(fave_corpus_config) as c:
+        enrich_speakers_from_csv(c, path)
+
+        q = c.query_graph(c.phone).filter(c.phone.speaker.is_interviewer == True)
+
+        q = q.columns(c.phone.label.column_name('label'),
+                    c.phone.speaker.name.column_name('speaker'))
+
+        res = q.all()
+
+        assert(all(x.speaker == 'Interviewer' for x in res))
+
+def test_discourse_enrichment(fave_corpus_config, csv_test_dir):
+    path = os.path.join(csv_test_dir, 'fave_discourse_info.txt')
+    with CorpusContext(fave_corpus_config) as c:
+        enrich_discourses_from_csv(c, path)
+
+        q = c.query_graph(c.phone).filter(c.phone.discourse.noise_level == 'high')
+
+        q = q.columns(c.phone.label.column_name('label'),
+                    c.phone.discourse.name.column_name('discourse'))
+
+        res = q.all()
+
+        assert(all(x.discourse == 'fave_test' for x in res))

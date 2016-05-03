@@ -20,7 +20,7 @@ http.socket_timeout = 999
 from sqlalchemy import create_engine
 from ..sql.models import Base, Discourse, Speaker
 from ..sql.config import Session
-from ..sql.query import Lexicon
+from ..sql.query import Lexicon, Census
 
 from ..config import CorpusConfig
 
@@ -65,6 +65,7 @@ class BaseContext(object):
         self.hierarchy = Hierarchy({})
 
         self.lexicon = Lexicon(self)
+        self.census = Census(self)
 
         self._has_sound_files = None
         self._has_all_sound_files = None

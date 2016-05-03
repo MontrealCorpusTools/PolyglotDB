@@ -37,7 +37,7 @@ class LabbCatParser(TextgridParser):
         '''
         tg = self.load_textgrid(path)
         if not self._is_valid(tg):
-            raise(TextGridError('This file cannot be parsed by the LaBB-CAT parser.'))
+            raise(TextGridError('The file "{}" cannot be parsed by the LaBB-CAT parser.'.format(path)))
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         if self.speaker_parser is not None:

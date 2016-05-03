@@ -216,6 +216,70 @@ def import_feature_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
+def import_speaker_csvs(corpus_context, typed_data):
+    string_set_template = 'n.{name} = csvLine.{name}'
+    float_set_template = 'n.{name} = toFloat(csvLine.{name})'
+    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
+    properties = []
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :Speaker(%s)' % h)
+        if v == int:
+            template = int_set_template
+        elif v == bool:
+            template = bool_set_template
+        elif v == float:
+            template = float_set_template
+        else:
+            template = string_set_template
+        properties.append(template.format(name = h))
+    properties = ',\n'.join(properties)
+    directory = corpus_context.config.temporary_directory('csv')
+    path = os.path.join(directory,'speaker_import.csv')
+    feat_path = 'file:///{}'.format(path.replace('\\','/'))
+    import_statement = '''
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    MATCH (n:Speaker:{corpus_name}) where n.name = csvLine.name
+    SET {new_properties}'''
+
+    statement = import_statement.format(path = feat_path,
+                                corpus_name = corpus_context.corpus_name,
+                                new_properties = properties)
+    corpus_context.execute_cypher(statement)
+    #os.remove(path) # FIXME Neo4j 2.3 does not release files
+
+def import_discourse_csvs(corpus_context, typed_data):
+    string_set_template = 'n.{name} = csvLine.{name}'
+    float_set_template = 'n.{name} = toFloat(csvLine.{name})'
+    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
+    properties = []
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :Discourse(%s)' % h)
+        if v == int:
+            template = int_set_template
+        elif v == bool:
+            template = bool_set_template
+        elif v == float:
+            template = float_set_template
+        else:
+            template = string_set_template
+        properties.append(template.format(name = h))
+    properties = ',\n'.join(properties)
+    directory = corpus_context.config.temporary_directory('csv')
+    path = os.path.join(directory,'discourse_import.csv')
+    feat_path = 'file:///{}'.format(path.replace('\\','/'))
+    import_statement = '''
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    MATCH (n:Discourse:{corpus_name}) where n.name = csvLine.name
+    SET {new_properties}'''
+
+    statement = import_statement.format(path = feat_path,
+                                corpus_name = corpus_context.corpus_name,
+                                new_properties = properties)
+    corpus_context.execute_cypher(statement)
+    #os.remove(path) # FIXME Neo4j 2.3 does not release files
+
 def import_utterance_csv(corpus_context, discourse):
     path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))

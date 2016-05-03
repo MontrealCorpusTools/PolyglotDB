@@ -94,12 +94,23 @@ class Property(Base):
 
     value = Column(String(250), nullable = False)
 
+speaksin_table = Table('speaks_in', Base.metadata,
+    Column('discourse_id', Integer, ForeignKey('discourse.id')),
+    Column('speaker_id', Integer, ForeignKey('speaker.id'))
+)
+
 class Discourse(Base):
     __tablename__ = 'discourse'
 
     id = Column(Integer, primary_key = True)
 
     name = Column(String(250), nullable = False)
+
+    properties = relationship('DiscourseProperty', backref = 'discourse')
+
+    speakers = relationship("Speaker",
+        secondary=speaksin_table,
+        back_populates="discourses")
 
 class Speaker(Base):
     __tablename__ = 'speaker'
@@ -108,15 +119,34 @@ class Speaker(Base):
 
     name = Column(String(250), nullable = False)
 
+    properties = relationship('SpeakerProperty', backref = 'speaker')
+
+    discourses = relationship("Discourse",
+        secondary=speaksin_table,
+        back_populates="speakers")
+
 class SpeakerProperty(Base):
     __tablename__ = 'speaker_property'
 
     id = Column(Integer, primary_key = True)
 
     speaker_id = Column(Integer, ForeignKey('speaker.id'), nullable = False)
-    speaker = relationship(Speaker)
 
-    label = Column(String(250), nullable = False)
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable = False)
+    property_type = relationship(PropertyType)
+
+    value = Column(String(250), nullable = False)
+
+
+class DiscourseProperty(Base):
+    __tablename__ = 'discourse_property'
+
+    id = Column(Integer, primary_key = True)
+
+    discourse_id = Column(Integer, ForeignKey('discourse.id'), nullable = False)
+
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable = False)
+    property_type = relationship(PropertyType)
 
     value = Column(String(250), nullable = False)
 

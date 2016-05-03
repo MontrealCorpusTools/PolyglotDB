@@ -169,6 +169,9 @@ class ImportContext(BaseContext):
         initial_begin = time.time()
 
         discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
+        for s in data.speakers:
+            speaker, _ = get_or_create(self.sql_session, Speaker, name = s)
+            discourse.speakers.append(speaker)
         phone_cache = defaultdict(set)
         segment_type = data.segment_type
         for level in data.annotation_types:

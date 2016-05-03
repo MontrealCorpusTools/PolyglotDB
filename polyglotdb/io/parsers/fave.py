@@ -52,7 +52,7 @@ class FaveParser(TextgridParser):
         tg = TextGrid()
         tg.read(path)
         if not self._is_valid(tg):
-            raise(TextGridError('This file cannot be parsed by the FAVE parser.'))
+            raise(TextGridError('The file "{}" cannot be parsed by the FAVE parser.'.format(path)))
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         dummy = self.annotation_types

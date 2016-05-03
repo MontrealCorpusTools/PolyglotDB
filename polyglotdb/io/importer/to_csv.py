@@ -139,3 +139,23 @@ def feature_data_to_csvs(corpus_context, data):
         for k,v in sorted(data.items()):
             v['label'] = k
             writer.writerow(v)
+
+def speaker_data_to_csvs(corpus_context, data):
+    directory = corpus_context.config.temporary_directory('csv')
+    with open(os.path.join(directory, 'speaker_import.csv'), 'w') as f:
+        header = ['name'] + sorted(next(iter(data.values())).keys())
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for k,v in sorted(data.items()):
+            v['name'] = k
+            writer.writerow(v)
+
+def discourse_data_to_csvs(corpus_context, data):
+    directory = corpus_context.config.temporary_directory('csv')
+    with open(os.path.join(directory, 'discourse_import.csv'), 'w') as f:
+        header = ['name'] + sorted(next(iter(data.values())).keys())
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for k,v in sorted(data.items()):
+            v['name'] = k
+            writer.writerow(v)

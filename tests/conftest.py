@@ -9,7 +9,7 @@ from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
 
 from polyglotdb.io.parsers.base import BaseParser
 
-from polyglotdb.io import (inspect_textgrid)
+from polyglotdb.io import (inspect_textgrid, inspect_fave)
 
 from polyglotdb.corpus import CorpusContext
 from polyglotdb.structure import Hierarchy
@@ -385,3 +385,14 @@ def acoustic_utt_config(graph_db, textgrid_test_dir):
     config.pitch_algorithm = 'acousticsim'
     config.formant_algorithm = 'acousticsim'
     return config
+
+@pytest.fixture(scope='session')
+def fave_corpus_config(graph_db, fave_test_dir):
+    config = CorpusConfig('fave_test_corpus', **graph_db)
+
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_fave(fave_test_dir)
+        c.load(parser, fave_test_dir)
+    return config
+
