@@ -26,7 +26,7 @@ class OrthographyTextParser(BaseParser):
                     Hierarchy({'word': None}), make_transcription = False,
                     stop_check = stop_check, call_back = call_back)
 
-    def parse_discourse(self, path):
+    def parse_discourse(self, path, types_only = False):
         '''
         Parse a text file for later importing.
 
@@ -77,7 +77,7 @@ class OrthographyTextParser(BaseParser):
             self.annotation_types[0].add((x, num_annotations + i) for i, x in enumerate(to_add))
             num_annotations += len(to_add)
 
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:

@@ -44,7 +44,7 @@ class BaseParser(object):
             return False
         return True
 
-    def _parse_annotations(self):
+    def _parse_annotations(self, types_only = False):
         annotation_types = {}
         segment_type = None
         for k, v in self.hierarchy.items():
@@ -83,6 +83,8 @@ class BaseParser(object):
                     begin = None
                     end = None
                     for rl in speaker_levels:
+                        if types_only and not rl.type_property:
+                            continue
                         if rl.subannotation:
                             continue
                         if begin is None:
@@ -119,6 +121,8 @@ class BaseParser(object):
                         a.previous_id = annotation_types[k][-1].id
                     annotation_types[k].add(a)
                 for rl in speaker_levels:
+                    if types_only:
+                        continue
                     if not rl.subannotation:
                         continue
                     for sub in rl:
@@ -134,15 +138,22 @@ class BaseParser(object):
                         if k not in self.hierarchy.subannotations:
                             self.hierarchy.subannotations[k] = set()
                         self.hierarchy.subannotations[k].add(a.type)
-
         for k, v in annotation_types.items():
-            st = v.supertype
-            if st is not None:
-                for a in annotation_types[k]:
-                    super_annotation = annotation_types[st].lookup(a.midpoint, speaker = a.speaker)
-                    a.super_id = super_annotation.id
+            annotation_types[k].optimize_lookups()
+            if not types_only:
+                st = v.supertype
+                if st is not None:
+                    annotation_types[st].optimize_lookups()
+                    for a in annotation_types[k]:
+                        super_annotation = annotation_types[st].lookup(a.midpoint, speaker = a.speaker)
+                        try:
+                            a.super_id = super_annotation.id
+                        except AttributeError:
+                            print(a.begin, a.end, a.speaker)
+                            raise
             if self.make_transcription and segment_type is not None and v.is_word:
                 v.type_property_keys.update(['transcription'])
+                annotation_types[segment_type].optimize_lookups()
                 for a in annotation_types[k]:
                     transcription = annotation_types[segment_type].lookup_range(a.begin, a.end, speaker = a.speaker)
                     a.type_properties['transcription'] = [x.label for x in transcription]
@@ -155,10 +166,10 @@ class BaseParser(object):
         return annotation_types
 
     def parse_types(self, path, corpus_name):
-        data = self.parse_discourse(path)
+        data = self.parse_discourse(path, types_only = True)
         return data.types(corpus_name)
 
-    def parse_discourse(self, name):
+    def parse_discourse(self, name, types_only = False):
         '''
         Parse annotations for later importing.
 
@@ -172,7 +183,7 @@ class BaseParser(object):
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data
         '''
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         return data

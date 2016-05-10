@@ -32,7 +32,7 @@ class TimitParser(BaseParser):
                     stop_check = stop_check, call_back = call_back)
         self.speaker_parser = DirectorySpeakerParser()
 
-    def parse_discourse(self, word_path):
+    def parse_discourse(self, word_path, types_only = False):
         '''
         Parse a TIMIT file for later importing.
 
@@ -74,7 +74,7 @@ class TimitParser(BaseParser):
         self.annotation_types[0].add((x['spelling'], x['begin'], x['end']) for x in words)
         self.annotation_types[1].add(phones)
 
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:
