@@ -106,9 +106,9 @@ def read_words(path):
             end = float(l[1]) / sr
             word = l[2]
             if prev is not None and begin != prev:
-                output.append({'spelling': 'sil', 'begin':prev, 'end':begin})
+                output.append({'spelling': '<SIL>', 'begin':prev, 'end':begin})
             elif prev is None and begin != 0:
-                output.append({'spelling': 'sil', 'begin':0, 'end':begin})
+                output.append({'spelling': '<SIL>', 'begin':0, 'end':begin})
             output.append({'spelling':word, 'begin':begin, 'end':end})
             prev = end
     return output

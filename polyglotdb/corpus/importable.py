@@ -15,6 +15,8 @@ from ..acoustics.io import add_acoustic_info
 from ..io.importer import (data_to_graph_csvs, import_csvs,
                     data_to_type_csvs, import_type_csvs)
 
+from ..exceptions import ParseError
+
 from py2neo.cypher.error.schema import IndexAlreadyExists
 
 class ImportContext(BaseContext):
@@ -85,9 +87,10 @@ class ImportContext(BaseContext):
 
     def load(self, parser, path):
         if os.path.isdir(path):
-            self.load_directory(parser, path)
+            could_not_parse = self.load_directory(parser, path)
         else:
-            self.load_discourse(parser, path)
+            could_not_parse = self.load_discourse(parser, path)
+        return could_not_parse
 
     def load_discourse(self, parser, path):
         data = parser.parse_discourse(path)
@@ -95,6 +98,7 @@ class ImportContext(BaseContext):
         self.add_types(*data.types(self.corpus_name))
         self.add_discourse(data)
         self.finalize_import()
+        return []
 
     def load_directory(self, parser, path):
         call_back = parser.call_back
@@ -125,7 +129,10 @@ class ImportContext(BaseContext):
                 call_back(i)
             root, filename = t
             path = os.path.join(root,filename)
-            discourse_types, headers = parser.parse_types(path, self.corpus_name)
+            try:
+                discourse_types, headers = parser.parse_types(path, self.corpus_name)
+            except ParseError:
+                continue
             if type_headers is None:
                 type_headers = headers
             for k, v in discourse_types.items():
@@ -138,7 +145,7 @@ class ImportContext(BaseContext):
             call_back('Parsing files...')
             call_back(0,len(file_tuples))
             cur = 0
-
+        could_not_parse = []
         for i, t in enumerate(file_tuples):
             if parser.stop_check is not None and parser.stop_check():
                 return
@@ -148,10 +155,15 @@ class ImportContext(BaseContext):
                 call_back('Parsing file {} of {} ({})...'.format(i+1, len(file_tuples), name))
                 call_back(i)
             path = os.path.join(root,filename)
-            data = parser.parse_discourse(path)
+            try:
+                data = parser.parse_discourse(path)
+            except ParseError:
+                could_not_parse.append(path)
+                continue
             self.add_discourse(data)
         self.finalize_import()
         parser.call_back = call_back
+        return could_not_parse
 
     def update_sql_database(self, data):
         '''
