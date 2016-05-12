@@ -96,14 +96,15 @@ AND NONE (x in ns where x:speech)
 WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, prev_node_word.id AS begin_id, foll_node_word.begin AS end, foll_node_word.id AS end_id, foll_node_word.begin - prev_node_word.end AS duration
 ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
-        results = self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse)
+
+        results = list(self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse))
         collapsed_results = []
         for i, r in enumerate(results):
             if len(collapsed_results) == 0:
                 collapsed_results.append(r)
                 continue
-            if r.begin == collapsed_results[-1].end:
-                collapsed_results[-1].end = r.end
+            if r['begin'] == collapsed_results[-1]['end']:
+                collapsed_results[-1]['end'] = r['end']
             else:
                 collapsed_results.append(r)
         utterances = []
@@ -116,21 +117,21 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
         return w.id as id, w.begin as begin, w.end as end
         order by w.begin
         '''.format(corpus = self.corpus_name, word_type = word_type)
-        end_words = self.execute_cypher(statement, discourse = discourse)
+        end_words = list(self.execute_cypher(statement, discourse = discourse))
 
         if len(results) < 2:
-            begin = end_words[0].begin
-            begin_id = end_words[0].id
+            begin = end_words[0]['begin']
+            begin_id = end_words[0]['id']
             if len(results) == 0:
-                return [(begin_id, end_words[1].id)]
-            if results[0].begin == 0:
-                return [(results[0].end_id, end_words[1].id)]
-            if results[0].end == end_words[1].end:
-                return [(begin_id, end_words[1].end_id)]
+                return [(begin_id, end_words[1]['id'])]
+            if results[0]['begin'] == 0:
+                return [(results[0]['end_id'], end_words[1]['id'])]
+            if results[0]['end'] == end_words[1]['end']:
+                return [(begin_id, end_words[1]['end_id'])]
 
-        if results[0].begin != 0:
+        if results[0]['begin'] != 0:
             current = 0
-            current_id = end_words[0].id
+            current_id = end_words[0]['id']
         else:
             current = None
             current_id = None
@@ -141,25 +142,23 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
             if current is not None:
                 if current < min_begin:
                     min_begin = current
-                if r.begin - current > min_utterance_length:
-                    utterances.append((current_id, r.begin_id))
+                if r['begin'] - current > min_utterance_length:
+                    utterances.append((current_id, r['begin_id']))
                 elif i == len(results) - 1:
-                    utterances[-1] = (utterances[-1][0], r.begin_id)
+                    utterances[-1] = (utterances[-1][0], r['begin_id'])
                 elif len(utterances) != 0:
-                    dist_to_prev = current - prev
-                    dist_to_foll = r.end - r.begin
+                    dist_to_prev = current - utterances[-1][1]
+                    dist_to_foll = r['end'] - r['begin']
                     if dist_to_prev <= dist_to_foll:
-                        utterances[-1] = (utterances[-1][0], r.begin_id)
+                        utterances[-1] = (utterances[-1][0], r['begin_id'])
             prev = current
-            current = r.end
-            current_id = r.end_id
-        if current < end_words[1].end:
-            if end_words[1].end - current > min_utterance_length:
-                utterances.append((current_id, end_words[1].id))
+            current = r['end']
+            current_id = r['end_id']
+        if current < end_words[1]['end']:
+            if end_words[1]['end'] - current > min_utterance_length:
+                utterances.append((current_id, end_words[1]['id']))
             else:
-                utterances[-1] = (utterances[-1][0], end_words[1].id)
-        #if min_begin < end_words[0].begin:
-        #    utterances[0] = (end_words[0].id, utterances[0][1])
+                utterances[-1] = (utterances[-1][0], end_words[1]['id'])
         return utterances
 
     def get_utterances(self, discourse,
@@ -195,55 +194,56 @@ AND NONE (x in ns where x:speech)
 WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, foll_node_word.begin AS end, foll_node_word.begin - prev_node_word.end AS duration
 ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
-        results = self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse)
+        results = list(self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse))
 
         collapsed_results = []
         for i, r in enumerate(results):
             if len(collapsed_results) == 0:
                 collapsed_results.append(r)
                 continue
-            if r.begin == collapsed_results[-1].end:
-                collapsed_results[-1].end = r.end
+            if r['begin'] == collapsed_results[-1]['end']:
+                collapsed_results[-1]['end'] = r['end']
             else:
                 collapsed_results.append(r)
         utterances = []
         word = getattr(self, word_type)
         q = self.query_graph(word).filter(word.discourse.name == discourse)
         times = q.aggregate(Min(word.begin), Max(word.end))
-        if len(results) < 2:
-            begin = times.min_begin
-            if len(results) == 0:
-                return [(begin, times.max_end)]
-            if results[0].begin == 0:
-                return [(results[0].end, times.max_end)]
-            if results[0].end == times.max_end:
-                return [(begin, results[0].end)]
 
-        if results[0].begin != 0:
+        if len(results) < 2:
+            begin = times['min_begin']
+            if len(results) == 0:
+                return [(begin, times['max_end'])]
+            if results[0]['begin'] == 0:
+                return [(results[0]['end'], times['max_end'])]
+            if results[0]['end'] == times['max_end']:
+                return [(begin, results[0]['end'])]
+
+        if results[0]['begin'] != 0:
             current = 0
         else:
             current = None
         for i, r in enumerate(collapsed_results):
             if current is not None:
-                if r.begin - current > min_utterance_length:
-                    utterances.append((current, r.begin))
+                if r['begin'] - current > min_utterance_length:
+                    utterances.append((current, r['begin']))
                 elif i == len(results) - 1:
-                    utterances[-1] = (utterances[-1][0], r.begin)
+                    utterances[-1] = (utterances[-1][0], r['begin'])
                 elif len(utterances) != 0:
                     dist_to_prev = current - utterances[-1][1]
-                    dist_to_foll = r.end - r.begin
+                    dist_to_foll = r['end'] - r['begin']
                     if dist_to_prev <= dist_to_foll:
-                        utterances[-1] = (utterances[-1][0], r.begin)
-            current = r.end
-        if current < times.max_end:
-            if times.max_end - current > min_utterance_length:
-                utterances.append((current, times.max_end))
+                        utterances[-1] = (utterances[-1][0], r['begin'])
+            current = r['end']
+        if current < times['max_end']:
+            if times['max_end'] - current > min_utterance_length:
+                utterances.append((current, times['max_end']))
             else:
-                utterances[-1] = (utterances[-1][0], times.max_end)
-        if utterances[-1][1] > times.max_end:
-            utterances[-1] = (utterances[-1][0], times.max_end)
-        if utterances[0][0] < times.min_begin:
-            utterances[0] = (times.min_begin, utterances[0][1])
+                utterances[-1] = (utterances[-1][0], times['max_end'])
+        if utterances[-1][1] > times['max_end']:
+            utterances[-1] = (utterances[-1][0], times['max_end'])
+        if utterances[0][0] < times['min_begin']:
+            utterances[0] = (times['min_begin'], utterances[0][1])
         return utterances
 
     def encode_utterance_position(self, call_back = None, stop_check = None):

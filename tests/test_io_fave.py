@@ -39,14 +39,14 @@ def test_load_fave(fave_test_dir, graph_db):
         q = q.columns(c.word.label, c.word.following.label.column_name('following'))
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].following == 'JURASSIC')
+        assert(results[0]['following'] == 'JURASSIC')
 
         q = c.query_graph(c.word).filter(c.word.label == 'MURDER')
         q = q.order_by(c.word.begin)
         q = q.columns(c.word.label, c.word.following.label.column_name('following'))
         results = q.all()
         assert(len(results) == 2)
-        assert(results[0].following == 'KNOW')
+        assert(results[0]['following'] == 'KNOW')
 
         interviewer = c.census['Interviewer']
 
