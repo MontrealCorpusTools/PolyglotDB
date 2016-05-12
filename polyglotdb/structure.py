@@ -50,7 +50,7 @@ class Hierarchy(object):
 
     def add_type_labels(self, corpus_context, annotation_type, labels):
         statement = self.get_type_subset_template.format(type = annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
+        res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
             cur_subsets = res[0].subsets
         except AttributeError:
@@ -63,7 +63,7 @@ class Hierarchy(object):
 
     def remove_type_labels(self, corpus_context, annotation_type, labels):
         statement = self.get_type_subset_template.format(type = annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
+        res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
             cur_subsets = res[0].subsets
         except AttributeError:
@@ -76,7 +76,7 @@ class Hierarchy(object):
 
     def add_token_labels(self, corpus_context, annotation_type, labels):
         statement = self.get_token_subset_template.format(type = annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
+        res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
             cur_subsets = res[0].subsets
         except AttributeError:
@@ -89,7 +89,7 @@ class Hierarchy(object):
 
     def remove_token_labels(self, corpus_context, annotation_type, labels):
         statement = self.get_token_subset_template.format(type = annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
+        res = corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name)
         try:
             cur_subsets = res[0].subsets
         except AttributeError:

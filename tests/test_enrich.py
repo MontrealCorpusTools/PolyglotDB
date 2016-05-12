@@ -18,23 +18,23 @@ def test_lexicon_enrichment(timed_config, csv_test_dir):
 
         res = q.all()
 
-        assert(all(x['label'] == 'guess' for x in res))
+        assert(all(x.label == 'guess' for x in res))
 
         q = c.query_graph(c.word).filter(c.word.label == 'i')
 
         res = q.all()
 
-        assert(res[0]['frequency'] == 150)
-        assert(res[0]['part_of_speech'] == 'PRP')
-        assert(res[0]['neighborhood_density'] == 17)
+        assert(res[0].frequency == 150)
+        assert(res[0].part_of_speech == 'PRP')
+        assert(res[0].neighborhood_density == 17)
 
         q = c.query_graph(c.word).filter(c.word.label == 'cute')
 
         res = q.all()
 
-        assert(res[0]['frequency'] is None)
-        assert(res[0]['part_of_speech'] == 'JJ')
-        assert(res[0]['neighborhood_density'] == 14)
+        assert(res[0].frequency is None)
+        assert(res[0].part_of_speech == 'JJ')
+        assert(res[0].neighborhood_density == 14)
 
         levels = c.lexicon.get_property_levels('part_of_speech')
         assert(set(levels) == set(['NN','VB','JJ','IN','PRP']))
@@ -50,7 +50,7 @@ def test_feature_enrichment(timed_config, csv_test_dir):
 
         res = q.all()
 
-        assert(all(x['label'] == 'ay' for x in res))
+        assert(all(x.label == 'ay' for x in res))
 
         q = c.query_graph(c.phone).filter(c.phone.place_of_articulation == 'velar')
 
@@ -58,7 +58,7 @@ def test_feature_enrichment(timed_config, csv_test_dir):
 
         res = q.all()
 
-        assert(all(x['label'] in ['k','g'] for x in res))
+        assert(all(x.label in ['k','g'] for x in res))
 
 def test_speaker_enrichment(fave_corpus_config, csv_test_dir):
     path = os.path.join(csv_test_dir, 'fave_speaker_info.txt')
@@ -72,7 +72,7 @@ def test_speaker_enrichment(fave_corpus_config, csv_test_dir):
 
         res = q.all()
 
-        assert(all(x['speaker'] == 'Interviewer' for x in res))
+        assert(all(x.speaker == 'Interviewer' for x in res))
 
 def test_discourse_enrichment(fave_corpus_config, csv_test_dir):
     path = os.path.join(csv_test_dir, 'fave_discourse_info.txt')
@@ -86,4 +86,4 @@ def test_discourse_enrichment(fave_corpus_config, csv_test_dir):
 
         res = q.all()
 
-        assert(all(x['discourse'] == 'fave_test' for x in res))
+        assert(all(x.discourse == 'fave_test' for x in res))

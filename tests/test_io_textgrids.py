@@ -94,5 +94,5 @@ def test_load_pronunciation(textgrid_test_dir, graph_db):
                 c.words.dictionaryPron.column_name('dict_pron'),
                 c.words.actualPron.column_name('act_pron'))
         results = q.all()
-        assert(results[0]['dict_pron'] == 'p.r.aa.b.ah.b.l.iy')
-        assert(results[0]['act_pron'] == 'p.r.aa.b.ah.b.l.iy')
+        assert(results[0].dict_pron == 'p.r.aa.b.ah.b.l.iy')
+        assert(results[0].act_pron == 'p.r.aa.b.ah.b.l.iy')

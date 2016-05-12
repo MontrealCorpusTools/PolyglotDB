@@ -27,10 +27,10 @@ def make_safe(value, delimiter):
 def save_results(results, path, header = None, mode = 'w'):
     if header is None:
         try:
-            header = results.keys()
+            header = results.columns
         except AttributeError:
             try:
-                header = results[0].keys()
+                header = results[0].__producer__.columns
             except AttributeError:
                 raise(Exception('Could not get the column header from the list, please specify the header.'))
     with open(path, mode, encoding = 'utf8') as f:
@@ -38,7 +38,7 @@ def save_results(results, path, header = None, mode = 'w'):
         if mode != 'a':
             writer.writeheader()
         for line in results:
-            writer.writerow({k: make_safe(line[k], '/') for k in header})
+            writer.writerow({k: make_safe(getattr(line, k), '/') for k in header})
 
 def export_corpus_csv(corpus, path,
                     delimiter = ',', trans_delimiter = '.',

@@ -107,17 +107,6 @@ class CorpusConfig(object):
         return '{}:{}'.format(self.graph_host, self.graph_port)
 
     @property
-    def graph_connection_kwargs(self):
-        kwargs = {'host': self.graph_host,
-                    'bolt': True}
-
-        if self.graph_user is not None:
-            kwargs['user'] = self.graph_user
-        if self.graph_password is not None:
-            kwargs['password'] = self.graph_password
-        return kwargs
-
-    @property
     def graph_connection_string(self):
         user_string = ''
         if self.graph_user is not None and self.graph_password is not None:

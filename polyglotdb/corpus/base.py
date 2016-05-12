@@ -11,9 +11,11 @@ import sqlalchemy
 import py2neo
 
 from py2neo import Graph
+from py2neo.packages.httpstream import http
 
-from py2neo.database.status import (ClientError, DatabaseError, Forbidden,
-                    TransientError, Unauthorized, ConstraintError)
+from py2neo.cypher.error.network import UnknownFailure
+from py2neo.cypher.error.statement import ExternalResourceFailure
+http.socket_timeout = 999
 
 from sqlalchemy import create_engine
 from ..sql.models import Base, Discourse, Speaker
@@ -55,7 +57,7 @@ class BaseContext(object):
         else:
             self.config = CorpusConfig(*args, **kwargs)
         self.config.init()
-        self.graph = Graph(**self.config.graph_connection_kwargs)
+        self.graph = Graph(self.config.graph_connection_string)
         self.corpus_name = self.config.corpus_name
         if self.corpus_name:
             self.init_sql()
@@ -106,19 +108,18 @@ class BaseContext(object):
 
     def execute_cypher(self, statement, **parameters):
         try:
-            return self.graph.run(statement, **parameters)
-        except py2neo.packages.httpstream.http.SocketError:
+            return self.graph.cypher.execute(statement, **parameters)
+        except http.SocketError:
             raise(ConnectionError('PolyglotDB could not connect to the server specified.'))
-        except ClientError:
-            raise
-        except (Unauthorized):
+        except py2neo.error.Unauthorized:
             raise(AuthorizationError('The specified user and password were not authorized by the server.'))
-        except Forbidden:
+        except http.NetworkAddressError:
             raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
-        except (TransientError):
+        except (py2neo.cypher.TransientError,
+                UnknownFailure,
+                ExternalResourceFailure
+                ):
             raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
-        except ConstraintError:
-            pass
         except Exception:
             raise
 
@@ -144,13 +145,11 @@ class BaseContext(object):
         q = self.sql_session.query(Speaker).all()
         if not len(q):
             res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.corpus_name))
-
             speakers = []
             for s in res:
-                print(s)
-                instance = Speaker(name = s['speaker'])
+                instance = Speaker(name = s.speaker)
                 self.sql_session.add(instance)
-                speakers.append(s['speaker'])
+                speakers.append(s.speaker)
             self.sql_session.flush()
             return speakers
         return [x.name for x in q]
@@ -205,14 +204,14 @@ class BaseContext(object):
         '''
         if call_back is not None:
             call_back('Resetting database...')
-            number = self.execute_cypher('''MATCH (n:%s)-[r]-() return count(*) as number ''' % (self.corpus_name)).evaluate()
+            number = self.execute_cypher('''MATCH (n:%s)-[r]->() return count(*) as number ''' % (self.corpus_name)).one
             call_back(0, number * 2)
         num_deleted = 0
         deleted = 1000
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:%s)-[r]-() with r LIMIT 50000 DELETE r return count(r) as deleted_count ''' % (self.corpus_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:%s)-[r]->() with r LIMIT 50000 DELETE r return count(r) as deleted_count ''' % (self.corpus_name)).one
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
@@ -220,7 +219,7 @@ class BaseContext(object):
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:%s) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' % (self.corpus_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:%s) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' % (self.corpus_name)).one
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)

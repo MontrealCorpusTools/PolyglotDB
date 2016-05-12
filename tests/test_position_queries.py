@@ -13,7 +13,7 @@ def test_position_query(timed_config):
         expected = [1,1]
         assert(len(results) == len(expected))
         for i in range(len(expected)):
-            assert(results[i]['position'] == expected[i])
+            assert(results[i].position == expected[i])
 
 def test_initial_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -25,10 +25,10 @@ def test_initial_query(acoustic_config):
         q = q.order_by(g.word.begin)
         print(q.cypher())
         results = q.all()
-        assert(results[0]['initial_following_phone'] == 'ih')
-        assert(abs(results[0]['initial_following_phone_duration'] - 0.062353) < 0.001)
-        assert(abs(results[0]['begin'] - 1.203942) < 0.001)
-        assert(abs(results[0]['end'] - 1.266295) < 0.001)
+        assert(results[0].initial_following_phone == 'ih')
+        assert(abs(results[0].initial_following_phone_duration - 0.062353) < 0.001)
+        assert(abs(results[0].begin - 1.203942) < 0.001)
+        assert(abs(results[0].end - 1.266295) < 0.001)
 
 def test_final_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -40,10 +40,10 @@ def test_final_query(acoustic_config):
         q = q.order_by(g.word.begin)
         print(q.cypher())
         results = q.all()
-        assert(results[0]['final_previous_phone'] == 's')
-        assert(abs(results[0]['final_previous_phone_duration'] - 0.079107) < 0.001)
-        assert(abs(results[0]['begin'] - 1.124835) < 0.001)
-        assert(abs(results[0]['end'] - 1.203942) < 0.001)
+        assert(results[0].final_previous_phone == 's')
+        assert(abs(results[0].final_previous_phone_duration - 0.079107) < 0.001)
+        assert(abs(results[0].begin - 1.124835) < 0.001)
+        assert(abs(results[0].end - 1.203942) < 0.001)
 
 def test_penult_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -55,10 +55,10 @@ def test_penult_query(acoustic_config):
         q = q.order_by(g.word.begin)
         print(q.cypher())
         results = q.all()
-        assert(results[0]['phone'] == 'ih')
-        assert(abs(results[0]['duration'] - 0.042712) < 0.001)
-        assert(abs(results[0]['begin'] - 1.082123) < 0.001)
-        assert(abs(results[0]['end'] - 1.124835) < 0.001)
+        assert(results[0].phone == 'ih')
+        assert(abs(results[0].duration - 0.042712) < 0.001)
+        assert(abs(results[0].begin - 1.082123) < 0.001)
+        assert(abs(results[0].end - 1.124835) < 0.001)
 
         q = g.query_graph(g.word).filter(g.word.label == 'is')
         q = q.columns(g.word.previous.phone.antepenultimate.label.column_name('phone'),
@@ -68,7 +68,7 @@ def test_penult_query(acoustic_config):
         q = q.order_by(g.word.begin)
         print(q.cypher())
         results = q.all()
-        assert(results[0]['phone'] == 'dh')
-        assert(abs(results[0]['duration'] - 0.022900) < 0.001)
-        assert(abs(results[0]['begin'] - 1.059223) < 0.001)
-        assert(abs(results[0]['end'] - 1.082123) < 0.001)
+        assert(results[0].phone == 'dh')
+        assert(abs(results[0].duration - 0.022900) < 0.001)
+        assert(abs(results[0].begin - 1.059223) < 0.001)
+        assert(abs(results[0].end - 1.082123) < 0.001)

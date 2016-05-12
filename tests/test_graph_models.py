@@ -12,7 +12,7 @@ def test_models(acoustic_config):
         q = q.columns(c.phone.id.column_name('id'))
 
         results = q.all()
-        id = results[0]['id']
+        id = results[0].id
 
         model = LinguisticAnnotation(c)
         model.load(id)
@@ -29,7 +29,7 @@ def test_type_properties(acoustic_config):
         q = q.columns(c.word.id.column_name('id'))
 
         results = q.all()
-        id = results[1]['id']
+        id = results[1].id
 
         model = LinguisticAnnotation(c)
         model.load(id)
@@ -42,7 +42,7 @@ def test_hierarchical(acoustic_config):
         q = q.columns(c.word.id.column_name('id'))
 
         results = q.all()
-        id = results[1]['id']
+        id = results[1].id
 
         model = LinguisticAnnotation(c)
         model.load(id)
@@ -53,7 +53,7 @@ def test_hierarchical(acoustic_config):
         q = q.columns(c.phone.id.column_name('id'))
 
         results = q.all()
-        id = results[1]['id']
+        id = results[1].id
 
         model = LinguisticAnnotation(c)
         model.load(id)
@@ -65,8 +65,8 @@ def test_subannotations(subannotation_config):
         q = c.query_graph(c.phone).columns(c.phone.voicing_during_closure.id.column_name('voicing_ids'))
         res = q.all()
         for x in res:
-            if len(x['voicing_ids']) > 0:
-                id = x['voicing_ids'][0]
+            if len(x.voicing_ids) > 0:
+                id = x.voicing_ids[0]
                 break
         model = SubAnnotation(c)
         model.load(id)
@@ -78,7 +78,7 @@ def test_add_subannotation(subannotation_config):
         q = c.query_graph(c.phone).order_by(c.phone.id)
         q = q.columns(c.phone.id.column_name('id'))
         res = q.all()
-        id = res[0]['id']
+        id = res[0].id
         model = LinguisticAnnotation(c)
         model.load(id)
         assert(model.voicing_during_closure == [])
@@ -99,7 +99,7 @@ def test_add_subannotation(subannotation_config):
 
         q = c.query_graph(c.phone).order_by(c.phone.id)
         res = q.all()
-        id = res[0]['id']
+        id = res[0].id
         model = LinguisticAnnotation(c)
         model.load(id)
 

@@ -22,11 +22,11 @@ def test_query_duration_aggregate_average_group_by(acoustic_config):
         results = q.group_by(g.phone.label.column_name('label')).aggregate(Average(g.phone.duration))
 
         assert(len(results) == 2)
-        assert(results[0]['label'] == 'aa')
-        assert(abs(results[0]['average_duration'] - 0.08) < 0.001)
+        assert(results[0].label == 'aa')
+        assert(abs(results[0].average_duration - 0.08) < 0.001)
 
-        assert(results[1]['label'] == 'ae')
-        assert(abs(results[1]['average_duration'] - 0.193) < 0.001)
+        assert(results[1].label == 'ae')
+        assert(abs(results[1].average_duration - 0.193) < 0.001)
 
 def test_query_count_group_by(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -34,11 +34,11 @@ def test_query_count_group_by(acoustic_config):
         results = q.group_by(g.phone.label.column_name('label')).aggregate(Count())
         assert(len(results) == 2)
         print(results)
-        assert(results[0]['label'] == 'aa')
-        assert(results[0]['count_all'] == 3)
+        assert(results[0].label == 'aa')
+        assert(results[0].count_all == 3)
 
-        assert(results[1]['label'] == 'ae')
-        assert(results[1]['count_all'] == 7)
+        assert(results[1].label == 'ae')
+        assert(results[1].count_all == 7)
 
 def test_min(acoustic_config):
     with CorpusContext(acoustic_config) as g:

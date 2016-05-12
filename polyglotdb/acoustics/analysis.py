@@ -6,8 +6,6 @@ import os
 
 from functools import partial
 
-import sqlalchemy
-
 from ..sql.models import SoundFile, Pitch, Formants, Discourse
 
 from ..exceptions import GraphQueryError
@@ -132,9 +130,9 @@ def analyze_pitch(corpus_context, sound_file):
 
         outdir = corpus_context.config.temporary_directory(sound_file.discourse.name)
         for i, u in enumerate(utterances):
-            outpath = os.path.join(outdir, 'temp-{}-{}.wav'.format(u['begin'], u['end']))
+            outpath = os.path.join(outdir, 'temp-{}-{}.wav'.format(u.begin, u.end))
             if not os.path.exists(outpath):
-                extract_audio(sound_file.filepath, outpath, u['begin'], u['end'], padding = padding * 3)
+                extract_audio(sound_file.filepath, outpath, u.begin, u.end, padding = padding * 3)
 
         path_mapping = [(os.path.join(outdir, x),) for x in os.listdir(outdir)]
         try:
@@ -195,9 +193,9 @@ def analyze_formants(corpus_context, sound_file):
         outdir = corpus_context.config.temporary_directory(sound_file.discourse.name)
         path_mapping = []
         for i, u in enumerate(utterances):
-            outpath = os.path.join(outdir, 'temp-{}-{}.wav'.format(u['begin'], u['end']))
+            outpath = os.path.join(outdir, 'temp-{}-{}.wav'.format(u.begin, u.end))
             if not os.path.exists(outpath):
-                extract_audio(sound_file.filepath, outpath, u['begin'], u['end'], padding = padding)
+                extract_audio(sound_file.filepath, outpath, u.begin, u.end, padding = padding)
             path_mapping.append((outpath,))
 
         cache = generate_cache(path_mapping, formant_function, None, default_njobs() - 1, None, None)

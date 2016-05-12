@@ -51,7 +51,7 @@ def import_csvs(corpus_context, data):
         path = os.path.join(directory, '{}_{}.csv'.format(data.name, at))
         rel_path = 'file:///{}'.format(path.replace('\\','/'))
 
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
+        corpus_context.graph.cypher.execute('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
         properties = []
         corpus_context.execute_cypher('CREATE INDEX ON :%s(begin)' % (at,))
@@ -167,7 +167,6 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
     if case_sensitive:
         import_statement = '''USING PERIODIC COMMIT 3000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    with csvLine
     MATCH (n:{word_type}_type:{corpus_name}) where n.label = csvLine.label
     SET {new_properties}'''
     else:
@@ -312,9 +311,14 @@ def import_syllable_csv(corpus_context, split_name):
                         '{}_syllable.csv'.format(split_name))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
-
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
@@ -387,9 +391,14 @@ def import_nonsyl_csv(corpus_context, split_name):
                         '{}_nonsyl.csv'.format(split_name))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
-
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
@@ -424,6 +433,9 @@ with o, w, csvLine, s
     FOREACH (fv IN CASE WHEN foll IS NOT NULL THEN [foll] ELSE [] END |
       CREATE (s)-[:precedes]->(fv)
     )
+    FOREACH (fv IN CASE WHEN foll IS NOT NULL THEN [foll] ELSE [] END |
+      REMOVE fv.prev_id
+    )
 with o, w, csvLine, s
 OPTIONAL MATCH
 (c:{phone_name}:{corpus}:speech {{id: csvLine.coda_id}})-[:contained_by]->(w),
@@ -453,9 +465,10 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
     prop_temp = '''{name}: csvLine.{name}'''
     properties = []
-
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % type)
-
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % type)
+    except py2neo.cypher.error.schema.ConstraintAlreadyExists:
+        pass
 
     for p in props:
         if p in ['id', 'annotated_id', 'begin', 'end']:

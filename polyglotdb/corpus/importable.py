@@ -17,6 +17,8 @@ from ..io.importer import (data_to_graph_csvs, import_csvs,
 
 from ..exceptions import ParseError
 
+from py2neo.cypher.error.schema import IndexAlreadyExists
+
 class ImportContext(BaseContext):
     def add_types(self, types, type_headers):
         '''
@@ -32,10 +34,19 @@ class ImportContext(BaseContext):
         import_type_csvs(self, type_headers)
 
     def initialize_import(self):
-        self.execute_cypher('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
-        self.execute_cypher('CREATE INDEX ON :Discourse(name)')
-        self.execute_cypher('CREATE INDEX ON :Speaker(name)')
+        try:
+            self.execute_cypher('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
+        except IndexAlreadyExists:
+            pass
 
+        try:
+            self.execute_cypher('CREATE INDEX ON :Discourse(name)')
+        except IndexAlreadyExists:
+            pass
+        try:
+            self.execute_cypher('CREATE INDEX ON :Speaker(name)')
+        except IndexAlreadyExists:
+            pass
         self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
     def finalize_import(self):

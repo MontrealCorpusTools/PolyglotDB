@@ -11,15 +11,11 @@ set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
 REMOVE {alias}:speech
 WITH {alias}
 OPTIONAL MATCH (prec)-[r1:precedes]->({alias})
-    FOREACH (o IN CASE WHEN prec IS NOT NULL THEN [prec] ELSE [] END |
-      CREATE (prec)-[:precedes_pause]->({alias})
-    )
+MERGE (prec)-[:precedes_pause]->({alias})
 DELETE r1
 WITH {alias}, prec
 OPTIONAL MATCH ({alias})-[r2:precedes]->(foll)
-    FOREACH (o IN CASE WHEN foll IS NOT NULL THEN [foll] ELSE [] END |
-      CREATE ({alias})-[:precedes_pause]->(foll)
-    )
+MERGE ({alias})-[:precedes_pause]->(foll)
 DELETE r2'''
 
 change_label_template = '''SET {alias} {value}
