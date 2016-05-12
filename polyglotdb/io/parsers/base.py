@@ -6,6 +6,8 @@ from ..types.parsing import Tobi, BreakIndex
 
 from ..discoursedata import DiscourseData
 
+from ...exceptions import ParseError
+
 class BaseParser(object):
     '''
     Base parser, extend this class for new parsers.
@@ -74,7 +76,7 @@ class BaseParser(object):
                 if lengths[speaker] == 0:
                     lengths[speaker] = len(inputlevel)
                 elif lengths[speaker] != len(inputlevel):
-                    raise(Exception('Annotations sharing a linguistic type and a speaker don\'t have a consistent length.'))
+                    raise(ParseError('Annotations sharing a linguistic type and a speaker don\'t have a consistent length.'))
             for speaker, speaker_levels in relevent_levels.items():
                 for i in range(lengths[speaker]):
                     type_properties = {}
