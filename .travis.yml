@@ -14,7 +14,8 @@ jdk:
   - oraclejdk7
 
 before_install:
-  # install Neo4j locally:- bash continuous-integration/travis/install.sh
+  # install Neo4j locally:
+  - bash continuous-integration/travis/install.sh
   - ls $HOME/neo4j/neo4j
 
 # Install packages
