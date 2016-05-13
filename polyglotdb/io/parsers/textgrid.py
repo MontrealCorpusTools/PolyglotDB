@@ -38,7 +38,7 @@ class TextgridParser(BaseParser):
             raise(TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
         return tg
 
-    def parse_discourse(self, path):
+    def parse_discourse(self, path, types_only = False):
         '''
         Parse a TextGrid file for later importing.
 
@@ -74,7 +74,7 @@ class TextgridParser(BaseParser):
                 self.annotation_types[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             else:
                 self.annotation_types[i].add(((x.mark.strip(), x.time) for x in ti))
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:

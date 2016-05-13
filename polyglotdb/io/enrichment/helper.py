@@ -3,6 +3,7 @@ import csv
 from collections import defaultdict
 
 def parse_string(value):
+    value = value.strip()
     if value.lower() == 'true':
         return True
     if value.lower() == 'false':
@@ -22,7 +23,7 @@ def parse_file(path, case_sensitive = True):
         reader = csv.DictReader(csvfile, dialect = dialect)
         header = reader.fieldnames
         key_name = header[0]
-        sanitized_names = [x.replace(' ', '_') for x in header]
+        sanitized_names = [x.strip().replace(' ', '_') for x in header]
         data = {}
         type_data = {}
         for line in reader:

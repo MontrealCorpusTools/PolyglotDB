@@ -97,7 +97,6 @@ WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, prev_node_word.id AS begin_id, foll_node_word.begin AS end, foll_node_word.id AS end_id, foll_node_word.begin - prev_node_word.end AS duration
 ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
         results = self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse)
-
         collapsed_results = []
         for i, r in enumerate(results):
             if len(collapsed_results) == 0:
@@ -137,6 +136,7 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
             current_id = None
         min_begin = 1000
         max_begin = 0
+        prev = None
         for i, r in enumerate(collapsed_results):
             if current is not None:
                 if current < min_begin:
@@ -146,10 +146,11 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
                 elif i == len(results) - 1:
                     utterances[-1] = (utterances[-1][0], r.begin_id)
                 elif len(utterances) != 0:
-                    dist_to_prev = current - utterances[-1][1]
+                    dist_to_prev = current - prev
                     dist_to_foll = r.end - r.begin
                     if dist_to_prev <= dist_to_foll:
                         utterances[-1] = (utterances[-1][0], r.begin_id)
+            prev = current
             current = r.end
             current_id = r.end_id
         if current < end_words[1].end:

@@ -29,6 +29,9 @@ class PGContextError(PGError):
 
 ## Corpus loading exceptions
 
+class ParseError(PGError):
+    pass
+
 class PGOSError(PGError):
     """
     Exception class for when files or directories that are expected are missing.
@@ -49,13 +52,13 @@ class DelimiterError(PGError):
     """
     pass
 
-class ILGError(PGError):
+class ILGError(ParseError):
     """
     Exception for general issues when loading interlinear gloss files.
     """
     pass
 
-class ILGWordMismatchError(PGError):
+class ILGWordMismatchError(ParseError):
     """
     Exception for when interlinear gloss files have different numbers of
     words across lines that should have a one-to-one mapping.
@@ -79,7 +82,7 @@ class ILGWordMismatchError(PGError):
                 self.details += '({}, {} words) '.format(k,len(v))
                 self.details += ' '.join(str(x) for x in v) + '\n'
 
-class ILGLinesMismatchError(PGError):
+class ILGLinesMismatchError(ParseError):
     """
     Exception for when the number of lines in a interlinear gloss file
     is not a multiple of the number of types of lines.
@@ -100,10 +103,10 @@ class ILGLinesMismatchError(PGError):
             else:
                 self.details += str(line) + '\n'
 
-class TextGridError(PGError):
+class TextGridError(ParseError):
     pass
 
-class TextGridTierError(PGError):
+class TextGridTierError(ParseError):
     """
     Exception for when a specified tier was not found in a TextGrid.
 
@@ -124,7 +127,7 @@ class TextGridTierError(PGError):
         for t in tiers:
             self.details += '{}\n'.format(t.name)
 
-class BuckeyeParseError(PGError):
+class BuckeyeParseError(ParseError):
     def __init__(self, path, misparsed_lines):
         if len(misparsed_lines) == 1:
             self.main = 'One line in \'{}\' was not parsed correctly.'.format(path)
