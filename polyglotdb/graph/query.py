@@ -2,8 +2,6 @@
 from collections import defaultdict
 import copy
 
-from py2neo.cypher import RecordList
-
 from .elements import (ContainsClauseElement,
                     AlignmentClauseElement,
                     RightAlignedClauseElement, LeftAlignedClauseElement,
@@ -575,7 +573,7 @@ class GraphQuery(object):
         cypher = self.cypher()
         value = self.corpus.execute_cypher(cypher, **self.cypher_params())
         self._aggregate = []
-        return value.one
+        return value.evaluate()
 
     def aggregate(self, *args):
         """
@@ -587,9 +585,11 @@ class GraphQuery(object):
         cypher = self.cypher()
         value = self.corpus.execute_cypher(cypher, **self.cypher_params())
         if self._group_by or any(not x.collapsing for x in self._aggregate):
-            return value
+            return list(value)
+        elif len(self._aggregate) > 1:
+            return list(value)[0]
         else:
-            return value.one
+            return value.evaluate()
 
     def set_type(self, *args, **kwargs):
         """
@@ -740,7 +740,6 @@ class SplitQuery(GraphQuery):
 
     def all(self):
         results = []
-        columns = None
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
                 return None
@@ -748,14 +747,8 @@ class SplitQuery(GraphQuery):
             if isinstance(r, list):
                 results.extend(r)
             else:
-                results.extend(r.records)
-        if isinstance(r, list):
-            return results
-        else:
-            if columns is None:
-                columns = r.columns
-            return RecordList(columns, results)
-
+                results.extend(x for x in r)
+        return results
 
     def delete(self):
         for q in self.split_queries():

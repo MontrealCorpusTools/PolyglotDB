@@ -83,21 +83,21 @@ def test_utterance_nosilence(graph_db, textgrid_test_dir):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].following_word is None)
+        assert(results[0]['following_word'] is None)
 
         q = g.query_graph(g.word).filter(g.word.begin == g.word.utterance.begin)
 
         results = q.all()
 
         assert(len(results) == 1)
-        assert(results[0].label == 'a')
+        assert(results[0]['label'] == 'a')
 
         q = g.query_graph(g.phone).filter(g.phone.begin == g.phone.utterance.begin)
 
         results = q.all()
 
         assert(len(results) == 1)
-        assert(results[0].label == 'a')
+        assert(results[0]['label'] == 'a')
 
         #Things like g.phone.word.following are currently broken in PolyglotDB
         return
@@ -110,7 +110,7 @@ def test_utterance_nosilence(graph_db, textgrid_test_dir):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].following_word is None)
+        assert(results[0]['following_word'] is None)
 
 
 def test_encode_utterances(acoustic_config):
@@ -128,9 +128,9 @@ def test_encode_utterances(acoustic_config):
                                 (24.174348, 24.706663), (24.980290, 25.251656)]
         assert(len(results) == len(expected_utterances))
         for i, r in enumerate(results):
-            assert(round(r.begin,3) == round(expected_utterances[i][0], 3))
-            assert(round(r.end,3) == round(expected_utterances[i][1],3))
-        assert(abs(results[0].duration - 6.482261) < 0.001)
+            assert(round(r['begin'],3) == round(expected_utterances[i][0], 3))
+            assert(round(r['end'],3) == round(expected_utterances[i][1],3))
+        assert(abs(results[0]['duration'] - 6.482261) < 0.001)
 
         g.encode_pauses(['sil'])
         g.encode_utterances(min_pause_length = 0)
@@ -146,15 +146,15 @@ def test_encode_utterances(acoustic_config):
         assert(len(g.query_graph(g.pause).all()) == 11)
         assert(len(results) == len(expected_utterances))
         for i, r in enumerate(results):
-            assert(round(r.begin,3) == round(expected_utterances[i][0], 3))
-            assert(round(r.end,3) == round(expected_utterances[i][1],3))
+            assert(round(r['begin'],3) == round(expected_utterances[i][0], 3))
+            assert(round(r['end'],3) == round(expected_utterances[i][1],3))
 
         q = g.query_graph(g.utterance).order_by(g.utterance.begin)
         results = q.all()
         for i, r in enumerate(results):
-            assert(round(r.begin,3) == round(expected_utterances[i][0], 3))
-            assert(round(r.end,3) == round(expected_utterances[i][1],3))
-            assert(r.label is None)
+            assert(round(r['begin'],3) == round(expected_utterances[i][0], 3))
+            assert(round(r['end'],3) == round(expected_utterances[i][1],3))
+            assert(r['label'] is None)
 
         q = g.query_graph(g.phone).filter(g.phone.begin == g.phone.utterance.begin)
         q = q.order_by(g.phone.begin)
@@ -165,7 +165,7 @@ def test_encode_utterances(acoustic_config):
         expected = ['dh', 'ah', 'l', 'ah', 'ae', 'hh', 'w', 'ah', 'ae', 'th']
 
         for i, r in enumerate(results):
-            assert(r.label == expected[i])
+            assert(r['label'] == expected[i])
 
 def test_speech_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -174,7 +174,7 @@ def test_speech_rate(acoustic_config):
         q = q.order_by(g.utterance.begin)
         print(q.cypher())
         results = q.all()
-        assert(abs(results[0].words_per_second - (26 / 6.482261)) < 0.001)
+        assert(abs(results[0]['words_per_second'] - (26 / 6.482261)) < 0.001)
 
 def test_query_speaking_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -183,7 +183,7 @@ def test_query_speaking_rate(acoustic_config):
         q = q.order_by(g.word.begin)
         print(q.cypher())
         results = q.all()
-        assert(abs(results[0].words_per_second - (26 / 6.482261)) < 0.001)
+        assert(abs(results[0]['words_per_second'] - (26 / 6.482261)) < 0.001)
 
 def test_utterance_position(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -197,7 +197,7 @@ def test_utterance_position(acoustic_config):
         q = q.columns(g.word.utterance.word.position.column_name('position'))
         print(q.cypher())
         results = q.all()
-        assert(results[0].position == 1)
+        assert(results[0]['position'] == 1)
 
         q = g.query_graph(g.word)
         q = q.filter(g.word.label == 'talking')
@@ -205,8 +205,8 @@ def test_utterance_position(acoustic_config):
         q = q.columns(g.word.utterance.word.position.column_name('position'))
         print(q.cypher())
         results = q.all()
-        assert(results[0].position == 7)
-        assert(results[1].position == 4)
+        assert(results[0]['position'] == 7)
+        assert(results[1]['position'] == 4)
 
 
 @pytest.mark.xfail
@@ -241,5 +241,5 @@ def test_complex_query(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
-        assert(results[0].num_segments_in_word == 5)
-        assert(results[0].num_syllables_in_word == 2)
+        assert(results[0]['num_segments_in_word'] == 5)
+        assert(results[0]['num_syllables_in_word'] == 2)
