@@ -13,12 +13,9 @@ def import_type_csvs(corpus_context, type_headers):
 
         corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
 
-        corpus_context.execute_cypher('CREATE INDEX ON :%s_type(label)' % (at,))
         properties = []
         for x in h:
             properties.append(prop_temp.format(name=x))
-            if x != 'id':
-                corpus_context.execute_cypher('CREATE INDEX ON :%s_type(%s)' % (at, x))
         if properties:
             type_prop_string = ', '.join(properties)
         else:
@@ -34,6 +31,10 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         log.info('Loading {} types...'.format(at))
         begin = time.time()
         corpus_context.execute_cypher(statement)
+        corpus_context.execute_cypher('CREATE INDEX ON :%s_type(label)' % (at,))
+        for x in h:
+            if x != 'id':
+                corpus_context.execute_cypher('CREATE INDEX ON :%s_type(%s)' % (at, x))
         log.info('Finished loading {} types!'.format(at))
         log.debug('{} type loading took: {} seconds.'.format(at, time.time() - begin))
         #os.remove(path) # FIXME Neo4j 2.3 does not release files
@@ -54,8 +55,6 @@ def import_csvs(corpus_context, data):
         corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
         properties = []
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(begin)' % (at,))
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(end)' % (at,))
 
         for x in data[at].token_property_keys:
             properties.append(prop_temp.format(name=x))
@@ -114,6 +113,8 @@ def import_csvs(corpus_context, data):
         log.info('Loading {} relationships...'.format(at))
         begin = time.time()
         corpus_context.execute_cypher(statement, discourse = data.name)
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(begin)' % (at,))
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(end)' % (at,))
         log.info('Finished loading {} relationships!'.format(at))
         log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
         #os.remove(path) # FIXME Neo4j 2.3 does not release files
@@ -150,7 +151,6 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.word_name,h))
         if v == int:
             template = int_set_template
         elif v == bool:
@@ -182,6 +182,8 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
                                 word_type = corpus_context.word_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.word_name,h))
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 
@@ -192,7 +194,6 @@ def import_feature_csvs(corpus_context, typed_data):
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name,h))
         if v == int:
             template = int_set_template
         elif v == bool:
@@ -216,6 +217,8 @@ def import_feature_csvs(corpus_context, typed_data):
                                 phone_type = corpus_context.phone_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name,h))
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_speaker_csvs(corpus_context, typed_data):
@@ -225,7 +228,6 @@ def import_speaker_csvs(corpus_context, typed_data):
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :Speaker(%s)' % h)
         if v == int:
             template = int_set_template
         elif v == bool:
@@ -248,6 +250,8 @@ def import_speaker_csvs(corpus_context, typed_data):
                                 corpus_name = corpus_context.corpus_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :Speaker(%s)' % h)
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_discourse_csvs(corpus_context, typed_data):
@@ -257,7 +261,6 @@ def import_discourse_csvs(corpus_context, typed_data):
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :Discourse(%s)' % h)
         if v == int:
             template = int_set_template
         elif v == bool:
@@ -280,6 +283,8 @@ def import_discourse_csvs(corpus_context, typed_data):
                                 corpus_name = corpus_context.corpus_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :Discourse(%s)' % h)
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_utterance_csv(corpus_context, discourse):
@@ -287,8 +292,6 @@ def import_utterance_csv(corpus_context, discourse):
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
-    corpus_context.execute_cypher('CREATE INDEX ON :utterance(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :utterance(end)')
     statement = '''LOAD CSV FROM "{path}" AS csvLine
             MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine[0]}})-[:spoken_by]->(s:Speaker:{corpus})
             WHERE d.name = {{discourse}}
@@ -305,6 +308,8 @@ def import_utterance_csv(corpus_context, discourse):
                 corpus = corpus_context.corpus_name,
                     word_type = corpus_context.word_name)
     corpus_context.execute_cypher(statement, discourse = discourse)
+    corpus_context.execute_cypher('CREATE INDEX ON :utterance(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :utterance(end)')
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_syllable_csv(corpus_context, split_name):
@@ -315,11 +320,6 @@ def import_syllable_csv(corpus_context, split_name):
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
 
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
     statement = '''USING PERIODIC COMMIT 500
     LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -381,6 +381,11 @@ def import_syllable_csv(corpus_context, split_name):
                     phone_name = corpus_context.phone_name,
                     discourse = split_name)
     corpus_context.execute_cypher(statement)
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
 def import_nonsyl_csv(corpus_context, split_name):
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
@@ -389,12 +394,6 @@ def import_nonsyl_csv(corpus_context, split_name):
 
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
-
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
     statement = '''USING PERIODIC COMMIT 500
     LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -446,6 +445,11 @@ with o, w, s, p, csvLine
                     discourse = split_name
                 )
     corpus_context.execute_cypher(statement)
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
 def import_subannotation_csv(corpus_context, type, annotated_type, props):
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
@@ -460,7 +464,6 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
     for p in props:
         if p in ['id', 'annotated_id', 'begin', 'end']:
             continue
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (type, p))
         properties.append(prop_temp.format(name = p))
     if properties:
         properties = ', ' + ', '.join(properties)
@@ -479,4 +482,8 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
                     type = type,
                     properties = properties)
     corpus_context.execute_cypher(statement)
+    for p in props:
+        if p in ['id', 'annotated_id']:
+            continue
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (type, p))
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
