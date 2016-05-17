@@ -74,7 +74,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
             call_back(0, number)
         statement = '''MATCH (st:syllable_type:{corpus})
                 WITH st
-                LIMIT 100
+                LIMIT 1
                 MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s),
                 (s:syllable:{corpus})-[:is_a]->(st),
                 (s)-[:contained_by]->(w:{word_name}:{corpus})

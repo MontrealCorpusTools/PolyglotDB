@@ -31,6 +31,8 @@ def test_load_fave(fave_test_dir, graph_db):
 
         c.encode_pauses('<SIL>')
 
+        c.encode_utterances(min_pause_length = 0)
+
         q = c.query_graph(c.word).filter(c.word.label == 'PLANET')
         q = q.filter(c.word.speaker.name == 'Gary Salvi')
         q = q.order_by(c.word.begin)

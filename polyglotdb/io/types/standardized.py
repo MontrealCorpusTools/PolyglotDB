@@ -29,7 +29,8 @@ class PGAnnotation(object):
         if corpus is not None:
             value += ' ' + corpus
         m.update(value.encode())
-        return m.hexdigest()
+        out = m.hexdigest()
+        return out
 
     def type_keys(self):
         keys = list(self.type_properties.keys())
@@ -70,6 +71,18 @@ class PGAnnotationType(object):
         self.type_properties = set()
         self.token_properties = set()
         self.is_word = False
+        self._lookup_dict = None
+
+    def optimize_lookups(self):
+        if self._lookup_dict is not None:
+            return
+        self._list = sorted(self._list, key = lambda x: x.begin)
+        if len(self._list) > 1000:
+            self._lookup_dict = {}
+            cur = 0
+            while cur < len(self._list):
+                self._lookup_dict[cur] = self._list[cur].begin
+                cur += 1000
 
     def add(self, annotation):
         self._list.append(annotation)
@@ -93,26 +106,62 @@ class PGAnnotationType(object):
         return speakers
 
     def lookup(self, timepoint, speaker = None):
+        if self._lookup_dict is not None:
+            prev = 0
+            for ind, time in sorted(self._lookup_dict.items()):
+                if timepoint < time:
+                    if prev != 0:
+                        prev -= 500
+                    lookup_list = self._list[prev:ind+100]
+                    break
+                prev = ind
+            else:
+                if ind != 0:
+                    ind -= 500
+                lookup_list = self._list[ind:]
+                #print('didn\'t break')
+            #print(sorted(self._lookup_dict.items()))
+            #print(prev, ind, time, timepoint, len(lookup_list), lookup_list[0].begin, lookup_list[-1].end)
+        else:
+            lookup_list = self._list
         if speaker is None:
-            return next((x for x in self._list
+            return next((x for x in lookup_list
                             if timepoint >= x.begin and
                                 timepoint <= x.end),
                         None)
         else:
-            return next((x for x in self._list
+            return next((x for x in lookup_list
                             if x.speaker == speaker and
                                 timepoint >= x.begin and
                                 timepoint <= x.end),
                         None)
 
     def lookup_range(self, begin, end, speaker = None):
+        if self._lookup_dict is not None:
+            prev = 0
+            mapping = sorted(self._lookup_dict.items())
+            for i, (ind, time) in enumerate(mapping):
+                if begin < time:
+                    if end < time:
+                        lookup_list = self._list[prev:ind]
+                    else:
+                        try:
+                            lookup_list = self._list[prev:mapping[i+1][0]]
+                        except IndexError:
+                            lookup_list = self._list[prev:]
+                    break
+                prev = ind
+            else:
+                lookup_list = self._list[ind:]
+        else:
+            lookup_list = self._list
         if speaker is None:
-            return sorted([x for x in self._list
+            return sorted([x for x in lookup_list
                             if x.midpoint >= begin and
                                 x.midpoint <= end],
                         key = lambda x: x.begin)
         else:
-            return sorted([x for x in self._list
+            return sorted([x for x in lookup_list
                             if x.speaker == speaker and
                                 x.midpoint >= begin and
                                 x.midpoint <= end],

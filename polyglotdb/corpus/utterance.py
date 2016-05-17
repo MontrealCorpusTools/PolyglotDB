@@ -137,6 +137,7 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
             current_id = None
         min_begin = 1000
         max_begin = 0
+        prev = None
         for i, r in enumerate(collapsed_results):
             if current is not None:
                 if current < min_begin:
@@ -150,6 +151,7 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
                     dist_to_foll = r['end'] - r['begin']
                     if dist_to_prev <= dist_to_foll:
                         utterances[-1] = (utterances[-1][0], r['begin_id'])
+            prev = current
             current = r['end']
             current_id = r['end_id']
         if current < end_words[1]['end']:

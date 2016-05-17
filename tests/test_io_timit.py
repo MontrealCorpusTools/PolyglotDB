@@ -59,7 +59,7 @@ def test_load_phones(timit_test_dir):
 def test_load_words(timit_test_dir):
     words = read_words(os.path.join(timit_test_dir, 'test.WRD'))
     expected_words = [
-        {'spelling':'sil','begin': 0,'end': 2400 / 16000},
+        {'spelling':'<SIL>','begin': 0,'end': 2400 / 16000},
         {'spelling':'she','begin': 2400 / 16000,'end': 5480 / 16000},
         {'spelling':'had','begin': 5480 / 16000,'end': 9859 / 16000,},
         {'spelling':'your','begin': 9859 / 16000,'end': 12200 / 16000,},
@@ -68,9 +68,9 @@ def test_load_words(timit_test_dir):
         {'spelling':'in','begin': 22511 / 16000,'end': 25400 / 16000},
         {'spelling':'greasy','begin': 25400 / 16000,'end': 32584 / 16000},
         {'spelling':'wash','begin': 32584 / 16000,'end': 38417 / 16000},
-        {'spelling': 'sil','begin': 38417 / 16000, 'end':38833 / 16000},
+        {'spelling': '<SIL>','begin': 38417 / 16000, 'end':38833 / 16000},
         {'spelling':'water','begin': 38833 / 16000,'end': 43730 / 16000},
-        {'spelling': 'sil','begin': 43730 / 16000, 'end':45067 / 16000},
+        {'spelling': '<SIL>','begin': 43730 / 16000, 'end':45067 / 16000},
         {'spelling':'all','begin': 45067 / 16000,'end': 48200 / 16000},
         {'spelling':'year','begin': 48200 / 16000,'end': 53756 / 16000}]
     for i,w in enumerate(expected_words):

@@ -42,7 +42,7 @@ class BuckeyeParser(BaseParser):
                     stop_check = stop_check, call_back = call_back)
         self.speaker_parser = FilenameSpeakerParser(3)
 
-    def parse_discourse(self, word_path):
+    def parse_discourse(self, word_path, types_only = False):
         '''
         Parse a Buckeye file for later importing.
 
@@ -123,7 +123,7 @@ class BuckeyeParser(BaseParser):
             self.annotation_types[3].add([(w['category'], beg, end)])
             self.annotation_types[4].add(found)
 
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:

@@ -44,13 +44,14 @@ def test_load(textgrid_test_dir, graph_db):
         print([(x.linguistic_type, x.name) for x in parser.annotation_types])
         c.load(parser, path)
 
+@pytest.mark.xfail
 def test_directory(textgrid_test_dir, graph_db):
     path = os.path.join(textgrid_test_dir, 'phone_word.TextGrid')
     with CorpusContext('test_textgrid_directory', **graph_db) as c:
         c.reset()
-        with pytest.raises(TextGridError):
-            parser = inspect_textgrid(path)
-            c.load(parser, textgrid_test_dir)
+        parser = inspect_textgrid(path)
+        unparsed = c.load(parser, textgrid_test_dir)
+        assert(len(unparsed) > 0)
 
 @pytest.mark.xfail
 def test_inspect_textgrid_directory(textgrid_test_dir):

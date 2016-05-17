@@ -26,7 +26,7 @@ class TranscriptionTextParser(BaseParser):
                     make_label = True,
                     stop_check = stop_check, call_back = call_back)
 
-    def parse_discourse(self, path):
+    def parse_discourse(self, path, types_only = False):
         '''
         Parse a text file for later importing.
 
@@ -72,7 +72,7 @@ class TranscriptionTextParser(BaseParser):
             a.add(((x, num_annotations + i) for i, x in enumerate(line)))
             num_annotations += len(line)
 
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:
