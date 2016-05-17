@@ -33,7 +33,7 @@ class IlgParser(BaseParser):
                     make_label = True,
                     stop_check = stop_check, call_back = call_back)
 
-    def parse_discourse(self, path):
+    def parse_discourse(self, path, types_only = False):
         '''
         Parse an ILG file for later importing.
 
@@ -98,7 +98,7 @@ class IlgParser(BaseParser):
         if len(mismatching_lines) > 0:
             raise(ILGWordMismatchError(mismatching_lines))
 
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:

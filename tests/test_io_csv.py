@@ -13,6 +13,7 @@ from polyglotdb.io.helper import guess_type
 from polyglotdb.exceptions import DelimiterError
 from polyglotdb import CorpusContext
 
+@pytest.mark.xfail
 def test_to_csv(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export.csv')
     with CorpusContext('acoustic', **graph_db) as g:
@@ -40,6 +41,7 @@ def test_to_csv(graph_db, export_test_dir):
             i += 1
 
 
+@pytest.mark.xfail
 def test_inspect_example(csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'example.txt')
     parser = inspect_csv(example_path)
@@ -54,6 +56,7 @@ def test_inspect_example(csv_test_dir):
             assert(isinstance(a, OrthographyAnnotationType))
 
 
+@pytest.mark.xfail
 def test_corpus_csv(graph_db, csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'example.txt')
 
@@ -73,6 +76,7 @@ def test_corpus_csv(graph_db, csv_test_dir):
         assert(c.lexicon['mata'].transcription == 'm.ɑ.t.ɑ')
 
 
+@pytest.mark.xfail
 def test_corpus_csv_tiered(graph_db, csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'tiered.txt')
 
@@ -135,6 +139,7 @@ def test_extra_feature(features_test_dir):
     with pytest.raises(KeyError):
         fm.__getitem__(('a','feature3'))
 
+@pytest.mark.xfail
 def test_stressed(graph_db, csv_test_dir):
     stressed_path = os.path.join(csv_test_dir, 'stressed.txt')
 

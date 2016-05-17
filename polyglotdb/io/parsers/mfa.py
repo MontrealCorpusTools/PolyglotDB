@@ -21,7 +21,7 @@ class MfaParser(TextgridParser):
                 found_phone = True
         return found_word and found_phone
 
-    def parse_discourse(self, path):
+    def parse_discourse(self, path, types_only = False):
         '''
         Parse a TextGrid file for later importing.
 
@@ -56,7 +56,7 @@ class MfaParser(TextgridParser):
                 self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             elif ti.name == 'phones':
                 self.annotation_types[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:

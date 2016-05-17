@@ -9,6 +9,7 @@ from polyglotdb.exceptions import TextGridError
 from ..helper import find_wav_path
 
 from .base import DiscourseData
+from .speaker import DirectorySpeakerParser
 
 class LabbCatParser(TextgridParser):
     def _is_valid(self, tg):
@@ -21,7 +22,7 @@ class LabbCatParser(TextgridParser):
                 found_phone = True
         return found_word and found_phone
 
-    def parse_discourse(self, path):
+    def parse_discourse(self, path, types_only = False):
         '''
         Parse a TextGrid file for later importing.
 
@@ -39,7 +40,7 @@ class LabbCatParser(TextgridParser):
         if not self._is_valid(tg):
             raise(TextGridError('The file "{}" cannot be parsed by the LaBB-CAT parser.'.format(path)))
         name = os.path.splitext(os.path.split(path)[1])[0]
-
+        self.speaker_parser = DirectorySpeakerParser()
         if self.speaker_parser is not None:
             speaker = self.speaker_parser.parse_path(path)
         else:
@@ -55,7 +56,7 @@ class LabbCatParser(TextgridParser):
                 self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             elif ti.name.startswith('segment'):
                 self.annotation_types[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:

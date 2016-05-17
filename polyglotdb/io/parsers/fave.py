@@ -35,7 +35,7 @@ class FaveParser(TextgridParser):
         found_phone = all(found_phones.values())
         return found_word and found_phone
 
-    def parse_discourse(self, path):
+    def parse_discourse(self, path, types_only = False):
         '''
         Parse a TextGrid file for later importing.
 
@@ -68,7 +68,7 @@ class FaveParser(TextgridParser):
             at.speaker = speaker
             at.add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             self.annotation_types.append(at)
-        pg_annotations = self._parse_annotations()
+        pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         data.wav_path = find_wav_path(path)
