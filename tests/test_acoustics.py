@@ -12,7 +12,6 @@ def test_wav_info(acoustic_utt_config):
         assert(sf.n_channels == 1)
 
 def test_analyze_acoustics(acoustic_utt_config):
-    return
     with CorpusContext(acoustic_utt_config) as g:
         g.analyze_acoustics()
 
