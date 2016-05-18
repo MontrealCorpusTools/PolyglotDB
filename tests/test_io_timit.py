@@ -89,7 +89,7 @@ def test_load_discourse_timit(graph_db, timit_test_dir):
 
         q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
         results = q.all()
-        assert(all(x.speaker == 'timit' for x in results))
+        assert(all(x['speaker'] == 'timit' for x in results))
 
 def test_load_directory_timit(graph_db, timit_test_dir):
     parser = inspect_timit(timit_test_dir)
@@ -102,4 +102,4 @@ def test_load_directory_timit(graph_db, timit_test_dir):
 
         q = q.columns(c.surface_transcription.speaker.name.column_name('speaker'))
         results = q.all()
-        assert(all(x.speaker == 'timit' for x in results))
+        assert(all(x['speaker'] == 'timit' for x in results))

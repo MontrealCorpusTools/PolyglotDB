@@ -19,7 +19,7 @@ class BaseAnnotation(object):
     def node(self, item):
         self._node = item
         self._id = item.properties['id']
-        for x in self._node.labels:
+        for x in self._node.labels():
             if x in self.corpus_context.hierarchy:
                 self._type = x
                 break
@@ -61,6 +61,9 @@ class LinguisticAnnotation(BaseAnnotation):
 
         self._preloaded = False
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     @property
     def properties(self):
         return sorted(set(self._node.properties.keys()) | set(self._type_node.properties.keys()))
@@ -74,66 +77,78 @@ class LinguisticAnnotation(BaseAnnotation):
             if self._previous == 'empty':
                 return None
             if self._previous is None:
-                res = self.corpus_context.execute_cypher('''Match (previous_type)<-[:is_a]-(previous_token)-[:precedes]->(token {id: {id}}) RETURN previous_token, previous_type''', id = self._id)
+                res = list(self.corpus_context.execute_cypher(
+                    '''MATCH (previous_type)<-[:is_a]-(previous_token)-[:precedes]->(token {id: {id}})
+                        RETURN previous_token, previous_type''', id = self._id))
                 if len(res) == 0:
                     self._previous = 'empty'
                     return None
                 self._previous = LinguisticAnnotation(self.corpus_context)
-                self._previous.node = res[0].previous_token
-                self._previous.type_node = res[0].previous_type
+                self._previous.node = res[0]['previous_token']
+                self._previous.type_node = res[0]['previous_type']
             return self._previous
         if key == 'following':
             if self._following == 'empty':
                 return None
             if self._following is None:
-                res = self.corpus_context.execute_cypher('''Match (following_type)<-[:is_a]-(following_token)<-[:precedes]-(token {id: {id}}) RETURN following_token, following_type''', id = self._id)
+                res = list(self.corpus_context.execute_cypher(
+                    '''MATCH (following_type)<-[:is_a]-(following_token)<-[:precedes]-(token {id: {id}})
+                            RETURN following_token, following_type''', id = self._id))
                 if len(res) == 0:
                     self._following = 'empty'
                     return None
                 self._following = LinguisticAnnotation(self.corpus_context)
-                self._following.node = res[0].following_token
-                self._following.type_node = res[0].following_type
+                self._following.node = res[0]['following_token']
+                self._following.type_node = res[0]['following_type']
             return self._following
         if key == 'speaker':
             if self._speaker == 'empty':
                 return None
             if self._speaker is None:
-                res = self.corpus_context.execute_cypher('''Match (speaker:Speaker)<-[:spoken_by]-(token {id: {id}}) RETURN speaker''', id = self._id)
+                res = list(self.corpus_context.execute_cypher(
+                    '''MATCH (speaker:Speaker)<-[:spoken_by]-(token {id: {id}})
+                        RETURN speaker''', id = self._id))
                 if len(res) == 0:
                     self._speaker = 'empty'
                     return None
                 self._speaker = Speaker(self.corpus_context)
-                self._speaker.node = res[0].speaker
+                self._speaker.node = res[0]['speaker']
             return self._speaker
         if key == 'discourse':
             if self._discourse == 'empty':
                 return None
             if self._discourse is None:
-                res = self.corpus_context.execute_cypher('''Match (discourse:Discourse)<-[:spoken_in]-(token {id: {id}}) RETURN discourse''', id = self._id)
+                res = list(self.corpus_context.execute_cypher(
+                    '''MATCH (discourse:Discourse)<-[:spoken_in]-(token {id: {id}})
+                        RETURN discourse''', id = self._id))
                 if len(res) == 0:
                     self._discourse = 'empty'
                     return None
                 self._discourse = Discourse(self.corpus_context)
-                self._discourse.node = res[0].discourse
+                self._discourse.node = res[0]['discourse']
             return self._discourse
         if key in self.corpus_context.hierarchy.get_lower_types(self._type):
             if key not in self._subs:
-                res = self.corpus_context.execute_cypher('''Match (lower_type)<-[:is_a]-(lower_token:{a_type})-[:contained_by*1..]->(token {{id: {{id}}}}) RETURN lower_token, lower_type ORDER BY lower_token.begin'''.format(a_type = key), id = self._id)
+                res = self.corpus_context.execute_cypher(
+                    '''MATCH (lower_type)<-[:is_a]-(lower_token:{a_type})-[:contained_by*1..]->(token {{id: {{id}}}})
+                        RETURN lower_token, lower_type ORDER BY lower_token.begin'''.format(a_type = key), id = self._id)
                 self._subs[key] = []
                 for r in res:
                     a = LinguisticAnnotation(self.corpus_context)
-                    a.node = r.lower_token
-                    a.type_node = r.lower_type
+                    a.node = r['lower_token']
+                    a.type_node = r['lower_type']
                     self._subs[key].append(a)
             return self._subs[key]
         if key in self.corpus_context.hierarchy.get_higher_types(self._type):
             if key not in self._supers:
-                res = self.corpus_context.execute_cypher('''Match (higher_type)<-[:is_a]-(higher_token:{a_type})<-[:contained_by*1..]-(token {{id: {{id}}}}) RETURN higher_token, higher_type'''.format(a_type = key), id = self._id)
+                res = list(self.corpus_context.execute_cypher(
+                    '''MATCH (higher_type)<-[:is_a]-(higher_token:{a_type})<-[:contained_by*1..]-(token {{id: {{id}}}})
+                        RETURN higher_token, higher_type'''.format(a_type = key), id = self._id))
                 if len(res) == 0:
                     return None
                 a =  LinguisticAnnotation(self.corpus_context)
-                a.node = res[0].higher_token
-                a.type_node = res[0].higher_type
+                a.node = res[0]['higher_token']
+                a.type_node = res[0]['higher_type']
                 self._supers[key] = a
             return self._supers[key]
         try:
@@ -141,13 +156,15 @@ class LinguisticAnnotation(BaseAnnotation):
                 if self._preloaded and key not in self._subannotations:
                     return []
                 elif key not in self._subannotations:
-                    res = self.corpus_context.execute_cypher('''Match (sub:{a_type})-[:annotates]->(token {{id: {{id}}}}) RETURN sub'''.format(a_type = key), id = self._id)
+                    res = self.corpus_context.execute_cypher(
+                        '''MATCH (sub:{a_type})-[:annotates]->(token {{id: {{id}}}})
+                            RETURN sub'''.format(a_type = key), id = self._id)
 
                     self._subannotations[key] = []
                     for r in res:
                         a = SubAnnotation(self.corpus_context)
                         a._annotation = self
-                        a.node = r.sub
+                        a.node = r['sub']
                         self._subannotations[key].append(a)
                 return self._subannotations[key]
         except KeyError:
@@ -160,10 +177,10 @@ class LinguisticAnnotation(BaseAnnotation):
     def update_properties(self,**kwargs):
         for k,v in kwargs.items():
             if k in self._type_node.properties:
-                 self._type_node.properties[k] = v
-            self._node.properties[k] = v
+                 self._type_node.update(**{k: v})
+            self._node.update(**{k: v})
         if self._node['begin'] > self._node['end']:
-            self._node['begin'], self._node['end'] = self._node['end'], self._node['begin']
+            self._node.update(begin = self._node['end'], end = self._node['begin'])
 
     def save(self):
         self.corpus_context.graph.push(self.node)
@@ -172,9 +189,11 @@ class LinguisticAnnotation(BaseAnnotation):
                 s.save()
 
     def load(self, id):
-        res = self.corpus_context.execute_cypher('''Match (token {id: {id}})-[:is_a]->(type) RETURN token, type''', id = id)
-        self.node = res[0].token
-        self.type_node = res[0].type
+        res = list(self.corpus_context.execute_cypher(
+            '''MATCH (token {id: {id}})-[:is_a]->(type)
+                RETURN token, type''', id = id))
+        self.node = res[0]['token']
+        self.type_node = res[0]['type']
 
     @property
     def type_node(self):
@@ -263,10 +282,9 @@ class SubAnnotation(BaseAnnotation):
         raise(AttributeError)
 
     def update_properties(self,**kwargs):
-        for k,v in kwargs.items():
-             self._node.properties[k] = v
+        self._node.update(**kwargs)
         if self._node['begin'] > self._node['end']:
-            self._node['begin'], self._node['end'] = self._node['end'], self._node['begin']
+            self._node.update(begin = self._node['end'], end = self._node['begin'])
 
     @property
     def node(self):
@@ -276,17 +294,19 @@ class SubAnnotation(BaseAnnotation):
     def node(self, item):
         self._node = item
         self._id = item.properties['id']
-        for x in self._node.labels:
+        for x in self._node.labels():
             if x in self.corpus_context.hierarchy.subannotations[self._annotation._type]:
                 self._type = x
                 break
 
     def load(self, id):
-        res = self.corpus_context.execute_cypher('''Match (sub {id: {id}})-[:annotates]->(token)-[:is_a]->(type) RETURN sub, token, type''', id = id)
+        res = list(self.corpus_context.execute_cypher(
+            '''MATCH (sub {id: {id}})-[:annotates]->(token)-[:is_a]->(type)
+                RETURN sub, token, type''', id = id))
         self._annotation = LinguisticAnnotation(self.corpus_context)
-        self._annotation.node = res[0].token
-        self._annotation.type_node = res[0].type
-        self.node = res[0].sub
+        self._annotation.node = res[0]['token']
+        self._annotation.type_node = res[0]['type']
+        self.node = res[0]['sub']
 
     def save(self):
         self.corpus_context.graph.push(self._node)
@@ -312,11 +332,13 @@ class Speaker(SubAnnotation):
     @node.setter
     def node(self, item):
         self._node = item
-        self._id = item.properties['id']
+        self._id = item.properties['name']
 
     def load(self, id):
-        res = self.corpus_context.execute_cypher('''Match (speaker:{a_type} {{id: {{id}}}}) RETURN speaker'''.format(a_type = self._type), id = id)
-        self.node = res[0].speaker
+        res = list(self.corpus_context.execute_cypher(
+            '''MATCH (speaker:{a_type} {{id: {{id}}}})
+                RETURN speaker'''.format(a_type = self._type), id = id))
+        self.node = res[0]['speaker']
 
 class Discourse(Speaker):
     def __init__(self, corpus_context = None):

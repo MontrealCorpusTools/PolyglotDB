@@ -11,7 +11,7 @@ def test_basic_query(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
         print(q.cypher())
-        assert(all(x.label == 'are' for x in q.all()))
+        assert(all(x['label'] == 'are' for x in q.all()))
     assert('timed' in get_corpora_list(timed_config))
 
 @pytest.mark.xfail
@@ -22,7 +22,7 @@ def test_aggregate_element(timed_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
-        assert(all(x.word_label == 'are' for x in results))
+        assert(all(x['word_label'] == 'are' for x in results))
 
 def test_strings(timed_config):
     with CorpusContext(timed_config) as g:
@@ -32,8 +32,8 @@ def test_strings(timed_config):
         print(q.cypher())
         results = q.all()
 
-        assert(all(x.label == 'are' for x in results))
-        assert(all(x.phones == ['aa','r'] for x in results))
+        assert(all(x['label'] == 'are' for x in results))
+        assert(all(x['phones'] == ['aa','r'] for x in results))
 
 def test_columns(timed_config):
     with CorpusContext(timed_config) as g:
@@ -41,18 +41,18 @@ def test_columns(timed_config):
         q = q.columns(g.phone.word.label.column_name('word_label'), g.phone.line.id)
         print(q.cypher())
         results = q.all()
-        assert(all(x.word_label in ['are', 'dogs'] for x in results))
+        assert(all(x['word_label'] in ['are', 'dogs'] for x in results))
 
 def test_discourse_query(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).columns(g.word.discourse.name.column_name('discourse'))
         print(q.cypher())
-        assert(all(x.discourse == 'test_timed' for x in q.all()))
+        assert(all(x['discourse'] == 'test_timed' for x in q.all()))
 
         q = g.query_graph(g.word).filter(g.word.discourse.name == 'test')
         q = q.columns(g.word.discourse.name.column_name('discourse'))
         print(q.cypher())
-        assert(all(x.discourse == 'test_timed' for x in q.all()))
+        assert(all(x['discourse'] == 'test_timed' for x in q.all()))
 
 
 def test_order_by(timed_config):
@@ -62,8 +62,8 @@ def test_order_by(timed_config):
         print(q.cypher())
         print(q.all())
         for x in q.all():
-            assert(x.begin > prev)
-            prev = x.begin
+            assert(x['begin'] > prev)
+            prev = x['begin']
     assert('timed' in get_corpora_list(timed_config))
 
 def test_basic_discourses_prop(timed_config):
@@ -92,8 +92,8 @@ def test_query_previous_previous(timed_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].previous_label == 'are')
-        assert(results[0].previous_previous_label == 'cats')
+        assert(results[0]['previous_label'] == 'are')
+        assert(results[0]['previous_previous_label'] == 'cats')
 
 def test_query_following(timed_config):
     with CorpusContext(timed_config) as g:
@@ -118,8 +118,8 @@ def test_query_following_following(timed_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].following_label == 'are')
-        assert(results[0].following_following_label == 'cute')
+        assert(results[0]['following_label'] == 'are')
+        assert(results[0]['following_following_label'] == 'cute')
 
 def test_query_time(timed_config):
     with CorpusContext(timed_config) as g:
@@ -172,43 +172,42 @@ def test_query_alignment(timed_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].begin == 0)
+        assert(results[0]['begin'] == 0)
 
-        print('BEGIN PROBLEM')
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter(g.phone.begin == g.phone.line.begin).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].begin == 0)
+        assert(results[0]['begin'] == 0)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
         q = q.filter(g.phone.begin != g.phone.line.begin).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].begin == 0.8)
+        assert(results[0]['begin'] == 0.8)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 's')
         q = q.filter_right_aligned(g.line).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].begin == 3.5)
+        assert(results[0]['begin'] == 3.5)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 's')
         q = q.filter(g.phone.end == g.phone.line.end).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].begin == 3.5)
+        assert(results[0]['begin'] == 3.5)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 's')
         q = q.filter(g.phone.end != g.phone.line.end).times()
         print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
-        assert(results[0].begin == 0.3)
+        assert(results[0]['begin'] == 0.3)
 
 def test_query_previous_left_aligned_line(timed_config):
     with CorpusContext(timed_config) as g:
@@ -315,14 +314,14 @@ def test_query_duration(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 3)
-        assert(abs(results[0].begin - 2.704) < 0.001)
-        assert(abs(results[0].duration - 0.078) < 0.001)
+        assert(abs(results[0]['begin'] - 2.704) < 0.001)
+        assert(abs(results[0]['duration'] - 0.078) < 0.001)
 
-        assert(abs(results[1].begin - 9.320) < 0.001)
-        assert(abs(results[1].duration - 0.122) < 0.001)
+        assert(abs(results[1]['begin'] - 9.320) < 0.001)
+        assert(abs(results[1]['duration'] - 0.122) < 0.001)
 
-        assert(abs(results[2].begin - 24.560) < 0.001)
-        assert(abs(results[2].duration - 0.039) < 0.001)
+        assert(abs(results[2]['begin'] - 24.560) < 0.001)
+        assert(abs(results[2]['duration'] - 0.039) < 0.001)
     assert('acoustic' in get_corpora_list(acoustic_config))
 
 
@@ -342,14 +341,14 @@ def test_subset(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 3)
-        assert(abs(results[0].begin - 2.704) < 0.001)
-        assert(abs(results[0].duration - 0.078) < 0.001)
+        assert(abs(results[0]['begin'] - 2.704) < 0.001)
+        assert(abs(results[0]['duration'] - 0.078) < 0.001)
 
-        assert(abs(results[1].begin - 9.320) < 0.001)
-        assert(abs(results[1].duration - 0.122) < 0.001)
+        assert(abs(results[1]['begin'] - 9.320) < 0.001)
+        assert(abs(results[1]['duration'] - 0.122) < 0.001)
 
-        assert(abs(results[2].begin - 24.560) < 0.001)
-        assert(abs(results[2].duration - 0.039) < 0.001)
+        assert(abs(results[2]['begin'] - 24.560) < 0.001)
+        assert(abs(results[2]['duration'] - 0.039) < 0.001)
 
         syllabics = ['aa','ih']
         q = g.query_graph(g.phone).filter(g.phone.label.in_(syllabics))
@@ -363,7 +362,7 @@ def test_subset(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
-        assert(results[0].num_syllables_in_word == 2)
+        assert(results[0]['num_syllables_in_word'] == 2)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.filter(g.phone.following.label == 'k')
@@ -374,8 +373,8 @@ def test_subset(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
-        assert(results[0].num_segments_in_word == 5)
-        assert(results[0].num_syllables_in_word == 2)
+        assert(results[0]['num_segments_in_word'] == 5)
+        assert(results[0]['num_syllables_in_word'] == 2)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 't')
         q = q.filter(g.phone.following.type_subset == '+syllabic')
@@ -383,7 +382,7 @@ def test_subset(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
-        assert(results[0].following == 'aa')
+        assert(results[0]['following'] == 'aa')
 
 
 def test_mirrored(acoustic_config):
@@ -437,8 +436,8 @@ def test_cached(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
-        assert(results[0].num_segments_in_word == 5)
-        assert(results[0].num_syllables_in_word == 2)
+        assert(results[0]['num_segments_in_word'] == 5)
+        assert(results[0]['num_syllables_in_word'] == 2)
 
 
 def test_or_clause(timed_config):
@@ -457,8 +456,8 @@ def test_or_clause(timed_config):
         assert(len(expected) == len(results))
 
         for i, r in enumerate(results):
-            assert(r.label == expected[i].label)
-            assert(r.begin == expected[i].begin)
+            assert(r['label'] == expected[i]['label'])
+            assert(r['begin'] == expected[i]['begin'])
 
         q = g.query_graph(g.word).filter(or_(g.word.label == 'are', g.word.label == 'guess'))
         q = q.order_by(g.word.begin)
@@ -469,5 +468,5 @@ def test_or_clause(timed_config):
         assert(len(expected) == len(results))
 
         for i, r in enumerate(results):
-            assert(r.label == expected[i].label)
-            assert(r.begin == expected[i].begin)
+            assert(r['label'] == expected[i]['label'])
+            assert(r['begin'] == expected[i]['begin'])

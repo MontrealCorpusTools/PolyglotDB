@@ -33,7 +33,7 @@ return onset, count(onset) as freq'''.format(corpus_name = self.corpus_name,
         res = self.execute_cypher(statement)
         data = {}
         for r in res:
-            data[tuple(r.onset)] = r.freq
+            data[tuple(r['onset'])] = r['freq']
         return data
 
     def find_codas(self):
@@ -58,7 +58,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
         res = self.execute_cypher(statement)
         data = {}
         for r in res:
-            data[tuple(r.coda)] = r.freq
+            data[tuple(r['coda'])] = r['freq']
         return data
 
     def encode_syllabic_segments(self, phones):
@@ -92,7 +92,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher(statement).one
+            deleted = self.execute_cypher(statement).evaluate()
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
@@ -121,7 +121,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
 
         statement = '''MATCH (n:{}:syllabic) return n.label as label'''.format(self.corpus_name)
         res = self.execute_cypher(statement)
-        syllabics = set(x.label for x in res)
+        syllabics = set(x['label'] for x in res)
 
         word_type = getattr(self, self.word_name)
         phone_type = getattr(word_type, self.phone_name)
@@ -155,10 +155,10 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
             non_syls = []
             prev_id = None
             for w in results:
-                phones = w.phones
-                phone_ids = w.phone_id
-                phone_begins = w.begins
-                phone_ends = w.ends
+                phones = w['phones']
+                phone_ids = w['phone_id']
+                phone_begins = w['begins']
+                phone_ends = w['ends']
                 vow_inds = [i for i,x in enumerate(phones) if x in syllabics]
                 if len(vow_inds) == 0:
                     cur_id = uuid1()
