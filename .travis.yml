@@ -8,16 +8,21 @@ branches:
 notifications:
   email: false
 
-sudo: required
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
 
 before_install:
   # install Neo4j locally:
-  - sudo apt-get update && sudo apt-get install oracle-java8-installer
+  #- sudo apt-get update && sudo apt-get install oracle-java8-installer
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - bash continuous-integration/travis/install.sh
   - ls $HOME/neo4j/neo4j
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
+  #- sudo rm -rf /dev/shm
+  #- sudo ln -s /run/shm /dev/shm
 
 # Install packages
 install:
