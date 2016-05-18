@@ -1,6 +1,6 @@
-language: python
-python:
-  - 3.5
+language: java
+jdk:
+  - oraclejdk8
 branches:
   only:
     - master
@@ -9,10 +9,6 @@ notifications:
   email: false
 
 sudo: false
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
 
 before_install:
   # install Neo4j locally:
