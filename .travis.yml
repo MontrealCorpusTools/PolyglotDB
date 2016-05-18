@@ -9,7 +9,7 @@ notifications:
   email: false
 
 sudo: required
-
+dist: trusty
 
 before_install:
   # install Neo4j locally:
