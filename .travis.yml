@@ -9,8 +9,10 @@ notifications:
   email: false
 
 sudo: false
-jdk:
-  - oraclejdk8
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
 
 before_install:
   # install Neo4j locally:
