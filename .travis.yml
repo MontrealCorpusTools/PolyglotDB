@@ -8,7 +8,7 @@ branches:
 notifications:
   email: false
 
-sudo: false
+sudo: true
 
 addons:
   apt:
@@ -21,8 +21,8 @@ before_install:
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - bash continuous-integration/travis/install.sh
   - ls $HOME/neo4j/neo4j
-  #- sudo rm -rf /dev/shm
-  #- sudo ln -s /run/shm /dev/shm
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
 
 # Install packages
 install:
