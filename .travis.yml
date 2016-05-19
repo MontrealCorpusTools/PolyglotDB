@@ -35,6 +35,7 @@ install:
 script:
   - $HOME/neo4j/neo4j/bin/neo4j start
   - sleep 10
+  - cat $HOME/neo4j/neo4j/logs/neo4j.log
   - $HOME/neo4j/neo4j/bin/neo4j status
   - "coverage run --source=polyglotdb setup.py test"
 
