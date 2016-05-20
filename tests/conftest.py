@@ -15,6 +15,10 @@ from polyglotdb.corpus import CorpusContext
 from polyglotdb.structure import Hierarchy
 from polyglotdb.config import CorpusConfig
 
+def pytest_addoption(parser):
+    parser.addoption("--skipacoustics", action="store_true",
+        help="skip acoustic tests")
+
 @pytest.fixture(scope='session')
 def test_dir():
     if not os.path.exists('tests/data/generated'):

@@ -1,4 +1,5 @@
 import sys
+import os
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
@@ -10,6 +11,8 @@ class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = ['-x', '--strict', '--verbose', '--tb=long', 'tests']
+        if os.environ['TRAVIS']:
+            self.test_args.insert(0, '--skipacoustics')
         self.test_suite = True
 
     def run_tests(self):
