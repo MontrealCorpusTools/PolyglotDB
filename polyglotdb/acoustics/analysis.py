@@ -148,27 +148,14 @@ def analyze_pitch(corpus_context, sound_file):
             begin = float(begin) - padding * 3
             if begin < 0:
                 begin = 0
-            end = float(end)
-            for timepoint, value in v.items():
-                timepoint += begin # true timepoint
-                try:
-                    value = value[0]
-                except TypeError:
-                    pass
-                p = Pitch(sound_file = sound_file, time = timepoint, F0 = value, source = algorithm)
-                corpus_context.sql_session.add(p)
+            track = {k2 + begin: v2 for k2, v2 in v.items()} # true timepoint
+            corpus_context.save_pitch(sound_file, track, source = algorithm)
     else:
         try:
             pitch = pitch_function(sound_file.filepath)
         except FileNotFoundError:
             return
-        for timepoint, value in pitch.items():
-            try:
-                value = value[0]
-            except TypeError:
-                pass
-            p = Pitch(sound_file = sound_file, time = timepoint, F0 = value, source = algorithm)
-            corpus_context.sql_session.add(p)
+        corpus_context.save_pitch(sound_file, pitch, source = algorithm)
     corpus_context.sql_session.flush()
 
 def analyze_formants(corpus_context, sound_file):
@@ -208,29 +195,9 @@ def analyze_formants(corpus_context, sound_file):
             begin = float(begin) - padding
             if begin < 0:
                 begin = 0
-            end = float(end)
-            for timepoint, value in v.items():
-                timepoint += begin # true timepoint
-                f1, f2, f3 = sanitize_formants(value)
-                f = Formants(sound_file = sound_file, time = timepoint, F1 = f1,
-                        F2 = f2, F3 = f3, source = algorithm)
-                corpus_context.sql_session.add(f)
+            track = {k2 + begin: v2 for k2, v2 in v.items()} # true timepoint
+            corpus_context.save_formants(sound_file, track, source = algorithm)
     else:
-        formants = formant_function(sound_file.filepath)
-        for timepoint, value in formants.items():
-            f1, f2, f3 = sanitize_formants(value)
-            f = Formants(sound_file = sound_file, time = timepoint, F1 = f1,
-                    F2 = f2, F3 = f3, source = algorithm)
-            corpus_context.sql_session.add(f)
-
-def sanitize_formants(value):
-    f1 = value[0][0]
-    if f1 is None:
-        f1 = 0
-    f2 = value[1][0]
-    if f2 is None:
-        f2 = 0
-    f3 = value[2][0]
-    if f3 is None:
-        f3 = 0
-    return f1, f2, f3
+        track = formant_function(sound_file.filepath)
+        corpus_context.save_formants(sound_file, track, source = algorithm)
+    corpus_context.sql_session.flush()

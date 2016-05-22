@@ -21,7 +21,8 @@ class PyTest(TestCommand):
             errcode = pytest.main(self.test_args)
             sys.exit(errcode)
 
-setup(name='polyglotdb',
+if __name__ == '__main__':
+    setup(name='polyglotdb',
       version='0.0.1',
       description='',
       long_description='',

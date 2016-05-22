@@ -11,6 +11,8 @@ from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
                             SubAnnotation as QuerySubAnnotation,
                             SpeakerAnnotation, DiscourseAnnotation)
 
+from .results import QueryResults
+
 from .func import Count
 
 from .cypher import query_to_cypher, query_to_params
@@ -18,8 +20,6 @@ from .cypher import query_to_cypher, query_to_params
 from polyglotdb.io import save_results
 
 from polyglotdb.exceptions import SubannotationError
-
-from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 
 class GraphQuery(object):
     """
@@ -470,7 +470,7 @@ class GraphQuery(object):
                 discourse_found = False
                 begin_found = False
                 end_found = False
-                for c in self._columns:
+                for c in self._columns + self._hidden_columns:
                     if a.annotation.discourse == c.base_annotation and \
                         c.label == 'name':
                         a.discourse_alias = c.output_label
@@ -489,81 +489,15 @@ class GraphQuery(object):
                     self._hidden_columns.append(a.annotation.begin.column_name(a.begin_alias))
                 if not end_found:
                     self._hidden_columns.append(a.annotation.end.column_name(a.end_alias))
-        res_list = self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
-        if self._columns or self._acoustic_columns:
-            if self._acoustic_columns:
-                for a in self._acoustic_columns:
-                    for name in a.output_columns:
-                        res_list.columns.append(name)
-                for i, r in enumerate(res_list):
-                    for a in self._acoustic_columns:
-                        t = a.hydrate(self.corpus, getattr(r, a.discourse_alias),
-                                    getattr(r, a.begin_alias),
-                                    getattr(r, a.end_alias))
-                        for k in a.output_columns:
-                            res_list[i].__values__ = tuple(list(res_list[i].__values__) +[t[k]])
-                            setattr(res_list[i], k, t[k])
-            return res_list
-        new_res_list = []
-        for r in res_list:
-            a = LinguisticAnnotation(self.corpus)
-            a.node = r[self.to_find.alias]
-            a.type_node = r[self.to_find.type_alias]
-            a._preloaded = True
-            for pre in self._preload:
-                if isinstance(pre, DiscourseAnnotation):
-                    pa = Discourse(self.corpus)
-                    pa.node = r[pre.alias]
-                    a._discourse = pa
-                elif isinstance(pre, SpeakerAnnotation):
-                    pa = Speaker(self.corpus)
-                    pa.node = r[pre.alias]
-                    a._speaker = pa
-
-                elif isinstance(pre, HierarchicalAnnotation):
-                    pa = LinguisticAnnotation(self.corpus)
-                    pa.node = r[pre.alias]
-                    pa.type_node = r[pre.type_alias]
-
-                    a._supers[pre.type] = pa
-                elif isinstance(pre, QuerySubAnnotation):
-                    subannotations = r[pre.path_alias]
-                    for s in subannotations:
-                        sa = SubAnnotation(self.corpus)
-                        sa._annotation = a
-                        sa.node = s
-                        if sa._type not in a._subannotations:
-                            a._subannotations[sa._type] = []
-                        a._subannotations[sa._type].append(sa)
-                elif isinstance(pre, SubPathAnnotation):
-                    subs = r[pre.path_alias]
-                    sub_types = r[pre.path_type_alias]
-                    subbed = []
-                    subannotations = r[pre.subannotation_alias]
-                    for i,e in enumerate(subs):
-                        pa = LinguisticAnnotation(self.corpus)
-                        pa.node = e
-                        pa.type_node = sub_types[i]
-                        pa._preloaded = True
-                        for s in subannotations[i]:
-                            sa = SubAnnotation(self.corpus)
-                            sa._annotation = pa
-                            sa.node = s
-                            if sa._type not in pa._subannotations:
-                                pa._subannotations[sa._type] = []
-                            pa._subannotations[sa._type].append(sa)
-                        subbed.append(pa)
-                    a._subs[pre.sub.type] = subbed
-            new_res_list.append(a)
-        return new_res_list
+        return QueryResults(self)
 
     def to_csv(self, path):
         """
         Same as ``all``, but the results of the query are output to the
         specified path as a CSV file.
         """
-        save_results(self.corpus.execute_cypher(self.cypher(), **self.cypher_params()), path)
+        self.all().to_csv(path)
 
     def count(self):
         """

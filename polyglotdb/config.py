@@ -70,6 +70,7 @@ class CorpusConfig(object):
 
         self.pitch_algorithm = 'reaper'
         self.formant_algorithm = 'acousticsim'
+        self.time_sampling = 0.01
 
         for k,v in kwargs.items():
             setattr(self, k, v)
@@ -109,7 +110,7 @@ class CorpusConfig(object):
     @property
     def graph_connection_kwargs(self):
         kwargs = {'host': self.graph_host,
-		'http_port':self.graph_port,
+        'http_port':self.graph_port,
                     'bolt': True}
 
         if self.graph_user is not None:
