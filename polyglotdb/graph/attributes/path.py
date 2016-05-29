@@ -41,7 +41,7 @@ class PathAnnotation(AnnotationAttribute):
 
     @property
     def def_path_alias(self):
-        return '{}:{}:{}'.format(self.path_alias, self.key, self.sub.corpus)
+        return '{}:{}:{}'.format(self.path_alias, self.key, key_for_cypher(self.sub.corpus))
 
     @property
     def path_alias(self):
@@ -143,7 +143,7 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def def_subannotation_alias(self):
-        return '{}:{}'.format(self.subannotation_alias, self.sub.corpus)
+        return '{}:{}'.format(self.subannotation_alias, key_for_cypher(self.sub.corpus))
 
     @property
     def withs(self):
@@ -169,7 +169,7 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def def_path_alias(self):
-        return '{}:{}:{}'.format(self.path_alias, self.sub.type, self.sub.corpus)
+        return '{}:{}:{}'.format(self.path_alias, self.sub.type, key_for_cypher(self.sub.corpus))
 
     @property
     def path_alias(self):

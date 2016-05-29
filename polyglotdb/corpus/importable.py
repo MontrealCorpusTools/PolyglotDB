@@ -57,11 +57,11 @@ class ImportContext(BaseContext):
         begin = time.time()
 
         self.execute_cypher(
-            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(corpus_name = self.corpus_name),
+            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(corpus_name = self.cypher_safe_name),
                     discourse_name = data.name)
         for s in data.speakers:
             self.execute_cypher(
-                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.corpus_name),
+                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.cypher_safe_name),
                         speaker_name = s)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(self, data)

@@ -9,10 +9,10 @@ def test_inspect_discourse(acoustic_utt_config):
 
         assert(len(d) == 1)
 
-        d.updateTimes(1, 2)
+        d.update_times(1, 2)
 
         assert(len(d) == 1)
 
-        d.updateTimes(0, 9)
+        d.update_times(0, 9)
 
         assert(len(d) == 2)
