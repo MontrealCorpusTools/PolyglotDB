@@ -638,7 +638,7 @@ class SplitQuery(GraphQuery):
         attribute_name = self.splitter[:-1] #remove 's', fixme maybe?
         splitter_annotation = getattr(self.to_find, attribute_name)
         splitter_attribute = getattr(splitter_annotation, 'name')
-        splitter_names = getattr(self.corpus, self.splitter)
+        splitter_names = sorted(getattr(self.corpus, self.splitter))
         if self.call_back is not None:
             self.call_back(0,len(splitter_names))
         for i, x in enumerate(splitter_names):
@@ -673,15 +673,15 @@ class SplitQuery(GraphQuery):
             q.set_pause()
 
     def all(self):
-        results = []
+        results = None
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
                 return None
-            r = q.all()
-            if isinstance(r, list):
-                results.extend(r)
+            if results is None:
+                r = q.all()
+                results = r
             else:
-                results.extend(x for x in r)
+                results.add_results(q)
         return results
 
     def delete(self):

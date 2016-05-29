@@ -1,8 +1,9 @@
 
+from uuid import uuid1
 
 from .base import BaseContext
 
-from ..io.importer import time_data_to_csvs, import_utterance_csv
+from ..io.importer import utterance_data_to_csvs, import_utterance_csv
 from ..graph.func import Max, Min
 from ..graph.query import DiscourseGraphQuery
 
@@ -60,7 +61,16 @@ class UtteranceCorpus(BaseContext):
                 call_back(i)
                 call_back('Encoding utterances for discourse {} of {} ({})...'.format(i, len(discourses), d))
             utterances = self.get_utterance_ids(d, min_pause_length, min_utterance_length)
-            time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
+            data = []
+            prev_id = None
+            for u in utterances:
+                cur_id = uuid1()
+                row = {'id': cur_id, 'prev_id': prev_id,
+                    'begin_word_id': u[0],
+                    'end_word_id':u[1]}
+                data.append(row)
+                prev_id = cur_id
+            utterance_data_to_csvs(self, data, d)
             import_utterance_csv(self, d)
 
     def get_utterance_ids(self, discourse,

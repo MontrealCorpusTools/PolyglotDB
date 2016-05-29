@@ -291,13 +291,19 @@ def import_utterance_csv(corpus_context, discourse):
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
-    statement = '''LOAD CSV FROM "{path}" AS csvLine
-            MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine[0]}})-[:spoken_by]->(s:Speaker:{corpus})
+    statement = '''LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus})
             WHERE d.name = {{discourse}}
-            OPTIONAL MATCH (d)<-[:spoken_in]-(end:{word_type}:{corpus}:speech {{id: csvLine[1]}})
-            CREATE (utt:utterance:{corpus}:speech {{id: csvLine[2], begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus}),
+            OPTIONAL MATCH (d)<-[:spoken_in]-(end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
+            CREATE (utt:utterance:{corpus}:speech {{id: csvLine.id, begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus}),
                 (d)<-[:spoken_in]-(utt),
                 (s)<-[:spoken_by]-(utt)
+            WITH utt, begin, end, csvLine
+
+            OPTIONAL MATCH (prev:utterance {{id:csvLine.prev_id}})
+            FOREACH (o IN CASE WHEN prev IS NOT NULL THEN [prev] ELSE [] END |
+              CREATE (prev)-[:precedes]->(utt)
+            )
             WITH utt, begin, end
             MATCH path = shortestPath((begin)-[:precedes*0..]->(end))
             WITH utt, begin, end, nodes(path) as words

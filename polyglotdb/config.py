@@ -110,7 +110,7 @@ class CorpusConfig(object):
     @property
     def graph_connection_kwargs(self):
         kwargs = {'host': self.graph_host,
-        'http_port':self.graph_port,
+        'http_port':int(self.graph_port),
                     'bolt': True}
 
         if self.graph_user is not None:

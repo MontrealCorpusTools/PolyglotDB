@@ -123,13 +123,17 @@ class BaseContext(object):
             raise
 
     @property
+    def cypher_safe_name(self):
+        return '`{}`'.format(self.corpus_name)
+
+    @property
     def discourses(self):
         '''
         Return a list of all discourses in the corpus.
         '''
         q = self.sql_session.query(Discourse).all()
         if not len(q):
-            res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.corpus_name))
+            res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.cypher_safe_name))
             discourses = []
             for d in res:
                 instance = Discourse(name = d.discourse)
@@ -143,7 +147,7 @@ class BaseContext(object):
     def speakers(self):
         q = self.sql_session.query(Speaker).all()
         if not len(q):
-            res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.corpus_name))
+            res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.cypher_safe_name))
 
             speakers = []
             for s in res:
@@ -205,14 +209,14 @@ class BaseContext(object):
         '''
         if call_back is not None:
             call_back('Resetting database...')
-            number = self.execute_cypher('''MATCH (n:%s)-[r]-() return count(*) as number ''' % (self.corpus_name)).evaluate()
+            number = self.execute_cypher('''MATCH (n:{})-[r]-() return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
             call_back(0, number * 2)
         num_deleted = 0
         deleted = 1000
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:%s)-[r]-() with r LIMIT 50000 DELETE r return count(r) as deleted_count ''' % (self.corpus_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:{})-[r]-() with r LIMIT 50000 DELETE r return count(r) as deleted_count '''.format(self.cypher_safe_name)).evaluate()
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
@@ -220,7 +224,7 @@ class BaseContext(object):
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:%s) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' % (self.corpus_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:{}) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' .format(self.cypher_safe_name)).evaluate()
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
@@ -283,8 +287,7 @@ class BaseContext(object):
         name : str
             Name of the discourse to remove
         '''
-        self.execute_cypher('''MATCH (n:%s:%s)-[r]->() DELETE n, r'''
-                                    % (self.corpus_name, name))
+        self.execute_cypher('''MATCH (n:{}:{})-[r]->() DELETE n, r'''.format(self.cypher_safe_name, name))
 
     def discourse(self, name, annotations = None):
         '''

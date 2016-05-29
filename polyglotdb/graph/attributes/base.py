@@ -6,7 +6,8 @@ from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         InClauseElement, NotInClauseElement, ContainsClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
-                        SubsetClauseElement, NullClauseElement, NotNullClauseElement)
+                        SubsetClauseElement, NullClauseElement, NotNullClauseElement,
+                        FollowsClauseElement, PrecedesClauseElement)
 
 from ...exceptions import SubsetError
 
@@ -269,6 +270,12 @@ class AnnotationAttribute(Attribute):
     @property
     def withs(self):
         return [self.alias, self.type_alias]
+
+    def precedes(self, other_annotation):
+        return PrecedesClauseElement(self, other_annotation)
+
+    def follows(self, other_annotation):
+        return FollowsClauseElement(self, other_annotation)
 
     def __getattr__(self, key):
         if key == 'annotation':

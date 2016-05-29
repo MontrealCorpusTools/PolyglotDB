@@ -6,6 +6,8 @@ from ..acoustics import acoustic_analysis
 
 from ..sql.models import SoundFile, Pitch, Formants, Discourse
 
+from ..graph.discourse import DiscourseInspecter
+
 def sanitize_formants(value):
     try:
         f1 = value[0][0]
@@ -32,6 +34,9 @@ class AudioContext(BaseContext):
         if not self.has_sound_files:
             raise(NoSoundFileError)
         acoustic_analysis(self)
+
+    def inspect_discourse(self, discourse, begin = None, end = None):
+        return DiscourseInspecter(self, discourse, begin, end)
 
     def discourse_sound_file(self, discourse):
         q = self.sql_session.query(SoundFile).join(SoundFile.discourse)
@@ -63,11 +68,13 @@ class AudioContext(BaseContext):
     def get_formants(self, discourse, begin, end, source = None):
         if source is None:
             source = self.config.formant_algorithm
-        q = corpus_context.sql_session.query(Formants).join(SoundFile).join(Discourse)
+        q = self.sql_session.query(Formants).join(SoundFile).join(Discourse)
         q = q.filter(Discourse.name == discourse)
-        q = q.filter(Formants.source == corpus_context.config.formant_algorithm)
-        q = q.filter(Formants.time >= begin)
-        q = q.filter(Formants.time <= end)
+        q = q.filter(Formants.source == self.config.formant_algorithm)
+        if begin is not None:
+            q = q.filter(Formants.time >= begin)
+        if end is not None:
+            q = q.filter(Formants.time <= end)
         q = q.order_by(Formants.time)
         listing = q.all()
         return listing
@@ -75,11 +82,13 @@ class AudioContext(BaseContext):
     def get_pitch(self, discourse, begin, end, source = None):
         if source is None:
             source = self.config.pitch_algorithm
-        q = corpus_context.sql_session.query(Pitch).join(SoundFile).join(Discourse)
+        q = self.sql_session.query(Pitch).join(SoundFile).join(Discourse)
         q = q.filter(Discourse.name == discourse)
-        q = q.filter(Pitch.source == corpus_context.config.pitch_algorithm)
-        q = q.filter(Pitch.time >= begin)
-        q = q.filter(Pitch.time <= end)
+        q = q.filter(Pitch.source == self.config.pitch_algorithm)
+        if begin is not None:
+            q = q.filter(Pitch.time >= begin)
+        if end is not None:
+            q = q.filter(Pitch.time <= end)
         q = q.order_by(Pitch.time)
         listing = q.all()
         return listing

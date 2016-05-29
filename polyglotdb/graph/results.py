@@ -62,10 +62,9 @@ def hydrate_model(r, to_find, to_find_type, to_preload, corpus):
 class QueryResults(object):
     def __init__(self, query):
         self.corpus = query.corpus
-        self.cache = {}
+        self.cache = []
         self.cursors = [self.corpus.execute_cypher(query.cypher(), **query.cypher_params())]
         self.evaluated = []
-        self.current_cursor_ind = 0
         self.current_ind = 0
         if query._columns:
             self.models = False
@@ -83,30 +82,34 @@ class QueryResults(object):
             self.columns = None
 
     def __getitem__(self, key):
-        cur = 0
-        for i, c in enumerate(self.cursors):
-            if i not in self.cache:
-                self.cache[i] = []
-            cur_cache_len = len(self.cache[i])
-            if key < cur + cur_cache_len:
-                return self.cache[i][key - cur]
-            if i not in self.evaluated:
-                self._cache_cursor(i, up_to = key - cur)
-                cur_cache_len = len(self.cache[i])
-                if key < cur + cur_cache_len:
-                    return self.cache[i][key - cur]
-            cur += cur_cache_len
+        if key < 0:
+            raise(IndexError('Results do not support negative indexing.'))
+        cur_cache_len = len(self.cache)
+        if key < cur_cache_len:
+            return self.cache[key]
+        self._cache_cursor(up_to = key)
+        cur_cache_len = len(self.cache)
+        if key < cur_cache_len:
+            return self.cache[key]
         raise(IndexError(key))
 
-    def _cache_cursor(self, i, up_to = None):
-        while True:
-            r = self.cursors[i].next()
-            if r is None:
-                self.evaluated.append(i)
-                break
-            r = self._sanitize_record(r)
-            self.cache[i].append(r)
-            if up_to is not None and len(self.cache[i]) > up_to:
+    def _cache_cursor(self, up_to = None):
+        for i, c in enumerate(self.cursors):
+            if i in self.evaluated:
+                continue
+            while True:
+                try:
+                    r = c.next()
+                except StopIteration:
+                    r = None
+                if r is None:
+                    self.evaluated.append(i)
+                    break
+                r = self._sanitize_record(r)
+                self.cache.append(r)
+                if up_to is not None and len(self.cache) > up_to:
+                    break
+            if up_to is not None and len(self.cache) > up_to:
                 break
 
     def add_results(self, query):
@@ -115,16 +118,27 @@ class QueryResults(object):
         self.cursors.append(cursor)
 
     def next(self, number):
-        pass
+        next_ind = number + self.current_ind
+        if next_ind > len(self.cache):
+            self._cache_cursor(up_to = next_ind)
+        to_return = self.cache[self.current_ind:next_ind]
+        self.current_ind = next_ind
+        return to_return
 
     def previous(self, number):
-        pass
+        if number > self.current_ind:
+            to_return = self.cache[0:self.current_ind]
+            self.current_ind = 0
+        else:
+            next_ind = self.current_ind - number
+            to_return = self.cache[next_ind:self.current_ind]
+            self.current_ind = next_ind
+        return to_return
 
     def _sanitize_record(self, r):
         if self.models:
             r = hydrate_model(r, self._to_find, self._to_find_type, self._preload, self.corpus)
         else:
-            print(r)
             r = Record(r)
             for a in self._acoustic_columns:
                 t = a.hydrate(self.corpus, r[a.discourse_alias],
@@ -135,23 +149,27 @@ class QueryResults(object):
         return r
 
     def __iter__(self):
+        for r in self.cache:
+            yield r
         for i, c in enumerate(self.cursors):
-            if i in self.cache:
-                for r in self.cache[i]:
-                    yield r
-            else:
-                self.cache[i] = []
             while True:
-                r = c.next()
+                try:
+                    r = c.next()
+                except StopIteration:
+                    r = None
                 if r is None:
                     self.evaluated.append(i)
                     break
                 r = self._sanitize_record(r)
-                self.cache[i].append(r)
+                self.cache.append(r)
                 yield r
 
     def to_csv(self, path):
         save_results(self, path)
+
+    def __len__(self):
+        self._cache_cursor()
+        return len(self.cache)
 
 class Record(object):
     def __init__(self, result):
