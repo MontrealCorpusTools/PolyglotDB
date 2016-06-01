@@ -8,7 +8,7 @@ from .textgrid import TextgridParser
 from ..types.parsing import OrthographyTier
 
 from polyglotdb.exceptions import TextGridError
-from ..helper import find_wav_path
+from ..helper import find_wav_path, get_n_channels
 
 from .base import DiscourseData
 
@@ -57,9 +57,41 @@ class FaveParser(TextgridParser):
 
         dummy = self.annotation_types
         self.annotation_types = []
+        wav_path = find_wav_path(path)
+        speaker_channel_mapping = {}
+        if wav_path is not None:
+            n_channels = get_n_channels(wav_path)
+            if n_channels > 1:
+                #Figure speaker-channel mapping
+                n_tiers = 0
+                for ti in tg.tiers:
+                    try:
+                        speaker, type = ti.name.split(' - ')
+                    except ValueError:
+                        continue
+                    n_tiers += 1
+                ind = 0
+                cutoffs = [x/n_channels for x in range(1, n_channels)]
+                print(cutoffs)
+                for ti in tg.tiers:
+                    try:
+                        speaker, type = ti.name.split(' - ')
+                    except ValueError:
+                        continue
+                    if speaker in speaker_channel_mapping:
+                        continue
+                    print(ind/n_channels)
+                    for i, c in enumerate(cutoffs):
+                        print(c)
+                        if ind / n_channels < c:
+                            speaker_channel_mapping[speaker] = i
+                            break
+                    else:
+                        speaker_channel_mapping[speaker] = i + 1
+                    ind += 1
 
         #Parse the tiers
-        for i, ti in enumerate(tg.tiers):
+        for ti in tg.tiers:
             try:
                 speaker, type = ti.name.split(' - ')
             except ValueError:
@@ -71,7 +103,8 @@ class FaveParser(TextgridParser):
         pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
-        data.wav_path = find_wav_path(path)
+        data.speaker_channel_mapping = speaker_channel_mapping
+        data.wav_path = wav_path
 
         self.annotation_types = dummy
 

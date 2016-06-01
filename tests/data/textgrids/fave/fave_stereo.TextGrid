@@ -1,0 +1,170 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 7.15 
+tiers? <exists> 
+size = 5 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "notes" 
+        xmin = 0 
+        xmax = 7.15 
+        intervals: size = 1 
+        intervals [1]:
+            xmin = 0 
+            xmax = 7.15 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "Speaker 1 - word" 
+        xmin = 0 
+        xmax = 7.15 
+        intervals: size = 7 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.2311721129880919 
+            text = "" 
+        intervals [2]:
+            xmin = 0.2311721129880919 
+            xmax = 1.005045924489984 
+            text = "aa" 
+        intervals [3]:
+            xmin = 1.005045924489984 
+            xmax = 1.1783012554232437 
+            text = "" 
+        intervals [4]:
+            xmin = 1.1783012554232437 
+            xmax = 1.9059736453429335 
+            text = "iy" 
+        intervals [5]:
+            xmin = 1.9059736453429335 
+            xmax = 2.136980753253946 
+            text = "" 
+        intervals [6]:
+            xmin = 2.136980753253946 
+            xmax = 2.870428320871411 
+            text = "iy" 
+        intervals [7]:
+            xmin = 2.870428320871411 
+            xmax = 7.15 
+            text = "" 
+    item [3]:
+        class = "IntervalTier" 
+        name = "Speaker 1 - phone" 
+        xmin = 0 
+        xmax = 7.15 
+        intervals: size = 7 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.2311721129880919 
+            text = "" 
+        intervals [2]:
+            xmin = 0.2311721129880919 
+            xmax = 1.005045924489984 
+            text = "aa" 
+        intervals [3]:
+            xmin = 1.005045924489984 
+            xmax = 1.1783012554232437 
+            text = "" 
+        intervals [4]:
+            xmin = 1.1783012554232437 
+            xmax = 1.9059736453429335 
+            text = "iy" 
+        intervals [5]:
+            xmin = 1.9059736453429335 
+            xmax = 2.136980753253946 
+            text = "" 
+        intervals [6]:
+            xmin = 2.136980753253946 
+            xmax = 2.870428320871411 
+            text = "iy" 
+        intervals [7]:
+            xmin = 2.870428320871411 
+            xmax = 7.15 
+            text = "" 
+    item [4]:
+        class = "IntervalTier" 
+        name = "Speaker 2 - word" 
+        xmin = 0 
+        xmax = 7.15 
+        intervals: size = 9 
+        intervals [1]:
+            xmin = 0 
+            xmax = 3.3324425366934367 
+            text = "" 
+        intervals [2]:
+            xmin = 3.3324425366934367 
+            xmax = 4.060114926613126 
+            text = "iy" 
+        intervals [3]:
+            xmin = 4.060114926613126 
+            xmax = 4.279571679128589 
+            text = "" 
+        intervals [4]:
+            xmin = 4.279571679128589 
+            xmax = 5.018794424443829 
+            text = "ah" 
+        intervals [5]:
+            xmin = 5.018794424443829 
+            xmax = 5.244026354657066 
+            text = "" 
+        intervals [6]:
+            xmin = 5.244026354657066 
+            xmax = 5.965923566878981 
+            text = "uw" 
+        intervals [7]:
+            xmin = 5.965923566878981 
+            xmax = 6.179605141696667 
+            text = "" 
+        intervals [8]:
+            xmin = 6.179605141696667 
+            xmax = 6.924603064709683 
+            text = "y" 
+        intervals [9]:
+            xmin = 6.924603064709683 
+            xmax = 7.15 
+            text = "" 
+    item [5]:
+        class = "IntervalTier" 
+        name = "Speaker 2 - phone" 
+        xmin = 0 
+        xmax = 7.15 
+        intervals: size = 9 
+        intervals [1]:
+            xmin = 0 
+            xmax = 3.3324425366934367 
+            text = "" 
+        intervals [2]:
+            xmin = 3.3324425366934367 
+            xmax = 4.060114926613126 
+            text = "iy" 
+        intervals [3]:
+            xmin = 4.060114926613126 
+            xmax = 4.279571679128589 
+            text = "" 
+        intervals [4]:
+            xmin = 4.279571679128589 
+            xmax = 5.018794424443829 
+            text = "ah" 
+        intervals [5]:
+            xmin = 5.018794424443829 
+            xmax = 5.244026354657066 
+            text = "" 
+        intervals [6]:
+            xmin = 5.244026354657066 
+            xmax = 5.965923566878981 
+            text = "uw" 
+        intervals [7]:
+            xmin = 5.965923566878981 
+            xmax = 6.179605141696667 
+            text = "" 
+        intervals [8]:
+            xmin = 6.179605141696667 
+            xmax = 6.924603064709683 
+            text = "y" 
+        intervals [9]:
+            xmin = 6.924603064709683 
+            xmax = 7.15 
+            text = "" 

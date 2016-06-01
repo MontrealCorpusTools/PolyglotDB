@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from .base import BaseContext
 
-from ..sql.models import (Base, Annotation, Property, NumericProperty,
+from ..sql.models import (Base, Annotation, Property, NumericProperty, SpeaksIn,
                     AnnotationType, PropertyType, Discourse, Speaker, SoundFile)
 
 from ..sql.helper import get_or_create
@@ -172,7 +172,11 @@ class ImportContext(BaseContext):
         discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
         for s in data.speakers:
             speaker, _ = get_or_create(self.sql_session, Speaker, name = s)
-            discourse.speakers.append(speaker)
+            sin = SpeaksIn(speaker = speaker, discourse = discourse)
+            if s in data.speaker_channel_mapping:
+                sin.channel = data.speaker_channel_mapping[s]
+            self.sql_session.add(sin)
+            discourse.speakers.append(sin)
         phone_cache = defaultdict(set)
         segment_type = data.segment_type
         for level in data.annotation_types:

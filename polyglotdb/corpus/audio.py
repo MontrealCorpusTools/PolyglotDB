@@ -65,7 +65,7 @@ class AudioContext(BaseContext):
             self._has_sound_files = self.sql_session.query(SoundFile).first() is not None
         return self._has_sound_files
 
-    def get_formants(self, discourse, begin, end, source = None):
+    def get_formants(self, discourse, begin, end, channel = 0, source = None):
         if source is None:
             source = self.config.formant_algorithm
         q = self.sql_session.query(Formants).join(SoundFile).join(Discourse)
@@ -75,11 +75,12 @@ class AudioContext(BaseContext):
             q = q.filter(Formants.time >= begin)
         if end is not None:
             q = q.filter(Formants.time <= end)
+        q = q.filter(Formants.channel == channel)
         q = q.order_by(Formants.time)
         listing = q.all()
         return listing
 
-    def get_pitch(self, discourse, begin, end, source = None):
+    def get_pitch(self, discourse, begin, end, channel = 0, source = None):
         if source is None:
             source = self.config.pitch_algorithm
         q = self.sql_session.query(Pitch).join(SoundFile).join(Discourse)
@@ -89,11 +90,12 @@ class AudioContext(BaseContext):
             q = q.filter(Pitch.time >= begin)
         if end is not None:
             q = q.filter(Pitch.time <= end)
+        q = q.filter(Pitch.channel == channel)
         q = q.order_by(Pitch.time)
         listing = q.all()
         return listing
 
-    def save_formants(self, sound_file, formant_track, source = None):
+    def save_formants(self, sound_file, formant_track, channel = 0, source = None):
         if isinstance(sound_file, str):
             sound_file = self.discourse_sound_file(sound_file)
         #if sound_file is None:
@@ -103,10 +105,10 @@ class AudioContext(BaseContext):
         for timepoint, value in formant_track.items():
             f1, f2, f3 = sanitize_formants(value)
             f = Formants(sound_file = sound_file, time = timepoint, F1 = f1,
-                    F2 = f2, F3 = f3, source = source)
+                    F2 = f2, F3 = f3, channel = channel, source = source)
             self.sql_session.add(f)
 
-    def save_pitch(self, sound_file, pitch_track, source = None):
+    def save_pitch(self, sound_file, pitch_track, channel = 0, source = None):
         if isinstance(sound_file, str):
             sound_file = self.discourse_sound_file(sound_file)
         #if sound_file is None:
@@ -118,5 +120,5 @@ class AudioContext(BaseContext):
                 value = value[0]
             except TypeError:
                 pass
-            p = Pitch(sound_file = sound_file, time = timepoint, F0 = value, source = source)
+            p = Pitch(sound_file = sound_file, time = timepoint, F0 = value, channel = channel, source = source)
             self.sql_session.add(p)

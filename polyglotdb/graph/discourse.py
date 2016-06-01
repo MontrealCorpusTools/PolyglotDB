@@ -3,19 +3,27 @@ import numpy as np
 from scipy.io import wavfile
 from scipy.signal import lfilter
 
+from resampy import resample
+
 def load_sound_file(path):
 
-    sr, signal = wavfile.read(path)
+    try:
+        sr, signal = wavfile.read(path)
+    except:
+        return None, None, None
     signal = signal / 32768
-    preemph_signal = lfilter([1., -0.95], 1, signal)
-    return signal, preemph_signal, sr
+    preemph_signal = lfilter([1., -0.95], 1, signal, axis = 0)
+    downsampled_1000 = resample(signal, sr, 1000, filter = 'kaiser_fast', axis = 0)
+    downsampled_100 = resample(downsampled_1000, 100, 100, filter = 'kaiser_fast', axis = 0)
+    return signal, preemph_signal, sr, downsampled_1000, downsampled_100
 
 class DiscourseInspecter(object):
     def __init__(self, corpus_context, discourse_name, initial_begin = None, initial_end = None):
         self.corpus = corpus_context
         self.name = discourse_name
         self.sound_file = self.corpus.discourse_sound_file(self.name)
-
+        self.cached_begin = None
+        self.cached_end = None
         self.signal = None
         self.preemph_signal = None
         self.sr = None
@@ -23,68 +31,84 @@ class DiscourseInspecter(object):
             self.corpus.sql_session.expunge(self.sound_file)
 
             if os.path.exists(self.sound_file.filepath):
-                self.signal, self.preemph_signal, self.sr =load_sound_file(self.sound_file.filepath)
+                (self.signal, self.preemph_signal, self.sr,
+                self.downsampled_1000,
+                self.downsampled_100) = load_sound_file(self.sound_file.filepath)
 
-        if initial_begin is None:
-            self.view_begin = 0
+            self.max_time = self.sound_file.duration
+            self.num_channels = self.sound_file.n_channels
         else:
-            self.view_begin = initial_begin
-        if initial_end is None:
-            self.view_end = 30
-        else:
-            self.view_end = initial_end
+            h_type = self.corpus.hierarchy.highest
+            highest = getattr(self.corpus, h_type)
+            q = self.corpus.query_graph(highest)
+            q = q.filter(highest.discourse.name == self.name)
+            q = q.order_by(highest.end, descending = True)
+            q = q.limit(1)
+            self.max_time = q.all()[0].end
+            self.num_channels = 1
 
-        self.max_time = self.sound_file.duration
+        self._initialize_cache(initial_begin, initial_end)
 
-        if self.max_time < self.view_end:
-            self.view_end = self.max_time
-        self._initialize_cache()
-
-    def _initialize_cache(self):
-        q = self._base_discourse_query()
+    def _initialize_cache(self, begin, end):
+        print('initializing discourse cache')
+        q = self._base_discourse_query(begin, end)
         self.cache = [x for x in q.all()]
-        if len(self.cache) == 0:
-            self.cached_begin = None
-            self.cached_end = None
-        else:
-            self.cached_begin = self.cache[0].begin
-            if self.cached_begin > self.view_begin:
-                self.cached_begin = self.view_begin
-            self.cached_end = self.cache[-1].end
-            if self.cached_end > self.view_end:
-                self.cached_end = self.view_end
+        self.update_cached_times()
+        print('done initializing', self.cached_begin, self.cached_end, len(self.cache))
 
-    def update_cache(self):
-        h_type = self.corpus.hierarchy.highest
-        highest = getattr(self.corpus, h_type)
-        if self.cached_begin is None or self.view_begin < self.cached_begin:
-            q = self._base_discourse_query()
-            if self.cache:
-                q = q.filter(highest.precedes(self.cache[0]))
-            self.cache = [x for x in q.all()] + self.cache
-
-        if self.cached_end is None or self.view_end > self.cached_end:
-            q = self._base_discourse_query()
-            if self.cache:
-                q = q.filter(highest.follows(self.cache[-1]))
-
-            self.cache += [x for x in q.all()]
-
+    def add_preceding(self, results):
+        self.cache = results + self.cache
         self.update_cached_times()
 
-    def _base_discourse_query(self):
+    def add_following(self, results):
+        self.cache += results
+        self.update_cached_times()
+
+    def update_cache(self, begin, end):
+        print(begin, end, self.cached_begin, self.cached_end)
+        if self.cached_begin is None or begin < self.cached_begin:
+            print('updating preceding')
+            q = self.preceding_cache_query(begin)
+            self.add_preceding([x for x in q.all()])
+
+        if self.cached_end is None or end > self.cached_end:
+            print('updating following')
+            q = self.following_cache_query(end)
+            self.add_following([x for x in q.all()])
+
+    def preceding_cache_query(self, begin = None):
+        h_type = self.corpus.hierarchy.highest
+        highest = getattr(self.corpus, h_type)
+        q = self._base_discourse_query(begin = begin)
+        if self.cache:
+            q = q.filter(highest.precedes(self.cache[0]))
+        return q
+
+    def following_cache_query(self, end = None):
+        h_type = self.corpus.hierarchy.highest
+        highest = getattr(self.corpus, h_type)
+        q = self._base_discourse_query(end = end)
+        if self.cache:
+            q = q.filter(highest.follows(self.cache[-1]))
+        return q
+
+    def _base_discourse_query(self, begin = None, end = None):
         h_type = self.corpus.hierarchy.highest
         highest = getattr(self.corpus, h_type)
         q = self.corpus.query_graph(highest)
         q = q.filter(highest.discourse.name == self.name)
-        q = q.filter(highest.begin < self.view_end)
-        q = q.filter(highest.end > self.view_begin)
+        if end is not None:
+            q = q.filter(highest.begin < end)
+        if begin is not None:
+            q = q.filter(highest.end > begin)
         preloads = []
         if h_type in self.corpus.hierarchy.subannotations:
             for s in self.corpus.hierarchy.subannotations[h_type]:
                 preloads.append(getattr(highest, s))
         for t in self.corpus.hierarchy.get_lower_types(h_type):
             preloads.append(getattr(highest, t))
+        preloads.append(highest.speaker)
+        preloads.append(highest.discourse)
         q = q.preload(*preloads)
         q = q.order_by(highest.begin)
         return q
@@ -94,83 +118,64 @@ class DiscourseInspecter(object):
             self.cached_begin = None
             self.cached_end = None
         else:
-            self.cached_begin = self.cache[0].begin
-            if self.cached_begin > self.view_begin:
-                self.cached_begin = self.view_begin
-            self.cached_end = self.cache[-1].end
-            if self.cached_end > self.view_end:
-                self.cached_end = self.view_end
+            if self.cached_begin is None or self.cached_begin > self.cache[0].begin:
+                self.cached_begin = self.cache[0].begin
+            if self.cached_end is None or self.cached_end < self.cache[-1].end:
+                self.cached_end = self.cache[-1].end
+        print('done updating', self.cached_begin, self.cache[0].begin, self.cached_end, self.cache[-1].end, len(self.cache))
+
 
     def update_times(self, begin, end):
-        self.view_begin = begin
-        self.view_end = end
-        self.update_cache()
-
-    def pan(self, time_delta):
-        min_time = self.view_begin + time_delta
-        max_time = self.view_end + time_delta
-        if max_time > self.max_time:
-            new_delta = time_delta - (max_time - self.max_time)
-            min_time = self.view_begin + new_delta
-            max_time = self.view_end + new_delta
-        if min_time < 0:
-            new_delta = time_delta - (min_time - self.min_time)
-            min_time = self.view_begin + new_delta
-            max_time = self.view_end + new_delta
-        self.view_begin = min_time
-        self.view_end = max_time
-        self.update_cache()
-
-    def zoom(self, factor, center_time):
-        left_space = center_time - self.view_begin
-        right_space = self.view_end - center_time
-
-        min_time = center_time - left_space * factor
-        max_time = center_time + right_space * factor
-
-        if max_time > self.max_time:
-            max_time = self.max_time
-        if min_time < 0:
-            min_time = self.min_time
-        self.view_begin = min_time
-        self.view_end = max_time
-        self.update_cache()
+        if begin < 0:
+            begin = 0
+        if end > self.max_time:
+            end = self.max_time
+        self.update_cache(begin, end)
 
     def __iter__(self):
         for a in self.cache:
-            if a.end > self.view_begin and a.begin < self.view_end:
-                yield a
+            yield a
 
     def __len__(self):
         return len([x for x in self])
 
-    def formants(self):
-        formant_list = self.corpus.get_formants(self.name, self.view_begin, self.view_end)
+    def annotations(self, begin = None, end = None, channel = 0):
+        for a in self.cache:
+            if a.channel != channel:
+                continue
+            if begin is not None and a.end <= begin:
+                continue
+            if end is not None and a.begin >= end:
+                continue
+            yield a
+
+    def formants(self, begin = None, end = None, channel = 0):
+        formant_list = self.corpus.get_formants(self.name, begin, end, channel)
         formant_dict = {'F1': np.array([[x.time, x.F1] for x in formant_list]),
                         'F2': np.array([[x.time, x.F2] for x in formant_list]),
                         'F3': np.array([[x.time, x.F3] for x in formant_list])}
         return formant_dict
 
-    def formants_from_begin(self):
-        formant_list = self.corpus.get_formants(self.name, self.view_begin, self.view_end)
-        formant_dict = {'F1': np.array([[x.time - self.view_begin, x.F1] for x in formant_list]),
-                        'F2': np.array([[x.time - self.view_begin, x.F2] for x in formant_list]),
-                        'F3': np.array([[x.time - self.view_begin, x.F3] for x in formant_list])}
+    def formants_from_begin(self, begin, end, channel = 0):
+        formant_list = self.corpus.get_formants(self.name, begin, end, channel)
+        formant_dict = {'F1': np.array([[x.time - begin, x.F1] for x in formant_list]),
+                        'F2': np.array([[x.time - begin, x.F2] for x in formant_list]),
+                        'F3': np.array([[x.time - begin, x.F3] for x in formant_list])}
         return formant_dict
 
-    def pitch(self):
-        pitch_list = self.corpus.get_pitch(self.name, self.view_begin, self.view_end)
+    def pitch(self, begin = None, end = None, channel = 0):
+        pitch_list = self.corpus.get_pitch(self.name, begin, end, channel)
         pitch_list = np.array([[x.time, x.F0] for x in pitch_list])
         return pitch_list
 
-    def pitch_from_begin(self):
-        pitch_list = self.corpus.get_pitch(self.name, self.view_begin, self.view_end)
-        pitch_list = np.array([[x.time - self.view_begin, x.F0] for x in pitch_list])
+    def pitch_from_begin(self, begin, end, channel = 0):
+        pitch_list = self.corpus.get_pitch(self.name, begin, end, channel)
+        pitch_list = np.array([[x.time - begin, x.F0] for x in pitch_list])
         return pitch_list
 
-    def get_acoustics(self, time):
+    def get_acoustics(self, time, channel = 0):
         acoustics = {}
-        pitch = self.pitch()
+        pitch = self.pitch(time - 0.5, time + 0.5, channel = channel)
         if not pitch:
             acoustics['F0'] = None
         else:
@@ -188,7 +193,7 @@ class DiscourseInspecter(object):
                     break
             else:
                 acoustics['F0'] = None
-        formants = self.formants()
+        formants = self.formants(time - 0.5, time + 0.5, channel = channel)
         if not formants:
             acoustics['F1'] = None
             acoustics['F2'] = None
@@ -209,9 +214,11 @@ class DiscourseInspecter(object):
                         break
         return acoustics
 
-    def find_annotation(self, key, time):
+    def find_annotation(self, key, time, channel = 0):
         annotation = None
         for a in self:
+            if a.channel != channel:
+                continue
             if isinstance(key, tuple):
                 elements = getattr(a, key[0])
                 for e in elements:
@@ -234,12 +241,30 @@ class DiscourseInspecter(object):
                 break
         return annotation
 
-    def visible_signal(self):
-        min_samp = np.floor(self.view_begin * self.sr)
-        max_samp = np.ceil(self.view_end * self.sr)
-        return self.signal[min_samp:max_samp]
+    def visible_downsampled_1000(self, begin, end, channel = 0):
+        if self.downsampled_1000 is None:
+            return None
+        min_samp = int(np.floor(begin * 1000))
+        max_samp = int(np.ceil(end * 1000))
+        return self.downsampled_1000[min_samp:max_samp, channel]
 
-    def visible_preemph_signal(self):
-        min_samp = np.floor(self.view_begin * self.sr)
-        max_samp = np.ceil(self.view_end * self.sr)
-        return self.preemph_signal[min_samp:max_samp]
+    def visible_downsampled_100(self, begin, end, channel = 0):
+        if self.downsampled_100 is None:
+            return None
+        min_samp = int(np.floor(begin * 100))
+        max_samp = int(np.ceil(end * 100))
+        return self.downsampled_100[min_samp:max_samp, channel]
+
+    def visible_signal(self, begin, end, channel = 0):
+        if self.signal is None:
+            return None
+        min_samp = int(np.floor(begin * self.sr))
+        max_samp = int(np.ceil(end * self.sr))
+        return self.signal[min_samp:max_samp, channel]
+
+    def visible_preemph_signal(self, begin, end, channel = 0):
+        if self.preemph_signal is None:
+            return None
+        min_samp = int(np.floor(begin * self.sr))
+        max_samp = int(np.ceil(end * self.sr))
+        return self.preemph_signal[min_samp:max_samp, channel]

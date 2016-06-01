@@ -107,7 +107,8 @@ class BaseContext(object):
     def execute_cypher(self, statement, **parameters):
         try:
             return self.graph.run(statement, **parameters)
-        except py2neo.packages.httpstream.http.SocketError:
+        except (py2neo.packages.httpstream.http.SocketError,
+                py2neo.packages.neo4j.v1.exceptions.ProtocolError):
             raise(ConnectionError('PolyglotDB could not connect to the server specified.'))
         except ClientError:
             raise

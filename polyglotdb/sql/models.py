@@ -94,10 +94,14 @@ class Property(Base):
 
     value = Column(String(250), nullable = False)
 
-speaksin_table = Table('speaks_in', Base.metadata,
-    Column('discourse_id', Integer, ForeignKey('discourse.id')),
-    Column('speaker_id', Integer, ForeignKey('speaker.id'))
-)
+class SpeaksIn(Base):
+    __tablename__ = 'speaks_in'
+    discourse_id = Column(Integer, ForeignKey('discourse.id'), primary_key = True)
+    speaker_id = Column(Integer, ForeignKey('speaker.id'), primary_key = True)
+    channel = Column(Integer, default = 0)
+    speaker = relationship("Speaker", back_populates="discourses")
+    discourse = relationship("Discourse", back_populates="speakers")
+
 
 class Discourse(Base):
     __tablename__ = 'discourse'
@@ -108,9 +112,8 @@ class Discourse(Base):
 
     properties = relationship('DiscourseProperty', backref = 'discourse')
 
-    speakers = relationship("Speaker",
-        secondary=speaksin_table,
-        back_populates="discourses")
+    speakers = relationship("SpeaksIn",
+        back_populates="discourse")
 
 class Speaker(Base):
     __tablename__ = 'speaker'
@@ -121,9 +124,8 @@ class Speaker(Base):
 
     properties = relationship('SpeakerProperty', backref = 'speaker')
 
-    discourses = relationship("Discourse",
-        secondary=speaksin_table,
-        back_populates="speakers")
+    discourses = relationship("SpeaksIn",
+        back_populates="speaker")
 
 class SpeakerProperty(Base):
     __tablename__ = 'speaker_property'
@@ -188,6 +190,8 @@ class Formants(Base):
 
     F3 = Column(Integer, nullable = False)
 
+    channel = Column(Integer, default = 0)
+
     source = Column(String(250), nullable = False)
 
 class Pitch(Base):
@@ -201,5 +205,7 @@ class Pitch(Base):
     time = Column(Float, nullable = False)
 
     F0 = Column(Float, nullable = False)
+
+    channel = Column(Integer, default = 0)
 
     source = Column(String(250), nullable = False)

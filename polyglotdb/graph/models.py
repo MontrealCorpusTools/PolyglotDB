@@ -196,6 +196,14 @@ class LinguisticAnnotation(BaseAnnotation):
         self.type_node = res[0]['type']
 
     @property
+    def channel(self):
+        speaker = self.corpus_context.census[self.speaker.name]
+        for x in speaker.discourses:
+            if x.discourse.name == self.discourse.name:
+                return x.channel
+        return None
+
+    @property
     def type_node(self):
         return self._type_node
 
