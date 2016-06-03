@@ -70,7 +70,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
     def reset_syllables(self, call_back = None, stop_check = None):
         if call_back is not None:
             call_back('Resetting syllables...')
-            number = self.execute_cypher('''MATCH (n:syllable:%s) return count(*) as number ''' % (self.cypher_safe_name)).one
+            number = self.execute_cypher('''MATCH (n:syllable:%s) return count(*) as number ''' % (self.cypher_safe_name)).evaluate()
             call_back(0, number)
         statement = '''MATCH (st:syllable_type:{corpus})
                 WITH st

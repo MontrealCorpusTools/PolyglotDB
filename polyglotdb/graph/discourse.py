@@ -3,19 +3,106 @@ import numpy as np
 from scipy.io import wavfile
 from scipy.signal import lfilter
 
+import librosa
+
 from resampy import resample
 
-def load_sound_file(path):
+class LongSoundFile(object):
+    cache_amount = 60
+    def __init__(self, sound_file, initial_begin = None, initial_end = None):
+        self.path = sound_file.filepath
+        self.mode = None
 
-    try:
-        sr, signal = wavfile.read(path)
-    except:
-        return None, None, None
-    signal = signal / 32768
-    preemph_signal = lfilter([1., -0.95], 1, signal, axis = 0)
-    downsampled_1000 = resample(signal, sr, 1000, filter = 'kaiser_fast', axis = 0)
-    downsampled_100 = resample(downsampled_1000, 100, 100, filter = 'kaiser_fast', axis = 0)
-    return signal, preemph_signal, sr, downsampled_1000, downsampled_100
+        self.duration = sound_file.duration
+        self.num_channels = sound_file.n_channels
+        if self.duration < self.cache_amount:
+            self.mode = 'short'
+            self.signal, self.sr = librosa.load(self.path, sr = None)
+            self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis = 0)
+            self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter = 'kaiser_fast', axis = 0)
+            self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter = 'kaiser_fast', axis = 0)
+            self.cached_begin = 0
+            self.cached_end = self.duration
+        else:
+            self.mode = 'long'
+            if initial_begin is not None:
+                if initial_end is not None:
+                    padding = self.cache_amount - (initial_end - initial_begin)
+                    self.cached_begin = initial_begin - padding
+                    self.cached_end = initial_end + padding
+                else:
+                    self.cached_begin = initial_begin - self.cache_amount / 2
+                    self.cached_end = initial_begin + self.cache_amount / 2
+                if self.cached_begin < 0:
+                    self.cached_end -= self.cached_begin
+                    self.cached_begin = 0
+                if self.cached_end > self.duration:
+                    diff = self.cached_end - self.duration
+                    self.cached_end = self.duration
+                    self.cached_begin -= diff
+            else:
+                self.cached_begin = 0
+                self.cached_end = self.cache_amount
+        self.refresh_cache()
+
+    def update_times(self, begin, end):
+        if begin < 0:
+            begin = 0
+        if end > self.duration:
+            end = self.duration
+        self.cached_begin, self.cached_end = begin, end
+        self.refresh_cache()
+
+    def refresh_cache(self):
+        if self.mode == 'long':
+            dur = self.cached_end - self.cached_begin
+            self.signal, self.sr = librosa.load(self.path, sr = None,
+                        offset = self.cached_begin, duration = dur, mono = False)
+            if len(self.signal.shape) == 1:
+                self.signal = self.signal.reshape((self.signal.shape[0],1))
+            else:
+                self.signal = self.signal.T
+            print(self.signal.shape)
+            self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis = 0)
+            self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter = 'kaiser_fast', axis = 0)
+            self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter = 'kaiser_fast', axis = 0)
+
+    def visible_downsampled_1000(self, begin, end, channel = 0):
+        if self.downsampled_1000 is None:
+            return None
+        begin -= self.cached_begin
+        end -= self.cached_begin
+        min_samp = int(np.floor(begin * 1000))
+        max_samp = int(np.ceil(end * 1000))
+        return self.downsampled_1000[min_samp:max_samp, channel]
+
+    def visible_downsampled_100(self, begin, end, channel = 0):
+        if self.downsampled_100 is None:
+            return None
+        begin -= self.cached_begin
+        end -= self.cached_begin
+        min_samp = int(np.floor(begin * 100))
+        max_samp = int(np.ceil(end * 100))
+        return self.downsampled_100[min_samp:max_samp, channel]
+
+    def visible_signal(self, begin, end, channel = 0):
+        if self.signal is None:
+            return None
+        print(begin, end, self.cached_begin)
+        begin -= self.cached_begin
+        end -= self.cached_begin
+        min_samp = int(np.floor(begin * self.sr))
+        max_samp = int(np.ceil(end * self.sr))
+        return self.signal[min_samp:max_samp, channel]
+
+    def visible_preemph_signal(self, begin, end, channel = 0):
+        if self.preemph_signal is None:
+            return None
+        begin -= self.cached_begin
+        end -= self.cached_begin
+        min_samp = int(np.floor(begin * self.sr))
+        max_samp = int(np.ceil(end * self.sr))
+        return self.preemph_signal[min_samp:max_samp, channel]
 
 class DiscourseInspecter(object):
     def __init__(self, corpus_context, discourse_name, initial_begin = None, initial_end = None):
@@ -24,19 +111,9 @@ class DiscourseInspecter(object):
         self.sound_file = self.corpus.discourse_sound_file(self.name)
         self.cached_begin = None
         self.cached_end = None
-        self.signal = None
-        self.preemph_signal = None
-        self.sr = None
-        if self.sound_file is not None:
-            self.corpus.sql_session.expunge(self.sound_file)
 
-            if os.path.exists(self.sound_file.filepath):
-                (self.signal, self.preemph_signal, self.sr,
-                self.downsampled_1000,
-                self.downsampled_100) = load_sound_file(self.sound_file.filepath)
-
+        if self.sound_file is not None and os.path.exists(self.sound_file.filepath):
             self.max_time = self.sound_file.duration
-            self.num_channels = self.sound_file.n_channels
         else:
             h_type = self.corpus.hierarchy.highest
             highest = getattr(self.corpus, h_type)
@@ -45,7 +122,6 @@ class DiscourseInspecter(object):
             q = q.order_by(highest.end, descending = True)
             q = q.limit(1)
             self.max_time = q.all()[0].end
-            self.num_channels = 1
 
         self._initialize_cache(initial_begin, initial_end)
 
@@ -53,14 +129,23 @@ class DiscourseInspecter(object):
         print('initializing discourse cache')
         q = self._base_discourse_query(begin, end)
         self.cache = [x for x in q.all()]
-        self.update_cached_times()
+        if begin < 0:
+            begin = 0
+        if end > self.max_time:
+            end = self.max_time
+        self.cached_begin = begin
+        self.cached_end = end
         print('done initializing', self.cached_begin, self.cached_end, len(self.cache))
 
     def add_preceding(self, results):
+        for r in results:
+            r.corpus_context = self.corpus
         self.cache = results + self.cache
         self.update_cached_times()
 
     def add_following(self, results):
+        for r in results:
+            r.corpus_context = self.corpus
         self.cache += results
         self.update_cached_times()
 
@@ -75,6 +160,7 @@ class DiscourseInspecter(object):
             print('updating following')
             q = self.following_cache_query(end)
             self.add_following([x for x in q.all()])
+        self.cache_sound_file()
 
     def preceding_cache_query(self, begin = None):
         h_type = self.corpus.hierarchy.highest
@@ -240,31 +326,3 @@ class DiscourseInspecter(object):
             if annotation is not None:
                 break
         return annotation
-
-    def visible_downsampled_1000(self, begin, end, channel = 0):
-        if self.downsampled_1000 is None:
-            return None
-        min_samp = int(np.floor(begin * 1000))
-        max_samp = int(np.ceil(end * 1000))
-        return self.downsampled_1000[min_samp:max_samp, channel]
-
-    def visible_downsampled_100(self, begin, end, channel = 0):
-        if self.downsampled_100 is None:
-            return None
-        min_samp = int(np.floor(begin * 100))
-        max_samp = int(np.ceil(end * 100))
-        return self.downsampled_100[min_samp:max_samp, channel]
-
-    def visible_signal(self, begin, end, channel = 0):
-        if self.signal is None:
-            return None
-        min_samp = int(np.floor(begin * self.sr))
-        max_samp = int(np.ceil(end * self.sr))
-        return self.signal[min_samp:max_samp, channel]
-
-    def visible_preemph_signal(self, begin, end, channel = 0):
-        if self.preemph_signal is None:
-            return None
-        min_samp = int(np.floor(begin * self.sr))
-        max_samp = int(np.ceil(end * self.sr))
-        return self.preemph_signal[min_samp:max_samp, channel]

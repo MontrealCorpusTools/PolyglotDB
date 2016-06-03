@@ -61,6 +61,42 @@ class LinguisticAnnotation(BaseAnnotation):
 
         self._preloaded = False
 
+    @property
+    def corpus_context(self):
+        return self._corpus_context
+
+    @corpus_context.setter
+    def corpus_context(self, context):
+        if self._corpus_context == context:
+            return
+        self._corpus_context = context
+        f = self._following
+        while True:
+            if f is None:
+                break
+            f.corpus_context = context
+            f = f._following
+        f = self._previous
+        while True:
+            if f is None:
+                break
+            f.corpus_context = context
+            f = f._previous
+        f = self._speaker
+        if f is not None:
+            f.corpus_context = context
+        f = self._discourse
+        if f is not None:
+            f.corpus_context = context
+        for k,v in self._supers.items():
+            v.corpus_context = context
+        for k,v in self._subs.items():
+            for t in v:
+                t.corpus_context = context
+        for k,v in self._subannotations.items():
+            for t in v:
+                t.corpus_context = context
+
     def __getitem__(self, key):
         return getattr(self, key)
 

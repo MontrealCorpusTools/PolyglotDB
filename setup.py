@@ -57,7 +57,8 @@ if __name__ == '__main__':
           'sqlalchemy',
           'textgrid',
           'acousticsim',
-          'py2neo'
+          'py2neo',
+          'librosa'
       ],
     cmdclass={'test': PyTest},
     extras_require={
