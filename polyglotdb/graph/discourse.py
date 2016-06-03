@@ -160,7 +160,6 @@ class DiscourseInspecter(object):
             print('updating following')
             q = self.following_cache_query(end)
             self.add_following([x for x in q.all()])
-        self.cache_sound_file()
 
     def preceding_cache_query(self, begin = None):
         h_type = self.corpus.hierarchy.highest
