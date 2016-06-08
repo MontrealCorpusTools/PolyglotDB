@@ -7,7 +7,12 @@ from ..graph.helper import value_for_cypher
 
 def generate_cypher_property_list(property_set):
     """
-        
+    Generates a list of properies of cypher queries
+
+    Returns
+    -------
+    properties : str
+        list of properties   
     """
     props = []
     for name, t in property_set:
@@ -26,6 +31,14 @@ def generate_cypher_property_list(property_set):
 
 class StructuredContext(BaseContext):
     def generate_hierarchy(self):
+        """
+        Creates the hierarchy, which is information on how the corpus is structured
+
+        Returns
+        -------
+        h : Hierarchy object
+            the structure of the corpus
+        """
         exists_statement = '''MATCH (c:Corpus)<-[:contained_by]-(s)
         WHERE c.name = {corpus_name} RETURN c LIMIT 1'''
         if self.execute_cypher(exists_statement, corpus_name = self.corpus_name):
@@ -124,11 +137,17 @@ class StructuredContext(BaseContext):
         return h
 
     def refresh_hierarchy(self):
+        """
+        Updates the hierarchy
+        """
         h = self.generate_hierarchy()
         self.hierarchy = h
         self.save_variables()
 
     def reset_hierarchy(self):
+        """
+        Resets the hierarchy
+        """
         self.execute_cypher('''MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t),
                                 (c)-[:spoken_by]->(s:Speaker),
                                 (c)-[:spoken_in]->(d:Discourse)
@@ -138,6 +157,9 @@ class StructuredContext(BaseContext):
                                 DETACH DELETE a, t, n, s, d'''.format(self.corpus_name))
 
     def encode_hierarchy(self):
+        """
+        encodes hierarchy 
+        """
         self.reset_hierarchy()
         hierarchy_template = '''({super})<-[:contained_by]-({sub})-[:is_a]->({sub_type})'''
         subannotation_template = '''({super})<-[:annotates]-({sub})'''
@@ -197,6 +219,20 @@ class StructuredContext(BaseContext):
         self.execute_cypher(statement, corpus_name = self.corpus_name)
 
     def encode_position(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        """
+        Encodes position of lower type in higher type
+
+        Parameters
+        ----------
+        higher_annotation_type : str
+            what the higher annotation is (utterance, word)
+        lower_annotation_type : str
+            what the lower annotation is (word, phone, syllable)
+        name : 
+
+        subset : 
+
+        """
         lower = getattr(self, lower_annotation_type)
         if subset is not None:
             lower = lower.subset_type(subset)
@@ -212,6 +248,19 @@ class StructuredContext(BaseContext):
         self.save_variables()
 
     def encode_rate(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        """
+        Encodes the rate of the lower type in the higher type
+
+        Parameters
+        ----------
+        higher_annotation_type : str
+            what the higher annotation is (utterance, word)
+        lower_annotation_type : str
+            what the lower annotation is (word, phone, syllable)
+        name : 
+
+        subset : 
+        """
         higher = getattr(self, higher_annotation_type)
         lower = getattr(higher, lower_annotation_type)
         if subset is not None:
@@ -224,6 +273,19 @@ class StructuredContext(BaseContext):
         self.save_variables()
 
     def encode_count(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+        """
+        Encodes the rate of the lower type in the higher type
+
+        Parameters
+        ----------
+        higher_annotation_type : str
+            what the higher annotation is (utterance, word)
+        lower_annotation_type : str
+            what the lower annotation is (word, phone, syllable)
+        name : 
+
+        subset : 
+        """
         higher = getattr(self, higher_annotation_type)
         lower = getattr(higher, lower_annotation_type)
         if subset is not None:
@@ -236,6 +298,15 @@ class StructuredContext(BaseContext):
         self.save_variables()
 
     def reset_property(self, annotation_type, name):
+        """
+        Removes property from hierarchy
+
+        Parameters
+        ----------
+        annnotation_type : 
+            what is being removed
+        name : 
+        """
         q = self.query_graph(getattr(self, annotation_type))
         q.set_token(**{name: None})
         self.hierarchy.remove_token_properties(self, annotation_type, [name])
