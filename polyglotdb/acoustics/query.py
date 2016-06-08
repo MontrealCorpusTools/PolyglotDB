@@ -13,7 +13,14 @@ class AcousticQuery(object):
 
 
     def pitch(self, algorithm):
+        """ 
+        finds the correct file, then adds the pitch to it 
 
+        Parameters
+        ----------
+        algorithm : str
+            the algorithm to be used for finding pitch
+        """
         for i, element in enumerate(self.elements):
             begin, end = element.begin, element.end
             q = self.corpus.sql_session.query(Pitch).join(SoundFile, Discourse)
@@ -25,6 +32,14 @@ class AcousticQuery(object):
         return self
 
     def max(self):
+        """
+        for each element, get the maximum acoustic element and add it to __values__
+
+        Returns
+        -------
+        self.elements
+
+         """
         for e in self.acoustic_elements:
             name = 'max_{}'.format(e)
             for i in range(len(self.elements)):
@@ -36,13 +51,28 @@ class AcousticQuery(object):
         return self.elements
 
     def all(self):
+        """ 
+        add the pitch to each element's __values__ tuple
+        
+        Returns
+        -------
+        self.elements
+        """ 
         for i in range(len(self.elements)):
             self.elements[i].__values__ = tuple(list(self.elements[i].__values__) +[self.elements[i].pitch])
         self.elements.columns.append('pitch')
         return self.elements
 
     def formants(self, algorithm):
+        """ 
+        finds the correct file, then adds the formants to it 
 
+        Parameters
+        ----------
+        algorithm : str
+            the algorithm to be used for finding the formants
+
+        """
         for i, element in enumerate(self.elements):
             begin, end = element.begin, element.end
             q = self.corpus.sql_session.query(Formants).join(SoundFile, Discourse)

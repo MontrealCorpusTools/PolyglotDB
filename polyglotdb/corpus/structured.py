@@ -6,6 +6,9 @@ from ..structure import Hierarchy
 from ..graph.helper import value_for_cypher
 
 def generate_cypher_property_list(property_set):
+    """
+        
+    """
     props = []
     for name, t in property_set:
         if name == 'id':

@@ -10,22 +10,61 @@ from ..acoustics.query import AcousticQuery
 
 class AudioContext(BaseContext):
     def query_acoustics(self, graph_query):
+        """
+        Checks for soundfiles,
+        Makes an AcousticQuery object
+
+        Parameters
+        ----------
+        graph_query : 
+            the query to be run
+
+        Returns
+        -------
+        AcousticQuery object
+
+        """
         if not self.has_sound_files:
             raise(NoSoundFileError)
         return AcousticQuery(self, graph_query)
 
     def analyze_acoustics(self):
+        """
+        checks for soundfiles
+        runs an acoustic analysis
+        """
         if not self.has_sound_files:
             raise(NoSoundFileError)
         acoustic_analysis(self)
 
     def discourse_sound_file(self, discourse):
+        """
+        Gets the first sound file from the discourse
+
+        Parameters
+        ----------
+        discourse : str
+            discourse name
+
+        Returns
+        -------
+        sound_file :
+            the first soundfile
+        """
         q = self.sql_session.query(SoundFile).join(SoundFile.discourse)
         q = q.filter(Discourse.name == discourse)
         sound_file = q.first()
         return sound_file
 
     def has_all_sound_files(self):
+        """
+        Checks if it has run before, then checks if all sound files exist for each discourse name
+
+        Returns
+        -------
+        _has_all_sound_files : bool
+            True if sound file exists for each discourse name in corpus
+        """
         if self._has_all_sound_files is not None:
             return self._has_all_sound_files
         discourses = self.discourses
@@ -42,6 +81,14 @@ class AudioContext(BaseContext):
 
     @property
     def has_sound_files(self):
+        """
+        Checks if it has run before, then checks if there are any sound files
+
+        Returns
+        -------
+        _has_sound_files : bool
+            True if there are any sound files at all, false if there aren't
+        """
         if self._has_sound_files is None:
             self._has_sound_files = self.sql_session.query(SoundFile).first() is not None
         return self._has_sound_files

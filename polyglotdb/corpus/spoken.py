@@ -6,6 +6,17 @@ from ..io.importer import (speaker_data_to_csvs, import_speaker_csvs,
 
 class SpokenContext(BaseContext):
     def enrich_speakers(self, speaker_data, type_data = None):
+        """
+        adds properties to speakers, adds speaker properties to census
+        adds pproperties to hierarchy
+        Parameters
+        ----------
+        speaker_data : dict
+            the data about the speakers to add
+        type_data : dict
+            default to None
+        
+        """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(speaker_data.values())).items()}
 
@@ -21,6 +32,18 @@ class SpokenContext(BaseContext):
         pass
 
     def enrich_discourses(self, discourse_data, type_data = None):
+        """
+        adds properties to discourses, adds properties to census
+        adds properties to hierarchy
+
+        Parameters
+        ----------
+        discours_data : dict
+            the data about the discourse to add
+        type_data : dict
+            default to None
+        
+        """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(discourse_data.values())).items()}
 

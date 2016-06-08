@@ -6,6 +6,15 @@ from ..io.importer import feature_data_to_csvs, import_feature_csvs
 
 class FeaturedContext(BaseContext):
     def encode_class(self, phones, label):
+        """
+        encodes word phone classes
+
+        Parameters
+        ----------
+        phones : 
+        label : str
+            the label for the class
+        """
         statement = '''MATCH (n:{phone_name}_type:{corpus_name}) where n.label in {{phones}}
         SET n :{label}'''.format(phone_name = self.phone_name, corpus_name = self.corpus_name,
                                 label = label)
@@ -14,6 +23,9 @@ class FeaturedContext(BaseContext):
         self.refresh_hierarchy()
 
     def reset_class(self, label):
+        """
+        resets the class
+        """
         statement = '''MATCH (n:{phone_name}_type:{corpus_name}:{label})
         REMOVE n:{label}'''.format(phone_name = self.phone_name, corpus_name = self.corpus_name,
                                 label = label)
@@ -22,18 +34,44 @@ class FeaturedContext(BaseContext):
         self.refresh_hierarchy()
 
     def encode_features(self, feature_dict):
+        """
+        gets the phone if it exists, queries for each phone and sets type to kwargs (?)
+        
+        Parameters
+        ----------
+        feature_dict : dict
+            all of the features of a particular 
+        """
         phone = getattr(self, self.phone_name)
         for k, v in feature_dict.items():
             q = self.query_graph(phone).filter(phone.label == k)
             q.set_type(**v)
 
     def reset_features(self, feature_names):
+        """
+        resets featurs back to nothing
+
+        Parameters
+        ----------
+        feature_names : list
+            list of names of features to remove
+        """
         phone = getattr(self, self.phone_name)
         q = self.query_graph(phone)
         q.set_type(**{x: None for x in feature_names})
         self.hierarchy.remove_type_properties(self, self.phone_name, feature_names)
 
     def enrich_features(self, feature_data, type_data = None):
+        """
+        Sets the data type and feature data, initializes importers for feature data, adds features to hierarchy for a phone
+
+        Parameters
+        ----------
+        feature_data : dict
+        
+        type_data : dict
+            By default None
+        """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(feature_data.values())).items()}
         labels = set(self.lexicon.phones())

@@ -105,6 +105,22 @@ class BaseContext(object):
             Base.metadata.create_all(self.engine)
 
     def execute_cypher(self, statement, **parameters):
+        """
+        Executes a cypher query
+        
+        Parameters
+        ----------
+        statement : str
+            the cypher statement
+        parameters :
+
+        Returns
+        -------
+        query result : 
+        or
+        raises error
+
+        """
         try:
             return self.graph.run(statement, **parameters)
         except py2neo.packages.httpstream.http.SocketError:
@@ -141,6 +157,14 @@ class BaseContext(object):
 
     @property
     def speakers(self):
+        """
+        Gets a list of speakers in the corpus
+
+        Returns
+        -------
+        names : list
+            all the speaker names
+        """
         q = self.sql_session.query(Speaker).all()
         if not len(q):
             res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.corpus_name))
@@ -186,6 +210,14 @@ class BaseContext(object):
 
     @property
     def word_name(self):
+        """
+        Gets the word label
+
+        Returns
+        -------
+        word : str
+            word name
+        """
         for at in self.hierarchy.annotation_types:
             if at.startswith('word'): #FIXME need a better way for storing word name
                 return at
@@ -193,6 +225,14 @@ class BaseContext(object):
 
     @property
     def phone_name(self):
+        """
+        Gets the phone label
+
+        Returns
+        -------
+        phone : str
+            phone name
+        """
         name = self.hierarchy.lowest
         if name is None:
             name = 'phone'

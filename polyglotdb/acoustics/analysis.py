@@ -31,7 +31,16 @@ def acoustic_analysis(corpus_context,
             speaker_subset = None,
             call_back = None,
             stop_check = None):
+    
+    """ 
+    Calls get_pitch and get_formants for each sound file in a corpus
 
+    Parameters
+    ----------
+    corpus_context : 
+        the type of corpus
+
+    """
     if speaker_subset is None:
         q = corpus_context.sql_session.query(SoundFile).join(Discourse)
         sound_files = q.all()
@@ -67,6 +76,22 @@ def acoustic_analysis(corpus_context,
     log.debug('Total time taken: {} seconds'.format(time.time() - initial_begin))
 
 def get_pitch(corpus_context, sound_file, calculate = True):
+    """ 
+    Tries to get the pitch of a sound file (F0), excepts sql error
+
+    
+    Parameters
+    ----------
+    corpus_context : 
+        the type of corpus
+    sound_file :
+        the .wav sound file
+
+    Returns
+    -------
+    listing or [] : list
+        q.all() ????
+    """
     try:
         q = corpus_context.sql_session.query(Pitch).join(SoundFile)
         q = q.filter(SoundFile.id == sound_file.id)
@@ -87,6 +112,22 @@ def get_pitch(corpus_context, sound_file, calculate = True):
     return listing
 
 def get_formants(corpus_context, sound_file, calculate = True):
+    """
+    Tries to get formants for a sound file (F1-F3), excepts sql error 
+
+    Parameters
+    ----------
+    corpus_context : 
+        the type of corpus
+    sound_file :
+        the .wav sound file
+
+    Returns
+    -------
+    listing or [] : list
+        q.all() ????
+
+    """
     try:
         q = corpus_context.sql_session.query(Formants).join(SoundFile)
         q = q.filter(SoundFile.id == sound_file.id)
@@ -107,6 +148,16 @@ def get_formants(corpus_context, sound_file, calculate = True):
     return listing
 
 def analyze_pitch(corpus_context, sound_file):
+    """ 
+    Analyzes the pitch using different algorithms based on the corpus the sound file is from 
+    
+    Parameters
+    ----------
+    corpus_context : 
+        the type of corpus
+    sound_file :
+        the .wav sound file
+    """
     algorithm = corpus_context.config.pitch_algorithm
     if algorithm == 'reaper':
         if getattr(corpus_context.config, 'reaper_path', None) is not None:
@@ -172,6 +223,14 @@ def analyze_pitch(corpus_context, sound_file):
     corpus_context.sql_session.flush()
 
 def analyze_formants(corpus_context, sound_file):
+    """ 
+    Analyzes the formants using different algorithms based on the corpus the sound file is from 
+
+    corpus_context : 
+        the type of corpus
+    sound_file :
+        the .wav sound file
+    """
     algorithm = corpus_context.config.formant_algorithm
     if algorithm == 'praat':
         if getattr(corpus_context.config, 'praat_path', None) is not None:
@@ -224,6 +283,20 @@ def analyze_formants(corpus_context, sound_file):
             corpus_context.sql_session.add(f)
 
 def sanitize_formants(value):
+    """ 
+    sanitzies formants, making them 0 if they are None 
+    
+    Parameters
+    ----------
+    value : list
+        the value of the formants
+
+    Returns
+    -------
+    f1, f2, f3 : int
+        the sanitized formants
+
+    """
     f1 = value[0][0]
     if f1 is None:
         f1 = 0

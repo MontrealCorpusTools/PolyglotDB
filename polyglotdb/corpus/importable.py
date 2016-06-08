@@ -32,6 +32,7 @@ class ImportContext(BaseContext):
         import_type_csvs(self, type_headers)
 
     def initialize_import(self):
+        """ prepares corpus for import of types of annotations """
         self.execute_cypher('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
         self.execute_cypher('CREATE INDEX ON :Discourse(name)')
         self.execute_cypher('CREATE INDEX ON :Speaker(name)')
@@ -39,6 +40,7 @@ class ImportContext(BaseContext):
         self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
     def finalize_import(self):
+        """ generates hierarchy and saves variables"""
         self.encode_hierarchy()
         self.hierarchy = self.generate_hierarchy()
         self.save_variables()
@@ -75,6 +77,21 @@ class ImportContext(BaseContext):
         log.debug('Total time taken: {} seconds'.format(time.time() - begin))
 
     def load(self, parser, path):
+        """
+            Checks if it can load the path
+
+            Parameters
+            ----------
+            parser : 
+                the type of parser used for corpus
+            path : str
+                the location of the corpus
+
+            Returns
+            -------
+            could_not_parse : 
+                whether or not it was able to parse the corpus
+        """
         if os.path.isdir(path):
             could_not_parse = self.load_directory(parser, path)
         else:
@@ -82,6 +99,21 @@ class ImportContext(BaseContext):
         return could_not_parse
 
     def load_discourse(self, parser, path):
+        """
+        initializes, adds types, adds data, and finalizes import
+
+        Parameters
+        ----------
+        parser : 
+                the type of parser used for corpus
+        path : str
+            the location of the discourse
+
+        Returns
+        -------
+        empty list
+
+        """
         data = parser.parse_discourse(path)
         self.initialize_import()
         self.add_types(*data.types(self.corpus_name))
@@ -90,6 +122,22 @@ class ImportContext(BaseContext):
         return []
 
     def load_directory(self, parser, path):
+        """
+        Checks if it can parse each file in dir, 
+        initializes, adds types, adds data, and finalizes import
+
+        Parameters
+        ----------
+        parser : 
+                the type of parser used for corpus
+        path : str
+            the location of the directory
+
+        Returns
+        -------
+        could_not_parse :
+            whether or not it was able to parse the corpus
+        """
         call_back = parser.call_back
         parser.call_back = None
         if call_back is not None:

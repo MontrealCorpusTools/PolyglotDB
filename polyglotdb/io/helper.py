@@ -18,6 +18,19 @@ tobi_characters = set('LH%-+!*')
 morph_delimiters = set('-=')
 
 def normalize_values_for_neo4j(dictionary):
+    """
+    Sanitizes dictionary for neo4j format by making non-existant values be the string 'NULL'
+
+    Parameters
+    ----------
+    dictionary : dict
+        the dictionary to be sanitized
+
+    Returns
+    -------
+    out : dict
+        sanitized dictionary
+    """
     out = {}
     for k,v in dictionary.items():
         if isinstance(v, list):
@@ -28,6 +41,19 @@ def normalize_values_for_neo4j(dictionary):
     return out
 
 def guess_type(values, trans_delimiters = None):
+    """
+    Given a set of values, guesses the value type (numeric, transcription, grouping, tobi, morpheme, orthography)
+
+    Parameters
+    ----------
+    values : dict
+        a dictionary of the possible values
+    
+    Returns
+    -------
+    type : string
+        most probably type (highest count)
+    """
     if trans_delimiters is None:
         trans_delimiters = ['.',' ', ';', ',']
     probable_values = {x: 0 for x in ATT_TYPES}
@@ -134,6 +160,19 @@ def text_to_lines(path):
     return lines
 
 def most_frequent_value(dictionary):
+    """ 
+    Gets the most frequent value in the dictionary
+
+    Parameters
+    ----------
+    dictionary  : dict
+        The dictionary to search through
+
+    Returns
+    -------
+    max : value
+        the most frequent value
+    """
     c = Counter(dictionary.values())
     return max(c.keys(), key = lambda x: c[x])
 
@@ -218,6 +257,19 @@ def make_type_id(type_values, corpus):
     return m.hexdigest()
 
 def guess_textgrid_format(path):
+    """
+    Given a directory, tries to guess what format the textgrids are in
+
+    Parameters
+    ----------
+    path : str
+        the path of the directory containing the textgrids
+
+    Returns
+    -------
+    str or None
+        textgrid format or None if file is not textgrid and directory doesn't contain textgrids
+    """
     from .inspect import inspect_labbcat, inspect_mfa, inspect_fave
     if os.path.isdir(path):
         counts = {'mfa': 0, 'labbcat': 0, 'fave': 0, None: 0}

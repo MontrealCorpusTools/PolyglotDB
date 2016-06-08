@@ -9,6 +9,16 @@ from ..sql.models import (SoundFile, Discourse)
 
 
 def add_acoustic_info(corpus_context, data):
+    """ 
+    Add the duration, sampling rate, number of channels, and discourse to a sound file 
+    
+    Parameters
+    ----------
+    corpus_context : 
+        The corpus type
+    data : 
+        the file to add info to
+    """
     if data.wav_path is None or not os.path.exists(data.wav_path):
         return
     with wave.open(data.wav_path,'rb') as f:
