@@ -51,6 +51,7 @@ class Attribute(object):
         return '<Attribute \'{}\'>'.format(str(self))
 
     def for_cypher(self):
+        """Returns annotation duration or annotation type if applicable, otherwise annotation name and label """
         if self.label == 'duration':
             return '{a}.end - {a}.begin'.format(a = self.annotation.alias)
         if self.type:
@@ -60,24 +61,44 @@ class Attribute(object):
 
     @property
     def base_annotation(self):
+        """ returns the annotation """
         return self.annotation
 
     @base_annotation.setter
     def base_annotation(self, value):
+        """ sets the annotation to value """
         self.annotation = value
 
     @property
     def alias(self):
+        """ Removes '`' from annotation """
         return '`{}_{}`'.format(self.annotation.alias.replace('`',''), self.label)
 
     def aliased_for_cypher(self):
+        """ 
+        formats alias for cypher
+
+        Returns
+        -------
+        string
+            alias for cypher
+        """
         return '{} AS {}'.format(self.for_cypher(), self.alias)
 
     def aliased_for_output(self):
+        """ 
+        formats alias for output 
+
+        Returns
+        -------
+        string
+            alias for output
+        """ 
         return '{} AS {}'.format(self.for_cypher(), self.output_alias)
 
     @property
     def output_alias(self):
+        
         if self.output_label is not None:
             return self.output_label
         return self.alias

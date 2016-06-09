@@ -10,6 +10,16 @@ class SubAnnotation(SubPathAnnotation):
         WITH {output_with_string}'''
 
     def generate_subquery(self, output_with_string, input_with_string):
+        """
+        Generates a subquery 
+        
+        Parameters
+        ----------
+        output_with_string : str
+            the string limiting the output
+        input_with_string : str
+            the string limiting the input
+         """
         return self.subquery_template.format(alias = self.annotation.alias,
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         def_path_alias = self.def_path_alias, path_alias = self.path_alias)

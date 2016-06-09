@@ -314,7 +314,17 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
         self.reset_property(self.word_name, 'position_in_utterance')
 
     def encode_speech_rate(self, subset_label, call_back = None, stop_check = None):
+        """ 
+        Encodes speech rate
+
+        Parameters
+        ----------
+        subset_label : str
+            the name of the subset to encode
+
+        """
         self.encode_rate('utterance', self.phone_name, 'speech_rate', subset = subset_label)
 
     def reset_speech_rate(self):
+        """ resets speech_rate """
         self.reset_property('utterance', 'speech_rate')

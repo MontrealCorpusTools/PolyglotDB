@@ -85,6 +85,9 @@ class BaseContext(object):
         self.config.query_behavior = 'speaker'
 
     def load_variables(self):
+        """
+        Loads variables into Hierarchy
+        """
         try:
             with open(os.path.join(self.config.data_dir, 'variables'), 'rb') as f:
                 var = pickle.load(f)
@@ -95,10 +98,14 @@ class BaseContext(object):
                 self.save_variables()
 
     def save_variables(self):
+        """ saves variables to hierarchy"""
         with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
             pickle.dump({'hierarchy': self.hierarchy}, f)
 
     def init_sql(self):
+        """
+        initializes sql connection
+        """
         self.engine = create_engine(self.config.sql_connection_string)
         Session.configure(bind=self.engine)
         if not os.path.exists(self.config.db_path):

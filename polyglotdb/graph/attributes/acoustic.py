@@ -23,6 +23,26 @@ class PitchAttribute(AcousticAttribute):
         self.label = 'pitch'
 
     def hydrate(self, corpus, discourse, begin, end, aggregation = None):
+        """
+        Gets all F0 from a discourse
+
+        Parameters
+        ----------
+        corpus :
+            the corpus to query
+        discourse : str
+            the discourse to query
+        begin : float
+            the start time of the pitch
+        end : float
+            the end time of the pitch
+        aggregation : defaults to None
+
+        Returns
+        -------
+        data : dict 
+            A dictionary with 'F0' as the keys and a dictionary of times and F0 values as the value
+         """
         data = {'F0':{}}
         q = corpus.sql_session.query(Pitch).join(SoundFile, Discourse)
         q = q.filter(Pitch.time >= begin, Pitch.time <= end)
@@ -40,6 +60,27 @@ class FormantAttribute(AcousticAttribute):
         self.label = 'formants'
 
     def hydrate(self, corpus, discourse, begin, end, aggregation = None):
+        """
+        Gets all formants from a discourse
+
+        Parameters
+        ----------
+        corpus :
+            the corpus to query
+        discourse : str
+            the discourse to query
+        begin : float
+            the start time of the pitch
+        end : float
+            the end time of the pitch
+        aggregation : defaults to None
+
+        Returns
+        -------
+        data : dict 
+            A dictionary with 'F1', 'F2', 'F3' as the keys and a dictionary of times and corresponding formant values as the value
+         """
+
         data = {'F1':{}, 'F2':{}, 'F3':{}}
         q = corpus.sql_session.query(Formants).join(SoundFile, Discourse)
         q = q.filter(Formants.time >= begin, Formants.time <= end)

@@ -19,26 +19,55 @@ class AggregateFunction(object):
 
     @property
     def acoustic(self):
+        """
+        Returns
+        -------
+        acoustic attribute
+        """
         return self.attribute.acoustic
 
     @property
     def base_annotation(self):
+        """
+        Returns
+        -------
+        base annotation
+        """
         return self.attribute.base_annotation
 
     @property
     def with_alias(self):
+        """
+        Returns
+        -------
+        with_alias
+        """
         return self.attribute.with_alias
 
     @property
     def with_aliases(self):
+        """
+        Returns
+        -------
+        with_aliases
+        """
         return self.attribute.with_aliases
 
     @property
-    def annotation(self):
+    def annotation(self):"""
+        Returns
+        -------
+        annotation
+        """
         return self.attribute.annotation
 
     @property
     def output_alias(self):
+        """
+        Returns
+        -------
+        output label
+        """
         if self.output_label is None:
             if self.attribute is not None:
                 name = self.attribute.label
@@ -50,21 +79,46 @@ class AggregateFunction(object):
 
 
     def aliased_for_output(self):
+        """
+        Returns
+        -------
+        output alias
+        """
         prop = self.for_cypher()
         output = self.output_alias
         return '{} AS {}'.format(prop, output)
 
     @property
     def collapsing(self):
+        """
+        Returns
+        -------
+        False if there is a PathAttribute, True otherwise
+        """
         if self.attribute is not None and isinstance(self.attribute, PathAttribute):
             return False
         return True
 
     def column_name(self, label):
+        """
+        sets output label
+
+        Parameters
+        ----------
+        label : str
+            the label to set
+
+        Returns
+        -------
+        self
+        """
         self.output_label = label
         return self
 
     def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
         if not self.collapsing:
             return self.collection_templates[self.function].format(
                                 property = self.attribute.for_cypher())
@@ -120,6 +174,9 @@ class Quantile(AggregateFunction):
         self.output_label = None
 
     def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
         if self.attribute is not None:
             element = self.attribute.for_cypher()
         else:
@@ -136,6 +193,9 @@ class InterquartileRange(AggregateFunction):
     template = 'percentileDisc({property}, 0.75) - percentileDisc({property}, 0.25)'
 
     def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
         if self.attribute is not None:
             element = self.attribute.for_cypher()
         else:

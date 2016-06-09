@@ -171,13 +171,26 @@ class AlignmentClauseElement(ClauseElement):
 
     @property
     def annotations(self):
+        """
+        Returns
+        -------
+        first and second annotations
+        """
         return [self.first, self.second]
 
     @property
     def attributes(self):
+        """
+        Returns
+        -------
+        the ID of the first annotation
+        """
         return [self.first.id]
 
     def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
         kwargs = {'second_node_alias': self.second.alias,
                 'first_node_alias': self.first.alias}
         return self.template.format(**kwargs)
@@ -233,6 +246,14 @@ class ComplexClause(object):
         return attributes
 
     def add_prefix(self, prefix):
+        """
+        Adds a prefix to a clause
+
+        Parameters
+        ----------
+        prefix : str
+            the prefix to add
+        """
         for i, c in enumerate(self.clauses):
             if isinstance(c, ComplexClause):
                 c.add_prefix(prefix+ str(i))
@@ -243,6 +264,14 @@ class ComplexClause(object):
                     pass
 
     def generate_params(self):
+        """
+        Generates dictionary of parameters of ComplexClause
+
+        Returns
+        -------
+        params : dict
+            a dictionary of parameters
+        """
         from .attributes import Attribute
         params = {}
         for c in self.clauses:
