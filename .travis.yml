@@ -39,3 +39,4 @@ cache:
   pip: true
   directories:
     - $HOME/miniconda
+    - $HOME/neo4j
