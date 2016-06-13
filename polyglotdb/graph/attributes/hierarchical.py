@@ -28,6 +28,14 @@ class HierarchicalAnnotation(AnnotationAttribute):
                 self.depth += 1
 
     def hierarchy_path(self, to_find):
+        """ 
+        Generates a path for the hierarchy
+
+        Returns
+        -------
+        real_path : list
+
+        """
         path = [self.type]
         a = self.contained_annotation
         while True:
@@ -85,6 +93,9 @@ class HierarchicalAnnotation(AnnotationAttribute):
 
     @property
     def alias(self):
+        
+        """Returns a cypher formatted string of keys and prefixes"""
+     
         pre = ''
         if self.pos < 0:
             pre += 'prev_{}_'.format(-1 * self.pos)
@@ -93,6 +104,7 @@ class HierarchicalAnnotation(AnnotationAttribute):
         return key_for_cypher(pre + self.contained_annotation.alias.replace('`','') + '_' + self.type)
 
     def for_match(self):
+        """ sets 'contained_alias' ,'containing_alias', and 'containing_type_alias'  keyword arguments for an annotation """
         kwargs = {}
         kwargs['contained_alias'] = self.contained_annotation.alias
         kwargs['containing_alias'] = self.define_alias

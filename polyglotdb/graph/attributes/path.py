@@ -12,6 +12,7 @@ class PathAnnotation(AnnotationAttribute):
         WITH {output_with_string}'''
 
     def subquery(self, withs):
+    	"""Generates a subquery given a list of alias and type_alias """ 
         input_with = ', '.join(withs)
         new_withs = withs - set([self.path_alias])
         output_with = ', '.join(new_withs) + ', ' + self.with_statement()
@@ -19,9 +20,13 @@ class PathAnnotation(AnnotationAttribute):
 
 
     def generate_times_subquery(self, output_with_string, input_with_string):
+    	"""
+		formats output_with_string into a cypher string
+    	"""
         return '''WITH {}'''.format(output_with_string)
 
     def generate_subquery(self, output_with_string, input_with_string):
+    	""" formats output_with_string into a subquery"""
         return self.subquery_template.format(path_alias = self.path_alias,
                         output_with_string = output_with_string,
                         key = self.key,
@@ -30,10 +35,18 @@ class PathAnnotation(AnnotationAttribute):
 
 
     def with_statement(self):
+    	""" """
         return ', '.join(['collect(n) as {a}'.format(a=self.path_alias),
                     'collect(t) as {a}'.format(a=self.path_type_alias)])
     @property
     def def_path_type_alias(self):
+    	"""generates a cypher string of types and labels
+
+    	Returns
+    	-------
+    	string
+			a cypher string of types and labels
+    	 """
         label_string = self.type + '_type'
         if self.subset_type_labels:
             label_string += ':' + ':'.join(map(key_for_cypher, self.subset_type_labels))
@@ -41,10 +54,12 @@ class PathAnnotation(AnnotationAttribute):
 
     @property
     def def_path_alias(self):
+    	""" returns a cypher string of path_alias, key, and corpus"""
         return '{}:{}:{}'.format(self.path_alias, self.key, self.sub.corpus)
 
     @property
     def path_alias(self):
+    	"""Returns a cypher formatted string of 'pause' and prefixes"""
         pre = ''
         if self.pos < 0:
             pre += 'prev_{}_'.format(-1 * self.pos)
@@ -56,12 +71,14 @@ class PathAnnotation(AnnotationAttribute):
 
     @property
     def path_type_alias(self):
+    	""" Returns a cypher formatted string of 'pause', prefixes, and the type of the annotation"""
         a = 'type_'+self.path_alias
         a = a.replace('`','')
         return key_for_cypher(a)
 
     @property
     def key(self):
+    	""" Returns 'pause'"""
         return 'pause'
 
     def __getattr__(self, key):
@@ -110,16 +127,19 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def hierarchy(self):
+    	"""Returns the original annotation hierarchy """
         return self.annotation.hierarchy
 
     @property
     def type(self):
+    	""" Returns the original subannotation type"""
         return self.sub.type
 
     def __hash__(self):
         return hash((self.annotation, self.sub))
 
     def generate_subquery(self, output_with_string, input_with_string):
+    	""" """
         if self.with_subannotations:
             subannotation_query = self.generate_subannotation_query(input_with_string)
         else:
