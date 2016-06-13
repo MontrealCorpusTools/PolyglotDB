@@ -10,7 +10,7 @@ from ..sql.models import (Base, Annotation, Property, NumericProperty, SpeaksIn,
 
 from ..sql.helper import get_or_create
 
-from ..acoustics.io import add_acoustic_info
+from ..acoustics.io import setup_audio
 
 from ..io.importer import (data_to_graph_csvs, import_csvs,
                     data_to_type_csvs, import_type_csvs)
@@ -52,6 +52,8 @@ class ImportContext(BaseContext):
         data : :class:`polyglotdb.io.helper.DiscourseData`
             Data for the discourse to be added
         '''
+        if data.name in self.discourses:
+            raise(ParseError('The discourse \'{}\' already exists in this corpus.'.format(data.name)))
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
@@ -68,7 +70,7 @@ class ImportContext(BaseContext):
         import_csvs(self, data)
         self.update_sql_database(data)
         self.hierarchy.update(data.hierarchy)
-        add_acoustic_info(self, data)
+        setup_audio(self, data)
 
 
         log.info('Finished adding discourse {}!'.format(data.name))

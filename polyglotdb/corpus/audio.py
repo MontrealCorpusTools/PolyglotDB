@@ -44,6 +44,9 @@ class AudioContext(BaseContext):
         sound_file = q.first()
         return sound_file
 
+    def discourse_audio_directory(self, discourse):
+        return os.path.join(self.config.audio_dir, discourse)
+
     def has_all_sound_files(self):
         if self._has_all_sound_files is not None:
             return self._has_all_sound_files
@@ -70,7 +73,7 @@ class AudioContext(BaseContext):
             source = self.config.formant_algorithm
         q = self.sql_session.query(Formants).join(SoundFile).join(Discourse)
         q = q.filter(Discourse.name == discourse)
-        q = q.filter(Formants.source == self.config.formant_algorithm)
+        q = q.filter(Formants.source == source)
         if begin is not None:
             q = q.filter(Formants.time >= begin)
         if end is not None:
@@ -85,7 +88,7 @@ class AudioContext(BaseContext):
             source = self.config.pitch_algorithm
         q = self.sql_session.query(Pitch).join(SoundFile).join(Discourse)
         q = q.filter(Discourse.name == discourse)
-        q = q.filter(Pitch.source == self.config.pitch_algorithm)
+        q = q.filter(Pitch.source == source)
         if begin is not None:
             q = q.filter(Pitch.time >= begin)
         if end is not None:
@@ -122,3 +125,21 @@ class AudioContext(BaseContext):
                 pass
             p = Pitch(sound_file = sound_file, time = timepoint, F0 = value, channel = channel, source = source)
             self.sql_session.add(p)
+
+    def has_formants(self, discourse, source = None):
+        q = self.sql_session.query(Formants).join(SoundFile).join(Discourse)
+        q = q.filter(Discourse.name == discourse)
+        q = q.filter(Formants.source == source)
+        listing = q.first()
+        if listing is None:
+            return False
+        return True
+
+    def has_pitch(self, discourse, source = None):
+        q = self.sql_session.query(Pitch).join(SoundFile).join(Discourse)
+        q = q.filter(Discourse.name == discourse)
+        q = q.filter(Pitch.source == source)
+        listing = q.first()
+        if listing is None:
+            return False
+        return True

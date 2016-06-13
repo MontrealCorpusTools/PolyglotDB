@@ -468,6 +468,7 @@ class GraphQuery(object):
         if self._acoustic_columns:
             for a in self._acoustic_columns:
                 discourse_found = False
+                speaker_found = False
                 begin_found = False
                 end_found = False
                 for c in self._columns + self._hidden_columns:
@@ -475,6 +476,10 @@ class GraphQuery(object):
                         c.label == 'name':
                         a.discourse_alias = c.output_label
                         discourse_found = True
+                    if a.annotation.speaker == c.base_annotation and \
+                        c.label == 'name':
+                        a.speaker_alias = c.output_label
+                        speaker_found = True
                     elif a.annotation == c.base_annotation and \
                         c.label == 'begin':
                         a.begin_alias = c.output_label
@@ -485,6 +490,8 @@ class GraphQuery(object):
                         end_found = True
                 if not discourse_found:
                     self._hidden_columns.append(a.annotation.discourse.name.column_name(a.discourse_alias))
+                if not speaker_found:
+                    self._hidden_columns.append(a.annotation.speaker.name.column_name(a.speaker_alias))
                 if not begin_found:
                     self._hidden_columns.append(a.annotation.begin.column_name(a.begin_alias))
                 if not end_found:
@@ -707,18 +714,6 @@ class SplitQuery(GraphQuery):
             if self.stop_check is not None and self.stop_check():
                 return
             q.set_token(*args, **kwargs)
-
-    def to_csv(self, path):
-        write = True
-        for q in self.split_queries():
-            if self.stop_check is not None and self.stop_check():
-                return
-            r = self.corpus.execute_cypher(q.cypher(), **q.cypher_params())
-            if write:
-                save_results(r, path, mode = 'w')
-                write = False
-            else:
-                save_results(r, path, mode = 'a')
 
 class SpeakerGraphQuery(SplitQuery):
     splitter = 'speakers'

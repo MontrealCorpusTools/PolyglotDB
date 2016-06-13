@@ -96,6 +96,8 @@ class FaveParser(TextgridParser):
                 speaker, type = ti.name.split(' - ')
             except ValueError:
                 continue
+            if len(ti) == 1 and ti[0].mark.strip() == '':
+                continue
             at = OrthographyTier(type, type)
             at.speaker = speaker
             at.add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))

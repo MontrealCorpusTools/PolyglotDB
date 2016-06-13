@@ -62,7 +62,6 @@ class LongSoundFile(object):
                 self.signal = self.signal.reshape((self.signal.shape[0],1))
             else:
                 self.signal = self.signal.T
-            print(self.signal.shape)
             self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis = 0)
             self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter = 'kaiser_fast', axis = 0)
             self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter = 'kaiser_fast', axis = 0)
@@ -88,7 +87,6 @@ class LongSoundFile(object):
     def visible_signal(self, begin, end, channel = 0):
         if self.signal is None:
             return None
-        print(begin, end, self.cached_begin)
         begin -= self.cached_begin
         end -= self.cached_begin
         min_samp = int(np.floor(begin * self.sr))
@@ -126,7 +124,6 @@ class DiscourseInspecter(object):
         self._initialize_cache(initial_begin, initial_end)
 
     def _initialize_cache(self, begin, end):
-        print('initializing discourse cache')
         q = self._base_discourse_query(begin, end)
         self.cache = [x for x in q.all()]
         if begin < 0:
@@ -135,7 +132,6 @@ class DiscourseInspecter(object):
             end = self.max_time
         self.cached_begin = begin
         self.cached_end = end
-        print('done initializing', self.cached_begin, self.cached_end, len(self.cache))
 
     def add_preceding(self, results):
         for r in results:
@@ -150,31 +146,30 @@ class DiscourseInspecter(object):
         self.update_cached_times()
 
     def update_cache(self, begin, end):
-        print(begin, end, self.cached_begin, self.cached_end)
         if self.cached_begin is None or begin < self.cached_begin:
-            print('updating preceding')
             q = self.preceding_cache_query(begin)
             self.add_preceding([x for x in q.all()])
 
         if self.cached_end is None or end > self.cached_end:
-            print('updating following')
             q = self.following_cache_query(end)
             self.add_following([x for x in q.all()])
 
     def preceding_cache_query(self, begin = None):
         h_type = self.corpus.hierarchy.highest
         highest = getattr(self.corpus, h_type)
-        q = self._base_discourse_query(begin = begin)
         if self.cache:
-            q = q.filter(highest.precedes(self.cache[0]))
+            q = self._base_discourse_query(begin = begin, end = self.cache[0].begin)
+        else:
+            q = self._base_discourse_query(begin = begin)
         return q
 
     def following_cache_query(self, end = None):
         h_type = self.corpus.hierarchy.highest
         highest = getattr(self.corpus, h_type)
-        q = self._base_discourse_query(end = end)
         if self.cache:
-            q = q.filter(highest.follows(self.cache[-1]))
+            q = self._base_discourse_query(end = end, begin = self.cache[-1].end)
+        else:
+            q = self._base_discourse_query(end = end)
         return q
 
     def _base_discourse_query(self, begin = None, end = None):
@@ -207,8 +202,6 @@ class DiscourseInspecter(object):
                 self.cached_begin = self.cache[0].begin
             if self.cached_end is None or self.cached_end < self.cache[-1].end:
                 self.cached_end = self.cache[-1].end
-        print('done updating', self.cached_begin, self.cache[0].begin, self.cached_end, self.cache[-1].end, len(self.cache))
-
 
     def update_times(self, begin, end):
         if begin < 0:
@@ -236,6 +229,8 @@ class DiscourseInspecter(object):
 
     def formants(self, begin = None, end = None, channel = 0):
         formant_list = self.corpus.get_formants(self.name, begin, end, channel)
+        if len(formant_list) == 0:
+            return None
         formant_dict = {'F1': np.array([[x.time, x.F1] for x in formant_list]),
                         'F2': np.array([[x.time, x.F2] for x in formant_list]),
                         'F3': np.array([[x.time, x.F3] for x in formant_list])}
@@ -243,6 +238,8 @@ class DiscourseInspecter(object):
 
     def formants_from_begin(self, begin, end, channel = 0):
         formant_list = self.corpus.get_formants(self.name, begin, end, channel)
+        if len(formant_list) == 0:
+            return None
         formant_dict = {'F1': np.array([[x.time - begin, x.F1] for x in formant_list]),
                         'F2': np.array([[x.time - begin, x.F2] for x in formant_list]),
                         'F3': np.array([[x.time - begin, x.F3] for x in formant_list])}
@@ -250,18 +247,22 @@ class DiscourseInspecter(object):
 
     def pitch(self, begin = None, end = None, channel = 0):
         pitch_list = self.corpus.get_pitch(self.name, begin, end, channel)
+        if len(pitch_list) == 0:
+            return None
         pitch_list = np.array([[x.time, x.F0] for x in pitch_list])
         return pitch_list
 
     def pitch_from_begin(self, begin, end, channel = 0):
         pitch_list = self.corpus.get_pitch(self.name, begin, end, channel)
+        if len(pitch_list) == 0:
+            return None
         pitch_list = np.array([[x.time - begin, x.F0] for x in pitch_list])
         return pitch_list
 
     def get_acoustics(self, time, channel = 0):
         acoustics = {}
         pitch = self.pitch(time - 0.5, time + 0.5, channel = channel)
-        if not pitch:
+        if pitch is not None:
             acoustics['F0'] = None
         else:
             for i,p in enumerate(pitch):
@@ -279,7 +280,7 @@ class DiscourseInspecter(object):
             else:
                 acoustics['F0'] = None
         formants = self.formants(time - 0.5, time + 0.5, channel = channel)
-        if not formants:
+        if formants is not None:
             acoustics['F1'] = None
             acoustics['F2'] = None
             acoustics['F3'] = None

@@ -64,6 +64,7 @@ class QueryResults(object):
         self.corpus = query.corpus
         self.cache = []
         self.cursors = [self.corpus.execute_cypher(query.cypher(), **query.cypher_params())]
+
         self.evaluated = []
         self.current_ind = 0
         if query._columns:
@@ -73,7 +74,8 @@ class QueryResults(object):
             self._to_find_type = None
             self._acoustic_columns = query._acoustic_columns
             self.columns = [x.output_alias for x in query._columns]
-            self.columns.extend(x.output_alias for x in query._acoustic_columns)
+            for x in query._acoustic_columns:
+                self.columns.extend(x.output_columns)
         else:
             self.models = True
             self._preload = query._preload
@@ -114,7 +116,7 @@ class QueryResults(object):
 
     def add_results(self, query):
         ## Add some validation
-        cursor = self.corpus.execute_cypher(query.cypher(), **query.cypher_params())
+        cursor = query.all().cursors[0]
         self.cursors.append(cursor)
 
     def next(self, number):
@@ -140,10 +142,27 @@ class QueryResults(object):
             r = hydrate_model(r, self._to_find, self._to_find_type, self._preload, self.corpus)
         else:
             r = Record(r)
+            cache = {}
             for a in self._acoustic_columns:
-                t = a.hydrate(self.corpus, r[a.discourse_alias],
+                if a.attribute is not None and a.attribute.label in cache:
+                    a.attribute.cached_settings, a.attribute.cached_data = cache[a.attribute.label]
+                elif a.label in cache:
+                    a.cached_settings, a.cached_data = cache[a.label]
+                discourse = r[a.discourse_alias]
+                speaker = self.corpus.census[r[a.speaker_alias]]
+                channel = 0
+                for x in speaker.discourses:
+                    if x.discourse.name == discourse:
+                        channel = x.channel
+                        break
+                t = a.hydrate(self.corpus, discourse,
                             r[a.begin_alias],
-                            r[a.end_alias])
+                            r[a.end_alias],
+                            channel)
+                if a.attribute is not None and a.attribute.label not in cache:
+                    cache[a.attribute.label] = a.attribute.cached_settings, a.attribute.cached_data
+                elif a.label in cache:
+                    cache[a.label] = a.cached_settings, a.cached_data
                 for k in a.output_columns:
                     r.add_acoustic(k, t[k])
         return r

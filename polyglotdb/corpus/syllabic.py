@@ -99,8 +99,8 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         try:
             self.hierarchy.annotation_types.remove('syllable')
             self.hierarchy[self.phone_name] = self.hierarchy['syllable']
-            self.hierarchy.remove_token_labels(self, 'phone', ['onset','coda','nucleus'])
-            self.hierarchy.remove_token_properties(self, 'phone', ['syllable_position'])
+            self.hierarchy.remove_token_labels(self, self.phone_name, ['onset','coda','nucleus'])
+            self.hierarchy.remove_token_properties(self, self.phone_name, ['syllable_position'])
             del self.hierarchy['syllable']
             self.encode_hierarchy()
             self.refresh_hierarchy()
@@ -133,8 +133,8 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
 
         self.hierarchy[self.phone_name] = 'syllable'
         self.hierarchy['syllable'] = self.word_name
-        self.hierarchy.add_token_labels(self, 'phone', ['onset','coda','nucleus'])
-        self.hierarchy.add_token_properties(self, 'phone', [('syllable_position', str)])
+        self.hierarchy.add_token_labels(self, self.phone_name, ['onset','coda','nucleus'])
+        self.hierarchy.add_token_properties(self, self.phone_name, [('syllable_position', str)])
         self.encode_hierarchy()
         self.refresh_hierarchy()
         for i, s in enumerate(splits):

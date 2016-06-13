@@ -113,7 +113,7 @@ class Discourse(Base):
     properties = relationship('DiscourseProperty', backref = 'discourse')
 
     speakers = relationship("SpeaksIn",
-        back_populates="discourse")
+        back_populates = "discourse")
 
 class Speaker(Base):
     __tablename__ = 'speaker'
@@ -158,6 +158,10 @@ class SoundFile(Base):
     id = Column(Integer, primary_key = True)
 
     filepath = Column(String(250), nullable = False)
+
+    consonant_filepath = Column(String(250), nullable = False)
+    vowel_filepath = Column(String(250), nullable = False)
+    low_freq_filepath = Column(String(250), nullable = False)
 
     duration = Column(Float, nullable = False)
 
