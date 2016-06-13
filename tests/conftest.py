@@ -15,6 +15,10 @@ from polyglotdb.corpus import CorpusContext
 from polyglotdb.structure import Hierarchy
 from polyglotdb.config import CorpusConfig
 
+def pytest_addoption(parser):
+    parser.addoption("--skipacoustics", action="store_true",
+        help="skip acoustic tests")
+
 @pytest.fixture(scope='session')
 def test_dir():
     if not os.path.exists('tests/data/generated'):
@@ -371,7 +375,7 @@ def acoustic_config(graph_db, textgrid_test_dir):
 
 @pytest.fixture(scope='session')
 def acoustic_utt_config(graph_db, textgrid_test_dir):
-    config = CorpusConfig('acoustic_utt', **graph_db)
+    config = CorpusConfig('acoustic utt', **graph_db)
 
     acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
     with CorpusContext(config) as c:

@@ -27,7 +27,7 @@ where not (pn)<-[:precedes]-()-[:contained_by*]->(w)
 with w, n,pn
 match p = shortestPath((pn)-[:precedes*0..10]->(n))
 with extract(x in nodes(p)[0..-1]|x.label) as onset
-return onset, count(onset) as freq'''.format(corpus_name = self.corpus_name,
+return onset, count(onset) as freq'''.format(corpus_name = self.cypher_safe_name,
                                             word_name = self.word_name,
                                             phone_name = self.phone_name)
         res = self.execute_cypher(statement)
@@ -51,7 +51,7 @@ where not (pn)-[:precedes]->()-[:contained_by*]->(w)
 with w, n,pn
 match p = shortestPath((n)-[:precedes*0..10]->(pn))
 with extract(x in nodes(p)[1..]|x.label) as coda
-return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
+return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                                             word_name = self.word_name,
                                             phone_name = self.phone_name)
 
@@ -70,7 +70,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
     def reset_syllables(self, call_back = None, stop_check = None):
         if call_back is not None:
             call_back('Resetting syllables...')
-            number = self.execute_cypher('''MATCH (n:syllable:%s) return count(*) as number ''' % (self.corpus_name)).one
+            number = self.execute_cypher('''MATCH (n:syllable:%s) return count(*) as number ''' % (self.cypher_safe_name)).evaluate()
             call_back(0, number)
         statement = '''MATCH (st:syllable_type:{corpus})
                 WITH st
@@ -84,7 +84,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
                 DETACH DELETE s, st
                 with p,s
                 REMOVE p:onset, p:nucleus, p:coda, p.syllable_position
-                RETURN count(s) as deleted_count'''.format(corpus = self.corpus_name,
+                RETURN count(s) as deleted_count'''.format(corpus = self.cypher_safe_name,
                         word_name = self.word_name,
                         phone_name = self.phone_name)
         num_deleted = 0
@@ -99,8 +99,8 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
         try:
             self.hierarchy.annotation_types.remove('syllable')
             self.hierarchy[self.phone_name] = self.hierarchy['syllable']
-            self.hierarchy.remove_token_labels(self, 'phone', ['onset','coda','nucleus'])
-            self.hierarchy.remove_token_properties(self, 'phone', ['syllable_position'])
+            self.hierarchy.remove_token_labels(self, self.phone_name, ['onset','coda','nucleus'])
+            self.hierarchy.remove_token_properties(self, self.phone_name, ['syllable_position'])
             del self.hierarchy['syllable']
             self.encode_hierarchy()
             self.refresh_hierarchy()
@@ -119,7 +119,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
         else:
             raise(NotImplementedError)
 
-        statement = '''MATCH (n:{}:syllabic) return n.label as label'''.format(self.corpus_name)
+        statement = '''MATCH (n:{}:syllabic) return n.label as label'''.format(self.cypher_safe_name)
         res = self.execute_cypher(statement)
         syllabics = set(x['label'] for x in res)
 
@@ -133,8 +133,8 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
 
         self.hierarchy[self.phone_name] = 'syllable'
         self.hierarchy['syllable'] = self.word_name
-        self.hierarchy.add_token_labels(self, 'phone', ['onset','coda','nucleus'])
-        self.hierarchy.add_token_properties(self, 'phone', [('syllable_position', str)])
+        self.hierarchy.add_token_labels(self, self.phone_name, ['onset','coda','nucleus'])
+        self.hierarchy.add_token_properties(self, self.phone_name, [('syllable_position', str)])
         self.encode_hierarchy()
         self.refresh_hierarchy()
         for i, s in enumerate(splits):
@@ -239,4 +239,4 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
             nonsyls_data_to_csvs(self, non_syls, s)
             import_nonsyl_csv(self, s)
 
-            self.execute_cypher('MATCH (n:syllable) where n.prev_id is not Null REMOVE n.prev_id')
+            self.execute_cypher('MATCH (n:{}:syllable) where n.prev_id is not Null REMOVE n.prev_id'.format(self.cypher_safe_name))

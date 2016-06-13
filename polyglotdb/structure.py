@@ -53,7 +53,7 @@ class Hierarchy(object):
         res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
         try:
             cur_subsets = res[0].subsets
-        except AttributeError:
+        except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets + labels)
         statement = self.set_type_subset_template.format(type = annotation_type)
@@ -66,7 +66,7 @@ class Hierarchy(object):
         res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
         try:
             cur_subsets = res[0].subsets
-        except AttributeError:
+        except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets) - set(labels)
         statement = self.set_type_subset_template.format(type = annotation_type)
@@ -79,7 +79,7 @@ class Hierarchy(object):
         res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
         try:
             cur_subsets = res[0].subsets
-        except AttributeError:
+        except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets + labels)
         statement = self.set_token_subset_template.format(type = annotation_type)
@@ -92,7 +92,7 @@ class Hierarchy(object):
         res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
         try:
             cur_subsets = res[0].subsets
-        except AttributeError:
+        except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets) - set(labels)
         statement = self.set_token_subset_template.format(type = annotation_type)
