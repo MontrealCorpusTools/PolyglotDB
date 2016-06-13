@@ -55,6 +55,7 @@ class CorpusConfig(object):
         self.graph_password = None
         self.graph_host = 'localhost'
         self.graph_port = 7474
+        self.bolt_port = 7687
 
         self.base_dir = os.path.join(BASE_DIR, self.corpus_name)
 
@@ -111,7 +112,8 @@ class CorpusConfig(object):
     @property
     def graph_connection_kwargs(self):
         kwargs = {'host': self.graph_host,
-        'http_port':int(self.graph_port),
+                    'http_port':int(self.graph_port),
+                    'bolt_port': self.bolt_port,
                     'bolt': True}
 
         if self.graph_user is not None:
