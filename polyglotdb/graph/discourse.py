@@ -262,7 +262,7 @@ class DiscourseInspecter(object):
     def get_acoustics(self, time, channel = 0):
         acoustics = {}
         pitch = self.pitch(time - 0.5, time + 0.5, channel = channel)
-        if pitch is not None:
+        if pitch is None:
             acoustics['F0'] = None
         else:
             for i,p in enumerate(pitch):
@@ -280,7 +280,7 @@ class DiscourseInspecter(object):
             else:
                 acoustics['F0'] = None
         formants = self.formants(time - 0.5, time + 0.5, channel = channel)
-        if formants is not None:
+        if formants is None:
             acoustics['F1'] = None
             acoustics['F2'] = None
             acoustics['F3'] = None
