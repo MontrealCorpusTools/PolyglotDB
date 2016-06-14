@@ -1,10 +1,13 @@
 
+from uuid import uuid1
 
 from .base import BaseContext
 
-from ..io.importer import time_data_to_csvs, import_utterance_csv
+from ..io.importer import utterance_data_to_csvs, import_utterance_csv
 from ..graph.func import Max, Min
 from ..graph.query import DiscourseGraphQuery
+
+from ..sql.models import Discourse, SpeaksIn
 
 from ..exceptions import GraphQueryError
 
@@ -60,8 +63,20 @@ class UtteranceCorpus(BaseContext):
                 call_back(i)
                 call_back('Encoding utterances for discourse {} of {} ({})...'.format(i, len(discourses), d))
             utterances = self.get_utterance_ids(d, min_pause_length, min_utterance_length)
-            time_data_to_csvs('utterance', self.config.temporary_directory('csv'), d, utterances)
+            data = []
+            prev_id = None
+            for u in utterances:
+                cur_id = uuid1()
+                row = {'id': cur_id, 'prev_id': prev_id,
+                    'begin_word_id': u[0],
+                    'end_word_id':u[1]}
+                data.append(row)
+                prev_id = cur_id
+            utterance_data_to_csvs(self, data, d)
             import_utterance_csv(self, d)
+        if call_back is not None:
+            call_back(i + 1)
+            call_back('Finished!')
 
     def get_utterance_ids(self, discourse,
                 min_pause_length = 0.5, min_utterance_length = 0):
@@ -86,79 +101,86 @@ class UtteranceCorpus(BaseContext):
             Time in seconds that is the minimum duration of a stretch of
             speech to count as an utterance
         """
+        d = self.sql_session.query(Discourse).join(SpeaksIn).filter(Discourse.name == discourse).first()
+        speakers = [x.speaker.name for x in set(d.speakers)]
         word_type = self.word_name
-        statement = '''MATCH p = (prev_node_word:{word_type}:speech:{corpus})-[:precedes_pause*1..]->(foll_node_word:{word_type}:speech:{corpus}),
-        (prev_node_word)-[:spoken_in]->(d:Discourse:{corpus})
-        WHERE d.name = {{discourse}}
-WITH nodes(p)[1..-1] as ns,foll_node_word, prev_node_word
-WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
-AND NONE (x in ns where x:speech)
-WITH foll_node_word, prev_node_word
-RETURN prev_node_word.end AS begin, prev_node_word.id AS begin_id, foll_node_word.begin AS end, foll_node_word.id AS end_id, foll_node_word.begin - prev_node_word.end AS duration
-ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
-        results = list(self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse))
-
-        collapsed_results = []
-        for i, r in enumerate(results):
-            if len(collapsed_results) == 0:
-                collapsed_results.append(r)
-                continue
-            if r['begin'] == collapsed_results[-1]['end']:
-                collapsed_results[-1]['end'] = r['end']
-            else:
-                collapsed_results.append(r)
         utterances = []
-        word_ids = []
-        word = getattr(self, word_type)
-        statement = '''MATCH (w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
-        where d.name = {{discourse}}
-        with max(w.end) as max_end, min(w.begin) as min_begin, collect(w) as words
-        with filter(x in words where x.begin = min_begin or x.end = max_end) as c UNWIND c as w
-        return w.id as id, w.begin as begin, w.end as end
-        order by w.begin
-        '''.format(corpus = self.corpus_name, word_type = word_type)
-        end_words = list(self.execute_cypher(statement, discourse = discourse))
+        for s in speakers:
+            print(s)
+            statement = '''MATCH p = (prev_node_word:{word_type}:speech:{corpus})-[:precedes_pause*1..]->(foll_node_word:{word_type}:speech:{corpus}),
+            (prev_node_word)-[:spoken_in]->(d:Discourse:{corpus}),
+            (prev_node_word)-[:spoken_by]->(s:Speaker:{corpus})
+            WHERE d.name = {{discourse}} AND s.name = {{speaker}}
+    WITH nodes(p)[1..-1] as ns,foll_node_word, prev_node_word
+    WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
+    AND NONE (x in ns where x:speech)
+    WITH foll_node_word, prev_node_word
+    RETURN prev_node_word.end AS begin, prev_node_word.id AS begin_id, foll_node_word.begin AS end, foll_node_word.id AS end_id, foll_node_word.begin - prev_node_word.end AS duration
+    ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
+            results = list(self.execute_cypher(statement,
+                node_pause_duration = min_pause_length,
+                    discourse = discourse,
+                    speaker = s))
 
-        if len(results) < 2:
-            begin = end_words[0]['begin']
-            begin_id = end_words[0]['id']
-            if len(results) == 0:
-                return [(begin_id, end_words[1]['id'])]
-            if results[0]['begin'] == 0:
-                return [(results[0]['end_id'], end_words[1]['id'])]
-            if results[0]['end'] == end_words[1]['end']:
-                return [(begin_id, end_words[1]['end_id'])]
+            collapsed_results = []
+            for i, r in enumerate(results):
+                if len(collapsed_results) == 0:
+                    collapsed_results.append(r)
+                    continue
+                if r['begin'] == collapsed_results[-1]['end']:
+                    collapsed_results[-1]['end'] = r['end']
+                else:
+                    collapsed_results.append(r)
+            statement = '''MATCH (s:Speaker:{corpus})<-[:spoken_by]-(w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
+            where d.name = {{discourse}} AND s.name = {{speaker}}
+            with max(w.end) as max_end, min(w.begin) as min_begin, collect(w) as words
+            with filter(x in words where x.begin = min_begin or x.end = max_end) as c UNWIND c as w
+            return w.id as id, w.begin as begin, w.end as end
+            order by w.begin
+            '''.format(corpus = self.cypher_safe_name, word_type = word_type)
+            end_words = list(self.execute_cypher(statement, discourse = discourse,
+                    speaker = s))
 
-        if results[0]['begin'] != 0:
-            current = 0
-            current_id = end_words[0]['id']
-        else:
-            current = None
-            current_id = None
-        min_begin = 1000
-        max_begin = 0
-        prev = None
-        for i, r in enumerate(collapsed_results):
-            if current is not None:
-                if current < min_begin:
-                    min_begin = current
-                if r['begin'] - current > min_utterance_length:
-                    utterances.append((current_id, r['begin_id']))
-                elif i == len(results) - 1:
-                    utterances[-1] = (utterances[-1][0], r['begin_id'])
-                elif len(utterances) != 0:
-                    dist_to_prev = current - utterances[-1][1]
-                    dist_to_foll = r['end'] - r['begin']
-                    if dist_to_prev <= dist_to_foll:
-                        utterances[-1] = (utterances[-1][0], r['begin_id'])
-            prev = current
-            current = r['end']
-            current_id = r['end_id']
-        if current < end_words[1]['end']:
-            if end_words[1]['end'] - current > min_utterance_length:
-                utterances.append((current_id, end_words[1]['id']))
+            if len(results) < 2:
+                begin = end_words[0]['begin']
+                begin_id = end_words[0]['id']
+                if len(results) == 0:
+                    return [(begin_id, end_words[1]['id'])]
+                if results[0]['begin'] == 0:
+                    return [(results[0]['end_id'], end_words[1]['id'])]
+                if results[0]['end'] == end_words[1]['end']:
+                    return [(begin_id, end_words[1]['end_id'])]
+
+            if results[0]['begin'] != 0:
+                current = 0
+                current_id = end_words[0]['id']
             else:
-                utterances[-1] = (utterances[-1][0], end_words[1]['id'])
+                current = None
+                current_id = None
+            min_begin = 1000
+            max_begin = 0
+            prev = None
+            for i, r in enumerate(collapsed_results):
+                if current is not None:
+                    if current < min_begin:
+                        min_begin = current
+                    if r['begin'] - current > min_utterance_length:
+                        utterances.append((current_id, r['begin_id']))
+                    elif i == len(results) - 1:
+                        utterances[-1] = (utterances[-1][0], r['begin_id'])
+                    elif len(utterances) != 0:
+                        dist_to_prev = current - prev
+                        dist_to_foll = r['end'] - r['begin']
+                        if dist_to_prev <= dist_to_foll:
+                            utterances[-1] = (utterances[-1][0], r['begin_id'])
+                prev = current
+                current = r['end']
+                current_id = r['end_id']
+            if current < end_words[1]['end']:
+                if end_words[1]['end'] - current > min_utterance_length:
+                    utterances.append((current_id, end_words[1]['id']))
+                else:
+                    utterances[-1] = (utterances[-1][0], end_words[1]['id'])
         return utterances
 
     def get_utterances(self, discourse,
@@ -193,7 +215,7 @@ WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
 AND NONE (x in ns where x:speech)
 WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, foll_node_word.begin AS end, foll_node_word.begin - prev_node_word.end AS duration
-ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
+ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
         results = list(self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse))
 
         collapsed_results = []
@@ -260,7 +282,7 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            '''.format(w_type = w_type, corpus_name = self.corpus_name)
+            '''.format(w_type = w_type, corpus_name = self.cypher_safe_name)
             split_names = self.speakers
         elif self.config.query_behavior == 'discourse':
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name})-[:spoken_in]->(discourse:Discourse:{corpus_name}),
@@ -274,7 +296,7 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            '''.format(w_type = w_type, corpus_name = self.corpus_name)
+            '''.format(w_type = w_type, corpus_name = self.cypher_safe_name)
         else:
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name}),
             (node_word_in_node_utterance:{w_type}:{corpus_name})-[:contained_by]->(node_utterance)
@@ -286,7 +308,7 @@ ORDER BY begin'''.format(corpus = self.corpus_name, word_type = word_type)
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            '''.format(w_type = w_type, corpus_name = self.corpus_name)
+            '''.format(w_type = w_type, corpus_name = self.cypher_safe_name)
 
 
         if split_names is None:

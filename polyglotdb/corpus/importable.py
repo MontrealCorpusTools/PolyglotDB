@@ -5,12 +5,12 @@ from collections import defaultdict
 
 from .base import BaseContext
 
-from ..sql.models import (Base, Annotation, Property, NumericProperty,
+from ..sql.models import (Base, Annotation, Property, NumericProperty, SpeaksIn,
                     AnnotationType, PropertyType, Discourse, Speaker, SoundFile)
 
 from ..sql.helper import get_or_create
 
-from ..acoustics.io import add_acoustic_info
+from ..acoustics.io import setup_audio
 
 from ..io.importer import (data_to_graph_csvs, import_csvs,
                     data_to_type_csvs, import_type_csvs)
@@ -52,23 +52,25 @@ class ImportContext(BaseContext):
         data : :class:`polyglotdb.io.helper.DiscourseData`
             Data for the discourse to be added
         '''
+        if data.name in self.discourses:
+            raise(ParseError('The discourse \'{}\' already exists in this corpus.'.format(data.name)))
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
 
         self.execute_cypher(
-            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(corpus_name = self.corpus_name),
+            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(corpus_name = self.cypher_safe_name),
                     discourse_name = data.name)
         for s in data.speakers:
             self.execute_cypher(
-                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.corpus_name),
+                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.cypher_safe_name),
                         speaker_name = s)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(self, data)
         import_csvs(self, data)
         self.update_sql_database(data)
         self.hierarchy.update(data.hierarchy)
-        add_acoustic_info(self, data)
+        setup_audio(self, data)
 
 
         log.info('Finished adding discourse {}!'.format(data.name))
@@ -172,7 +174,11 @@ class ImportContext(BaseContext):
         discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
         for s in data.speakers:
             speaker, _ = get_or_create(self.sql_session, Speaker, name = s)
-            discourse.speakers.append(speaker)
+            sin = SpeaksIn(speaker = speaker, discourse = discourse)
+            if s in data.speaker_channel_mapping:
+                sin.channel = data.speaker_channel_mapping[s]
+            self.sql_session.add(sin)
+            discourse.speakers.append(sin)
         phone_cache = defaultdict(set)
         segment_type = data.segment_type
         for level in data.annotation_types:

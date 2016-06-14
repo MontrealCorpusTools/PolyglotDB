@@ -1,5 +1,4 @@
 import os
-import wave
 from uuid import uuid1
 
 from .sql import get_or_create
@@ -9,6 +8,8 @@ from .io.importer import subannotations_data_to_csv, import_subannotation_csv
 from .sql.models import (SoundFile, Discourse)
 
 from . import CorpusContext
+
+from .acoustics.io import add_discourse_sound_info
 
 def get_corpora_list(config):
     with CorpusContext(config) as c:
@@ -75,16 +76,7 @@ def update_sound_files(corpus_context, new_directory):
             discourse = q.first()
             if discourse is None:
                 continue
-            path = os.path.join(root, f)
-            with wave.open(path,'rb') as f:
-                sample_rate = f.getframerate()
-                n_channels = f.getnchannels()
-                n_samples = f.getnframes()
-                duration = n_samples / sample_rate
-            sf = get_or_create(corpus_context.sql_session, SoundFile, filepath = path,
-                duration = duration, sampling_rate = sample_rate,
-                n_channels = n_channels, discourse = discourse)
-
+            add_discourse_sound_info(corpus_context, name, os.path.join(root, f))
 
 gp_language_stops = {'gp_croatian': ['p','t','k', 'b', 'd', 'g'],
                     'gp_french': ['P', 'T', 'K', 'B', 'D', 'G'],

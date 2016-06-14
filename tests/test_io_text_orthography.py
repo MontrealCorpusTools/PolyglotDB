@@ -24,6 +24,7 @@ def test_load_spelling_directory(graph_db, text_spelling_test_dir):
     parser = inspect_orthography(text_spelling_test_dir)
 
     with CorpusContext('spelling_directory', **graph_db) as c:
+        c.reset()
         c.load(parser, text_spelling_test_dir)
 
 @pytest.mark.xfail

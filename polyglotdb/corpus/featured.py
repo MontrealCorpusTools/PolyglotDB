@@ -7,7 +7,7 @@ from ..io.importer import feature_data_to_csvs, import_feature_csvs
 class FeaturedContext(BaseContext):
     def encode_class(self, phones, label):
         statement = '''MATCH (n:{phone_name}_type:{corpus_name}) where n.label in {{phones}}
-        SET n :{label}'''.format(phone_name = self.phone_name, corpus_name = self.corpus_name,
+        SET n :{label}'''.format(phone_name = self.phone_name, corpus_name = self.cypher_safe_name,
                                 label = label)
         self.execute_cypher(statement, phones = phones)
         self.hierarchy.add_type_labels(self, self.phone_name, [label])
@@ -15,7 +15,7 @@ class FeaturedContext(BaseContext):
 
     def reset_class(self, label):
         statement = '''MATCH (n:{phone_name}_type:{corpus_name}:{label})
-        REMOVE n:{label}'''.format(phone_name = self.phone_name, corpus_name = self.corpus_name,
+        REMOVE n:{label}'''.format(phone_name = self.phone_name, corpus_name = self.cypher_safe_name,
                                 label = label)
         self.execute_cypher(statement)
         self.hierarchy.remove_type_labels(self, self.phone_name, [label])

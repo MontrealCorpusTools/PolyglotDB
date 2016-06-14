@@ -1,4 +1,5 @@
 import sys
+import os
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
@@ -10,6 +11,8 @@ class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = ['-x', '--strict', '--verbose', '--tb=long', 'tests']
+        if os.environ.get('TRAVIS', False):
+            self.test_args.insert(0, '--skipacoustics')
         self.test_suite = True
 
     def run_tests(self):
@@ -18,7 +21,8 @@ class PyTest(TestCommand):
             errcode = pytest.main(self.test_args)
             sys.exit(errcode)
 
-setup(name='polyglotdb',
+if __name__ == '__main__':
+    setup(name='polyglotdb',
       version='0.0.1',
       description='',
       long_description='',
@@ -53,7 +57,8 @@ setup(name='polyglotdb',
           'sqlalchemy',
           'textgrid',
           'acousticsim',
-          'py2neo'
+          'py2neo',
+          'librosa'
       ],
     cmdclass={'test': PyTest},
     extras_require={
