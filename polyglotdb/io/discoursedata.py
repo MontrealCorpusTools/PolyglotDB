@@ -46,6 +46,13 @@ class DiscourseData(object):
         return item in self.data
 
     def highest_to_lowest(self):
+        """
+        orders hierarchy highest to lowest
+
+        Returns
+        ats : dict
+            the ordered hierarchy
+        """
         ats = []
         for k,v in self.hierarchy.items():
             if v is None:
@@ -60,6 +67,9 @@ class DiscourseData(object):
 
     @property
     def speakers(self):
+        """
+        Returns speakers from a discourse
+        """
         speakers = set()
         for x in self.values():
             speakers.update(x.speakers)
@@ -67,18 +77,28 @@ class DiscourseData(object):
 
     @property
     def annotation_types(self):
+        """ Returns corpus annotation types"""
         return self.keys()
 
     def keys(self):
+        """ Returns corpus keys"""
         return self.data.keys()
 
     def values(self):
+        """ Returns tuple of values in corpus"""
         return (self.data[x] for x in self.keys())
 
     def items(self):
+        """ Returns tuple of items in corpus"""
         return ((x, self.data[x]) for x in self.keys())
 
     def types(self, corpus_name):
+        """ Returns tuple of types and type headers 
+
+        Parameters
+        ----------
+        corpus_name : str
+            the name of the corpus"""
         types = {}
         type_headers = {}
         for k, v in self.items():

@@ -4,6 +4,16 @@ import logging
 import time
 
 def import_type_csvs(corpus_context, type_headers):
+    """ 
+    Imports types into corpus from csv files
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus to import into
+    type_headers : list
+        a list of type files
+    """
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
     prop_temp = '''{name}: csvLine.{name}'''
     for at, h in type_headers.items():
@@ -40,6 +50,16 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_csvs(corpus_context, data):
+    """
+    Loads data from a csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    data : obj
+        the data object
+    """
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
     log.info('Beginning to import {} into the graph database...'.format(data.name))
     initial_begin = time.time()
@@ -145,6 +165,19 @@ CREATE (t)-[:annotates]->(n)'''
 
 
 def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
+    """
+    Import a lexicon from csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    typed_data : obj
+        the data object
+    case_sensitive : boolean
+        defaults to false
+
+    """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
     int_set_template = 'n.{name} = toInt(csvLine.{name})'
@@ -187,6 +220,16 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
 
 
 def import_feature_csvs(corpus_context, typed_data):
+    """
+    Import features from csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    typed_data : obj
+        the data object
+    """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
     int_set_template = 'n.{name} = toInt(csvLine.{name})'
@@ -221,6 +264,16 @@ def import_feature_csvs(corpus_context, typed_data):
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_speaker_csvs(corpus_context, typed_data):
+    """
+    Import a speaker from csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    typed_data : obj
+        the data object
+    """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
     int_set_template = 'n.{name} = toInt(csvLine.{name})'
@@ -254,6 +307,16 @@ def import_speaker_csvs(corpus_context, typed_data):
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_discourse_csvs(corpus_context, typed_data):
+    """
+    Import a discourse from csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    typed_data : obj
+        the data object
+    """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
     int_set_template = 'n.{name} = toInt(csvLine.{name})'
@@ -287,6 +350,16 @@ def import_discourse_csvs(corpus_context, typed_data):
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_utterance_csv(corpus_context, discourse):
+    """
+    Import an utterance from csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    discourse : str
+        the discourse the utterance is in
+    """
     path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
 
@@ -312,6 +385,16 @@ def import_utterance_csv(corpus_context, discourse):
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 def import_syllable_csv(corpus_context, split_name):
+    """
+    Import a syllable from csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    split_name : str
+        the identifier of the file
+    """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_syllable.csv'.format(split_name))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
@@ -387,6 +470,16 @@ def import_syllable_csv(corpus_context, split_name):
     corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
 def import_nonsyl_csv(corpus_context, split_name):
+    """
+    Import a nonsyllable from csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    split_name : str
+        the identifier of the file
+    """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_nonsyl.csv'.format(split_name))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))
@@ -451,6 +544,20 @@ with o, w, s, p, csvLine
     corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
 def import_subannotation_csv(corpus_context, type, annotated_type, props):
+    """
+    Import a subannotation from csv file
+
+    Parameters 
+    ----------
+    corpus_context : CorpusContext
+        the corpus to load into
+    type : str
+        the file name of the csv
+    annotated_type : obj
+
+    props : list
+        
+    """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_subannotations.csv'.format(type))
     csv_path = 'file:///{}'.format(path.replace('\\','/'))

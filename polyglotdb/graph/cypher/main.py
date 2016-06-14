@@ -22,6 +22,19 @@ template = '''{match}
 {return}'''
 
 def query_to_cypher(query):
+    """
+    translates a query object into a cypher formatted string
+
+    Parameters
+    ----------
+    query : query obj
+        the query to transform
+
+    Returns
+    -------
+    cypher : str
+        the cypher-formatted string
+    """
     kwargs = {'match': '',
             'optional_match':'',
             'where': '',
@@ -67,6 +80,19 @@ def query_to_cypher(query):
     return cypher
 
 def query_to_params(query):
+    """
+    translates a query object into a dict of parameters
+
+    Parameters
+    ----------
+    query : query obj
+        the query to transform
+
+    Returns
+    -------
+    params : dict
+        the parameter dictionary
+    """
     params = {}
     for c in query._criterion:
         if isinstance(c, ComplexClause):

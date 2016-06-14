@@ -4,6 +4,18 @@ from uuid import uuid1
 from collections import defaultdict
 
 def data_to_type_csvs(corpus_context, types, type_headers):
+    """
+    Convert a types object into a CSV file 
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus
+    types : obj
+        the types in the corpus
+    type_headers : dict
+        headers for types
+    """
     directory = corpus_context.config.temporary_directory('csv')
     tfs = {}
 
@@ -83,11 +95,38 @@ def data_to_graph_csvs(corpus_context, data):
         x.close()
 
 def time_data_to_csvs(type, directory, discourse, timed_data):
+    """
+    Convert time data into a CSV file 
+
+    Parameters
+    ----------
+    type : obj
+        the type of data
+    directory : str 
+        path to the directory
+    discourse : str
+        the name of the discourse
+    timed_data : list
+        the timing data
+    """
     with open(os.path.join(directory, '{}_{}.csv'.format(discourse, type)), 'w') as f:
         for t in timed_data:
             f.write('{},{},{}\n'.format(t[0], t[1], uuid1()))
 
 def syllables_data_to_csvs(corpus_context, data, split_name):
+    """
+    Convert syllable data into a CSV file 
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus object
+    data : DiscourseData
+        Data to load into a graph
+    split_name : str
+        identifier of the file to load
+    
+    """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_syllable.csv'.format(split_name))
     header = ['id', 'prev_id', 'vowel_id', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
@@ -98,6 +137,19 @@ def syllables_data_to_csvs(corpus_context, data, split_name):
             writer.writerow(d)
 
 def nonsyls_data_to_csvs(corpus_context, data, split_name):
+    """
+    Convert non-syllable data into a CSV file 
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus object
+    data : DiscourseData
+        Data to load into a graph
+    split_name : str
+        identifier of the file to load
+    
+    """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_nonsyl.csv'.format(split_name))
     header = ['id', 'prev_id', 'break', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
@@ -109,6 +161,19 @@ def nonsyls_data_to_csvs(corpus_context, data, split_name):
 
 
 def subannotations_data_to_csv(corpus_context, type, data):
+    """
+    Convert subannotation data into a CSV file 
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus object
+    data : DiscourseData
+        Data to load into a graph
+    type : str
+        identifier of the file to load
+    
+    """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_subannotations.csv'.format(type))
     header = sorted(data[0].keys())
@@ -119,6 +184,18 @@ def subannotations_data_to_csv(corpus_context, type, data):
             writer.writerow(d)
 
 def lexicon_data_to_csvs(corpus_context, data, case_sensitive = False):
+    """
+    Convert lexicon data into a CSV file 
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus object
+    data : DiscourseData
+        Data to load into a graph
+    case_sensitive : boolean
+        defaults to False
+    """
     directory = corpus_context.config.temporary_directory('csv')
     with open(os.path.join(directory, 'lexicon_import.csv'), 'w') as f:
         header = ['label'] + sorted(next(iter(data.values())).keys())
@@ -131,6 +208,16 @@ def lexicon_data_to_csvs(corpus_context, data, case_sensitive = False):
             writer.writerow(v)
 
 def feature_data_to_csvs(corpus_context, data):
+     """
+    Convert feature data into a CSV file 
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus object
+    data : DiscourseData
+        Data to load into a graph
+    """
     directory = corpus_context.config.temporary_directory('csv')
     with open(os.path.join(directory, 'feature_import.csv'), 'w') as f:
         header = ['label'] + sorted(next(iter(data.values())).keys())
@@ -141,6 +228,16 @@ def feature_data_to_csvs(corpus_context, data):
             writer.writerow(v)
 
 def speaker_data_to_csvs(corpus_context, data):
+     """
+    Convert speaker data into a CSV file 
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus object
+    data : DiscourseData
+        Data to load into a graph
+    """
     directory = corpus_context.config.temporary_directory('csv')
     with open(os.path.join(directory, 'speaker_import.csv'), 'w') as f:
         header = ['name'] + sorted(next(iter(data.values())).keys())
@@ -151,6 +248,18 @@ def speaker_data_to_csvs(corpus_context, data):
             writer.writerow(v)
 
 def discourse_data_to_csvs(corpus_context, data):
+     """
+    Convert discourse data into a CSV file 
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        the corpus object
+    data : DiscourseData
+        Data to load into a graph
+    type : str
+        identifier of the file to load   
+    """
     directory = corpus_context.config.temporary_directory('csv')
     with open(os.path.join(directory, 'discourse_import.csv'), 'w') as f:
         header = ['name'] + sorted(next(iter(data.values())).keys())

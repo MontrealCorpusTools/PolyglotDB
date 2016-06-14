@@ -26,18 +26,22 @@ class SubAnnotation(SubPathAnnotation):
 
     @property
     def withs(self):
+        """ Returns 1-element list containing path_alias"""
         return [self.path_alias]
 
     def with_statement(self):
+        """Returns cypher formatted collect statement """
         template = 'collect({a}) as {a}'
         return template.format(a=self.path_alias)
 
     @property
     def path_alias(self):
+        """Returns cypher formatted string containing subannotation alias and annotation alias"""
         return key_for_cypher('{}_of_{}'.format(self.sub.alias, self.annotation.alias))
 
     @property
     def def_path_alias(self):
+        """Returns cypher formatted string containing path_alias, subannotation type, and corpus"""
         return '{}:{}:{}'.format(self.path_alias, self.sub.type, self.sub.corpus)
 
     def __getattr__(self, key):

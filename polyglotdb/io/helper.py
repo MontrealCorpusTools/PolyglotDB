@@ -52,7 +52,7 @@ def guess_type(values, trans_delimiters = None):
     Returns
     -------
     type : string
-        most probably type (highest count)
+        most probable type (highest count)
     """
     if trans_delimiters is None:
         trans_delimiters = ['.',' ', ';', ',']
@@ -81,6 +81,19 @@ def guess_type(values, trans_delimiters = None):
     return max(probable_values.items(), key=operator.itemgetter(1))[0]
 
 def guess_trans_delimiter(values):
+    """" Given a set of values, guess the transition delimiter
+    
+    Parameters
+    ----------
+     values : dict
+        a dictionary of the possible values
+
+    Returns
+    -------
+    type : int
+        the most probable delimiter (highest count)
+
+    """
     trans_delimiters = ['.',' ', ';', ',']
     probable_values = {x: 0 for x in trans_delimiters}
     for l in values:
@@ -177,6 +190,19 @@ def most_frequent_value(dictionary):
     return max(c.keys(), key = lambda x: c[x])
 
 def calculate_lines_per_gloss(lines):
+    """ 
+    Calculates lines per gloss of lines
+
+    Parameters
+    ----------
+    lines : list
+        lines in the corpus
+
+    Returns
+    -------
+    number : int
+        the count of lines per gloss
+    """
     line_counts = [len(x[1]) for x in lines]
     equaled = list()
     number = 1
@@ -211,6 +237,19 @@ def calculate_lines_per_gloss(lines):
 
 
 def ilg_text_to_lines(path):
+    """
+    converts an ilg file to text lines
+
+    Parameters
+    ----------
+    path : string
+        path to ilg file
+
+    Returns 
+    -------
+    lines : list
+        a sanitized list of lines in the file
+    """
     delimiter = None
     with open(path, encoding='utf-8-sig', mode='r') as f:
         text = f.read()
@@ -243,6 +282,14 @@ def find_wav_path(path):
     return None
 
 def log_annotation_types(annotation_types):
+    """
+    Writes annotation types to log
+
+    Parameters
+    ----------
+    annotation_types : list
+        a list of types of annotations in a corpus
+    """
     logging.info('Annotation type info')
     logging.info('--------------------')
     logging.info('')
@@ -250,6 +297,21 @@ def log_annotation_types(annotation_types):
         logging.info(a.pretty_print())
 
 def make_type_id(type_values, corpus):
+    """
+    Constructs hash table of values and corpus
+
+    Parameters
+    ----------
+    type_values : list
+        list of type values
+    corpus : str
+        the corpus 
+
+    Returns
+    -------
+    str
+        a hex string containing the digest of the values as hexadecimal numbers
+    """
     m = hashlib.sha1()
     value = ' '.join(map(str, type_values))
     value += ' ' + corpus

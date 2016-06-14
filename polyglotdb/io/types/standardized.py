@@ -24,6 +24,18 @@ class PGAnnotation(object):
         self.subannotations = []
 
     def sha(self, corpus = None):
+        """
+        Constructs hash of values and corpus name
+
+        Parameters
+        ----------
+        corpus : str
+            defaults to None
+        Returns
+        -------
+        str
+            a hex string containing the digest of the values as hexadecimal numbers
+        """
         m = hashlib.sha1()
         value = ' '.join(map(str, self.type_values()))
         if corpus is not None:
@@ -33,12 +45,23 @@ class PGAnnotation(object):
         return out
 
     def type_keys(self):
+        """
+        adds label to type property keys and sorts them
+
+        Returns
+        -------
+        list 
+            sorted list of property keys
+        """
         keys = list(self.type_properties.keys())
         if self.label is not None:
             keys.append('label')
         return sorted(keys)
 
     def type_values(self):
+        """
+
+        """
         normalized = normalize_values_for_neo4j(self.type_properties)
         for k in self.type_keys():
             if k == 'label':

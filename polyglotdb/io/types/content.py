@@ -11,6 +11,7 @@ from .base import BaseAnnotationType, BaseAnnotation
 class GroupingAnnotation(BaseAnnotation):
     @property
     def value(self):
+        """Returns empty string"""
         return ''
 
 class GroupingAnnotationType(BaseAnnotationType):
@@ -22,6 +23,7 @@ class OrthographyAnnotation(BaseAnnotation):
 
     @property
     def value(self):
+        """Returns BaseAnnotation label"""
         return self.label
 
 class OrthographyAnnotationType(BaseAnnotationType):
@@ -35,6 +37,7 @@ class OrthographyAnnotationType(BaseAnnotationType):
 
     @property
     def punctuation(self):
+        """Returns union of characters and punctuation"""
         return self.characters & set(string.punctuation)
 
 
@@ -44,6 +47,7 @@ class MorphemeAnnotation(OrthographyAnnotation):
 
     @property
     def value(self):
+        """Returns OrthographyAnnotation morphemes"""
         return self._list
 
 class MorphemeAnnotationType(OrthographyAnnotationType):
@@ -61,6 +65,15 @@ class MorphemeAnnotationType(OrthographyAnnotationType):
         return morphemes
 
     def add(self, annotations, save = True):
+         """
+        save annotations  to _list
+        Parameters
+        ----------
+        annotations : list
+            the annotations to save
+        save : boolean  
+            defaults to True
+        """
         for a in annotations:
             a = list(a)
             label = a.pop(0)
@@ -97,6 +110,14 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         MorphemeAnnotationType.__init__(self, name, linguistic_type)
 
     def pretty_print(self):
+        """ 
+        Formats information about corpus from parsing for printing to log
+
+        Returns
+        -------
+        string : str
+            the information 
+        """
         string = ('{}:\n'.format(self.name) +
                 '    Ignored characters: {}\n'.format(', '.join(self.ignored_characters)) +
                 '    Digraphs: {}\n'.format(', '.join(self.digraphs)) +
@@ -107,6 +128,14 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
 
     @property
     def digraph_pattern(self):
+        """
+        Builds a regular expression with the list of digraphs 
+
+        Returns
+        -------
+        re object
+            the regular expression of digraphs
+        """
         if len(self.digraphs) == 0:
             return None
         digraph_list = sorted(self.digraphs, key = lambda x: len(x), reverse=True)
@@ -115,6 +144,15 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         return re.compile(pattern)
 
     def add(self, annotations, save = True):
+         """
+        save annotations  to _list
+        Parameters
+        ----------
+        annotations : list
+            the annotations to save
+        save : boolean  
+            defaults to True
+        """
         for a in annotations:
             a = list(a)
             label = a.pop(0)
@@ -199,6 +237,15 @@ class NumericAnnotationType(BaseAnnotationType):
     annotation_class = NumericAnnotation
 
     def add(self, annotations, save = True):
+         """
+        save annotations  to _list
+        Parameters
+        ----------
+        annotations : list
+            the annotations to save
+        save : boolean  
+            defaults to True
+        """
         for a in annotations:
             a = list(a)
             label = a.pop(0)

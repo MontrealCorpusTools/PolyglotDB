@@ -14,6 +14,10 @@ class PauseAnnotation(AnnotationAttribute):
 
     @property
     def define_alias(self):
+    	""" concatenates type, corpus, and alias
+    	Returns
+    	str
+    		concatenated string"""
         label_string = ':{}'.format(self.type)
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
@@ -36,6 +40,7 @@ class PauseAnnotation(AnnotationAttribute):
 
     @property
     def key(self):
+    	"""Returns 'pause' """
         return 'pause'
 
 class PauseAttribute(Attribute):
@@ -43,6 +48,11 @@ class PauseAttribute(Attribute):
 
 class PausePathAnnotation(PathAnnotation):
     def additional_where(self):
+    	""" 
+    	Returns
+    	-------
+    	str or None
+    		cypher string if key is 'pause', None otherwise"""
         if self.key == 'pause':
             return 'NONE (x in nodes({})[1..-1] where x:speech)'.format(self.path_alias)
         return None
@@ -57,4 +67,5 @@ class PausePathAttribute(PathAttribute):
 
     @property
     def with_alias(self):
+    	""" Returns annotation's path_type_alias"""
         return self.annotation.path_type_alias
