@@ -62,7 +62,7 @@ def export_corpus_csv(corpus, path,
 
     Parameters
     ----------
-    corpus : :class:`polyglotdb.corpus.CorpusContext`
+    corpus : :class:`~polyglotdb.corpus.CorpusContext`
         Corpus to save to text file
     path : str
         Full path to write text file

@@ -7,7 +7,7 @@ def generate_withs(query, all_withs):
     
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         query object
     all_withs : list
         Defaults to None

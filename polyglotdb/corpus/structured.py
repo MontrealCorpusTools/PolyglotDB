@@ -36,7 +36,7 @@ class StructuredContext(BaseContext):
 
         Returns
         -------
-        h : :class: `polyglotdb.structure.Hierarchy`
+        h : :class: `~polyglotdb.structure.Hierarchy`
             the structure of the corpus
         """
         exists_statement = '''MATCH (c:Corpus)<-[:contained_by]-(s)

@@ -40,11 +40,11 @@ class BaseContext(object):
 
     Parameters
     ----------
-    args : arguments or :class:`polyglotdb.config.CorpusConfig`
+    args : arguments or :class:`~polyglotdb.config.CorpusConfig`
         If the first argument is not a CorpusConfig object, it is
         the name of the corpus
     kwargs : keyword arguments
-        If a :class:`polyglotdb.config.CorpusConfig` object is not specified, all arguments and
+        If a :class:`~polyglotdb.config.CorpusConfig` object is not specified, all arguments and
         keyword arguments are passed to a CorpusConfig object
     """
     def __init__(self, *args, **kwargs):
@@ -288,9 +288,9 @@ class BaseContext(object):
 
     def query_graph(self, annotation_type):
         '''
-        Return a :class:`polyglotdb.config.GraphQuery` for the specified annotation type.
+        Return a :class:`~polyglotdb.config.GraphQuery` for the specified annotation type.
 
-        When extending :class:`polyglotdb.config.GraphQuery` functionality, this function must be
+        When extending :class:`~polyglotdb.config.GraphQuery` functionality, this function must be
         overwritten.
 
         Parameters

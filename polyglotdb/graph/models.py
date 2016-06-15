@@ -51,7 +51,7 @@ class BaseAnnotation(object):
         
         Parameters
         ----------
-        context : : class: `polyglotdb.corpus.BaseContext`
+        context : : class: `~polyglotdb.corpus.BaseContext`
             The objects corpus_context will be set to this parameter
         """
         self._corpus_context = context
@@ -249,7 +249,7 @@ class LinguisticAnnotation(BaseAnnotation):
         
         Parameters
         ----------
-        subannotation : :class: `polyglotdb.graph.SubAnnotation`
+        subannotation : :class: `~polyglotdb.graph.SubAnnotation`
             the subannotation to be deleted
          """
         for i, sa in enumerate(self._subannotations[subannotation._type]):

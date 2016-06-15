@@ -27,7 +27,7 @@ def query_to_cypher(query):
 
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         the query to transform
 
     Returns
@@ -85,7 +85,7 @@ def query_to_params(query):
 
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         the query to transform
 
     Returns

@@ -25,7 +25,7 @@ class ImportContext(BaseContext):
         Parameters
         ----------
         parsed_data: dict
-            Dictionary with keys for discourse names and values of :class:`polyglotdb.io.helper.DiscourseData`
+            Dictionary with keys for discourse names and values of :class:`~polyglotdb.io.helper.DiscourseData`
             objects
         '''
         data_to_type_csvs(self, types, type_headers)
@@ -51,7 +51,7 @@ class ImportContext(BaseContext):
 
         Parameters
         ----------
-        data : :class:`polyglotdb.io.helper.DiscourseData`
+        data : :class:`~polyglotdb.io.helper.DiscourseData`
             Data for the discourse to be added
         '''
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
@@ -82,7 +82,7 @@ class ImportContext(BaseContext):
 
             Parameters
             ----------
-            parser : :class: `polyglotdb.io.parsers.BaseParser`
+            parser : :class: `~polyglotdb.io.parsers.BaseParser`
                 the type of parser used for corpus
             path : str
                 the location of the corpus
@@ -104,7 +104,7 @@ class ImportContext(BaseContext):
 
         Parameters
         ----------
-        parser : :class: `polyglotdb.io.parsers.BaseParser`
+        parser : :class: `~polyglotdb.io.parsers.BaseParser`
                 the type of parser used for corpus
         path : str
             the location of the discourse
@@ -128,7 +128,7 @@ class ImportContext(BaseContext):
 
         Parameters
         ----------
-        parser : :class: `polyglotdb.io.parsers.BaseParser`
+        parser : :class: `~polyglotdb.io.parsers.BaseParser`
                 the type of parser used for corpus
         path : str
             the location of the directory
@@ -210,7 +210,7 @@ class ImportContext(BaseContext):
 
         Parameters
         ----------
-        data : :class:`polyglotdb.io.helper.DiscourseData`
+        data : :class:`~polyglotdb.io.helper.DiscourseData`
             Data for the discourse
         '''
         log = logging.getLogger('{}_loading'.format(self.corpus_name))

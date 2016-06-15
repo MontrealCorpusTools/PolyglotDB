@@ -14,7 +14,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
     
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         the query object
     annotation_type : str
         the type of annotation

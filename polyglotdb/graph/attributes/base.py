@@ -233,9 +233,9 @@ class AnnotationAttribute(Attribute):
         Annotation type
     pos : int
         Position in the query
-    previous : :class:`polyglotdb.graph.attributes.AnnotationAttribute`
+    previous : :class:`~polyglotdb.graph.attributes.AnnotationAttribute`
         Returns the Annotation of the same type with the previous position
-    following : :class:`polyglotdb.graph.attributes.AnnotationAttribute`
+    following : :class:`~polyglotdb.graph.attributes.AnnotationAttribute`
         Returns the Annotation of the same type with the following position
     """
     has_subquery = False

@@ -5,7 +5,7 @@ def generate_wheres(criterion, wheres = None):
     
     Parameters
     ----------
-    criterion : :class: `polyglotdb.graph.GraphQuery`
+    criterion : :class: `~polyglotdb.graph.GraphQuery`
     	query object
     wheres : list
     	Defaults to None

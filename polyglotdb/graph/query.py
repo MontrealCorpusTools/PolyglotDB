@@ -29,7 +29,7 @@ class GraphQuery(object):
 
     Parameters
     ----------
-    corpus : :class:`polyglotdb.corpus.CorpusContext`
+    corpus : :class:`~polyglotdb.corpus.CorpusContext`
         The corpus to query
     to_find : str
         Name of the annotation type to search for
@@ -100,7 +100,7 @@ class GraphQuery(object):
         """
         Add one or more additional columns to the results.
 
-        Columns should be :class:`polyglotdb.graph.attributes.Attribute` objects.
+        Columns should be :class:`~polyglotdb.graph.attributes.Attribute` objects.
         """
         column_set = set(self._columns) & set(self._acoustic_columns) & set(self._hidden_columns)
         for c in args:
@@ -708,7 +708,7 @@ class SplitQuery(GraphQuery):
 
         Returns
         -------
-        q : :class: `polyglotdb.graph.GraphQuery`
+        q : :class: `~polyglotdb.graph.GraphQuery`
             the base query
         """
         q = GraphQuery(self.corpus, self.to_find)

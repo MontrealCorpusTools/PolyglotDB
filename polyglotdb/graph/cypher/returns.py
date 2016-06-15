@@ -41,7 +41,7 @@ def generate_order_by(query):
 
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         a query object
 
     Returns
@@ -79,7 +79,7 @@ def generate_delete(query):
 
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         a query object
 
     Returns
@@ -98,7 +98,7 @@ def generate_aggregate(query):
     
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         a query object
 
     Returns
@@ -124,7 +124,7 @@ def generate_distinct(query):
 
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         a query object
 
     Returns
@@ -152,7 +152,7 @@ def generate_cache(query):
     
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         a query object
 
     Returns
@@ -181,7 +181,7 @@ def generate_return(query):
     
     Parameters
     ----------
-    query : :class: `polyglotdb.graph.GraphQuery`
+    query : :class: `~polyglotdb.graph.GraphQuery`
         a query object
 
     Returns

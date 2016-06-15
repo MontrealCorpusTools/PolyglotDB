@@ -22,7 +22,7 @@ class AggregateFunction(object):
         """
         Returns
         -------
-        :class:`polyglotdb.graph.attributes.Attribute`
+        :class:`~polyglotdb.graph.attributes.Attribute`
             acoustic attribute
         """
         return self.attribute.acoustic
@@ -32,7 +32,7 @@ class AggregateFunction(object):
         """
         Returns
         -------
-        :class:`polyglotdb.graph.attributes.AnnotationAttribute`
+        :class:`~polyglotdb.graph.attributes.AnnotationAttribute`
             base annotation
         """
         return self.attribute.base_annotation
@@ -43,7 +43,7 @@ class AggregateFunction(object):
         Returns
         -------
         with_alias : str
-            the alias of a `polyglotdb.graph.attributes.AnnotationAttribute` object
+            the alias of a `~polyglotdb.graph.attributes.AnnotationAttribute` object
         """
         return self.attribute.with_alias
 
@@ -53,7 +53,7 @@ class AggregateFunction(object):
         Returns
         -------
         with_aliases : str
-            the with strings of a `polyglotdb.graph.attributes.AnnotationAttribute` object
+            the with strings of a `~polyglotdb.graph.attributes.AnnotationAttribute` object
         """
         return self.attribute.with_aliases
 
@@ -61,7 +61,7 @@ class AggregateFunction(object):
     def annotation(self):"""
         Returns
         -------
-        :class: `polyglotdb.graph.attributes.AnnotationAttribute` object
+        :class: `~polyglotdb.graph.attributes.AnnotationAttribute` object
             the annotation
         """
         return self.attribute.annotation
