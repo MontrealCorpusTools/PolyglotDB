@@ -708,7 +708,7 @@ class SplitQuery(GraphQuery):
 
         Returns
         -------
-        q : GraphQuery
+        q : :class: `polyglotdb.graph.GraphQuery`
             the base query
         """
         q = GraphQuery(self.corpus, self.to_find)

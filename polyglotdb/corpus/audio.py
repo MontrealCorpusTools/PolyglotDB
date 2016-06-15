@@ -16,12 +16,12 @@ class AudioContext(BaseContext):
 
         Parameters
         ----------
-        graph_query : 
+        graph_query : : class: `polyglotdb.graph.GraphQuery`
             the query to be run
 
         Returns
         -------
-        AcousticQuery object
+        AcousticQuery : : class `polyglotdb.acoustics.AcousticQuery`
 
         """
         if not self.has_sound_files:
@@ -29,10 +29,7 @@ class AudioContext(BaseContext):
         return AcousticQuery(self, graph_query)
 
     def analyze_acoustics(self):
-        """
-        checks for soundfiles
-        runs an acoustic analysis
-        """
+        """ runs an acoustic analysis """
         if not self.has_sound_files:
             raise(NoSoundFileError)
         acoustic_analysis(self)
@@ -48,7 +45,7 @@ class AudioContext(BaseContext):
 
         Returns
         -------
-        sound_file :
+        sound_file : : class: `polyglotdb.sql.models.SoundFile`
             the first soundfile
         """
         q = self.sql_session.query(SoundFile).join(SoundFile.discourse)

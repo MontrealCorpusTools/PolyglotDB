@@ -11,7 +11,8 @@ class FeaturedContext(BaseContext):
 
         Parameters
         ----------
-        phones : 
+        phones : list
+            a list of phones
         label : str
             the label for the class
         """
@@ -40,7 +41,7 @@ class FeaturedContext(BaseContext):
         Parameters
         ----------
         feature_dict : dict
-            all of the features of a particular 
+            features to encode
         """
         phone = getattr(self, self.phone_name)
         for k, v in feature_dict.items():
@@ -68,7 +69,7 @@ class FeaturedContext(BaseContext):
         Parameters
         ----------
         feature_data : dict
-        
+            the enrichment data
         type_data : dict
             By default None
         """

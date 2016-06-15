@@ -6,7 +6,7 @@ def make_safe(value, delimiter):
 
     Parameters
     ----------
-    value : object
+    value : list or None
         Object to make into string
 
     delimiter : str
@@ -62,7 +62,7 @@ def export_corpus_csv(corpus, path,
 
     Parameters
     ----------
-    corpus : Corpus
+    corpus : :class:`polyglotdb.corpus.CorpusContext`
         Corpus to save to text file
     path : str
         Full path to write text file

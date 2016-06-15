@@ -8,7 +8,7 @@ class PauseContext(BaseContext):
 
         Parameters
         ----------
-        pause_words : str or list
+        pause_words : str, list, tuple, or set
             Either a list of words that are pauses or a string containing
             a regular expression that specifies pause words
         """

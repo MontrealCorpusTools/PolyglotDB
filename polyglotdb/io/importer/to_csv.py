@@ -9,7 +9,7 @@ def data_to_type_csvs(corpus_context, types, type_headers):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus
     types : obj
         the types in the corpus
@@ -39,7 +39,7 @@ def data_to_graph_csvs(corpus_context, data):
 
     Parameters
     ----------
-    data : DiscourseData
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     directory: str
         Full path to a directory to store CSV files
@@ -119,9 +119,9 @@ def syllables_data_to_csvs(corpus_context, data, split_name):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus object
-    data : DiscourseData
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     split_name : str
         identifier of the file to load
@@ -142,9 +142,9 @@ def nonsyls_data_to_csvs(corpus_context, data, split_name):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context:class:`~polyglotdb.corpus.CorpusContext`
         the corpus object
-    data : DiscourseData
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     split_name : str
         identifier of the file to load
@@ -166,9 +166,9 @@ def subannotations_data_to_csv(corpus_context, type, data):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus object
-    data : DiscourseData
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     type : str
         identifier of the file to load
@@ -189,9 +189,9 @@ def lexicon_data_to_csvs(corpus_context, data, case_sensitive = False):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus object
-    data : DiscourseData
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     case_sensitive : boolean
         defaults to False
@@ -213,9 +213,9 @@ def feature_data_to_csvs(corpus_context, data):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus object
-    data : DiscourseData
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     """
     directory = corpus_context.config.temporary_directory('csv')
@@ -233,9 +233,9 @@ def speaker_data_to_csvs(corpus_context, data):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus object
-    data : DiscourseData
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     """
     directory = corpus_context.config.temporary_directory('csv')
@@ -253,9 +253,9 @@ def discourse_data_to_csvs(corpus_context, data):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus object
-    data : DiscourseData
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     type : str
         identifier of the file to load   

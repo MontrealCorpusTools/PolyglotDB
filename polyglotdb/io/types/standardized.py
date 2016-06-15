@@ -60,6 +60,13 @@ class PGAnnotation(object):
 
     def type_values(self):
         """
+        Normalizes type properties for neo4j, yields label or property
+
+        Yields
+        ------
+        str
+            either the property label or the property if there is no label
+        
 
         """
         normalized = normalize_values_for_neo4j(self.type_properties)
@@ -70,12 +77,30 @@ class PGAnnotation(object):
                 yield normalized[k]
 
     def token_keys(self):
+        """
+        adds label to token property keys and sorts them
+
+        Returns
+        -------
+        list 
+            sorted list of property keys
+        """
         keys = list(self.token_properties.keys())
         if self.label is not None:
             keys.append('label')
         return sorted(keys)
 
     def token_values(self):
+        """
+        Normalizes token properties for neo4j, yields label or property
+
+        Yields
+        ------
+        str
+            either the property label or the property if there is no label
+        
+
+        """
         normalized = normalize_values_for_neo4j(self.token_properties)
         for k in self.token_keys():
             if k == 'label':
@@ -97,6 +122,9 @@ class PGAnnotationType(object):
         self._lookup_dict = None
 
     def optimize_lookups(self):
+        """
+        optimizes the lookup dictionary
+        """
         if self._lookup_dict is not None:
             return
         self._list = sorted(self._list, key = lambda x: x.begin)
@@ -108,6 +136,14 @@ class PGAnnotationType(object):
                 cur += 1000
 
     def add(self, annotation):
+        """
+        adds annotation to PGAnnotationType object
+
+        Parameters
+        ----------
+        annotation :class: `~polyglotdb.io.types.BaseAnnotation`
+            the annotation to add
+        """
         self._list.append(annotation)
         self.type_property_keys.update(annotation.type_keys())
         for k,v in annotation.type_properties.items():
@@ -121,6 +157,14 @@ class PGAnnotationType(object):
 
     @property
     def speakers(self):
+        """
+        Gets the speakers from a PGAnnotationType object
+
+        Returns
+        -------
+        speakers : set
+            a set of speakers
+        """
         speakers = set()
         for x in self:
             if x.speaker is None:
@@ -129,6 +173,16 @@ class PGAnnotationType(object):
         return speakers
 
     def lookup(self, timepoint, speaker = None):
+        """
+        Searches the lookup_dict for a particular begin time, and optionally a speaker 
+
+        Parameters
+        ----------
+        timepoint : double
+            the begin of the desired linguistic object
+        speaker : str
+            Defaults to None
+        """
         if self._lookup_dict is not None:
             prev = 0
             for ind, time in sorted(self._lookup_dict.items()):
@@ -160,6 +214,18 @@ class PGAnnotationType(object):
                         None)
 
     def lookup_range(self, begin, end, speaker = None):
+        """
+        Searches the lookup_dict for objects between begin time, end time, and optionally a speaker 
+
+        Parameters
+        ----------
+        begin : double
+            the lower bound of the range
+        end : double
+            the upper bound of the range
+        speaker : str
+            Defaults to None
+        """
         if self._lookup_dict is not None:
             prev = 0
             mapping = sorted(self._lookup_dict.items())

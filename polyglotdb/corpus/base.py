@@ -119,7 +119,8 @@ class BaseContext(object):
         ----------
         statement : str
             the cypher statement
-        parameters :
+        parameters : dict
+            keyword arguments to execute a cypher statement
 
         Returns
         -------

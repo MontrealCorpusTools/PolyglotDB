@@ -51,7 +51,7 @@ class BaseAnnotation(object):
         
         Parameters
         ----------
-        context :
+        context : : class: `polyglotdb.corpus.BaseContext`
             The objects corpus_context will be set to this parameter
         """
         self._corpus_context = context
@@ -225,7 +225,8 @@ class LinguisticAnnotation(BaseAnnotation):
         Parameters
         ----------
         id : str
-            the ID of the desired node"""
+            the ID of the desired node
+        """
         res = list(self.corpus_context.execute_cypher(
             '''MATCH (token {id: {id}})-[:is_a]->(type)
                 RETURN token, type''', id = id))
@@ -248,7 +249,7 @@ class LinguisticAnnotation(BaseAnnotation):
         
         Parameters
         ----------
-        subannotation : 
+        subannotation : :class: `polyglotdb.graph.SubAnnotation`
             the subannotation to be deleted
          """
         for i, sa in enumerate(self._subannotations[subannotation._type]):
@@ -268,7 +269,8 @@ class LinguisticAnnotation(BaseAnnotation):
 
         Parameters
         ----------
-        type :
+        type : str
+            the type of the subannotation
 
         commit : boolean, defaults to False
 
@@ -355,10 +357,12 @@ class SubAnnotation(BaseAnnotation):
 
     @property
     def node(self):
+        """ returns the node"""
         return self._node
 
     @node.setter
     def node(self, item):
+        """ Sets the node to item"""
         self._node = item
         self._id = item.properties['id']
         for x in self._node.labels():
@@ -367,6 +371,14 @@ class SubAnnotation(BaseAnnotation):
                 break
 
     def load(self, id):
+        """ 
+        loads a node from the graph with a specific ID
+
+        Parameters
+        ----------
+        id : str
+            the ID of the desired node
+        """
         res = list(self.corpus_context.execute_cypher(
             '''MATCH (sub {id: {id}})-[:annotates]->(token)-[:is_a]->(type)
                 RETURN sub, token, type''', id = id))
@@ -376,6 +388,7 @@ class SubAnnotation(BaseAnnotation):
         self.node = res[0]['sub']
 
     def save(self):
+        """ saves the current node to the graph"""
         self.corpus_context.graph.push(self._node)
 
 class Speaker(SubAnnotation):

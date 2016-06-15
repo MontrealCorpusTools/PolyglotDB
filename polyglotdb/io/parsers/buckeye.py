@@ -53,8 +53,8 @@ class BuckeyeParser(BaseParser):
 
         Returns
         -------
-        DiscourseData
-            Parsed data from the file
+        :class:`~polyglotdb.io.discoursedata.DiscourseData`
+            Parsed data
         '''
         self.make_transcription = False
         name, ext = os.path.splitext(os.path.split(word_path)[1])

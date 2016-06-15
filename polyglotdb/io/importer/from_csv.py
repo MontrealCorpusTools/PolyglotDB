@@ -9,7 +9,7 @@ def import_type_csvs(corpus_context, type_headers):
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to import into
     type_headers : list
         a list of type files
@@ -55,9 +55,9 @@ def import_csvs(corpus_context, data):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
-    data : obj
+    data : :class:`~polyglotdb.io.helper.DiscourseData`
         the data object
     """
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
@@ -170,10 +170,10 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
-    typed_data : obj
-        the data object
+    typed_data : dict
+        the data 
     case_sensitive : boolean
         defaults to false
 
@@ -225,10 +225,10 @@ def import_feature_csvs(corpus_context, typed_data):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
-    typed_data : obj
-        the data object
+    typed_data : dict
+        the data 
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
@@ -269,10 +269,10 @@ def import_speaker_csvs(corpus_context, typed_data):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
-    typed_data : obj
-        the data object
+    typed_data : dict
+        the data 
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
@@ -312,10 +312,10 @@ def import_discourse_csvs(corpus_context, typed_data):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
-    typed_data : obj
-        the data object
+    typed_data : dict
+        the data 
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
@@ -355,7 +355,7 @@ def import_utterance_csv(corpus_context, discourse):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
     discourse : str
         the discourse the utterance is in
@@ -390,7 +390,7 @@ def import_syllable_csv(corpus_context, split_name):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
     split_name : str
         the identifier of the file
@@ -475,7 +475,7 @@ def import_nonsyl_csv(corpus_context, split_name):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
     split_name : str
         the identifier of the file
@@ -549,7 +549,7 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
 
     Parameters 
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus to load into
     type : str
         the file name of the csv

@@ -10,7 +10,7 @@ def enrich_speakers_from_csv(corpus_context, path):
 
 	Parameters
 	----------
-	corpus_context : obj
+	corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
 		the corpus being enriched
 	path : str
 		the path to the csv file
@@ -24,7 +24,7 @@ def enrich_discourses_from_csv(corpus_context, path):
 
 	Parameters
 	----------
-	corpus_context : obj
+	corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
 		the corpus being enriched
 	path : str
 		the path to the csv file

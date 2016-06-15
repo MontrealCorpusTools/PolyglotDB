@@ -8,7 +8,7 @@ class SpokenContext(BaseContext):
     def enrich_speakers(self, speaker_data, type_data = None):
         """
         adds properties to speakers, adds speaker properties to census
-        adds pproperties to hierarchy
+        adds properties to hierarchy
         Parameters
         ----------
         speaker_data : dict
@@ -38,7 +38,7 @@ class SpokenContext(BaseContext):
 
         Parameters
         ----------
-        discours_data : dict
+        discourse_data : dict
             the data about the discourse to add
         type_data : dict
             default to None

@@ -36,7 +36,7 @@ class StructuredContext(BaseContext):
 
         Returns
         -------
-        h : Hierarchy object
+        h : :class: `polyglotdb.structure.Hierarchy`
             the structure of the corpus
         """
         exists_statement = '''MATCH (c:Corpus)<-[:contained_by]-(s)
@@ -228,9 +228,10 @@ class StructuredContext(BaseContext):
             what the higher annotation is (utterance, word)
         lower_annotation_type : str
             what the lower annotation is (word, phone, syllable)
-        name : 
-
-        subset : 
+        name : str
+            the column name
+        subset : str
+            the annotation subset
 
         """
         lower = getattr(self, lower_annotation_type)
@@ -257,9 +258,10 @@ class StructuredContext(BaseContext):
             what the higher annotation is (utterance, word)
         lower_annotation_type : str
             what the lower annotation is (word, phone, syllable)
-        name : 
-
-        subset : 
+        name : str
+            the column name
+        subset : str
+            the annotation subset 
         """
         higher = getattr(self, higher_annotation_type)
         lower = getattr(higher, lower_annotation_type)
@@ -282,9 +284,10 @@ class StructuredContext(BaseContext):
             what the higher annotation is (utterance, word)
         lower_annotation_type : str
             what the lower annotation is (word, phone, syllable)
-        name : 
-
-        subset : 
+        name : str
+            the column name
+        subset : str
+            the annotation subset  
         """
         higher = getattr(self, higher_annotation_type)
         lower = getattr(higher, lower_annotation_type)
@@ -303,9 +306,10 @@ class StructuredContext(BaseContext):
 
         Parameters
         ----------
-        annnotation_type : 
+        annnotation_type : str
             what is being removed
-        name : 
+         name : str
+            the column name  
         """
         q = self.query_graph(getattr(self, annotation_type))
         q.set_token(**{name: None})

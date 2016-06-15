@@ -79,12 +79,13 @@ return coda, count(coda) as freq'''.format(corpus_name = self.corpus_name,
         return data
 
     def encode_syllabic_segments(self, phones):
-        """ Encode a list of phones as 'syllabic'
+        """ 
+        Encode a list of phones as 'syllabic'
             
-            Parameters
-            ----------
-            phones : list
-                A list of vowels and syllabic consonants
+        Parameters
+        ----------
+        phones : list
+            A list of vowels and syllabic consonants
         """
         self.encode_class(phones, 'syllabic')
 

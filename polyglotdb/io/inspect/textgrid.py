@@ -72,7 +72,7 @@ def uniqueLabels(tier):
 
 	Parameters
 	----------
-	tier : obj
+	tier : IntervalTier
 		the tier to collect labels from
 
 	Returns 
@@ -91,7 +91,7 @@ def average_duration(tier):
 
 	Parameters
 	----------
-	tier : obj
+	tier : IntervalTier
 		the tier to get duration from
 
 	Returns 
@@ -111,7 +111,7 @@ def averageLabelLen(tier):
 
 	Parameters
 	----------
-	tier : obj
+    tier : IntervalTier
 		the tier to collect labels from
 
 	Returns 

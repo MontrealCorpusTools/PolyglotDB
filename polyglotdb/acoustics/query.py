@@ -37,7 +37,8 @@ class AcousticQuery(object):
 
         Returns
         -------
-        self.elements
+        elements : list
+            list of the elements in the query
 
          """
         for e in self.acoustic_elements:
@@ -56,7 +57,8 @@ class AcousticQuery(object):
         
         Returns
         -------
-        self.elements
+        elements : list
+            list of the elements in the query
         """ 
         for i in range(len(self.elements)):
             self.elements[i].__values__ = tuple(list(self.elements[i].__values__) +[self.elements[i].pitch])

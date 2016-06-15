@@ -4,6 +4,30 @@ from .maxonset import split_nonsyllabic_maxonset, split_ons_coda_maxonset
 from .probabilistic import split_nonsyllabic_prob, split_ons_coda_prob
 
 def syllabify(phones, syllabics, onsets, codas, algorithm = 'probabilistic'):
+    """
+    Given a list of phones, groups them into syllables
+
+    Parameters
+    ----------
+    phones : list
+        a list of phones in the corpus
+    syllabics : list
+        a list of syllabic segments
+    onsets : list
+        a list of onsets 
+    codas : list
+        a list of codas
+    algorithm : str
+        the type of algorithm being used to determine syllables 
+        Defaults to 'probabilistic'
+
+    Returns
+    -------
+    syllables : list
+        a list of dictionaries which contain vowel, onset, coda, and label
+
+    """
+
     vow_inds = [i for i,x in enumerate(phones) if x in syllabics]
     if len(vow_inds) == 0:
         if algorithm == 'probabilistic':

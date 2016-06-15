@@ -10,7 +10,7 @@ def value_for_cypher(value):
     Parameters
     ----------
     value : str, list, or boolean
-        
+       
     Returns
     -------
     v : str
@@ -33,7 +33,7 @@ def key_for_cypher(key):
     Parameters
     ----------
     key : letter or non-letter
-
+        
     Returns
     -------
     key : str

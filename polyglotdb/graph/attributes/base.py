@@ -171,8 +171,8 @@ class Attribute(object):
 
 		Parameters
 		----------
-		other : 
-
+		other : list
+            attribute will be checked against elements in this list
 		Returns
 		-------
 		string
@@ -196,8 +196,8 @@ class Attribute(object):
 
 		Parameters
 		----------
-		other : 
-			
+		other : list
+            attribute will be checked against elements in this list
 		Returns
 		-------
 		string
@@ -233,9 +233,9 @@ class AnnotationAttribute(Attribute):
         Annotation type
     pos : int
         Position in the query
-    previous : AnnotationAttribute
+    previous : :class:`polyglotdb.graph.attributes.AnnotationAttribute`
         Returns the Annotation of the same type with the previous position
-    following : AnnotationAttribute
+    following : :class:`polyglotdb.graph.attributes.AnnotationAttribute`
         Returns the Annotation of the same type with the following position
     """
     has_subquery = False

@@ -28,8 +28,8 @@ class PitchAttribute(AcousticAttribute):
 
         Parameters
         ----------
-        corpus :
-            the corpus to query
+        corpus : :class:`polyglotdb.corpus.CorpusContext`
+            The corpus to query
         discourse : str
             the discourse to query
         begin : float
@@ -65,8 +65,8 @@ class FormantAttribute(AcousticAttribute):
 
         Parameters
         ----------
-        corpus :
-            the corpus to query
+        corpus : :class:`polyglotdb.corpus.CorpusContext`
+            The corpus to query
         discourse : str
             the discourse to query
         begin : float

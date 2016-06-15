@@ -37,8 +37,8 @@ def acoustic_analysis(corpus_context,
 
     Parameters
     ----------
-    corpus_context : 
-        the type of corpus
+    corpus_context : : class: `polyglotdb.corpus.BaseContext`
+        the type of corpus being analyzed
 
     """
     if speaker_subset is None:
@@ -82,15 +82,15 @@ def get_pitch(corpus_context, sound_file, calculate = True):
     
     Parameters
     ----------
-    corpus_context : 
+    corpus_context : : class: `polyglotdb.corpus.BaseContext`
         the type of corpus
-    sound_file :
+    sound_file : : class: `polyglotdb.sql.models.SoundFile`
         the .wav sound file
 
     Returns
     -------
-    listing or [] : list
-        q.all() ????
+    listing : list
+        list of pitches
     """
     try:
         q = corpus_context.sql_session.query(Pitch).join(SoundFile)
@@ -117,15 +117,15 @@ def get_formants(corpus_context, sound_file, calculate = True):
 
     Parameters
     ----------
-    corpus_context : 
+    corpus_context : : class: `polyglotdb.corpus.BaseContext`
         the type of corpus
-    sound_file :
+    sound_file : : class: `polyglotdb.sql.models.SoundFile`
         the .wav sound file
 
     Returns
     -------
-    listing or [] : list
-        q.all() ????
+    listing : list
+        list of pitches
 
     """
     try:
@@ -153,9 +153,9 @@ def analyze_pitch(corpus_context, sound_file):
     
     Parameters
     ----------
-    corpus_context : 
+    corpus_context : : class: `polyglotdb.corpus.BaseContext`
         the type of corpus
-    sound_file :
+    sound_file : : class: `polyglotdb.sql.models.SoundFile`
         the .wav sound file
     """
     algorithm = corpus_context.config.pitch_algorithm
@@ -226,9 +226,11 @@ def analyze_formants(corpus_context, sound_file):
     """ 
     Analyzes the formants using different algorithms based on the corpus the sound file is from 
 
-    corpus_context : 
+    Parameters 
+    ----------
+    corpus_context : : class: `polyglotdb.corpus.BaseContext`
         the type of corpus
-    sound_file :
+    sound_file : : class: `polyglotdb.sql.models.SoundFile`
         the .wav sound file
     """
     algorithm = corpus_context.config.formant_algorithm

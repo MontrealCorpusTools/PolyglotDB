@@ -7,7 +7,7 @@ def enrich_lexicon_from_csv(corpus_context, path, case_sensitive = False):
 
 	Parameters
 	----------
-	corpus_context : obj
+	corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
 		the corpus being enriched
 	path : str
 		the path to the csv file

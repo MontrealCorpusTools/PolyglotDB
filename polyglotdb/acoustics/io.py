@@ -14,10 +14,10 @@ def add_acoustic_info(corpus_context, data):
     
     Parameters
     ----------
-    corpus_context : 
+    corpus_context : : class: `polyglotdb.corpus.BaseContext`
         The corpus type
-    data : 
-        the file to add info to
+    data : :class:`polyglotdb.io.helper.DiscourseData`
+        Data for the discourse to be added
     """
     if data.wav_path is None or not os.path.exists(data.wav_path):
         return

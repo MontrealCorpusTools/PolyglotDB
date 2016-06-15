@@ -35,7 +35,7 @@ class SpeakerAnnotation(HierarchicalAnnotation):
 
     def for_match(self):
     	"""
-		Returns cypher formatted string containing HierarchichalAnnotation token_alias and speaker_alias
+		Returns cypher formatted string containing `polyglotdb.graph.HierarchichalAnnotation` token_alias and speaker_alias
     	"""
         kwargs = {}
         kwargs['token_alias'] = self.contained_annotation.alias
@@ -44,5 +44,5 @@ class SpeakerAnnotation(HierarchicalAnnotation):
 
     @property
     def withs(self):
-    	"""Returns 1-element list of HierarchichalAnnotation alias"""
+    	"""Returns 1-element list of `polyglotdb.graph.HierarchichalAnnotation` alias"""
         return [self.alias]

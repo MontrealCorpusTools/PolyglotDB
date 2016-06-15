@@ -15,7 +15,9 @@ class PauseAnnotation(AnnotationAttribute):
     @property
     def define_alias(self):
     	""" concatenates type, corpus, and alias
+        
     	Returns
+        -------
     	str
     		concatenated string"""
         label_string = ':{}'.format(self.type)

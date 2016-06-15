@@ -82,15 +82,15 @@ class ImportContext(BaseContext):
 
             Parameters
             ----------
-            parser : 
+            parser : :class: `polyglotdb.io.parsers.BaseParser`
                 the type of parser used for corpus
             path : str
                 the location of the corpus
 
             Returns
             -------
-            could_not_parse : 
-                whether or not it was able to parse the corpus
+            could_not_parse : list
+                list of files that it could not parse
         """
         if os.path.isdir(path):
             could_not_parse = self.load_directory(parser, path)
@@ -104,7 +104,7 @@ class ImportContext(BaseContext):
 
         Parameters
         ----------
-        parser : 
+        parser : :class: `polyglotdb.io.parsers.BaseParser`
                 the type of parser used for corpus
         path : str
             the location of the discourse
@@ -128,15 +128,15 @@ class ImportContext(BaseContext):
 
         Parameters
         ----------
-        parser : 
+        parser : :class: `polyglotdb.io.parsers.BaseParser`
                 the type of parser used for corpus
         path : str
             the location of the directory
 
         Returns
         -------
-        could_not_parse :
-            whether or not it was able to parse the corpus
+        could_not_parse : list
+            list of files that were not able to be parsed
         """
         call_back = parser.call_back
         parser.call_back = None
