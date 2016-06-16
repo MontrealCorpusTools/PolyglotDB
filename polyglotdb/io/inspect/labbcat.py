@@ -7,7 +7,7 @@ from ..parsers import LabbCatParser
 
 
 def inspect_labbcat(path):
-	"""
+    """
     Generate an :class:`~polyglotdb.io.parsers.ilg.LabbCatParser`
     for a specified text file for parsing it as a LabbCat file
 
@@ -15,7 +15,7 @@ def inspect_labbcat(path):
     ----------
     path : str
         Full path to text file
- 
+
     Returns
     -------
     :class:`~polyglotdb.io.parsers.ilg.LabbCat`
