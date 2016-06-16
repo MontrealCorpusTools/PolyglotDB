@@ -144,7 +144,7 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         return re.compile(pattern)
 
     def add(self, annotations, save = True):
-         """
+        """
         save annotations  to _list
         Parameters
         ----------
@@ -237,7 +237,7 @@ class NumericAnnotationType(BaseAnnotationType):
     annotation_class = NumericAnnotation
 
     def add(self, annotations, save = True):
-         """
+        """
         save annotations  to _list
         Parameters
         ----------
