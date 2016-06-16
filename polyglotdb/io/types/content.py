@@ -65,13 +65,13 @@ class MorphemeAnnotationType(OrthographyAnnotationType):
         return morphemes
 
     def add(self, annotations, save = True):
-         """
+        """
         save annotations  to _list
         Parameters
         ----------
         annotations : list
             the annotations to save
-        save : boolean  
+        save : boolean
             defaults to True
         """
         for a in annotations:
@@ -110,13 +110,13 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         MorphemeAnnotationType.__init__(self, name, linguistic_type)
 
     def pretty_print(self):
-        """ 
+        """
         Formats information about corpus from parsing for printing to log
 
         Returns
         -------
         string : str
-            the information 
+            the information
         """
         string = ('{}:\n'.format(self.name) +
                 '    Ignored characters: {}\n'.format(', '.join(self.ignored_characters)) +
@@ -129,7 +129,7 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
     @property
     def digraph_pattern(self):
         """
-        Builds a regular expression with the list of digraphs 
+        Builds a regular expression with the list of digraphs
 
         Returns
         -------
@@ -150,7 +150,7 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         ----------
         annotations : list
             the annotations to save
-        save : boolean  
+        save : boolean
             defaults to True
         """
         for a in annotations:
@@ -243,7 +243,7 @@ class NumericAnnotationType(BaseAnnotationType):
         ----------
         annotations : list
             the annotations to save
-        save : boolean  
+        save : boolean
             defaults to True
         """
         for a in annotations:
