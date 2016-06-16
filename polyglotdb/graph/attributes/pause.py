@@ -1,5 +1,5 @@
 
-from polyglotdb.graph.attributes.base import AnnotationAttribute, Attribute
+from polyglotdb.graph.attributes.base import AnnotationAttribute, Attribute, key_for_cypher
 
 from polyglotdb.graph.attributes.path import PathAnnotation, PathAttribute
 
@@ -22,7 +22,7 @@ class PauseAnnotation(AnnotationAttribute):
     		concatenated string"""
         label_string = ':{}'.format(self.type)
         if self.corpus is not None:
-            label_string += ':{}'.format(self.corpus)
+            label_string += ':{}'.format(key_for_cypher(self.corpus))
         return '{}{}'.format(self.alias, label_string)
 
     def __getattr__(self, key):

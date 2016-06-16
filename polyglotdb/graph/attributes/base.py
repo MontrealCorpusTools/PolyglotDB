@@ -6,7 +6,8 @@ from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         InClauseElement, NotInClauseElement, ContainsClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
-                        SubsetClauseElement, NullClauseElement, NotNullClauseElement)
+                        SubsetClauseElement, NullClauseElement, NotNullClauseElement,
+                        FollowsClauseElement, PrecedesClauseElement)
 
 from ...exceptions import SubsetError
 
@@ -302,6 +303,8 @@ class AnnotationAttribute(Attribute):
     def define_type_alias(self):
     	""" Returns a cypher string for getting all type_labels"""
         label_string = ':{}_type'.format(self.type)
+        if self.corpus is not None:
+            label_string += ':{}'.format(key_for_cypher(self.corpus))
         if self.subset_type_labels:
             label_string += ':' + ':'.join(map(key_for_cypher, self.subset_type_labels))
         return '{}{}'.format(self.type_alias, label_string)
@@ -311,7 +314,7 @@ class AnnotationAttribute(Attribute):
     	""" Returns a cypher string for getting all token_labels"""
         label_string = ':{}:speech'.format(self.type)
         if self.corpus is not None:
-            label_string += ':{}'.format(self.corpus)
+            label_string += ':{}'.format(key_for_cypher(self.corpus))
         if self.subset_token_labels:
             label_string += ':' + ':'.join(map(key_for_cypher, self.subset_token_labels))
         return '{}{}'.format(self.alias, label_string)
@@ -340,6 +343,12 @@ class AnnotationAttribute(Attribute):
     def withs(self):
     	""" Returns a list of alias and type_alias """
         return [self.alias, self.type_alias]
+
+    def precedes(self, other_annotation):
+        return PrecedesClauseElement(self, other_annotation)
+
+    def follows(self, other_annotation):
+        return FollowsClauseElement(self, other_annotation)
 
     def __getattr__(self, key):
         if key == 'annotation':

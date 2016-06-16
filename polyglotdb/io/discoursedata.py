@@ -28,6 +28,7 @@ class DiscourseData(object):
     def __init__(self, name, annotation_types, hierarchy):
         self.name = name
         self.data = annotation_types
+        self.speaker_channel_mapping = {}
 
         self.segment_type = None
         for k,v in self.data.items():

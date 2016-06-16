@@ -33,7 +33,7 @@ class PauseContext(BaseContext):
         MATCH p = (prec)-[:precedes_pause*]->(foll:{corpus}:{word_type}:speech)
         WITH prec, foll, p
         WHERE NONE (x in nodes(p)[1..-1] where x:speech)
-        MERGE (prec)-[:precedes]->(foll)'''.format(corpus = self.corpus_name,
+        MERGE (prec)-[:precedes]->(foll)'''.format(corpus = self.cypher_safe_name,
                                                     word_type = self.word_name)
 
         self.execute_cypher(statement)
@@ -48,17 +48,17 @@ class PauseContext(BaseContext):
         """
         statement = '''MATCH (n:{corpus}:{word_type}:speech)-[r:precedes]->(m:{corpus}:{word_type}:speech)
         WHERE (n)-[:precedes_pause]->()
-        DELETE r'''.format(corpus=self.corpus_name, word_type = self.word_name)
+        DELETE r'''.format(corpus=self.cypher_safe_name, word_type = self.word_name)
         self.execute_cypher(statement)
 
         statement = '''MATCH (n:{corpus}:{word_type})-[r:precedes_pause]->(m:{corpus}:{word_type})
         MERGE (n)-[:precedes]->(m)
-        DELETE r'''.format(corpus=self.corpus_name, word_type = self.word_name)
+        DELETE r'''.format(corpus=self.cypher_safe_name, word_type = self.word_name)
         self.execute_cypher(statement)
 
         statement = '''MATCH (n:pause:{corpus})
         SET n :speech
-        REMOVE n:pause'''.format(corpus=self.corpus_name)
+        REMOVE n:pause'''.format(corpus=self.cypher_safe_name)
         self.execute_cypher(statement)
         try:
             self.hierarchy.annotation_types.remove('pause')

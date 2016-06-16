@@ -4,35 +4,40 @@ from .base import BaseContext
 
 from ..acoustics import acoustic_analysis
 
-from ..sql.models import Discourse, SoundFile
+from ..sql.models import SoundFile, Pitch, Formants, Discourse
 
-from ..acoustics.query import AcousticQuery
+from ..graph.discourse import DiscourseInspecter
+
+def sanitize_formants(value):
+    try:
+        f1 = value[0][0]
+    except TypeError:
+        f1 = value[0]
+    if f1 is None:
+        f1 = 0
+    try:
+        f2 = value[1][0]
+    except TypeError:
+        f2 = value[1]
+    if f2 is None:
+        f2 = 0
+    try:
+        f3 = value[2][0]
+    except TypeError:
+        f3 = value[2]
+    if f3 is None:
+        f3 = 0
+    return f1, f2, f3
 
 class AudioContext(BaseContext):
-    def query_acoustics(self, graph_query):
-        """
-        Checks for soundfiles,
-        Makes an AcousticQuery object
-
-        Parameters
-        ----------
-        graph_query : : class: `polyglotdb.graph.GraphQuery`
-            the query to be run
-
-        Returns
-        -------
-        AcousticQuery : : class `polyglotdb.acoustics.AcousticQuery`
-
-        """
-        if not self.has_sound_files:
-            raise(NoSoundFileError)
-        return AcousticQuery(self, graph_query)
-
     def analyze_acoustics(self):
         """ runs an acoustic analysis """
         if not self.has_sound_files:
             raise(NoSoundFileError)
         acoustic_analysis(self)
+
+    def inspect_discourse(self, discourse, begin = None, end = None):
+        return DiscourseInspecter(self, discourse, begin, end)
 
     def discourse_sound_file(self, discourse):
         """
@@ -52,6 +57,9 @@ class AudioContext(BaseContext):
         q = q.filter(Discourse.name == discourse)
         sound_file = q.first()
         return sound_file
+
+    def discourse_audio_directory(self, discourse):
+        return os.path.join(self.config.audio_dir, discourse)
 
     def has_all_sound_files(self):
         """
@@ -89,3 +97,79 @@ class AudioContext(BaseContext):
         if self._has_sound_files is None:
             self._has_sound_files = self.sql_session.query(SoundFile).first() is not None
         return self._has_sound_files
+
+    def get_formants(self, discourse, begin, end, channel = 0, source = None):
+        if source is None:
+            source = self.config.formant_algorithm
+        q = self.sql_session.query(Formants).join(SoundFile).join(Discourse)
+        q = q.filter(Discourse.name == discourse)
+        q = q.filter(Formants.source == source)
+        if begin is not None:
+            q = q.filter(Formants.time >= begin)
+        if end is not None:
+            q = q.filter(Formants.time <= end)
+        q = q.filter(Formants.channel == channel)
+        q = q.order_by(Formants.time)
+        listing = q.all()
+        return listing
+
+    def get_pitch(self, discourse, begin, end, channel = 0, source = None):
+        if source is None:
+            source = self.config.pitch_algorithm
+        q = self.sql_session.query(Pitch).join(SoundFile).join(Discourse)
+        q = q.filter(Discourse.name == discourse)
+        q = q.filter(Pitch.source == source)
+        if begin is not None:
+            q = q.filter(Pitch.time >= begin)
+        if end is not None:
+            q = q.filter(Pitch.time <= end)
+        q = q.filter(Pitch.channel == channel)
+        q = q.order_by(Pitch.time)
+        listing = q.all()
+        return listing
+
+    def save_formants(self, sound_file, formant_track, channel = 0, source = None):
+        if isinstance(sound_file, str):
+            sound_file = self.discourse_sound_file(sound_file)
+        #if sound_file is None:
+        #   return
+        if source is None:
+            source = self.config.formant_algorithm
+        for timepoint, value in formant_track.items():
+            f1, f2, f3 = sanitize_formants(value)
+            f = Formants(sound_file = sound_file, time = timepoint, F1 = f1,
+                    F2 = f2, F3 = f3, channel = channel, source = source)
+            self.sql_session.add(f)
+
+    def save_pitch(self, sound_file, pitch_track, channel = 0, source = None):
+        if isinstance(sound_file, str):
+            sound_file = self.discourse_sound_file(sound_file)
+        #if sound_file is None:
+        #   return
+        if source is None:
+            source = self.config.pitch_algorithm
+        for timepoint, value in pitch_track.items():
+            try:
+                value = value[0]
+            except TypeError:
+                pass
+            p = Pitch(sound_file = sound_file, time = timepoint, F0 = value, channel = channel, source = source)
+            self.sql_session.add(p)
+
+    def has_formants(self, discourse, source = None):
+        q = self.sql_session.query(Formants).join(SoundFile).join(Discourse)
+        q = q.filter(Discourse.name == discourse)
+        q = q.filter(Formants.source == source)
+        listing = q.first()
+        if listing is None:
+            return False
+        return True
+
+    def has_pitch(self, discourse, source = None):
+        q = self.sql_session.query(Pitch).join(SoundFile).join(Discourse)
+        q = q.filter(Discourse.name == discourse)
+        q = q.filter(Pitch.source == source)
+        listing = q.first()
+        if listing is None:
+            return False
+        return True

@@ -4,7 +4,7 @@ import string
 import logging
 import operator
 import hashlib
-
+import wave
 from collections import Counter
 
 from textgrid import TextGrid
@@ -16,6 +16,11 @@ ATT_TYPES = ['orthography', 'transcription', 'numeric',
 
 tobi_characters = set('LH%-+!*')
 morph_delimiters = set('-=')
+
+def get_n_channels(file_path):
+    with wave.open(file_path,'rb') as soundf:
+        n_channels = soundf.getnchannels()
+    return n_channels
 
 def normalize_values_for_neo4j(dictionary):
     """

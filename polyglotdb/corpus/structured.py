@@ -96,7 +96,7 @@ class StructuredContext(BaseContext):
             h.type_properties = type_properties
             h.speaker_properties = speaker_properties
             h.discourse_properties = discourse_properties
-        else:
+        else: #FIXME I don't think this gets run and «...» syntax isn't supported any longer by py2neo
             all_labels = self.graph.node_labels
             linguistic_labels = []
             discourses = set(self.discourses)
@@ -151,10 +151,10 @@ class StructuredContext(BaseContext):
         self.execute_cypher('''MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t),
                                 (c)-[:spoken_by]->(s:Speaker),
                                 (c)-[:spoken_in]->(d:Discourse)
-                                WHERE c.name = '{}'
+                                WHERE c.name = {corpus}
                                 WITH n, t, c, s, d
                                 OPTIONAL MATCH (t)<-[:annotates]-(a)
-                                DETACH DELETE a, t, n, s, d'''.format(self.corpus_name))
+                                DETACH DELETE a, t, n, s, d''', corpus = self.corpus_name)
 
     def encode_hierarchy(self):
         """

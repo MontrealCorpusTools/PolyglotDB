@@ -1,11 +1,17 @@
 import csv
 import os
-from uuid import uuid1
 from collections import defaultdict
+
+def write_csv_file(path, header, data):
+    with open(path, 'w', newline = '') as f:
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for d in data:
+            writer.writerow(d)
 
 def data_to_type_csvs(corpus_context, types, type_headers):
     """
-    Convert a types object into a CSV file 
+    Convert a types object into a CSV file
 
     Parameters
     ----------
@@ -19,18 +25,11 @@ def data_to_type_csvs(corpus_context, types, type_headers):
     directory = corpus_context.config.temporary_directory('csv')
     tfs = {}
 
-    for k in type_headers.keys():
-        tfs[k] = open(os.path.join(directory,'{}_type.csv'.format(k)), 'w', encoding = 'utf8')
-    type_writers = {}
-    for k,v in type_headers.items():
-        type_writers[k] = csv.DictWriter(tfs[k], type_headers[k], delimiter = ',')
-        type_writers[k].writeheader()
-
-    for k,v in types.items():
-        for t in v:
-            type_writers[k].writerow(dict(zip(type_headers[k],t)))
-    for x in tfs.values():
-        x.close()
+    for k, v in type_headers.items():
+        path = os.path.join(directory,'{}_type.csv'.format(k))
+        header = v
+        data = [dict(zip(v,t)) for t in types[k]]
+        write_csv_file(path, header, data)
 
 def data_to_graph_csvs(corpus_context, data):
     """
@@ -48,7 +47,7 @@ def data_to_graph_csvs(corpus_context, data):
     rfs = {}
     for x in data.annotation_types:
         path = os.path.join(directory,'{}_{}.csv'.format(data.name, x))
-        rfs[x] = open(path, 'w', encoding = 'utf8')
+        rfs[x] = open(path, 'w', newline = '', encoding = 'utf8')
     rel_writers = {}
 
     for k,v in rfs.items():
@@ -65,7 +64,7 @@ def data_to_graph_csvs(corpus_context, data):
     for k,v in data.hierarchy.subannotations.items():
         for s in v:
             path = os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s))
-            subanno_files[k,s] = open(path, 'w', encoding = 'utf8')
+            subanno_files[k,s] = open(path, 'w', newline = '', encoding = 'utf8')
             header = ['id', 'begin', 'end', 'annotation_id', 'label']
             subanno_writers[k,s] = csv.DictWriter(subanno_files[k,s], header, delimiter = ',')
             subanno_writers[k,s].writeheader()
@@ -94,28 +93,29 @@ def data_to_graph_csvs(corpus_context, data):
     for x in subanno_files.values():
         x.close()
 
-def time_data_to_csvs(type, directory, discourse, timed_data):
+def utterance_data_to_csvs(corpus_context, data, discourse):
     """
-    Convert time data into a CSV file 
+    Convert time data into a CSV file
 
     Parameters
     ----------
     type : obj
         the type of data
-    directory : str 
+    directory : str
         path to the directory
     discourse : str
         the name of the discourse
     timed_data : list
         the timing data
     """
-    with open(os.path.join(directory, '{}_{}.csv'.format(discourse, type)), 'w') as f:
-        for t in timed_data:
-            f.write('{},{},{}\n'.format(t[0], t[1], uuid1()))
+    path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                        '{}_utterance.csv'.format(discourse))
+    header = ['id', 'prev_id', 'begin_word_id', 'end_word_id']
+    write_csv_file(path, header, data)
 
 def syllables_data_to_csvs(corpus_context, data, split_name):
     """
-    Convert syllable data into a CSV file 
+    Convert syllable data into a CSV file
 
     Parameters
     ----------
@@ -125,20 +125,16 @@ def syllables_data_to_csvs(corpus_context, data, split_name):
         Data to load into a graph
     split_name : str
         identifier of the file to load
-    
+
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_syllable.csv'.format(split_name))
     header = ['id', 'prev_id', 'vowel_id', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
-    with open(path, 'w') as f:
-        writer = csv.DictWriter(f, header, delimiter = ',')
-        writer.writeheader()
-        for d in data:
-            writer.writerow(d)
+    write_csv_file(path, header, data)
 
 def nonsyls_data_to_csvs(corpus_context, data, split_name):
     """
-    Convert non-syllable data into a CSV file 
+    Convert non-syllable data into a CSV file
 
     Parameters
     ----------
@@ -148,21 +144,17 @@ def nonsyls_data_to_csvs(corpus_context, data, split_name):
         Data to load into a graph
     split_name : str
         identifier of the file to load
-    
+
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_nonsyl.csv'.format(split_name))
     header = ['id', 'prev_id', 'break', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
-    with open(path, 'w') as f:
-        writer = csv.DictWriter(f, header, delimiter = ',')
-        writer.writeheader()
-        for d in data:
-            writer.writerow(d)
+    write_csv_file(path, header, data)
 
 
 def subannotations_data_to_csv(corpus_context, type, data):
     """
-    Convert subannotation data into a CSV file 
+    Convert subannotation data into a CSV file
 
     Parameters
     ----------
@@ -172,20 +164,16 @@ def subannotations_data_to_csv(corpus_context, type, data):
         Data to load into a graph
     type : str
         identifier of the file to load
-    
+
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_subannotations.csv'.format(type))
     header = sorted(data[0].keys())
-    with open(path, 'w') as f:
-        writer = csv.DictWriter(f, header, delimiter = ',')
-        writer.writeheader()
-        for d in data:
-            writer.writerow(d)
+    write_csv_file(path, header, data)
 
 def lexicon_data_to_csvs(corpus_context, data, case_sensitive = False):
     """
-    Convert lexicon data into a CSV file 
+    Convert lexicon data into a CSV file
 
     Parameters
     ----------
@@ -209,7 +197,7 @@ def lexicon_data_to_csvs(corpus_context, data, case_sensitive = False):
 
 def feature_data_to_csvs(corpus_context, data):
      """
-    Convert feature data into a CSV file 
+    Convert feature data into a CSV file
 
     Parameters
     ----------
@@ -229,7 +217,7 @@ def feature_data_to_csvs(corpus_context, data):
 
 def speaker_data_to_csvs(corpus_context, data):
      """
-    Convert speaker data into a CSV file 
+    Convert speaker data into a CSV file
 
     Parameters
     ----------
@@ -249,7 +237,7 @@ def speaker_data_to_csvs(corpus_context, data):
 
 def discourse_data_to_csvs(corpus_context, data):
      """
-    Convert discourse data into a CSV file 
+    Convert discourse data into a CSV file
 
     Parameters
     ----------
@@ -258,7 +246,7 @@ def discourse_data_to_csvs(corpus_context, data):
     data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
     type : str
-        identifier of the file to load   
+        identifier of the file to load
     """
     directory = corpus_context.config.temporary_directory('csv')
     with open(os.path.join(directory, 'discourse_import.csv'), 'w') as f:

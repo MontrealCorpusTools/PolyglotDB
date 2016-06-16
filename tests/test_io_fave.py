@@ -51,11 +51,26 @@ def test_load_fave(fave_test_dir, graph_db):
         interviewer = c.census['Interviewer']
 
         assert(len(interviewer.discourses) == 2)
-        assert(sorted(x.name for x in interviewer.discourses) == ['fave_test', 'fave_test2'])
+        assert(sorted(x.discourse.name for x in interviewer.discourses) == ['fave_test', 'fave_test2'])
 
         s = c.census['Gary Salvi']
 
         assert(len(s.discourses) == 1)
-        assert([x.name for x in s.discourses] == ['fave_test'])
+        assert([x.discourse.name for x in s.discourses] == ['fave_test'])
 
+def test_load_fave_stereo(fave_test_dir, graph_db):
 
+    with CorpusContext('test_stereo', **graph_db) as c:
+        c.reset()
+        parser = inspect_fave(fave_test_dir)
+        c.load(parser, fave_test_dir)
+
+        s = c.census['Speaker 1']
+
+        assert(len(s.discourses) == 1)
+        assert([x.channel for x in s.discourses] == [0])
+
+        s = c.census['Speaker 2']
+
+        assert(len(s.discourses) == 1)
+        assert([x.channel for x in s.discourses] == [1])

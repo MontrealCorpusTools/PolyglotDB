@@ -81,6 +81,42 @@ class LinguisticAnnotation(BaseAnnotation):
 
         self._preloaded = False
 
+    @property
+    def corpus_context(self):
+        return self._corpus_context
+
+    @corpus_context.setter
+    def corpus_context(self, context):
+        if self._corpus_context == context:
+            return
+        self._corpus_context = context
+        f = self._following
+        while True:
+            if f is None:
+                break
+            f.corpus_context = context
+            f = f._following
+        f = self._previous
+        while True:
+            if f is None:
+                break
+            f.corpus_context = context
+            f = f._previous
+        f = self._speaker
+        if f is not None:
+            f.corpus_context = context
+        f = self._discourse
+        if f is not None:
+            f.corpus_context = context
+        for k,v in self._supers.items():
+            v.corpus_context = context
+        for k,v in self._subs.items():
+            for t in v:
+                t.corpus_context = context
+        for k,v in self._subannotations.items():
+            for t in v:
+                t.corpus_context = context
+
     def __getitem__(self, key):
         return getattr(self, key)
 
@@ -232,6 +268,14 @@ class LinguisticAnnotation(BaseAnnotation):
                 RETURN token, type''', id = id))
         self.node = res[0]['token']
         self.type_node = res[0]['type']
+
+    @property
+    def channel(self):
+        speaker = self.corpus_context.census[self.speaker.name]
+        for x in speaker.discourses:
+            if x.discourse.name == self.discourse.name:
+                return x.channel
+        return None
 
     @property
     def type_node(self):

@@ -12,7 +12,7 @@ class PathAnnotation(AnnotationAttribute):
         WITH {output_with_string}'''
 
     def subquery(self, withs):
-    	"""Generates a subquery given a list of alias and type_alias """ 
+        """Generates a subquery given a list of alias and type_alias """
         input_with = ', '.join(withs)
         new_withs = withs - set([self.path_alias])
         output_with = ', '.join(new_withs) + ', ' + self.with_statement()
@@ -20,13 +20,13 @@ class PathAnnotation(AnnotationAttribute):
 
 
     def generate_times_subquery(self, output_with_string, input_with_string):
-    	"""
-		formats output_with_string into a cypher string
-    	"""
+        """
+        formats output_with_string into a cypher string
+        """
         return '''WITH {}'''.format(output_with_string)
 
     def generate_subquery(self, output_with_string, input_with_string):
-    	""" formats output_with_string into a subquery"""
+        """ formats output_with_string into a subquery"""
         return self.subquery_template.format(path_alias = self.path_alias,
                         output_with_string = output_with_string,
                         key = self.key,
@@ -35,18 +35,18 @@ class PathAnnotation(AnnotationAttribute):
 
 
     def with_statement(self):
-    	""" """
+        """ """
         return ', '.join(['collect(n) as {a}'.format(a=self.path_alias),
                     'collect(t) as {a}'.format(a=self.path_type_alias)])
     @property
     def def_path_type_alias(self):
-    	"""generates a cypher string of types and labels
+        """generates a cypher string of types and labels
 
-    	Returns
-    	-------
-    	string
-			a cypher string of types and labels
-    	 """
+        Returns
+        -------
+        string
+            a cypher string of types and labels
+         """
         label_string = self.type + '_type'
         if self.subset_type_labels:
             label_string += ':' + ':'.join(map(key_for_cypher, self.subset_type_labels))
@@ -54,12 +54,12 @@ class PathAnnotation(AnnotationAttribute):
 
     @property
     def def_path_alias(self):
-    	""" returns a cypher string of path_alias, key, and corpus"""
-        return '{}:{}:{}'.format(self.path_alias, self.key, self.sub.corpus)
+        """ returns a cypher string of path_alias, key, and corpus"""
+        return '{}:{}:{}'.format(self.path_alias, self.key, key_for_cypher(self.sub.corpus))
 
     @property
     def path_alias(self):
-    	"""Returns a cypher formatted string of 'pause' and prefixes"""
+        """Returns a cypher formatted string of 'pause' and prefixes"""
         pre = ''
         if self.pos < 0:
             pre += 'prev_{}_'.format(-1 * self.pos)
@@ -71,14 +71,14 @@ class PathAnnotation(AnnotationAttribute):
 
     @property
     def path_type_alias(self):
-    	""" Returns a cypher formatted string of 'pause', prefixes, and the type of the annotation"""
+        """ Returns a cypher formatted string of 'pause', prefixes, and the type of the annotation"""
         a = 'type_'+self.path_alias
         a = a.replace('`','')
         return key_for_cypher(a)
 
     @property
     def key(self):
-    	""" Returns 'pause'"""
+        """ Returns 'pause'"""
         return 'pause'
 
     def __getattr__(self, key):
@@ -127,28 +127,28 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def hierarchy(self):
-    	"""Returns the original annotation hierarchy """
+        """Returns the original annotation hierarchy """
         return self.annotation.hierarchy
 
     @property
     def type(self):
-    	""" Returns the original subannotation type"""
+        """ Returns the original subannotation type"""
         return self.sub.type
 
     def __hash__(self):
         return hash((self.annotation, self.sub))
 
     def generate_subquery(self, output_with_string, input_with_string):
-    	"""
-        Generates a subquery 
-        
+        """
+        Generates a subquery
+
         Parameters
         ----------
         output_with_string : str
             the string limiting the output
         input_with_string : str
             the string limiting the input
-    	 """
+         """
         if self.with_subannotations:
             subannotation_query = self.generate_subannotation_query(input_with_string)
         else:
@@ -160,14 +160,14 @@ class SubPathAnnotation(PathAnnotation):
                         subannotation_query = subannotation_query)
 
     def generate_subannotation_query(self, input_with_string):
-    	"""
-		Generates a subannotation query 
-        
+        """
+        Generates a subannotation query
+
         Parameters
         ----------
         input_with_string : str
             the string limiting the input
-    	"""
+        """
         output_with_string = ','.join([input_with_string, self.path_alias,
                                 self.path_type_alias,
                                 self.collect_template.format(a = self.subannotation_alias)])
@@ -176,31 +176,31 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def subannotation_alias(self):
-    	""" Adds 'subannotation_ to the path_alias"""
+        """ Adds 'subannotation_ to the path_alias"""
         return 'subannotation_'+ self.path_alias
 
     @property
     def def_subannotation_alias(self):
-    	""" Concatenates the subannotation_alias and corpus """
-        return '{}:{}'.format(self.subannotation_alias, self.sub.corpus)
+        """ Concatenates the subannotation_alias and corpus """
+        return '{}:{}'.format(self.subannotation_alias, key_for_cypher(self.sub.corpus))
 
     @property
     def withs(self):
-    	"""Returns a list with path_alias, path_type_alias, and subannotation_alias if applicable """
+        """Returns a list with path_alias, path_type_alias, and subannotation_alias if applicable """
         withs = [self.path_alias,self.path_type_alias]
         if self.with_subannotations:
             withs.append(self.subannotation_alias)
         return withs
 
     def with_statement(self):
-    	""" 
-    	Generates collect_template_formats of path_alias, path_type_alias, and subannotation_alias if applicable
-		
-		Returns
-		-------
-		str
-			a comma separates string of collect_template_formats
-    	"""
+        """
+        Generates collect_template_formats of path_alias, path_type_alias, and subannotation_alias if applicable
+
+        Returns
+        -------
+        str
+            a comma separates string of collect_template_formats
+        """
         withs = [self.collect_template.format(a=self.path_alias),
                     self.collect_template.format(a=self.path_type_alias)
                     ]
@@ -210,7 +210,7 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def def_path_type_alias(self):
-    	""" concatenates subannotation type, '_type' and subset_type_labels with the path_type_alias """
+        """ concatenates subannotation type, '_type' and subset_type_labels with the path_type_alias """
         label_string = self.sub.type + '_type'
         if self.sub.subset_type_labels:
             label_string += ':' + ':'.join(map(key_for_cypher, self.sub.subset_type_labels))
@@ -218,21 +218,21 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def def_path_alias(self):
-    	""" Concatenates path_alias, subannotation type, and sub.corpus into a string """
-        return '{}:{}:{}'.format(self.path_alias, self.sub.type, self.sub.corpus)
+        """ Concatenates path_alias, subannotation type, and sub.corpus into a string """
+        return '{}:{}:{}'.format(self.path_alias, self.sub.type, key_for_cypher(self.sub.corpus))
 
     @property
     def path_alias(self):
-    	""" formats subannotation alias and annotation alias into a cypher-ready 'in' string"""
+        """ formats subannotation alias and annotation alias into a cypher-ready 'in' string"""
         return key_for_cypher('{}_in_{}'.format(self.sub.alias, self.annotation.alias))
 
     def subset_type(self, *args):
-    	""" """
+        """ """
         self.sub = self.sub.subset_type(*args)
         return self
 
     def subset_token(self, *args):
-    	""" adds args to the subset token labels
+        """ adds args to the subset token labels
         Parameters
         ----------
         args : list
@@ -243,19 +243,19 @@ class SubPathAnnotation(PathAnnotation):
 
     @property
     def path_type_alias(self):
-    	""" concatenates 'type_' with the path alias and returns cypher-ready string thereof"""
+        """ concatenates 'type_' with the path alias and returns cypher-ready string thereof"""
         a = 'type_'+self.path_alias
         a = a.replace('`','')
         return key_for_cypher(a)
 
     @property
     def key(self):
-    	"""Returns subannotation's key """
+        """Returns subannotation's key """
         return self.sub.key
 
     @property
     def alias(self):
-    	"""Returns subannotation's alias """
+        """Returns subannotation's alias """
         return self.sub.alias
 
     def __getattr__(self, key):
@@ -299,16 +299,16 @@ class PositionalAnnotation(SubPathAnnotation):
         return PositionalAttribute(self, key, False)
 
     def generate_subquery(self, output_with_string, input_with_string):
-    	""" 
-    	Generates a subquery 
-        
+        """
+        Generates a subquery
+
         Parameters
         ----------
         output_with_string : str
             the string limiting the output
         input_with_string : str
             the string limiting the input
-    	 """
+         """
         return self.subquery_template.format(alias = self.annotation.annotation.alias,
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         path_type_alias = self.path_type_alias, def_path_type_alias = self.def_path_type_alias,
@@ -316,45 +316,45 @@ class PositionalAnnotation(SubPathAnnotation):
                         subannotation_query = '')
 
     def with_statement(self):
-    	""" 
-    	Generates collect_template_formats of path_alias, path_type_alias
-		
-		Returns
-		-------
-		str
-			a comma separates string of collect_template_formats
-    	"""
+        """
+        Generates collect_template_formats of path_alias, path_type_alias
+
+        Returns
+        -------
+        str
+            a comma separates string of collect_template_formats
+        """
         return ', '.join([self.collect_template.format(a=self.path_alias),
                     self.collect_template.format(a=self.path_type_alias)])
 
     @property
     def type(self):
-    	""" Returns subannotation type """
+        """ Returns subannotation type """
         return self.annotation.type
 
     @property
     def sub(self):
-    	""" Returns subannotation object"""
+        """ Returns subannotation object"""
         return self.annotation.sub
 
     @property
     def path_alias(self):
-    	""" Returns subannotation path_alias"""
+        """ Returns subannotation path_alias"""
         return self.annotation.path_alias
 
     @property
     def type_alias(self):
-    	""" Returns subannotation type_alias"""
+        """ Returns subannotation type_alias"""
         return self.annotation.type_alias
 
     @property
     def withs(self):
-    	"""Returns a list with path_alias, path_type_alias"""
+        """Returns a list with path_alias, path_type_alias"""
         return [self.path_alias, self.path_type_alias]
 
     @property
     def path_type_alias(self):
-    	"""Returns path_type_alias """
+        """Returns path_type_alias """
         return self.annotation.path_type_alias
 
 class PathAttribute(Attribute):
@@ -366,7 +366,7 @@ class PathAttribute(Attribute):
 
     @property
     def base_annotation(self):
-    	""" Returns the subannotation if it exists, the regular annotation otherwise"""
+        """ Returns the subannotation if it exists, the regular annotation otherwise"""
         if isinstance(self.annotation, SubPathAnnotation):
             return self.annotation.annotation
         else:
@@ -374,21 +374,21 @@ class PathAttribute(Attribute):
 
     @base_annotation.setter
     def base_annotation(self, value):
-    	""" Sets the lowest annotation to value (i.e. the subannotation if it exists, or the regular annotation)"""
+        """ Sets the lowest annotation to value (i.e. the subannotation if it exists, or the regular annotation)"""
         if isinstance(self.annotation, SubPathAnnotation):
             self.annotation.annotation = value
         else:
             self.annotation = value
 
     def for_cypher(self):
-    	""" 
-    	Generates a cypher string for type return
+        """
+        Generates a cypher string for type return
 
-    	Returns
-    	-------
-    	type_return_template : str
-    		A string with properties contingent on label
-    	"""
+        Returns
+        -------
+        type_return_template : str
+            A string with properties contingent on label
+        """
         if self.type:
             return self.type_return_template.format(alias = self.annotation.path_type_alias, property = self.label)
 
@@ -405,17 +405,17 @@ class PathAttribute(Attribute):
             return self.type_return_template.format(alias = self.annotation.path_alias, property = self.label)
     @property
     def is_type_attribute(self):
-    	""" Returns True"""
+        """ Returns True"""
         return True
 
     @property
     def with_aliases(self):
-    	"""Returns annotation withs list """
+        """Returns annotation withs list """
         return self.annotation.withs
 
     @property
     def with_alias(self):
-    	"""returns annotation path_alias """
+        """returns annotation path_alias """
         return self.annotation.path_alias
 
 class PositionalAttribute(PathAttribute):
@@ -423,30 +423,30 @@ class PositionalAttribute(PathAttribute):
 
     @property
     def base_annotation(self):
-    	"""Returns the third subannotation """
+        """Returns the third subannotation """
         return self.annotation.annotation.annotation
 
     @base_annotation.setter
     def base_annotation(self, value):
-    	"""Sets the third subannotation to value"""
+        """Sets the third subannotation to value"""
         self.annotation.annotation.annotation = value
 
     @property
     def with_alias(self):
-    	"""returns 2nd annotations path_type_alias if it exists or path_alias otherwise"""
+        """returns 2nd annotations path_type_alias if it exists or path_alias otherwise"""
         if self.type:
             return self.annotation.annotation.path_type_alias
         return self.annotation.annotation.path_alias
 
     def for_cypher(self):
-    	""" 
-    	Generates a cypher string for type return
+        """
+        Generates a cypher string for type return
 
-    	Returns
-    	-------
-    	type_return_template : str
-    		A string with positional properties
-    	"""
+        Returns
+        -------
+        type_return_template : str
+            A string with positional properties
+        """
         pos = self.annotation.pos
         if self.type:
             alias = self.annotation.path_type_alias

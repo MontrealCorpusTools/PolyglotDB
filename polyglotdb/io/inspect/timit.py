@@ -20,6 +20,6 @@ def inspect_timit(word_path):
         Auto-detected parser for TIMIT
     """
     annotation_types = [OrthographyTier('word', 'word'),
-                       SegmentTier('surface_transcription', 'surface_transcription')]
-    hierarchy = Hierarchy({'surface_transcription':'word', 'word': None})
+                       SegmentTier('phone', 'phone')]
+    hierarchy = Hierarchy({'phone':'word', 'word': None})
     return TimitParser(annotation_types, hierarchy)

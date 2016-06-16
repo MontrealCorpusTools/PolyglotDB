@@ -40,18 +40,12 @@ def save_results(results, path, header = None, mode = 'w'):
         defaults to 'w', or write. Can be 'a', append
     """
     if header is None:
-        try:
-            header = results.keys()
-        except AttributeError:
-            try:
-                header = results[0].keys()
-            except AttributeError:
-                raise(Exception('Could not get the column header from the list, please specify the header.'))
-    with open(path, mode, encoding = 'utf8') as f:
+        header = results.columns
+    with open(path, mode, encoding = 'utf8', newline = '') as f:
         writer = DictWriter(f, header)
         if mode != 'a':
             writer.writeheader()
-        for line in results:
+        for i, line in enumerate(results):
             writer.writerow({k: make_safe(line[k], '/') for k in header})
 
 def export_corpus_csv(corpus, path,

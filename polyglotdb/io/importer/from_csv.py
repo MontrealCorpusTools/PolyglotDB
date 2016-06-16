@@ -3,6 +3,9 @@ import os
 import logging
 import time
 
+def make_path_safe(path):
+    return path.replace('\\','/').replace(' ','%20')
+
 def import_type_csvs(corpus_context, type_headers):
     """ 
     Imports types into corpus from csv files
@@ -19,7 +22,7 @@ def import_type_csvs(corpus_context, type_headers):
     for at, h in type_headers.items():
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_type.csv'.format(at))
-        type_path = 'file:///{}'.format(path.replace('\\','/'))
+        type_path = 'file:///{}'.format(make_path_safe(path))
 
         corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
 
@@ -36,7 +39,7 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         '''
         kwargs = {'path': type_path, 'annotation_type': at,
                     'type_property_string': type_prop_string,
-                    'corpus_name': corpus_context.corpus_name}
+                    'corpus_name': corpus_context.cypher_safe_name}
         statement = type_import_statement.format(**kwargs)
         log.info('Loading {} types...'.format(at))
         begin = time.time()
@@ -70,7 +73,7 @@ def import_csvs(corpus_context, data):
     directory = corpus_context.config.temporary_directory('csv')
     for at in data.highest_to_lowest():
         path = os.path.join(directory, '{}_{}.csv'.format(data.name, at))
-        rel_path = 'file:///{}'.format(path.replace('\\','/'))
+        rel_path = 'file:///{}'.format(make_path_safe(path))
 
         corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
@@ -105,7 +108,7 @@ def import_csvs(corpus_context, data):
     '''
             kwargs = {'path': rel_path, 'annotation_type': at,
                         'token_property_string': token_prop_string,
-                        'corpus_name': corpus_context.corpus_name,
+                        'corpus_name': corpus_context.cypher_safe_name,
                         'discourse': data.name,
                         'stype':st}
         else:
@@ -128,7 +131,7 @@ def import_csvs(corpus_context, data):
     '''
             kwargs = {'path': rel_path, 'annotation_type': at,
                         'token_property_string': token_prop_string,
-                        'corpus_name': corpus_context.corpus_name}
+                        'corpus_name': corpus_context.cypher_safe_name}
         statement = rel_import_statement.format(**kwargs)
         log.info('Loading {} relationships...'.format(at))
         begin = time.time()
@@ -147,7 +150,7 @@ def import_csvs(corpus_context, data):
         for s in v:
             path = os.path.join(directory,'{}_{}_{}.csv'.format(data.name, k, s))
             corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
-            sub_path = 'file:///{}'.format(path.replace('\\','/'))
+            sub_path = 'file:///{}'.format(make_path_safe(path))
 
             rel_import_statement = '''USING PERIODIC COMMIT 3000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
@@ -157,7 +160,7 @@ CREATE (t:{subannotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toF
 CREATE (t)-[:annotates]->(n)'''
             kwargs = {'path': sub_path, 'annotation_type': k,
                         'subannotation_type': s,
-                        'corpus_name': corpus_context.corpus_name,
+                        'corpus_name': corpus_context.cypher_safe_name,
                         'discourse': data.name}
             statement = rel_import_statement.format(**kwargs)
             corpus_context.execute_cypher(statement)
@@ -196,7 +199,7 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory,'lexicon_import.csv')
-    lex_path = 'file:///{}'.format(path.replace('\\','/'))
+    lex_path = 'file:///{}'.format(make_path_safe(path))
     if case_sensitive:
         import_statement = '''USING PERIODIC COMMIT 3000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
@@ -210,7 +213,7 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive = False):
     SET {new_properties}'''
 
     statement = import_statement.format(path = lex_path,
-                                corpus_name = corpus_context.corpus_name,
+                                corpus_name = corpus_context.cypher_safe_name,
                                 word_type = corpus_context.word_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
@@ -248,14 +251,14 @@ def import_feature_csvs(corpus_context, typed_data):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory,'feature_import.csv')
-    feat_path = 'file:///{}'.format(path.replace('\\','/'))
+    feat_path = 'file:///{}'.format(make_path_safe(path))
     import_statement = '''
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:{phone_type}_type:{corpus_name}) where n.label = csvLine.label
     SET {new_properties}'''
 
     statement = import_statement.format(path = feat_path,
-                                corpus_name = corpus_context.corpus_name,
+                                corpus_name = corpus_context.cypher_safe_name,
                                 phone_type = corpus_context.phone_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
@@ -292,14 +295,14 @@ def import_speaker_csvs(corpus_context, typed_data):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory,'speaker_import.csv')
-    feat_path = 'file:///{}'.format(path.replace('\\','/'))
+    feat_path = 'file:///{}'.format(make_path_safe(path))
     import_statement = '''
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:Speaker:{corpus_name}) where n.name = csvLine.name
     SET {new_properties}'''
 
     statement = import_statement.format(path = feat_path,
-                                corpus_name = corpus_context.corpus_name,
+                                corpus_name = corpus_context.cypher_safe_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
@@ -335,14 +338,14 @@ def import_discourse_csvs(corpus_context, typed_data):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory,'discourse_import.csv')
-    feat_path = 'file:///{}'.format(path.replace('\\','/'))
+    feat_path = 'file:///{}'.format(make_path_safe(path))
     import_statement = '''
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:Discourse:{corpus_name}) where n.name = csvLine.name
     SET {new_properties}'''
 
     statement = import_statement.format(path = feat_path,
-                                corpus_name = corpus_context.corpus_name,
+                                corpus_name = corpus_context.cypher_safe_name,
                                 new_properties = properties)
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
@@ -361,23 +364,29 @@ def import_utterance_csv(corpus_context, discourse):
         the discourse the utterance is in
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(discourse))
-    csv_path = 'file:///{}'.format(path.replace('\\','/'))
+    csv_path = 'file:///{}'.format(make_path_safe(path))
 
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
-    statement = '''LOAD CSV FROM "{path}" AS csvLine
-            MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine[0]}})-[:spoken_by]->(s:Speaker:{corpus})
+    statement = '''LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus})
             WHERE d.name = {{discourse}}
-            OPTIONAL MATCH (d)<-[:spoken_in]-(end:{word_type}:{corpus}:speech {{id: csvLine[1]}})
-            CREATE (utt:utterance:{corpus}:speech {{id: csvLine[2], begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus}),
+            OPTIONAL MATCH (d)<-[:spoken_in]-(end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
+            CREATE (utt:utterance:{corpus}:speech {{id: csvLine.id, begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus}),
                 (d)<-[:spoken_in]-(utt),
                 (s)<-[:spoken_by]-(utt)
+            WITH utt, begin, end, csvLine
+
+            OPTIONAL MATCH (prev:utterance {{id:csvLine.prev_id}})
+            FOREACH (o IN CASE WHEN prev IS NOT NULL THEN [prev] ELSE [] END |
+              CREATE (prev)-[:precedes]->(utt)
+            )
             WITH utt, begin, end
             MATCH path = shortestPath((begin)-[:precedes*0..]->(end))
             WITH utt, begin, end, nodes(path) as words
             UNWIND words as w
             CREATE (w)-[:contained_by]->(utt)'''
     statement = statement.format(path = csv_path,
-                corpus = corpus_context.corpus_name,
+                corpus = corpus_context.cypher_safe_name,
                     word_type = corpus_context.word_name)
     corpus_context.execute_cypher(statement, discourse = discourse)
     corpus_context.execute_cypher('CREATE INDEX ON :utterance(begin)')
@@ -397,7 +406,7 @@ def import_syllable_csv(corpus_context, split_name):
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_syllable.csv'.format(split_name))
-    csv_path = 'file:///{}'.format(path.replace('\\','/'))
+    csv_path = 'file:///{}'.format(make_path_safe(path))
 
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
@@ -458,7 +467,7 @@ def import_syllable_csv(corpus_context, split_name):
     FOREACH (r in rels | DELETE r)'''
 
     statement = statement.format(path = csv_path,
-                corpus = corpus_context.corpus_name,
+                corpus = corpus_context.cypher_safe_name,
                 word_name = corpus_context.word_name,
                     phone_name = corpus_context.phone_name,
                     discourse = split_name)
@@ -482,7 +491,7 @@ def import_nonsyl_csv(corpus_context, split_name):
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_nonsyl.csv'.format(split_name))
-    csv_path = 'file:///{}'.format(path.replace('\\','/'))
+    csv_path = 'file:///{}'.format(make_path_safe(path))
 
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
@@ -531,7 +540,7 @@ with o, w, s, p, csvLine
     FOREACH (r in rels | DELETE r)'''
 
     statement = statement.format(path = csv_path,
-                corpus = corpus_context.corpus_name,
+                corpus = corpus_context.cypher_safe_name,
                 word_name = corpus_context.word_name,
                     phone_name = corpus_context.phone_name,
                     discourse = split_name
@@ -560,7 +569,7 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_subannotations.csv'.format(type))
-    csv_path = 'file:///{}'.format(path.replace('\\','/'))
+    csv_path = 'file:///{}'.format(make_path_safe(path))
     prop_temp = '''{name}: csvLine.{name}'''
     properties = []
 
@@ -583,7 +592,7 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
                 end: toFloat(csvLine.end){properties}}})
             '''
     statement = statement.format(path = csv_path,
-                corpus = corpus_context.corpus_name,
+                corpus = corpus_context.cypher_safe_name,
                     a_type = annotated_type,
                     type = type,
                     properties = properties)

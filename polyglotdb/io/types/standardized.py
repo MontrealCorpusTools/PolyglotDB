@@ -167,9 +167,10 @@ class PGAnnotationType(object):
         """
         speakers = set()
         for x in self:
-            if x.speaker is None:
-                continue
-            speakers.add(x.speaker)
+            s = 'unknown'
+            if x.speaker is not None:
+                s = x.speaker
+            speakers.add(s)
         return speakers
 
     def lookup(self, timepoint, speaker = None):

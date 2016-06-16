@@ -55,6 +55,7 @@ class CorpusConfig(object):
         self.graph_password = None
         self.graph_host = 'localhost'
         self.graph_port = 7474
+        self.bolt_port = 7687
 
         self.base_dir = os.path.join(BASE_DIR, self.corpus_name)
 
@@ -64,12 +65,14 @@ class CorpusConfig(object):
 
         self.temp_dir = os.path.join(self.base_dir, 'temp')
         self.data_dir = os.path.join(self.base_dir, 'data')
+        self.audio_dir = os.path.join(self.data_dir, 'audio')
 
         self.engine = 'sqlite'
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
 
         self.pitch_algorithm = 'reaper'
         self.formant_algorithm = 'acousticsim'
+        self.time_sampling = 0.01
 
         for k,v in kwargs.items():
             setattr(self, k, v)
@@ -96,7 +99,7 @@ class CorpusConfig(object):
         if self.corpus_name:
             os.makedirs(self.log_dir, exist_ok = True)
             os.makedirs(self.temp_dir, exist_ok = True)
-            os.makedirs(self.data_dir, exist_ok = True)
+            os.makedirs(self.audio_dir, exist_ok = True)
         return
         setup_logger('{}_loading'.format(self.corpus_name), os.path.join(self.log_dir, 'load.log'), level = self.log_level)
         setup_logger('{}_querying'.format(self.corpus_name), os.path.join(self.log_dir, 'query.log'), level = self.log_level)
@@ -109,6 +112,8 @@ class CorpusConfig(object):
     @property
     def graph_connection_kwargs(self):
         kwargs = {'host': self.graph_host,
+                    'http_port':int(self.graph_port),
+                    'bolt_port': self.bolt_port,
                     'bolt': True}
 
         if self.graph_user is not None:

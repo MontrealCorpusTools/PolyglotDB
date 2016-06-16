@@ -470,3 +470,30 @@ def test_or_clause(timed_config):
         for i, r in enumerate(results):
             assert(r['label'] == expected[i]['label'])
             assert(r['begin'] == expected[i]['begin'])
+
+def test_precedes_clause(timed_config):
+    with CorpusContext(timed_config) as g:
+        q = g.query_graph(g.word).filter(g.word.label == 'cute')
+        a = q.all()[0]
+
+        q = g.query_graph(g.word).filter(g.word.precedes(a))
+        q = q.order_by(g.word.begin)
+        print(q.cypher(), q.cypher_params())
+
+        results = q.all()
+        assert(len(results) == 2)
+        assert(results[0].label == 'cats')
+        assert(results[1].label == 'are')
+
+def test_follows_clause(timed_config):
+    with CorpusContext(timed_config) as g:
+        q = g.query_graph(g.word).filter(g.word.label == 'too')
+        a = q.all()[0]
+
+        q = g.query_graph(g.word).filter(g.word.follows(a))
+        q = q.order_by(g.word.begin)
+        print(q.cypher(), q.cypher_params())
+        results = q.all()
+        assert(len(results) == 2)
+        assert(results[0].label == 'i')
+        assert(results[1].label == 'guess')

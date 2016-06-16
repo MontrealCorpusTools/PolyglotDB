@@ -1,3 +1,8 @@
 pytest
 sphinx>=1.3b3
 numpydoc
+librosa
+scipy
+sqlalchemy
+py2neo
+textgrid

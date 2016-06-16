@@ -58,6 +58,45 @@ class ClauseElement(object):
                                 self.sign,
                                 value)
 
+class PrecedenceClauseElement(ClauseElement):
+    value_alias_prefix = ''
+    template = "({})-[:precedes*]->({{id: {}}})"
+    def __init__(self, annotation, other_annotation):
+        self.annotation = annotation
+        self.value = other_annotation.id
+
+    @property
+    def annotations(self):
+        """
+        Get all annotations involved in the clause.
+        """
+        annotations = [self.annotation]
+        return annotations
+
+    @property
+    def attributes(self):
+        return []
+
+    def cypher_value_string(self):
+        """
+        Create a Cypher parameter for the value of the clause.
+        """
+        return '{`%s%s`}' % (self.value_alias_prefix.replace('`',''), self.annotation.alias.replace('`',''))
+
+    def for_cypher(self):
+
+        key = self.annotation.alias
+
+        return self.template.format(node_alias = key, id_string = self.cypher_value_string())
+
+class PrecedesClauseElement(PrecedenceClauseElement):
+    value_alias_prefix = 'precedes_'
+    template = "({node_alias})-[:precedes*]->({{id: {id_string}}})"
+
+class FollowsClauseElement(PrecedenceClauseElement):
+    value_alias_prefix = 'follows_'
+    template = "({{id: {id_string}}})-[:precedes*]->({node_alias})"
+
 class SubsetClauseElement(ClauseElement):
     template = "{}:{}"
     def for_cypher(self):

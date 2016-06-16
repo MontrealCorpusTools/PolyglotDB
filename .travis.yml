@@ -8,12 +8,18 @@ branches:
 notifications:
   email: false
 
-sudo: required
+sudo: true
 
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
 
 before_install:
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
   # install Neo4j locally:
-  - sudo apt-get update && sudo apt-get install oracle-java8-installer
+  #- sudo apt-get update && sudo apt-get install oracle-java8-installer
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - bash continuous-integration/travis/install.sh
   - ls $HOME/neo4j/neo4j
@@ -29,6 +35,9 @@ install:
 script:
   - $HOME/neo4j/neo4j/bin/neo4j start
   - sleep 10
+  - cat $HOME/neo4j/neo4j/logs/neo4j.log
+  - cat $HOME/neo4j/neo4j/logs/debug.log
+  - $HOME/neo4j/neo4j/bin/neo4j status
   - "coverage run --source=polyglotdb setup.py test"
 
 # Calculate coverage

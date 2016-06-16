@@ -11,6 +11,8 @@ from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
                             SubAnnotation as QuerySubAnnotation,
                             SpeakerAnnotation, DiscourseAnnotation)
 
+from .results import QueryResults
+
 from .func import Count
 
 from .cypher import query_to_cypher, query_to_params
@@ -18,8 +20,6 @@ from .cypher import query_to_cypher, query_to_params
 from polyglotdb.io import save_results
 
 from polyglotdb.exceptions import SubannotationError
-
-from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 
 class GraphQuery(object):
     """
@@ -475,13 +475,18 @@ class GraphQuery(object):
         if self._acoustic_columns:
             for a in self._acoustic_columns:
                 discourse_found = False
+                speaker_found = False
                 begin_found = False
                 end_found = False
-                for c in self._columns:
+                for c in self._columns + self._hidden_columns:
                     if a.annotation.discourse == c.base_annotation and \
                         c.label == 'name':
                         a.discourse_alias = c.output_label
                         discourse_found = True
+                    if a.annotation.speaker == c.base_annotation and \
+                        c.label == 'name':
+                        a.speaker_alias = c.output_label
+                        speaker_found = True
                     elif a.annotation == c.base_annotation and \
                         c.label == 'begin':
                         a.begin_alias = c.output_label
@@ -492,85 +497,21 @@ class GraphQuery(object):
                         end_found = True
                 if not discourse_found:
                     self._hidden_columns.append(a.annotation.discourse.name.column_name(a.discourse_alias))
+                if not speaker_found:
+                    self._hidden_columns.append(a.annotation.speaker.name.column_name(a.speaker_alias))
                 if not begin_found:
                     self._hidden_columns.append(a.annotation.begin.column_name(a.begin_alias))
                 if not end_found:
                     self._hidden_columns.append(a.annotation.end.column_name(a.end_alias))
-        res_list = self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
-        if self._columns or self._acoustic_columns:
-            if self._acoustic_columns:
-                for a in self._acoustic_columns:
-                    for name in a.output_columns:
-                        res_list.columns.append(name)
-                for i, r in enumerate(res_list):
-                    for a in self._acoustic_columns:
-                        t = a.hydrate(self.corpus, getattr(r, a.discourse_alias),
-                                    getattr(r, a.begin_alias),
-                                    getattr(r, a.end_alias))
-                        for k in a.output_columns:
-                            res_list[i].__values__ = tuple(list(res_list[i].__values__) +[t[k]])
-                            setattr(res_list[i], k, t[k])
-            return res_list
-        new_res_list = []
-        for r in res_list:
-            a = LinguisticAnnotation(self.corpus)
-            a.node = r[self.to_find.alias]
-            a.type_node = r[self.to_find.type_alias]
-            a._preloaded = True
-            for pre in self._preload:
-                if isinstance(pre, DiscourseAnnotation):
-                    pa = Discourse(self.corpus)
-                    pa.node = r[pre.alias]
-                    a._discourse = pa
-                elif isinstance(pre, SpeakerAnnotation):
-                    pa = Speaker(self.corpus)
-                    pa.node = r[pre.alias]
-                    a._speaker = pa
-
-                elif isinstance(pre, HierarchicalAnnotation):
-                    pa = LinguisticAnnotation(self.corpus)
-                    pa.node = r[pre.alias]
-                    pa.type_node = r[pre.type_alias]
-
-                    a._supers[pre.type] = pa
-                elif isinstance(pre, QuerySubAnnotation):
-                    subannotations = r[pre.path_alias]
-                    for s in subannotations:
-                        sa = SubAnnotation(self.corpus)
-                        sa._annotation = a
-                        sa.node = s
-                        if sa._type not in a._subannotations:
-                            a._subannotations[sa._type] = []
-                        a._subannotations[sa._type].append(sa)
-                elif isinstance(pre, SubPathAnnotation):
-                    subs = r[pre.path_alias]
-                    sub_types = r[pre.path_type_alias]
-                    subbed = []
-                    subannotations = r[pre.subannotation_alias]
-                    for i,e in enumerate(subs):
-                        pa = LinguisticAnnotation(self.corpus)
-                        pa.node = e
-                        pa.type_node = sub_types[i]
-                        pa._preloaded = True
-                        for s in subannotations[i]:
-                            sa = SubAnnotation(self.corpus)
-                            sa._annotation = pa
-                            sa.node = s
-                            if sa._type not in pa._subannotations:
-                                pa._subannotations[sa._type] = []
-                            pa._subannotations[sa._type].append(sa)
-                        subbed.append(pa)
-                    a._subs[pre.sub.type] = subbed
-            new_res_list.append(a)
-        return new_res_list
+        return QueryResults(self)
 
     def to_csv(self, path):
         """
         Same as ``all``, but the results of the query are output to the
         specified path as a CSV file.
         """
-        save_results(self.corpus.execute_cypher(self.cypher(), **self.cypher_params()), path)
+        self.all().to_csv(path)
 
     def count(self):
         """
@@ -652,7 +593,7 @@ class GraphQuery(object):
         self._set_token_labels = []
 
     def remove_type_labels(self, *args):
-        """ removes all type labels""" 
+        """ removes all type labels"""
         self._remove_type_labels.extend(args)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
@@ -660,7 +601,7 @@ class GraphQuery(object):
         self._remove_type_labels = []
 
     def remove_token_labels(self, *args):
-        """ removes all token labels""" 
+        """ removes all token labels"""
         self._remove_token_labels.extend(args)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
@@ -685,8 +626,8 @@ class GraphQuery(object):
         return self
 
     def cache(self, *args):
-        """ 
-        
+        """
+
         """
         self._cache.extend(args)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
@@ -704,7 +645,7 @@ class SplitQuery(GraphQuery):
     splitter = ''
 
     def base_query(self):
-        """ sets up base query 
+        """ sets up base query
 
         Returns
         -------
@@ -725,7 +666,7 @@ class SplitQuery(GraphQuery):
         attribute_name = self.splitter[:-1] #remove 's', fixme maybe?
         splitter_annotation = getattr(self.to_find, attribute_name)
         splitter_attribute = getattr(splitter_annotation, 'name')
-        splitter_names = getattr(self.corpus, self.splitter)
+        splitter_names = sorted(getattr(self.corpus, self.splitter))
         if self.call_back is not None:
             self.call_back(0,len(splitter_names))
         for i, x in enumerate(splitter_names):
@@ -762,15 +703,15 @@ class SplitQuery(GraphQuery):
 
     def all(self):
         """ returns all results from a query """
-        results = []
+        results = None
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
                 return None
-            r = q.all()
-            if isinstance(r, list):
-                results.extend(r)
+            if results is None:
+                r = q.all()
+                results = r
             else:
-                results.extend(x for x in r)
+                results.add_results(q)
         return results
 
     def delete(self):
@@ -799,25 +740,6 @@ class SplitQuery(GraphQuery):
             if self.stop_check is not None and self.stop_check():
                 return
             q.set_token(*args, **kwargs)
-
-    def to_csv(self, path):
-        """ writes the query to csv 
-        
-        Parameters
-        ----------
-        path : str
-            where the csv is to be written
-        """
-        write = True
-        for q in self.split_queries():
-            if self.stop_check is not None and self.stop_check():
-                return
-            r = self.corpus.execute_cypher(q.cypher(), **q.cypher_params())
-            if write:
-                save_results(r, path, mode = 'w')
-                write = False
-            else:
-                save_results(r, path, mode = 'a')
 
 class SpeakerGraphQuery(SplitQuery):
     splitter = 'speakers'
