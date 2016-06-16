@@ -16,10 +16,22 @@ class BaseAnnotationType(object):
         self.label = False
 
     def reset(self):
+        """
+        resets _list and speaker
+        """
         self._list = []
         self.speaker = None
 
     def add(self, annotations, save = True):
+        """
+        save annotations  to _list
+        Parameters
+        ----------
+        annotations : list
+            the annotations to save
+        save : boolean  
+            defaults to True
+        """
         for a in annotations:
             if save or len(self._list) < 10:
                 #If save is False, only the first 10 annotations are saved

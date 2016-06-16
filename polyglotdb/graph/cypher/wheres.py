@@ -1,5 +1,22 @@
 
 def generate_wheres(criterion, wheres = None):
+    """
+    Generates where statements
+
+    Parameters
+    ----------
+    criterion : :class: `~polyglotdb.graph.GraphQuery`
+        query object
+    wheres : list
+        Defaults to None
+        list of where statements
+
+    Returns
+    -------
+    str
+        cypher string containing where statements
+
+    """
     properties = []
     for c in criterion:
         properties.append(c.for_cypher())

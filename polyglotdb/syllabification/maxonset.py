@@ -1,6 +1,21 @@
 
 
 def split_ons_coda_maxonset(string, onsets):
+    """
+    Finds the split between onset and coda in a string
+
+    Parameters
+    ----------
+    string : list
+        the phones to search through
+    onsets : list
+        a list of possible onsets
+
+    Returns
+    -------
+    i : int
+        the index in the string where the onset ends and coda begins
+    """
     if len(string) == 0:
         return None
     for i in range(len(string) + 1):
@@ -12,6 +27,21 @@ def split_ons_coda_maxonset(string, onsets):
     return None
 
 def split_nonsyllabic_maxonset(string, onsets):
+    """
+    Finds split between onset and coda in list with no found syllabic segments
+
+    Parameters
+    ----------
+    string : list
+        the phones to search through
+    onsets : list
+        a list of possible onsets
+
+    Returns
+    -------
+    i : int
+        the index in the string where the onset ends and coda begins
+    """
     if len(string) == 0:
         return None
     for i in range(len(string), -1, -1):

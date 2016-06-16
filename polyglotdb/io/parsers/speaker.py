@@ -10,6 +10,19 @@ class FilenameSpeakerParser(SpeakerParser):
         self.orientation = orientation
 
     def parse_path(self, path):
+        """
+        parses a file path and returns a speaker name
+
+        Parameters
+        ----------
+        path : str
+            the path of the file
+
+        Returns
+        -------
+        name : str
+            the substring of path that is the speaker name
+        """
         name = os.path.basename(path)
         name, ext = os.path.splitext(name)
         if self.orientation == 'left':
@@ -22,6 +35,19 @@ class DirectorySpeakerParser(SpeakerParser):
         pass
 
     def parse_path(self, path):
+        """
+        parses a directory path and returns a speaker name
+
+        Parameters
+        ----------
+        path : str
+            the path of the directory
+
+        Returns
+        -------
+        name : str
+            the name of the speaker
+        """
         name = os.path.dirname(path)
         name = os.path.basename(name)
         return name

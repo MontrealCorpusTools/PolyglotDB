@@ -1,6 +1,22 @@
 import math
 
 def norm_count_dict(counts, onset = True):
+    """
+    Updates a dictionary of onset or coda counts
+
+    Parameters
+    ----------
+    counts : dict
+        a dictionary of onset and coda counts
+    onset : boolean
+        Defaults to true
+        determines whether looking for onset or coda counts
+    
+    Returns
+    -------
+    counts : dict
+        the updated dictionary
+    """
     if onset:
         notfound_factor = .05
         empty_factor = .5
@@ -14,6 +30,23 @@ def norm_count_dict(counts, onset = True):
     return counts
 
 def split_ons_coda_prob(string, onsets, codas):
+    """
+    Guesses the split between onset and coda in a string
+
+    Parameters
+    ----------
+    string : list
+        the phones to search through
+    onsets : list
+        a list of possible onsets
+    codas : list
+        a list of possible codas
+
+    Returns
+    -------
+    best : int
+        best guess for the index in the string where the onset ends and coda begins
+    """
     if len(string) == 0:
         return None
     max_prob = -10000
@@ -36,6 +69,23 @@ def split_ons_coda_prob(string, onsets, codas):
     return best
 
 def split_nonsyllabic_prob(string, onsets, codas):
+    """
+    Guesses split between onset and coda in list with no found syllabic segments
+
+    Parameters
+    ----------
+    string : list
+        the phones to search through
+    onsets : list
+        a list of possible onsets
+    codas : list
+        a list of possible codas
+
+    Returns
+    -------
+    best : int
+        best guess for the index in the string where the onset ends and coda begins
+    """
     if len(string) == 0:
         return None
     max_prob = -10000

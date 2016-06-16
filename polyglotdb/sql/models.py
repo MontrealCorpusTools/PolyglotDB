@@ -39,6 +39,7 @@ class Annotation(Base):
 
     @property
     def frequency(self):
+        """ Returns frequency of an Annotation object"""
         for a in self.numeric_properties:
             if a.property_type.label == 'frequency':
                 return a.value
@@ -46,6 +47,7 @@ class Annotation(Base):
 
     @property
     def transcription(self):
+        """ Returns transcription of an Annotation object"""
         for a in self.properties:
             if a.property_type.label == 'transcription':
                 return a.value
@@ -56,6 +58,7 @@ class Annotation(Base):
 
     @hybrid_property
     def label_insensitive(self):
+        """ Returns lowercase label"""
         return self.label.lower()
 
     @label_insensitive.comparator

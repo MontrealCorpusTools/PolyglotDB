@@ -36,6 +36,18 @@ remove_property_template = '''{alias}.{attribute}'''
 delete_template = '''DETACH DELETE {alias}'''
 
 def generate_order_by(query):
+    """ 
+    Generates cypher string to order columns, groups, and elements of query
+
+    Parameters
+    ----------
+    query : :class: `~polyglotdb.graph.GraphQuery`
+        a query object
+
+    Returns
+    -------
+    str
+        a cypher string containing columns, groups, and elements of query"""
     properties = []
     for c in query._order_by:
         ac_set = set(query._columns)
@@ -62,12 +74,38 @@ def generate_order_by(query):
     return ''
 
 def generate_delete(query):
+    """ 
+    Generates a statement to delete a query
+
+    Parameters
+    ----------
+    query : :class: `~polyglotdb.graph.GraphQuery`
+        a query object
+
+    Returns
+    -------
+    return_statement : str
+        the cypher formatted delete statement
+    """
     kwargs = {}
     kwargs['alias'] = query.to_find.alias
     return_statement = delete_template.format(**kwargs)
     return return_statement
 
 def generate_aggregate(query):
+    """
+    aggregates properties of a query into one string
+    
+    Parameters
+    ----------
+    query : :class: `~polyglotdb.graph.GraphQuery`
+        a query object
+
+    Returns
+    -------
+    str
+        aggregated properties of query
+     """
     properties = []
     for g in query._group_by:
         properties.append(g.aliased_for_output())
@@ -81,6 +119,19 @@ def generate_aggregate(query):
     return ', '.join(properties)
 
 def generate_distinct(query):
+    """ 
+    Generates string of either columns or aliases
+
+    Parameters
+    ----------
+    query : :class: `~polyglotdb.graph.GraphQuery`
+        a query object
+
+    Returns
+    -------
+    str
+        string of columns or aliases
+    """
 
     properties = []
     for c in query._columns + query._hidden_columns:
@@ -96,6 +147,19 @@ def generate_distinct(query):
         return ', '.join(properties)
 
 def generate_cache(query):
+    """
+    Generates cache from query object
+    
+    Parameters
+    ----------
+    query : :class: `~polyglotdb.graph.GraphQuery`
+        a query object
+
+    Returns
+    -------
+    str
+        cypher string to generate cache
+    """
     properties = []
     for c in query._cache:
         kwargs = {'alias': c.base_annotation.alias,
@@ -112,6 +176,19 @@ def generate_cache(query):
         return ''
 
 def generate_return(query):
+    """
+    Generates final statement from query object, calling whichever one of the other generate statements is specified in the query obj
+    
+    Parameters
+    ----------
+    query : :class: `~polyglotdb.graph.GraphQuery`
+        a query object
+
+    Returns
+    -------
+    str
+        cypher formatted string
+    """
     kwargs = {'order_by': '', 'columns':''}
     return_statement = ''
     if query._delete:
