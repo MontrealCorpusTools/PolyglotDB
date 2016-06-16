@@ -217,7 +217,7 @@ class BaseContext(object):
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:{})-[r]-() with r LIMIT 50000 DELETE r return count(r) as deleted_count '''.format(self.cypher_safe_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:{})-[r]-() with r LIMIT 5000 DELETE r return count(r) as deleted_count '''.format(self.cypher_safe_name)).evaluate()
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
@@ -225,7 +225,7 @@ class BaseContext(object):
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:{}) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' .format(self.cypher_safe_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:{}) with n LIMIT 5000 DELETE n return count(n) as deleted_count ''' .format(self.cypher_safe_name)).evaluate()
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
