@@ -76,7 +76,7 @@ class Attribute(object):
         return '`{}_{}`'.format(self.annotation.alias.replace('`',''), self.label)
 
     def aliased_for_cypher(self):
-        """ 
+        """
         creates cypher string to use in db
 
         Returns
@@ -87,21 +87,21 @@ class Attribute(object):
         return '{} AS {}'.format(self.for_cypher(), self.alias)
 
     def aliased_for_output(self):
-        """ 
-        creates cypher string for output 
+        """
+        creates cypher string for output
 
         Returns
         -------
         string
             string for output
-        """ 
+        """
         return '{} AS {}'.format(self.for_cypher(), self.output_alias)
 
     @property
     def output_alias(self):
         """
-		returns output_label if there is one
-		return alias otherwise
+        returns output_label if there is one
+        return alias otherwise
         """
         if self.output_label is not None:
             return self.output_label
@@ -109,19 +109,19 @@ class Attribute(object):
 
     @property
     def with_alias(self):
-    	"""	
-    	returns type_alias if there is one
-    	alias otherwise
-    	"""
+        """
+        returns type_alias if there is one
+        alias otherwise
+        """
         if self.type:
             return self.annotation.type_alias
         else:
             return self.annotation.alias
 
     def column_name(self, label):
-    	"""
-		sets a column name to label
-    	"""
+        """
+        sets a column name to label
+        """
         self.output_label = label
         return self
 
@@ -165,21 +165,21 @@ class Attribute(object):
         return LteClauseElement(self, other)
 
     def in_(self, other):
-    	"""
-		Checks if the parameter other has a 'cypher' element
-		executes the query if it does and appends the relevant results
-		or appends parameter other
+        """
+        Checks if the parameter other has a 'cypher' element
+        executes the query if it does and appends the relevant results
+        or appends parameter other
 
-		Parameters
-		----------
-		other : list
+        Parameters
+        ----------
+        other : list
             attribute will be checked against elements in this list
-		Returns
-		-------
-		string
-			clause for asserting membership in a filter
+        Returns
+        -------
+        string
+            clause for asserting membership in a filter
 
-    	"""
+        """
         if hasattr(other, 'cypher'):
             results = other.all()
             t = []
@@ -190,20 +190,20 @@ class Attribute(object):
         return InClauseElement(self, t)
 
     def not_in_(self, other):
-    	"""
-		Checks if the parameter other has a 'cypher' element
-		executes the query if it does and appends the relevant results
-		or appends parameter other
+        """
+        Checks if the parameter other has a 'cypher' element
+        executes the query if it does and appends the relevant results
+        or appends parameter other
 
-		Parameters
-		----------
-		other : list
+        Parameters
+        ----------
+        other : list
             attribute will be checked against elements in this list
-		Returns
-		-------
-		string
-			clause for asserting non-membership in a filter
-    	"""
+        Returns
+        -------
+        string
+            clause for asserting non-membership in a filter
+        """
         if hasattr(other, 'cypher'):
             results = other.all()
             t = []
@@ -214,7 +214,7 @@ class Attribute(object):
         return NotInClauseElement(self, t)
 
     def regex(self, pattern):
-    	""" Returns a clause for filtering based on regular expressions."""
+        """ Returns a clause for filtering based on regular expressions."""
         return RegexClauseElement(self, pattern)
 
 class AnnotationAttribute(Attribute):
@@ -274,14 +274,14 @@ class AnnotationAttribute(Attribute):
         return '<AnnotationAttribute object with \'{}\' type and {} position>'.format(self.type, self.pos)
 
     def for_match(self):
-    	""" sets 'token_alias' and 'type_alias'  keyword arguments for an annotation """
+        """ sets 'token_alias' and 'type_alias'  keyword arguments for an annotation """
         kwargs = {}
         kwargs['token_alias'] = self.define_alias
         kwargs['type_alias'] = self.define_type_alias
         return self.template.format(**kwargs)
 
     def subset_type(self, *args):
-    	""" adds each item in args to the hierarchy type_labels"""
+        """ adds each item in args to the hierarchy type_labels"""
         if self.hierarchy is not None:
             for a in args:
                 if not self.hierarchy.has_type_subset(self.type, a):
@@ -291,7 +291,7 @@ class AnnotationAttribute(Attribute):
 
     def subset_token(self, *args):
 
-		""" adds each item in args to the hierarchy token_labels"""
+        """ adds each item in args to the hierarchy token_labels"""
         if self.hierarchy is not None:
             for a in args:
                 if not self.hierarchy.has_token_subset(self.type, a):
@@ -301,7 +301,7 @@ class AnnotationAttribute(Attribute):
 
     @property
     def define_type_alias(self):
-    	""" Returns a cypher string for getting all type_labels"""
+        """ Returns a cypher string for getting all type_labels"""
         label_string = ':{}_type'.format(self.type)
         if self.corpus is not None:
             label_string += ':{}'.format(key_for_cypher(self.corpus))
@@ -311,7 +311,7 @@ class AnnotationAttribute(Attribute):
 
     @property
     def define_alias(self):
-    	""" Returns a cypher string for getting all token_labels"""
+        """ Returns a cypher string for getting all token_labels"""
         label_string = ':{}:speech'.format(self.type)
         if self.corpus is not None:
             label_string += ':{}'.format(key_for_cypher(self.corpus))
@@ -321,12 +321,12 @@ class AnnotationAttribute(Attribute):
 
     @property
     def type_alias(self):
-    	""" Returns a cypher formatted string of type alias"""
+        """ Returns a cypher formatted string of type alias"""
         return key_for_cypher('type_'+self.alias.replace('`', ''))
 
     @property
     def alias(self):
-    	"""Returns a cypher formatted string of keys and prefixes"""
+        """Returns a cypher formatted string of keys and prefixes"""
         pre = self.alias_prefix
         if self.pos < 0:
             pre += 'prev_{}_'.format(-1 * self.pos)
@@ -336,12 +336,12 @@ class AnnotationAttribute(Attribute):
 
     @property
     def with_alias(self):
-    	""" Returns alias """
+        """ Returns alias """
         return self.alias
 
     @property
     def withs(self):
-    	""" Returns a list of alias and type_alias """
+        """ Returns a list of alias and type_alias """
         return [self.alias, self.type_alias]
 
     def precedes(self, other_annotation):
@@ -400,12 +400,12 @@ class AnnotationAttribute(Attribute):
 
     @property
     def key(self):
-    	""" 
-		Returns
-		-------
-		key : str
-    		has the object type followed by all token labels and then all type labels
-    	"""
+        """
+        Returns
+        -------
+        key : str
+            has the object type followed by all token labels and then all type labels
+        """
         key = self.type
         if self.subset_token_labels:
             key += '_' + '_'.join(self.subset_token_labels)

@@ -6,7 +6,7 @@ from ..types.parsing import *
 from ..parsers import FaveParser
 
 def inspect_fave(path):
-	"""
+    """
     Generate an :class:`~polyglotdb.io.parsers.fave.FaveParser`
     for a specified text file for parsing it as an FAVE text file
 
@@ -14,7 +14,7 @@ def inspect_fave(path):
     ----------
     path : str
         Full path to text file
- 
+
     Returns
     -------
     :class:`~polyglotdb.io.parsers.ilg.FaveParser`

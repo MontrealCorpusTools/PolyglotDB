@@ -14,91 +14,91 @@ from ..parsers import TextgridParser
 
 
 def calculate_probability(x, mean, stdev):
-	""" 
-	Calculates the probability that a given tier is a word or phone 
+    """
+    Calculates the probability that a given tier is a word or phone
 
-	Parameters
-	----------
-	x : float
-		duration of the object in question
-	mean : float
-		mean duration of that type of object
-	stdev : float
-		standard deviation from mean
-	"""
+    Parameters
+    ----------
+    x : float
+        duration of the object in question
+    mean : float
+        mean duration of that type of object
+    stdev : float
+        standard deviation from mean
+    """
     exponent = math.exp(-(math.pow(x-mean,2)/(2*math.pow(stdev,2))))
     return (1 / (math.sqrt(2*math.pi) * stdev)) * exponent
 
 def word_probability(average_duration):
-	"""
-	Calculates probability of tier being a word tier
+    """
+    Calculates probability of tier being a word tier
 
-	Parameters 
-	----------
-	average_duration : float
-		the average duration of elements in the tier
+    Parameters
+    ----------
+    average_duration : float
+        the average duration of elements in the tier
 
-	Returns
-	-------
-	float
-		the probability that the tier is a word tier
-	"""
+    Returns
+    -------
+    float
+        the probability that the tier is a word tier
+    """
     mean = 0.2465409 # Taken from the Buckeye corpus
     sd = 0.03175723
     return calculate_probability(average_duration, mean, sd)
 
 def segment_probability(average_duration):
-	"""
-	Calculates probability of tier being a phone tier
+    """
+    Calculates probability of tier being a phone tier
 
-	Parameters 
-	----------
-	average_duration : float
-		the average duration of elements in the tier
+    Parameters
+    ----------
+    average_duration : float
+        the average duration of elements in the tier
 
-	Returns
-	-------
-	float
-		the probability that the tier is a phone tier
-	"""
+    Returns
+    -------
+    float
+        the probability that the tier is a phone tier
+    """
     mean = 0.08327773 # Taken from the Buckeye corpus
     sd = 0.03175723 #Actually=0.009260103
     return calculate_probability(average_duration, mean, sd)
 
 
 def uniqueLabels(tier):
-	"""
-	Gets the label from the tier, removing duplicates 
+    """
+    Gets the label from the tier, removing duplicates
 
-	Parameters
-	----------
-	tier : IntervalTier
-		the tier to collect labels from
+    Parameters
+    ----------
+    tier : IntervalTier
+        the tier to collect labels from
 
-	Returns 
-	-------
-	set 
-		label from the tier
-	"""
+    Returns
+    -------
+    set
+        label from the tier
+    """
     try:
         return set(x.mark for x in tier.intervals)
     except AttributeError:
         return set(x.mark for x in tier.points)
 
 def average_duration(tier):
-	"""
-	Gets the average duration of elements in a tier
+    """
+    Gets the average duration of elements in a tier
 
-	Parameters
-	----------
-	tier : IntervalTier
-		the tier to get duration from
+    Parameters
+    ----------
+    tier : IntervalTier
+        the tier to get duration from
 
-	Returns 
-	-------
-	double 
-		average duration
-	"""
+    Returns
+    -------
+    double
+        average duration
+    """
 
     if isinstance(tier, IntervalTier):
         return sum(x.maxTime - x.minTime for x in tier) / len(tier)
@@ -106,38 +106,38 @@ def average_duration(tier):
         return tier.maxTime/ len(tier)
 
 def averageLabelLen(tier):
-	"""
-	Get the average label length in a tier
+    """
+    Get the average label length in a tier
 
-	Parameters
-	----------
+    Parameters
+    ----------
     tier : IntervalTier
-		the tier to collect labels from
+        the tier to collect labels from
 
-	Returns 
-	-------
-	double
-		average label length
-	"""
+    Returns
+    -------
+    double
+        average label length
+    """
     labels = uniqueLabels(tier)
     if not labels:
         return 0
     return sum(len(lab) for lab in labels)/len(labels)
 
 def figure_linguistic_type(labels):
-	"""
-	Gets linguistic type for labels
+    """
+    Gets linguistic type for labels
 
-	Parameters
-	----------
-	labels : list of lists
-		the labels of a tier
+    Parameters
+    ----------
+    labels : list of lists
+        the labels of a tier
 
-	Returns 
-	-------
-	
-		the linguistic type
-	 """
+    Returns
+    -------
+
+        the linguistic type
+     """
     if len(labels) == 0:
         return None
     elif len(labels) == 1:
@@ -146,21 +146,21 @@ def figure_linguistic_type(labels):
     return label[0]
 
 def guess_tiers(tg):
-	"""
-	Guesses whether tiers are words or segments
-	
-	Parameters
-	----------
-	tg : TextGrid 
-		the textgrid object
+    """
+    Guesses whether tiers are words or segments
 
-	Returns
-	-------
-	tier_guesses : dict
-		the tiers and their likelihoods
-	hierarchy : `~polyglotdb.structure.Hierarchy`
-		the hierarchy object
-	"""
+    Parameters
+    ----------
+    tg : TextGrid
+        the textgrid object
+
+    Returns
+    -------
+    tier_guesses : dict
+        the tiers and their likelihoods
+    hierarchy : `~polyglotdb.structure.Hierarchy`
+        the hierarchy object
+    """
     tier_properties = {}
     tier_guesses = {}
     for i,t in enumerate(tg.tiers):

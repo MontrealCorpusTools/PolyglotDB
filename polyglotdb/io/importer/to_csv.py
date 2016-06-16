@@ -196,7 +196,7 @@ def lexicon_data_to_csvs(corpus_context, data, case_sensitive = False):
             writer.writerow(v)
 
 def feature_data_to_csvs(corpus_context, data):
-     """
+    """
     Convert feature data into a CSV file
 
     Parameters
@@ -216,7 +216,7 @@ def feature_data_to_csvs(corpus_context, data):
             writer.writerow(v)
 
 def speaker_data_to_csvs(corpus_context, data):
-     """
+    """
     Convert speaker data into a CSV file
 
     Parameters
@@ -236,7 +236,7 @@ def speaker_data_to_csvs(corpus_context, data):
             writer.writerow(v)
 
 def discourse_data_to_csvs(corpus_context, data):
-     """
+    """
     Convert discourse data into a CSV file
 
     Parameters

@@ -58,7 +58,8 @@ class AggregateFunction(object):
         return self.attribute.with_aliases
 
     @property
-    def annotation(self):"""
+    def annotation(self):
+        """
         Returns
         -------
         :class: `~polyglotdb.graph.attributes.AnnotationAttribute` object
