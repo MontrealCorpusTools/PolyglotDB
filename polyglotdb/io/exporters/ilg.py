@@ -6,8 +6,10 @@ def export_discourse_ilg(corpus_context, discourse, path,
 
     Parameters
     ----------
-    discourse : Discourse
-        Discourse object to export
+    corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
+        the type of corpus
+    discourse : str
+        discourse name 
     path : str
         Path to export to
     trans_delim : str, optional

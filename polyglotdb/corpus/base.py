@@ -40,11 +40,11 @@ class BaseContext(object):
 
     Parameters
     ----------
-    args : arguments or :class:`polyglotdb.config.CorpusConfig`
+    args : arguments or :class:`~polyglotdb.config.CorpusConfig`
         If the first argument is not a CorpusConfig object, it is
         the name of the corpus
     kwargs : keyword arguments
-        If a :class:`polyglotdb.config.CorpusConfig` object is not specified, all arguments and
+        If a :class:`~polyglotdb.config.CorpusConfig` object is not specified, all arguments and
         keyword arguments are passed to a CorpusConfig object
     """
     def __init__(self, *args, **kwargs):
@@ -85,6 +85,9 @@ class BaseContext(object):
         self.config.query_behavior = 'speaker'
 
     def load_variables(self):
+        """
+        Loads variables into Hierarchy
+        """
         try:
             with open(os.path.join(self.config.data_dir, 'variables'), 'rb') as f:
                 var = pickle.load(f)
@@ -95,16 +98,37 @@ class BaseContext(object):
                 self.save_variables()
 
     def save_variables(self):
+        """ saves variables to hierarchy"""
         with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
             pickle.dump({'hierarchy': self.hierarchy}, f)
 
     def init_sql(self):
+        """
+        initializes sql connection
+        """
         self.engine = create_engine(self.config.sql_connection_string)
         Session.configure(bind=self.engine)
         if not os.path.exists(self.config.db_path):
             Base.metadata.create_all(self.engine)
 
     def execute_cypher(self, statement, **parameters):
+        """
+        Executes a cypher query
+        
+        Parameters
+        ----------
+        statement : str
+            the cypher statement
+        parameters : dict
+            keyword arguments to execute a cypher statement
+
+        Returns
+        -------
+        query result : 
+        or
+        raises error
+
+        """
         try:
             return self.graph.run(statement, **parameters)
         except (py2neo.packages.httpstream.http.SocketError,
@@ -146,6 +170,14 @@ class BaseContext(object):
 
     @property
     def speakers(self):
+        """
+        Gets a list of speakers in the corpus
+
+        Returns
+        -------
+        names : list
+            all the speaker names
+        """
         q = self.sql_session.query(Speaker).all()
         if not len(q):
             res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.cypher_safe_name))
@@ -191,6 +223,14 @@ class BaseContext(object):
 
     @property
     def word_name(self):
+        """
+        Gets the word label
+
+        Returns
+        -------
+        word : str
+            word name
+        """
         for at in self.hierarchy.annotation_types:
             if at.startswith('word'): #FIXME need a better way for storing word name
                 return at
@@ -198,6 +238,14 @@ class BaseContext(object):
 
     @property
     def phone_name(self):
+        """
+        Gets the phone label
+
+        Returns
+        -------
+        phone : str
+            phone name
+        """
         name = self.hierarchy.lowest
         if name is None:
             name = 'phone'
@@ -217,7 +265,7 @@ class BaseContext(object):
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:{})-[r]-() with r LIMIT 50000 DELETE r return count(r) as deleted_count '''.format(self.cypher_safe_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:{})-[r]-() with r LIMIT 5000 DELETE r return count(r) as deleted_count '''.format(self.cypher_safe_name)).evaluate()
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
@@ -225,7 +273,7 @@ class BaseContext(object):
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:{}) with n LIMIT 50000 DELETE n return count(n) as deleted_count ''' .format(self.cypher_safe_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:{}) with n LIMIT 5000 DELETE n return count(n) as deleted_count ''' .format(self.cypher_safe_name)).evaluate()
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
@@ -245,9 +293,9 @@ class BaseContext(object):
 
     def query_graph(self, annotation_type):
         '''
-        Return a :class:`polyglotdb.config.GraphQuery` for the specified annotation type.
+        Return a :class:`~polyglotdb.config.GraphQuery` for the specified annotation type.
 
-        When extending :class:`polyglotdb.config.GraphQuery` functionality, this function must be
+        When extending :class:`~polyglotdb.config.GraphQuery` functionality, this function must be
         overwritten.
 
         Parameters

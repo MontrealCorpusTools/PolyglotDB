@@ -145,7 +145,11 @@ class UtteranceCorpus(BaseContext):
                 begin = end_words[0]['begin']
                 begin_id = end_words[0]['id']
                 if len(results) == 0:
-                    return [(begin_id, end_words[1]['id'])]
+                    if len(end_words) == 1:
+                        ind = 0
+                    else:
+                        ind = 1
+                    return [(begin_id, end_words[ind]['id'])]
                 if results[0]['begin'] == 0:
                     return [(results[0]['end_id'], end_words[1]['id'])]
                 if results[0]['end'] == end_words[1]['end']:
@@ -269,6 +273,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
         return utterances
 
     def encode_utterance_position(self, call_back = None, stop_check = None):
+        """ Encodes position_in_utterance for a word """
         w_type = self.word_name
         if self.config.query_behavior == 'speaker':
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name})-[:spoken_by]->(speaker:Speaker:{corpus_name}),
@@ -331,10 +336,21 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
         self.save_variables()
 
     def reset_utterance_position(self):
+        """resets position_in_utterance"""
         self.reset_property(self.word_name, 'position_in_utterance')
 
     def encode_speech_rate(self, subset_label, call_back = None, stop_check = None):
+        """ 
+        Encodes speech rate
+
+        Parameters
+        ----------
+        subset_label : str
+            the name of the subset to encode
+
+        """
         self.encode_rate('utterance', self.phone_name, 'speech_rate', subset = subset_label)
 
     def reset_speech_rate(self):
+        """ resets speech_rate """
         self.reset_property('utterance', 'speech_rate')

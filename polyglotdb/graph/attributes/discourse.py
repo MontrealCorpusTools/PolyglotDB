@@ -11,6 +11,9 @@ class DiscourseAnnotation(SpeakerAnnotation):
         self.type = 'Discourse'
 
     def for_match(self):
+        """
+        sets 'token_alias' and 'discourse_alias'  keyword arguments for an annotation
+        """
         kwargs = {}
         kwargs['token_alias'] = self.contained_annotation.alias
         kwargs['discourse_alias'] = self.define_alias

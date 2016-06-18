@@ -18,10 +18,15 @@ class SpeakerAnnotation(HierarchicalAnnotation):
 
     @property
     def pos(self):
+        """ Returns 0"""
         return 0
 
     @property
     def define_alias(self):
+        """ concatenates type, corpus, and alias
+        Returns
+        str
+            concatenated string"""
         label_string = ':{}'.format(self.type)
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
@@ -29,6 +34,9 @@ class SpeakerAnnotation(HierarchicalAnnotation):
 
 
     def for_match(self):
+        """
+        Returns cypher formatted string containing `polyglotdb.graph.HierarchichalAnnotation` token_alias and speaker_alias
+        """
         kwargs = {}
         kwargs['token_alias'] = self.contained_annotation.alias
         kwargs['speaker_alias'] = self.define_alias
@@ -36,4 +44,5 @@ class SpeakerAnnotation(HierarchicalAnnotation):
 
     @property
     def withs(self):
+        """Returns 1-element list of `polyglotdb.graph.HierarchichalAnnotation` alias"""
         return [self.alias]

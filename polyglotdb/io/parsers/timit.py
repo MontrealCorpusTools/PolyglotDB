@@ -84,6 +84,20 @@ class TimitParser(BaseParser):
         return data
 
 def read_phones(path):
+    """
+    From a timit file, reads the phone lines, appends label, begin, and end to output
+    
+    Parameters
+    ----------
+    path : str
+        path to file
+    
+    Returns
+    -------
+    output : list of tuples
+        each tuple is label, begin, end for a phone
+
+    """
     output = []
     sr = 16000
     with open(path,'r') as file_handle:
@@ -96,6 +110,20 @@ def read_phones(path):
     return output
 
 def read_words(path):
+    """
+    From a timit file, reads the word info
+    
+    Parameters
+    ----------
+    path : str
+        path to file
+    
+    Returns
+    -------
+    output : list of dicts
+        each dict has spelling, begin, end
+
+    """
     output = []
     sr = 16000
     prev = None

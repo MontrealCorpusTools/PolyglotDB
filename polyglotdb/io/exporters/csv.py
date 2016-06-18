@@ -6,7 +6,7 @@ def make_safe(value, delimiter):
 
     Parameters
     ----------
-    value : object
+    value : list or None
         Object to make into string
 
     delimiter : str
@@ -25,6 +25,20 @@ def make_safe(value, delimiter):
 
 
 def save_results(results, path, header = None, mode = 'w'):
+    """
+    Writes results to path specified 
+
+    Parameters
+    ----------
+    results : dict
+        the results to write
+    path : str
+        the path to the save file
+    header : list
+        Defaults to none
+    mode : str
+        defaults to 'w', or write. Can be 'a', append
+    """
     if header is None:
         header = results.columns
     with open(path, mode, encoding = 'utf8', newline = '') as f:
@@ -42,7 +56,7 @@ def export_corpus_csv(corpus, path,
 
     Parameters
     ----------
-    corpus : Corpus
+    corpus : :class:`~polyglotdb.corpus.CorpusContext`
         Corpus to save to text file
     path : str
         Full path to write text file

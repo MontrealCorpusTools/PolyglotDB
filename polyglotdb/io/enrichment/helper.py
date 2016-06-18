@@ -3,6 +3,18 @@ import csv
 from collections import defaultdict
 
 def parse_string(value):
+    """ 
+    parses string for python keywords or numeric value
+
+    Parameters
+    ----------
+    value : str or float
+        the value to be parsed (true, false, none, null, na, or float)
+
+    Returns
+    -------
+    boolean, None, float, original value
+    """
     value = value.strip()
     if value.lower() == 'true':
         return True
@@ -17,6 +29,22 @@ def parse_string(value):
         return value
 
 def parse_file(path, case_sensitive = True):
+    """
+    Parses a csv file into data and type_data
+
+    Parameters
+    ----------
+    path : str
+        the path to the file
+    case_sensitive : boolean
+        Defaults to true
+
+    Returns
+    -------
+    tuple
+        data and type_data for a csv file
+
+    """
     with open(path, 'r', encoding = 'utf-8-sig') as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read(1024))
         csvfile.seek(0)

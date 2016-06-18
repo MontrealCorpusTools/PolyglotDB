@@ -16,6 +16,11 @@ def test_encode_class(timed_config):
 
         assert(all(x.label == 'ae' for x in q.all()))
 
+        q = g.query_graph(g.phone).filter(g.phone.type_subset != label)
+        results = q.all()
+        assert(len(results) > 0)
+        assert(all(x.label != 'ae' for x in results))
+
         g.reset_class(label)
 
         with pytest.raises(SubsetError):

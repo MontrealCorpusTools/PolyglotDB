@@ -10,6 +10,34 @@ prec_pause_template = '''{path_alias} = (:speech:word)-[:precedes_pause*0..]->({
 foll_pause_template = '''{path_alias} = ({node_alias})-[:precedes_pause*0..]->(:speech:word)'''
 
 def generate_match(query, annotation_type, annotation_list, filter_annotations):
+    """ 
+    
+    Parameters
+    ----------
+    query : :class: `~polyglotdb.graph.GraphQuery`
+        the query object
+    annotation_type : str
+        the type of annotation
+    annotation_list : list
+        a list of annotations
+    filter_annotations : list 
+        a list of filters
+
+    Returns
+    -------
+    statements : list
+        a list of 'match' cypher strings
+    optional_statements: list
+        list of 'match' cypher strings that aren't filters
+    defined: set
+       path_alias, path_type_alias, and subannotation_alias
+    wheres: list
+        list of cypher strings and None's
+    optional_wheres: list
+        list of cypher strings and None's
+        only if annotations aren't filters
+
+    """
     annotation_list = sorted(annotation_list, key = lambda x: x.pos)
     positions = set(x.pos for x in annotation_list)
     prec_condition = ''

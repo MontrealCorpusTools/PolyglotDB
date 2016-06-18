@@ -32,6 +32,15 @@ def acoustic_analysis(corpus_context,
             call_back = None,
             stop_check = None):
 
+    """
+    Calls get_pitch and get_formants for each sound file in a corpus
+
+    Parameters
+    ----------
+    corpus_context : : class: `polyglotdb.corpus.BaseContext`
+        the type of corpus being analyzed
+
+    """
     q = corpus_context.sql_session.query(SoundFile).join(Discourse)
     sound_files = q.all()
 
@@ -104,6 +113,7 @@ def analyze_formants(corpus_context, sound_file, stop_check = None):
         else:
             return
     else:
+
         formant_function = partial(ASFormants, freq_lims = (0, 5500),
                                         time_step = 0.01, num_formants = 5,
                                         win_len = 0.025, window_shape = 'gaussian')

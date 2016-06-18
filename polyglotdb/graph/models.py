@@ -9,14 +9,24 @@ from .helper import key_for_cypher, value_for_cypher
 class BaseAnnotation(object):
 
     def load(self, id):
+        """ raise NotImplementedError"""
         raise(NotImplementedError)
 
     @property
     def node(self):
+        """ returns the BaseAnnotation's node"""
         return self._node
 
     @node.setter
     def node(self, item):
+        """ 
+        sets the BaseAnnotation's node
+
+        Parameters
+        ----------
+        item : 
+            the node will be set to item
+        """
         self._node = item
         self._id = item.properties['id']
         for x in self._node.labels():
@@ -26,14 +36,24 @@ class BaseAnnotation(object):
 
     @property
     def duration(self):
+        """ returns the duration of annotation """
         return self.end - self.begin
 
     @property
     def corpus_context(self):
+        """returns the corpus context """
         return self._corpus_context
 
     @corpus_context.setter
     def corpus_context(self, context):
+        """
+        sets the corpus context to the parameter
+        
+        Parameters
+        ----------
+        context : : class: `~polyglotdb.corpus.BaseContext`
+            The objects corpus_context will be set to this parameter
+        """
         self._corpus_context = context
 
     def save(self):
@@ -102,6 +122,7 @@ class LinguisticAnnotation(BaseAnnotation):
 
     @property
     def properties(self):
+        """ Returns sorted untion of node property keys and type_node property keys """ 
         return sorted(set(self._node.properties.keys()) | set(self._type_node.properties.keys()))
 
     def __getattr__(self, key):
@@ -211,6 +232,14 @@ class LinguisticAnnotation(BaseAnnotation):
             return self._type_node.properties[key]
 
     def update_properties(self,**kwargs):
+        """ 
+        updates node properties with kwargs
+
+        Parameters
+        ----------
+        kwards : dict
+            keyword arguments to update properties
+        """
         for k,v in kwargs.items():
             if k in self._type_node.properties:
                  self._type_node.update(**{k: v})
@@ -219,12 +248,21 @@ class LinguisticAnnotation(BaseAnnotation):
             self._node.update(begin = self._node['end'], end = self._node['begin'])
 
     def save(self):
+        """ saves the node to the graph"""
         self.corpus_context.graph.push(self.node)
         for k,v in self._subannotations.items():
             for s in v:
                 s.save()
 
     def load(self, id):
+        """ 
+        loads a node from the graph with a specific ID
+
+        Parameters
+        ----------
+        id : str
+            the ID of the desired node
+        """
         res = list(self.corpus_context.execute_cypher(
             '''MATCH (token {id: {id}})-[:is_a]->(type)
                 RETURN token, type''', id = id))
@@ -241,13 +279,23 @@ class LinguisticAnnotation(BaseAnnotation):
 
     @property
     def type_node(self):
+        """ returns the node type """
         return self._type_node
 
     @type_node.setter
     def type_node(self, item):
+        """ sets the node type to item """
         self._type_node = item
 
     def delete_subannotation(self, subannotation):
+        """
+        Deletes a subannotation from the graph
+        
+        Parameters
+        ----------
+        subannotation : :class: `~polyglotdb.graph.SubAnnotation`
+            the subannotation to be deleted
+         """
         for i, sa in enumerate(self._subannotations[subannotation._type]):
             if sa.id == subannotation.id:
                 break
@@ -260,7 +308,20 @@ class LinguisticAnnotation(BaseAnnotation):
         self.corpus_context.execute_cypher(statement, id = subannotation.id)
 
     def add_subannotation(self, type, commit = True, transaction = None, **properties):
+        """
+        Adds a subannotation to the graph
 
+        Parameters
+        ----------
+        type : str
+            the type of the subannotation
+
+        commit : boolean, defaults to False
+
+        transaction :  , defaults to None
+
+        properties : dict
+        """
         if 'begin' not in properties:
             properties['begin'] = self.begin
         if 'end' not in properties:
@@ -326,16 +387,26 @@ class SubAnnotation(BaseAnnotation):
         raise(AttributeError)
 
     def update_properties(self,**kwargs):
+        """ 
+        updates node properties with kwargs
+
+        Parameters
+        ----------
+        kwards : dict
+            keyword arguments to update properties
+        """
         self._node.update(**kwargs)
         if self._node['begin'] > self._node['end']:
             self._node.update(begin = self._node['end'], end = self._node['begin'])
 
     @property
     def node(self):
+        """ returns the node"""
         return self._node
 
     @node.setter
     def node(self, item):
+        """ Sets the node to item"""
         self._node = item
         self._id = item.properties['id']
         for x in self._node.labels():
@@ -344,6 +415,14 @@ class SubAnnotation(BaseAnnotation):
                 break
 
     def load(self, id):
+        """ 
+        loads a node from the graph with a specific ID
+
+        Parameters
+        ----------
+        id : str
+            the ID of the desired node
+        """
         res = list(self.corpus_context.execute_cypher(
             '''MATCH (sub {id: {id}})-[:annotates]->(token)-[:is_a]->(type)
                 RETURN sub, token, type''', id = id))
@@ -353,6 +432,7 @@ class SubAnnotation(BaseAnnotation):
         self.node = res[0]['sub']
 
     def save(self):
+        """ saves the current node to the graph"""
         self.corpus_context.graph.push(self._node)
 
 class Speaker(SubAnnotation):
@@ -371,14 +451,30 @@ class Speaker(SubAnnotation):
 
     @property
     def node(self):
+        """ returns the SubAnnotations's node"""
         return self._node
 
     @node.setter
     def node(self, item):
+        """ 
+        sets the SubAnnotation's node
+
+        Parameters
+        ----------
+        item : 
+            the node will be set to item
+        """
         self._node = item
         self._id = item.properties['name']
 
     def load(self, id):
+        """ 
+        loads a node from the graph with a specific ID
+
+        Parameters
+        ----------
+        id : str
+            the ID of the desired node"""
         res = list(self.corpus_context.execute_cypher(
             '''MATCH (speaker:{a_type} {{id: {{id}}}})
                 RETURN speaker'''.format(a_type = self._type), id = id))

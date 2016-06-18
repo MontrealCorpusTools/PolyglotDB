@@ -119,6 +119,26 @@ class PitchAttribute(AcousticAttribute):
         self.label = 'pitch'
 
     def hydrate(self, corpus, discourse, begin, end, channel = 0):
+        """
+        Gets all F0 from a discourse
+
+        Parameters
+        ----------
+        corpus : :class:`~polyglotdb.corpus.CorpusContext`
+            The corpus to query
+        discourse : str
+            the discourse to query
+        begin : float
+            the start time of the pitch
+        end : float
+            the end time of the pitch
+        aggregation : defaults to None
+
+        Returns
+        -------
+        data : dict
+            A dictionary with 'F0' as the keys and a dictionary of times and F0 values as the value
+         """
         if self.cached_settings == (discourse, begin, end, channel):
             data = self.cached_data
         else:
@@ -142,6 +162,26 @@ class FormantAttribute(AcousticAttribute):
         self.label = 'formants'
 
     def hydrate(self, corpus, discourse, begin, end, channel = 0):
+        """
+        Gets all formants from a discourse
+
+        Parameters
+        ----------
+        corpus : :class:`~polyglotdb.corpus.CorpusContext`
+            The corpus to query
+        discourse : str
+            the discourse to query
+        begin : float
+            the start time of the pitch
+        end : float
+            the end time of the pitch
+        aggregation : defaults to None
+
+        Returns
+        -------
+        data : dict
+            A dictionary with 'F1', 'F2', 'F3' as the keys and a dictionary of times and corresponding formant values as the value
+         """
         if self.cached_settings == (discourse, begin, end, channel):
             data = self.cached_data
         else:

@@ -2,6 +2,23 @@
 from ..attributes import SubAnnotation
 
 def generate_withs(query, all_withs):
+    """
+    Generates with statements
+    
+    Parameters
+    ----------
+    query : :class: `~polyglotdb.graph.GraphQuery`
+        query object
+    all_withs : list
+        Defaults to None
+        list of with statements
+
+    Returns
+    -------
+    str
+        cypher string containing with statements
+    
+    """
     statements = [withs_to_string(all_withs)]
     for c in query._criterion:
         for a in c.attributes:
@@ -51,4 +68,5 @@ def generate_withs(query, all_withs):
     return '\n'.join(statements)
 
 def withs_to_string(withs):
+    """Translates with lists into 'with' statements"""
     return 'WITH ' + ', '.join(withs)
