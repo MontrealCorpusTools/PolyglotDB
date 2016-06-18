@@ -6,7 +6,8 @@ from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         InClauseElement, NotInClauseElement, ContainsClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
-                        SubsetClauseElement, NullClauseElement, NotNullClauseElement,
+                        SubsetClauseElement, NotSubsetClauseElement,
+                        NullClauseElement, NotNullClauseElement,
                         FollowsClauseElement, PrecedesClauseElement)
 
 from ...exceptions import SubsetError
@@ -146,6 +147,8 @@ class Attribute(object):
                 return NotLeftAlignedClauseElement(self.annotation, other.annotation)
             elif self.label == 'end' and other.label == 'end':
                 return NotRightAlignedClauseElement(self.annotation, other.annotation)
+            elif self.label in ['token_subset', 'type_subset']:
+                return NotSubsetClauseElement(self, other)
         except AttributeError:
             pass
         if other is None:

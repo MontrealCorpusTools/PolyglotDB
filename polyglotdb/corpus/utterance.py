@@ -145,7 +145,11 @@ class UtteranceCorpus(BaseContext):
                 begin = end_words[0]['begin']
                 begin_id = end_words[0]['id']
                 if len(results) == 0:
-                    return [(begin_id, end_words[1]['id'])]
+                    if len(end_words) == 1:
+                        ind = 0
+                    else:
+                        ind = 1
+                    return [(begin_id, end_words[ind]['id'])]
                 if results[0]['begin'] == 0:
                     return [(results[0]['end_id'], end_words[1]['id'])]
                 if results[0]['end'] == end_words[1]['end']:
