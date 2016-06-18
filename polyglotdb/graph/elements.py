@@ -111,6 +111,20 @@ class SubsetClauseElement(ClauseElement):
         return self.template.format(key,
                                 value)
 
+class NotSubsetClauseElement(ClauseElement):
+    template = "NOT {}:{}"
+    def for_cypher(self):
+        """
+        Return a Cypher representation of the clause.
+        """
+        value = key_for_cypher(self.value)
+        if self.attribute.label == 'token_subset':
+            key = self.attribute.annotation.alias
+        elif self.attribute.label == 'type_subset':
+            key = self.attribute.annotation.type_alias
+        return self.template.format(key,
+                                value)
+
 class NullClauseElement(ClauseElement):
     template = '{} is null'
     def for_cypher(self):
