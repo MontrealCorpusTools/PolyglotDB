@@ -114,7 +114,7 @@ class BaseContext(object):
     def execute_cypher(self, statement, **parameters):
         """
         Executes a cypher query
-        
+
         Parameters
         ----------
         statement : str
@@ -124,7 +124,7 @@ class BaseContext(object):
 
         Returns
         -------
-        query result : 
+        query result :
         or
         raises error
 
@@ -258,22 +258,14 @@ class BaseContext(object):
         '''
         if call_back is not None:
             call_back('Resetting database...')
-            number = self.execute_cypher('''MATCH (n:{})-[r]-() return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
-            call_back(0, number * 2)
+            number = self.execute_cypher('''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
+            call_back(0, number)
         num_deleted = 0
         deleted = 1000
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher('''MATCH (n:{})-[r]-() with r LIMIT 5000 DELETE r return count(r) as deleted_count '''.format(self.cypher_safe_name)).evaluate()
-            num_deleted += deleted
-            if call_back is not None:
-                call_back(num_deleted)
-        deleted = 1000
-        while deleted > 0:
-            if stop_check is not None and stop_check():
-                break
-            deleted = self.execute_cypher('''MATCH (n:{}) with n LIMIT 5000 DELETE n return count(n) as deleted_count ''' .format(self.cypher_safe_name)).evaluate()
+            deleted = self.execute_cypher('''MATCH (n:{}) with n LIMIT 5000 DETACH DELETE n return count(n) as deleted_count '''.format(self.cypher_safe_name)).evaluate()
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
