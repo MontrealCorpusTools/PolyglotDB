@@ -261,14 +261,18 @@ class BaseContext(object):
             number = self.execute_cypher('''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
             call_back(0, number)
         num_deleted = 0
-        deleted = 1000
-        while deleted > 0:
-            if stop_check is not None and stop_check():
-                break
-            deleted = self.execute_cypher('''MATCH (n:{}) with n LIMIT 5000 DETACH DELETE n return count(n) as deleted_count '''.format(self.cypher_safe_name)).evaluate()
-            num_deleted += deleted
-            if call_back is not None:
-                call_back(num_deleted)
+        for a in self.hierarchy.annotation_types:
+            deleted = 1000
+            while deleted > 0:
+                if stop_check is not None and stop_check():
+                    break
+                deleted = self.execute_cypher('''MATCH (n:{}:{}_type) with n LIMIT 5000 DETACH DELETE n return count(n) as deleted_count '''.format(self.cypher_safe_name, a)).evaluate()
+                deleted = self.execute_cypher('''MATCH (n:{}:{}) with n LIMIT 5000 DETACH DELETE n return count(n) as deleted_count '''.format(self.cypher_safe_name, a)).evaluate()
+                num_deleted += deleted
+                if call_back is not None:
+                    call_back(num_deleted)
+        self.execute_cypher('''MATCH (n:{}:Speaker) DETACH DELETE n '''.format(self.cypher_safe_name))
+        self.execute_cypher('''MATCH (n:{}:Discourse) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.reset_hierarchy()
         self.hierarchy = Hierarchy({})
 
