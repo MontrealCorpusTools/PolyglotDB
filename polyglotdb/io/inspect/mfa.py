@@ -6,6 +6,20 @@ from ..types.parsing import *
 from ..parsers import MfaParser
 
 def inspect_mfa(path):
+    """
+    Generate an :class:`~polyglotdb.io.parsers.ilg.MfaParser`
+    for a specified text file for parsing it as a Mfa file
+
+    Parameters
+    ----------
+    path : str
+        Full path to text file
+
+    Returns
+    -------
+    :class:`~polyglotdb.io.parsers.ilg.Mfa`
+        Autodetected parser for Mfa
+    """
 
     annotation_types = [OrthographyTier('words', 'word'),
                             OrthographyTier('phones', 'phone')]

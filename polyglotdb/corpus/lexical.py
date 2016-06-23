@@ -5,6 +5,18 @@ from ..io.importer import lexicon_data_to_csvs, import_lexicon_csvs
 
 class LexicalContext(BaseContext):
     def enrich_lexicon(self, lexicon_data, type_data = None, case_sensitive = False):
+        """
+        adds properties to lexicon, adds properties to hierarchy
+
+        Parameters
+        ----------
+        lexicon_data : dict
+            the data in the lexicon
+        type_data : dict
+            default to None
+        case_sensitive : bool
+            default to False
+        """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(lexicon_data.values())).items()}
         if case_sensitive:

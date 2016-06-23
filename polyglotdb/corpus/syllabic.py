@@ -13,6 +13,15 @@ from ..syllabification.maxonset import split_nonsyllabic_maxonset, split_ons_cod
 
 class SyllabicContext(FeaturedContext):
     def find_onsets(self):
+        """ 
+        Gets syllable onsets
+
+        Returns
+        -------
+        data : dict
+            A dictionary with onset values as keys and frequency values as values
+
+        """
         statement = '''match (w:{word_name}:{corpus_name})
 where (w)<-[:contained_by*]-()-[:is_a]->(:syllabic)
 with w
@@ -37,6 +46,14 @@ return onset, count(onset) as freq'''.format(corpus_name = self.cypher_safe_name
         return data
 
     def find_codas(self):
+        """
+        Gets syllable codas
+
+        Returns
+        -------
+        data : dict
+            A dictionary with coda values as keys and frequency values as values
+        """
         statement = '''match (w:{word_name}:{corpus_name})
 where (w)<-[:contained_by*]-()-[:is_a]->(:syllabic)
 with w
@@ -62,12 +79,22 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         return data
 
     def encode_syllabic_segments(self, phones):
+        """ 
+        Encode a list of phones as 'syllabic'
+            
+        Parameters
+        ----------
+        phones : list
+            A list of vowels and syllabic consonants
+        """
         self.encode_class(phones, 'syllabic')
 
     def encode_number_of_syllables(self):
+        """ Encodes the number of syllables """
         pass
 
     def reset_syllables(self, call_back = None, stop_check = None):
+        """ Resets syllables, removes syllable annotation, removes onset, coda, and nucleus labels """
         if call_back is not None:
             call_back('Resetting syllables...')
             number = self.execute_cypher('''MATCH (n:syllable:%s) return count(*) as number ''' % (self.cypher_safe_name)).evaluate()
@@ -108,6 +135,14 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
             pass
 
     def encode_syllables(self, algorithm = 'probabilistic', call_back = None, stop_check = None):
+        """
+        Encodes syllables to a corpus
+
+        Parameters
+        ----------
+        algorithm : str defaults to 'probabilistic'
+            determines which algorithm will be used to encode syllables
+        """
         self.reset_syllables(call_back, stop_check)
         onsets = self.find_onsets()
         if algorithm == 'probabilistic':

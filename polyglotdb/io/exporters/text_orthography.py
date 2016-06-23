@@ -7,7 +7,7 @@ def export_discourse_spelling(corpus_context, discourse,
 
     Parameters
     ----------
-    corpus_context : CorpusContext
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         Context manager for the corpus
     discourse : str
         Discourse to export

@@ -29,7 +29,7 @@ class GraphQuery(object):
 
     Parameters
     ----------
-    corpus : :class:`polyglotdb.corpus.CorpusContext`
+    corpus : :class:`~polyglotdb.corpus.CorpusContext`
         The corpus to query
     to_find : str
         Name of the annotation type to search for
@@ -68,6 +68,7 @@ class GraphQuery(object):
         self.stop_check = None
 
     def set_pause(self):
+        """ sets pauses in graph"""
         self._set_token['pause'] = True
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
         self._set_token = {}
@@ -82,6 +83,7 @@ class GraphQuery(object):
 
     @property
     def annotation_set(self):
+        """ Returns annotation set """
         annotation_set = set()
         for c in self._criterion:
             annotation_set.update(c.annotations)
@@ -98,7 +100,7 @@ class GraphQuery(object):
         """
         Add one or more additional columns to the results.
 
-        Columns should be :class:`polyglotdb.graph.attributes.Attribute` objects.
+        Columns should be :class:`~polyglotdb.graph.attributes.Attribute` objects.
         """
         column_set = set(self._columns) & set(self._acoustic_columns) & set(self._hidden_columns)
         for c in args:
@@ -464,6 +466,11 @@ class GraphQuery(object):
     def all(self):
         """
         Returns all results for the query
+
+        Returns
+        -------
+        res_list : list
+            a list of results from the query
         """
         if self._acoustic_columns:
             for a in self._acoustic_columns:
@@ -586,6 +593,7 @@ class GraphQuery(object):
         self._set_token_labels = []
 
     def remove_type_labels(self, *args):
+        """ removes all type labels"""
         self._remove_type_labels.extend(args)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
@@ -593,6 +601,7 @@ class GraphQuery(object):
         self._remove_type_labels = []
 
     def remove_token_labels(self, *args):
+        """ removes all token labels"""
         self._remove_token_labels.extend(args)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
@@ -612,10 +621,14 @@ class GraphQuery(object):
         return self
 
     def limit(self, limit):
+        """ sets object limit to parameter limit """
         self._limit = limit
         return self
 
     def cache(self, *args):
+        """
+
+        """
         self._cache.extend(args)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
@@ -632,6 +645,13 @@ class SplitQuery(GraphQuery):
     splitter = ''
 
     def base_query(self):
+        """ sets up base query
+
+        Returns
+        -------
+        q : :class: `~polyglotdb.graph.GraphQuery`
+            the base query
+        """
         q = GraphQuery(self.corpus, self.to_find)
         for p in q._parameters:
             if isinstance(getattr(self, p), list):
@@ -642,6 +662,7 @@ class SplitQuery(GraphQuery):
         return q
 
     def split_queries(self):
+        """ splits a query into multiple queries """
         attribute_name = self.splitter[:-1] #remove 's', fixme maybe?
         splitter_annotation = getattr(self.to_find, attribute_name)
         splitter_attribute = getattr(splitter_annotation, 'name')
@@ -674,12 +695,14 @@ class SplitQuery(GraphQuery):
             yield base
 
     def set_pause(self):
+        """ sets a pause in queries """
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
                 return
             q.set_pause()
 
     def all(self):
+        """ returns all results from a query """
         results = None
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
@@ -692,6 +715,7 @@ class SplitQuery(GraphQuery):
         return results
 
     def delete(self):
+        """ deletes the query """
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
                 return
@@ -704,12 +728,14 @@ class SplitQuery(GraphQuery):
             q.cache(*args)
 
     def set_type(self, *args, **kwargs):
+        """ sets the query type"""
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
                 return
             q.set_type(*args, **kwargs)
 
     def set_token(self, *args, **kwargs):
+        """ sets the query token """
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
                 return

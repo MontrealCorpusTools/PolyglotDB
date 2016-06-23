@@ -39,6 +39,19 @@ class BaseParser(object):
         self.call_back = call_back
 
     def match_extension(self, filename):
+        """
+        Ensures that filename ends with acceptable extension
+
+        Parameters
+        ----------
+        filename : str
+            the filename of the file being checked
+
+        Returns
+        -------
+        boolean
+            True if filename is acceptable extension, false otherwise
+        """
         for x in self._extensions:
             if filename.lower().endswith(x):
                 break
@@ -168,6 +181,21 @@ class BaseParser(object):
         return annotation_types
 
     def parse_types(self, path, corpus_name):
+        """
+        Parses types out of a corpus 
+
+        Parameters 
+        ----------
+        path : str
+            a path to the corpus
+        corpus_name : str
+            name of the corpus
+
+        Returns
+        -------
+        data.types : list
+            a list of data types
+        """
         data = self.parse_discourse(path, types_only = True)
         return data.types(corpus_name)
 

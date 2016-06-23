@@ -53,8 +53,8 @@ class BuckeyeParser(BaseParser):
 
         Returns
         -------
-        DiscourseData
-            Parsed data from the file
+        :class:`~polyglotdb.io.discoursedata.DiscourseData`
+            Parsed data
         '''
         self.make_transcription = False
         name, ext = os.path.splitext(os.path.split(word_path)[1])
@@ -134,6 +134,20 @@ class BuckeyeParser(BaseParser):
 
 
 def read_phones(path):
+    """
+    From a buckeye file, reads the phone lines, appends label, begin, and end to output
+    
+    Parameters
+    ----------
+    path : str
+        path to file
+    
+    Returns
+    -------
+    output : list of tuples
+        each tuple is label, begin, end for a phone
+
+    """
     output = []
     with open(path,'r') as file_handle:
         header_pattern = re.compile("#\r{0,1}\n")
@@ -155,6 +169,20 @@ def read_phones(path):
     return output
 
 def read_words(path):
+    """
+    From a buckeye file, reads the word info
+    
+    Parameters
+    ----------
+    path : str
+        path to file
+    
+    Returns
+    -------
+    output : list of dicts
+        each dict has spelling, begin, end, transcription, surface_transcription, category
+
+    """
     output = []
     misparsed_lines = []
     with open(path,'r') as file_handle:
@@ -193,6 +221,7 @@ def read_words(path):
     return output
 
 def phone_match(one,two):
+    """ matches phone one to phone two, returns true if phone one is phone two or is part of phone two"""
     if one != two and one not in two:
         return False
     return True
