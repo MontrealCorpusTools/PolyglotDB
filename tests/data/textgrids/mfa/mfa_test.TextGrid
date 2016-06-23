@@ -1,0 +1,128 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 5 
+tiers? <exists> 
+size = 2 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "phones" 
+        xmin = 0 
+        xmax = 5 
+        intervals: size = 21 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.08225269466768025 
+            text = "AE" 
+        intervals [2]:
+            xmin = 0.08225269466768025 
+            xmax = 0.14677708921589916 
+            text = "S" 
+        intervals [3]:
+            xmin = 0.14677708921589916 
+            xmax = 0.2024776349370112 
+            text = "P" 
+        intervals [4]:
+            xmin = 0.2024776349370112 
+            xmax = 0.2874071798979148 
+            text = "ER" 
+        intervals [5]:
+            xmin = 0.2874071798979148 
+            xmax = 0.4065291390638574 
+            text = "IH" 
+        intervals [6]:
+            xmin = 0.4065291390638574 
+            xmax = 0.5359299313286737 
+            text = "N" 
+        intervals [7]:
+            xmin = 0.5359299313286737 
+            xmax = 0.7277498521584862 
+            text = "" 
+        intervals [8]:
+            xmin = 0.7277498521584862 
+            xmax = 0.8227025752063423 
+            text = "P" 
+        intervals [9]:
+            xmin = 0.8227025752063423 
+            xmax = 0.9230738556146828 
+            text = "L" 
+        intervals [10]:
+            xmin = 0.9230738556146828 
+            xmax = 1.0471592297458732 
+            text = "AE" 
+        intervals [11]:
+            xmin = 1.0471592297458732 
+            xmax = 1.2057865782471762 
+            text = "N" 
+        intervals [12]:
+            xmin = 1.2057865782471762 
+            xmax = 1.3988082713401389 
+            text = "EH" 
+        intervals [13]:
+            xmin = 1.3988082713401389 
+            xmax = 1.5463606347329 
+            text = "Y" 
+        intervals [14]:
+            xmin = 1.5463606347329 
+            xmax = 2.9389864791485665 
+            text = "" 
+        intervals [15]:
+            xmin = 2.9389864791485665 
+            xmax = 3.4038857361685495 
+            text = "JH" 
+        intervals [16]:
+            xmin = 3.4038857361685495 
+            xmax = 3.594149976503041 
+            text = "ER" 
+        intervals [17]:
+            xmin = 3.594149976503041 
+            xmax = 3.8572109696611645 
+            text = "AE" 
+        intervals [18]:
+            xmin = 3.8572109696611645 
+            xmax = 4.023007695334491 
+            text = "S" 
+        intervals [19]:
+            xmin = 4.023007695334491 
+            xmax = 4.186800389187662 
+            text = "IH" 
+        intervals [20]:
+            xmin = 4.186800389187662 
+            xmax = 4.29344727410947 
+            text = "K" 
+        intervals [21]:
+            xmin = 4.29344727410947 
+            xmax = 5 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "words" 
+        xmin = 0 
+        xmax = 5 
+        intervals: size = 6 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.5359299313286737 
+            text = "ASPIRIN" 
+        intervals [2]:
+            xmin = 0.5359299313286737 
+            xmax = 0.7277498521584862 
+            text = "" 
+        intervals [3]:
+            xmin = 0.7277498521584862 
+            xmax = 1.5463606347329 
+            text = "PLANET" 
+        intervals [4]:
+            xmin = 1.5463606347329 
+            xmax = 2.9389864791485665 
+            text = "" 
+        intervals [5]:
+            xmin = 2.9389864791485665 
+            xmax = 4.29344727410947 
+            text = "JURASSIC" 
+        intervals [6]:
+            xmin = 4.29344727410947 
+            xmax = 5 
+            text = "" 
