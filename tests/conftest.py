@@ -23,7 +23,7 @@ def pytest_addoption(parser):
 def test_dir():
     if not os.path.exists('tests/data/generated'):
         os.makedirs('tests/data/generated')
-    return os.path.abspath('tests/data')
+    return os.path.abspath('data') #was tests/data
 
 @pytest.fixture(scope='session')
 def buckeye_test_dir(test_dir):
@@ -400,3 +400,14 @@ def fave_corpus_config(graph_db, fave_test_dir):
         c.load(parser, fave_test_dir)
     return config
 
+@pytest.fixture(scope='session')
+def summarized_config(graph_db, textgrid_test_dir):
+    config = CorpusConfig('summarized', **graph_db)
+    
+    acoustic_path = os.path.join(textgrid_test_dir, 'summarized_config.TextGrid')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_textgrid(acoustic_path)
+        c.load(parser, acoustic_path)
+    
+    return config
