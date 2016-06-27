@@ -10,7 +10,16 @@ from ..helper import find_wav_path
 
 from .base import DiscourseData
 
+from .speaker import DirectorySpeakerParser
+
 class MfaParser(TextgridParser):
+    def __init__(self, annotation_types, hierarchy, make_transcription = True,
+                    make_label = False,
+                    stop_check = None, call_back = None):
+        super(MfaParser, self).__init__(annotation_types, hierarchy, make_transcription,
+                    make_label, stop_check, call_back)
+        self.speaker_parser = DirectorySpeakerParser()
+
     def _is_valid(self, tg):
         found_word = False
         found_phone = False

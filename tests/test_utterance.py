@@ -112,6 +112,24 @@ def test_utterance_nosilence(graph_db, textgrid_test_dir):
         assert(len(results) == 1)
         assert(results[0]['following_word'] is None)
 
+def test_utterance_oneword(graph_db, textgrid_test_dir):
+    tg_path = os.path.join(textgrid_test_dir, 'one_word_no_silence.TextGrid')
+    with CorpusContext('one_word_no_silence', **graph_db) as g:
+        g.reset()
+        parser = inspect_textgrid(tg_path)
+        parser.annotation_types[0].linguistic_type = 'phone'
+        parser.annotation_types[1].linguistic_type = 'word'
+        parser.hierarchy['word'] = None
+        parser.hierarchy['phone'] = 'word'
+        g.load(parser, tg_path)
+
+        g.encode_utterances()
+
+        q = g.query_graph(g.utterance)
+
+        res = q.all()
+
+        assert(res[0].begin == 0)
 
 def test_encode_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
