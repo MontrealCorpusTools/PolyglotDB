@@ -55,9 +55,9 @@ class ImportContext(BaseContext):
 
         self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
-    def finalize_import(self, data):
+    def finalize_import(self, data, call_back = None, stop_check = None):
         """ generates hierarchy and saves variables"""
-        import_csvs(self, data)
+        import_csvs(self, data, call_back, stop_check)
         self.encode_hierarchy()
         self.hierarchy = self.generate_hierarchy()
         self.save_variables()
@@ -220,7 +220,7 @@ class ImportContext(BaseContext):
                 could_not_parse.append(path)
                 continue
             self.add_discourse(data)
-        self.finalize_import(data)
+        self.finalize_import(data, call_back, parser.stop_check)
         parser.call_back = call_back
         return could_not_parse
 

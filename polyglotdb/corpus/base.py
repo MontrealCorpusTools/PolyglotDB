@@ -178,18 +178,17 @@ class BaseContext(object):
         names : list
             all the speaker names
         """
-        q = self.sql_session.query(Speaker).all()
+        q = self.sql_session.query(Speaker).order_by(Speaker.name).all()
         if not len(q):
             res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.cypher_safe_name))
 
             speakers = []
             for s in res:
-                print(s)
                 instance = Speaker(name = s['speaker'])
                 self.sql_session.add(instance)
                 speakers.append(s['speaker'])
             self.sql_session.flush()
-            return speakers
+            return sorted(speakers)
         return [x.name for x in q]
 
     def __enter__(self):

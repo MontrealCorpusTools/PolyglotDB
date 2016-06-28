@@ -63,7 +63,7 @@ class UtteranceCorpus(BaseContext):
                 return
             if call_back is not None:
                 call_back(i)
-                call_back('Encoding utterances for discourse {} of {} ({})...'.format(i, len(discourses), d))
+                call_back('Parsing utterances for discourse {} of {} ({})...'.format(i, len(discourses), d))
             utt_data = self.get_utterance_ids(d, min_pause_length, min_utterance_length)
             speaker_data = {}
             for s, utterances in utt_data.items():
@@ -77,7 +77,9 @@ class UtteranceCorpus(BaseContext):
                     speaker_data[s].append(row)
                     prev_id = cur_id
             utterance_data_to_csvs(self, speaker_data)
-        import_utterance_csv(self)
+        import_utterance_csv(self, call_back, stop_check)
+        if stop_check is not None and stop_check():
+            return
         if call_back is not None:
             call_back(i + 1)
             call_back('Finished!')
@@ -193,7 +195,6 @@ class UtteranceCorpus(BaseContext):
                 else:
                     utterances[-1] = (utterances[-1][0], end_words[1]['id'])
             speaker_utts[s] = utterances
-        print(speaker_utts)
         return speaker_utts
 
     def get_utterances(self, discourse,

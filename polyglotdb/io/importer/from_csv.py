@@ -43,7 +43,6 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
                     'type_property_string': type_prop_string,
                     'corpus_name': corpus_context.cypher_safe_name}
         statement = type_import_statement.format(**kwargs)
-        print(statement)
         log.info('Loading {} types...'.format(at))
         begin = time.time()
         try:
@@ -63,7 +62,7 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         log.debug('{} type loading took: {} seconds.'.format(at, time.time() - begin))
 
 
-def import_csvs(corpus_context, data):
+def import_csvs(corpus_context, data, call_back = None, stop_check = None):
     """
     Loads data from a csv file
 
@@ -82,8 +81,21 @@ def import_csvs(corpus_context, data):
     prop_temp = '''{name}: csvLine.{name}'''
 
     directory = corpus_context.config.temporary_directory('csv')
-    for s in corpus_context.speakers:
-        for at in data.highest_to_lowest():
+    speakers = corpus_context.speakers
+    annotation_types = data.highest_to_lowest()
+    if call_back is not None:
+        call_back('Importing data...')
+        call_back(0,len(speakers) * len(annotation_types))
+        cur = 0
+    for i, s in enumerate(speakers):
+        if call_back is not None:
+            call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), s))
+        for at in annotation_types:
+            if stop_check is not None and stop_check():
+                return
+            if call_back is not None:
+                call_back(cur)
+                cur += 1
             path = os.path.join(directory, '{}_{}.csv'.format(s, at))
             rel_path = 'file:///{}'.format(make_path_safe(path))
 
@@ -139,7 +151,6 @@ def import_csvs(corpus_context, data):
                             'token_property_string': token_prop_string,
                             'corpus_name': corpus_context.cypher_safe_name}
             statement = rel_import_statement.format(**kwargs)
-            print(statement)
             log.info('Loading {} relationships...'.format(at))
             begin = time.time()
             try:
@@ -371,7 +382,7 @@ def import_discourse_csvs(corpus_context, typed_data):
         corpus_context.execute_cypher('CREATE INDEX ON :Discourse(%s)' % h)
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
-def import_utterance_csv(corpus_context):
+def import_utterance_csv(corpus_context, call_back = None, stop_check = None):
     """
     Import an utterance from csv file
 
@@ -382,11 +393,23 @@ def import_utterance_csv(corpus_context):
     discourse : str
         the discourse the utterance is in
     """
-    for s in corpus_context.speakers:
+    speakers = corpus_context.speakers
+    if call_back is not None:
+        call_back('Importing data...')
+        call_back(0,len(speakers))
+    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
+    corpus_context.execute_cypher('CREATE INDEX ON :utterance(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :utterance(end)')
+    for i, s in enumerate(speakers):
+        if stop_check is not None and stop_check():
+            return
+        if call_back is not None:
+            call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), s))
+            call_back(i)
+
         path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(s))
         csv_path = 'file:///{}'.format(make_path_safe(path))
 
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
         statement = '''CYPHER planner=rule USING PERIODIC COMMIT 1000
                 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
                 MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus})
@@ -408,14 +431,10 @@ def import_utterance_csv(corpus_context):
         statement = statement.format(path = csv_path,
                     corpus = corpus_context.cypher_safe_name,
                         word_type = corpus_context.word_name)
-        #print(statement)
-        #error
         corpus_context.execute_cypher(statement)
         #os.remove(path) # FIXME Neo4j 2.3 does not release files
-    corpus_context.execute_cypher('CREATE INDEX ON :utterance(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :utterance(end)')
 
-def import_syllable_csv(corpus_context):
+def import_syllable_csv(corpus_context, call_back = None, stop_check = None):
     """
     Import a syllable from csv file
 
@@ -427,9 +446,23 @@ def import_syllable_csv(corpus_context):
         the identifier of the file
     """
 
+    speakers = corpus_context.speakers
+    if call_back is not None:
+        call_back('Importing syllables...')
+        call_back(0,len(speakers))
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
-    for s in corpus_context.speakers:
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
+    for i, s in enumerate(speakers):
+        if stop_check is not None and stop_check():
+            return
+        if call_back is not None:
+            call_back('Importing syllables for speaker {} of {} ({})...'.format(i, len(speakers), s))
+            call_back(i)
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_syllable.csv'.format(s))
         csv_path = 'file:///{}'.format(make_path_safe(path))
@@ -493,15 +526,9 @@ def import_syllable_csv(corpus_context):
                     corpus = corpus_context.cypher_safe_name,
                     word_name = corpus_context.word_name,
                         phone_name = corpus_context.phone_name)
-        print(statement)
         corpus_context.execute_cypher(statement)
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
-def import_nonsyl_csv(corpus_context):
+def import_nonsyl_csv(corpus_context, call_back = None, stop_check = None):
     """
     Import a nonsyllable from csv file
 
@@ -512,9 +539,23 @@ def import_nonsyl_csv(corpus_context):
     split_name : str
         the identifier of the file
     """
+    speakers = corpus_context.speakers
+    if call_back is not None:
+        call_back('Importing degenerate syllables...')
+        call_back(0,len(speakers))
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
-    for s in corpus_context.speakers:
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
+    for i, s in enumerate(speakers):
+        if stop_check is not None and stop_check():
+            return
+        if call_back is not None:
+            call_back('Importing degenerate syllables for speaker {} of {} ({})...'.format(i, len(speakers), s))
+            call_back(i)
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_nonsyl.csv'.format(s))
         csv_path = 'file:///{}'.format(make_path_safe(path))
@@ -569,11 +610,6 @@ def import_nonsyl_csv(corpus_context):
                         phone_name = corpus_context.phone_name
                     )
         corpus_context.execute_cypher(statement)
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
 
 def import_subannotation_csv(corpus_context, type, annotated_type, props):
     """
