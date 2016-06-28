@@ -73,7 +73,7 @@ class QueryResults(object):
             self._to_find = None
             self._to_find_type = None
             self._acoustic_columns = query._acoustic_columns
-            self.columns = [x.output_alias for x in query._columns]
+            self.columns = [x.output_alias.replace('`','') for x in query._columns]
             for x in query._acoustic_columns:
                 self.columns.extend(x.output_columns)
         else:

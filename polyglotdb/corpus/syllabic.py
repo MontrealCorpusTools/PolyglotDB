@@ -4,7 +4,8 @@ from uuid import uuid1
 from .featured import FeaturedContext
 
 from ..io.importer import (syllables_data_to_csvs, import_syllable_csv,
-                            nonsyls_data_to_csvs, import_nonsyl_csv)
+                            nonsyls_data_to_csvs, import_nonsyl_csv,
+                            create_syllabic_csvs, create_nonsyllabic_csvs)
 
 from ..io.helper import make_type_id
 
@@ -13,7 +14,7 @@ from ..syllabification.maxonset import split_nonsyllabic_maxonset, split_ons_cod
 
 class SyllabicContext(FeaturedContext):
     def find_onsets(self):
-        """ 
+        """
         Gets syllable onsets
 
         Returns
@@ -79,9 +80,9 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         return data
 
     def encode_syllabic_segments(self, phones):
-        """ 
+        """
         Encode a list of phones as 'syllabic'
-            
+
         Parameters
         ----------
         phones : list
@@ -161,6 +162,9 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         word_type = getattr(self, self.word_name)
         phone_type = getattr(word_type, self.phone_name)
 
+        create_syllabic_csvs(self)
+        create_nonsyllabic_csvs(self)
+
         splits = self.discourses
         process_string = 'Processing discourse {} of {} ({})...'
         if call_back is not None:
@@ -184,16 +188,22 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
             q = q.columns(word_type.id.column_name('id'), phone_type.id.column_name('phone_id'),
                         phone_type.label.column_name('phones'),
                         phone_type.begin.column_name('begins'),
-                        phone_type.end.column_name('ends'))
+                        phone_type.end.column_name('ends'),
+                        word_type.speaker.name.column_name('speaker'))
             results = q.all()
-            boundaries = []
-            non_syls = []
+            speaker_boundaries = {}
+            speaker_non_syls = {}
             prev_id = None
             for w in results:
                 phones = w['phones']
                 phone_ids = w['phone_id']
                 phone_begins = w['begins']
                 phone_ends = w['ends']
+                speaker = w['speaker']
+                if speaker not in speaker_boundaries:
+                    speaker_boundaries[speaker] = []
+                if speaker not in speaker_non_syls:
+                    speaker_non_syls[speaker] = []
                 vow_inds = [i for i,x in enumerate(phones) if x in syllabics]
                 if len(vow_inds) == 0:
                     cur_id = uuid1()
@@ -210,7 +220,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                             'label': label,
                             'type_id': make_type_id([label], self.corpus_name),
                             'end': phone_ends[-1]}
-                    non_syls.append(row)
+                    speaker_non_syls[speaker].append(row)
                     prev_id = cur_id
                     continue
                 for j, i in enumerate(vow_inds):
@@ -267,11 +277,11 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                         'label': label,
                         'type_id': make_type_id([label], self.corpus_name),
                             'coda_id':cur_coda_id, 'begin': begin, 'end': end}
-                    boundaries.append(row)
+                    speaker_boundaries[speaker].append(row)
                     prev_id = cur_id
-            syllables_data_to_csvs(self, boundaries, s)
-            import_syllable_csv(self, s)
-            nonsyls_data_to_csvs(self, non_syls, s)
-            import_nonsyl_csv(self, s)
+            syllables_data_to_csvs(self, speaker_boundaries)
+            nonsyls_data_to_csvs(self, speaker_non_syls)
+        import_syllable_csv(self)
+        import_nonsyl_csv(self)
 
-            self.execute_cypher('MATCH (n:{}:syllable) where n.prev_id is not Null REMOVE n.prev_id'.format(self.cypher_safe_name))
+        self.execute_cypher('MATCH (n:{}:syllable) where n.prev_id is not Null REMOVE n.prev_id'.format(self.cypher_safe_name))

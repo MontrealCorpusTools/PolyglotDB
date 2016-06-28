@@ -67,6 +67,18 @@ class DiscourseData(object):
         return ats
 
     @property
+    def token_headers(self):
+        headers = {}
+        for x in self.annotation_types:
+            token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse']
+            token_header += sorted(self[x].token_property_keys)
+            supertype = self[x].supertype
+            if supertype is not None:
+                token_header.append(supertype)
+            headers[x] = token_header
+        return headers
+
+    @property
     def speakers(self):
         """
         Returns speakers from a discourse
@@ -94,7 +106,7 @@ class DiscourseData(object):
         return ((x, self.data[x]) for x in self.keys())
 
     def types(self, corpus_name):
-        """ Returns tuple of types and type headers 
+        """ Returns tuple of types and type headers
 
         Parameters
         ----------

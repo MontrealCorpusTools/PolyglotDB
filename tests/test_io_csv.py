@@ -13,7 +13,6 @@ from polyglotdb.io.helper import guess_type
 from polyglotdb.exceptions import DelimiterError
 from polyglotdb import CorpusContext
 
-@pytest.mark.xfail
 def test_to_csv(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export.csv')
     with CorpusContext('acoustic', **graph_db) as g:
@@ -26,6 +25,30 @@ def test_to_csv(graph_db, export_test_dir):
 
     #ignore ids
     expected = [['label','duration','begin'],
+                ['aa','0.0783100000000001','2.70424'],
+                ['aa','0.12199999999999989','9.32077'],
+                ['aa','0.03981000000000279','24.56029']]
+    with open(export_path, 'r') as f:
+        i = 0
+        for line in f.readlines():
+            line = line.strip()
+            if line == '':
+                continue
+            line = line.split(',')
+            print(line)
+            assert(line == expected[i])
+            i += 1
+
+    with CorpusContext('acoustic', **graph_db) as g:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        q = q.columns(g.phone.label,
+                    g.phone.duration,
+                    g.phone.begin)
+        q = q.order_by(g.phone.begin)
+        q.to_csv(export_path)
+
+    #ignore ids
+    expected = [['node_phone_label','node_phone_duration','node_phone_begin'],
                 ['aa','0.0783100000000001','2.70424'],
                 ['aa','0.12199999999999989','9.32077'],
                 ['aa','0.03981000000000279','24.56029']]
