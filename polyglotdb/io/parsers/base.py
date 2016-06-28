@@ -180,11 +180,11 @@ class BaseParser(object):
                         annotation_types[k].token_property_keys.add('label')
         return annotation_types
 
-    def parse_types(self, path, corpus_name):
+    def parse_information(self, path, corpus_name):
         """
-        Parses types out of a corpus 
+        Parses types out of a corpus
 
-        Parameters 
+        Parameters
         ----------
         path : str
             a path to the corpus
@@ -197,7 +197,12 @@ class BaseParser(object):
             a list of data types
         """
         data = self.parse_discourse(path, types_only = True)
-        return data.types(corpus_name)
+        return_dict = {}
+        return_dict['types'], return_dict['type_headers'] = data.types(corpus_name)
+        return_dict['token_headers'] = data.token_headers
+        return_dict['subannotations'] = data.hierarchy.subannotations
+        return_dict['speakers'] = data.speakers
+        return return_dict
 
     def parse_discourse(self, name, types_only = False):
         '''

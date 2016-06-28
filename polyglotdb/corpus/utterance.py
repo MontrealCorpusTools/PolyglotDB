@@ -3,7 +3,7 @@ from uuid import uuid1
 
 from .base import BaseContext
 
-from ..io.importer import utterance_data_to_csvs, import_utterance_csv
+from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs
 from ..graph.func import Max, Min
 from ..graph.query import DiscourseGraphQuery
 
@@ -56,24 +56,28 @@ class UtteranceCorpus(BaseContext):
         discourses = self.discourses
         if call_back is not None:
             call_back(0, len(discourses))
+        create_utterance_csvs(self)
+
         for i, d in enumerate(discourses):
             if stop_check is not None and stop_check():
                 return
             if call_back is not None:
                 call_back(i)
                 call_back('Encoding utterances for discourse {} of {} ({})...'.format(i, len(discourses), d))
-            utterances = self.get_utterance_ids(d, min_pause_length, min_utterance_length)
-            data = []
-            prev_id = None
-            for u in utterances:
-                cur_id = uuid1()
-                row = {'id': cur_id, 'prev_id': prev_id,
-                    'begin_word_id': u[0],
-                    'end_word_id':u[1]}
-                data.append(row)
-                prev_id = cur_id
-            utterance_data_to_csvs(self, data, d)
-            import_utterance_csv(self, d)
+            utt_data = self.get_utterance_ids(d, min_pause_length, min_utterance_length)
+            speaker_data = {}
+            for s, utterances in utt_data.items():
+                speaker_data[s] = []
+                prev_id = None
+                for u in utterances:
+                    cur_id = uuid1()
+                    row = {'id': cur_id, 'prev_id': prev_id,
+                        'begin_word_id': u[0],
+                        'end_word_id':u[1]}
+                    speaker_data[s].append(row)
+                    prev_id = cur_id
+            utterance_data_to_csvs(self, speaker_data)
+        import_utterance_csv(self)
         if call_back is not None:
             call_back(i + 1)
             call_back('Finished!')
@@ -104,9 +108,9 @@ class UtteranceCorpus(BaseContext):
         d = self.sql_session.query(Discourse).join(SpeaksIn).filter(Discourse.name == discourse).first()
         speakers = [x.speaker.name for x in set(d.speakers)]
         word_type = self.word_name
-        utterances = []
+        speaker_utts = {}
         for s in speakers:
-            print(s)
+            utterances = []
             statement = '''MATCH p = (prev_node_word:{word_type}:speech:{corpus})-[:precedes_pause*1..]->(foll_node_word:{word_type}:speech:{corpus}),
             (prev_node_word)-[:spoken_in]->(d:Discourse:{corpus}),
             (prev_node_word)-[:spoken_by]->(s:Speaker:{corpus})
@@ -149,11 +153,14 @@ class UtteranceCorpus(BaseContext):
                         ind = 0
                     else:
                         ind = 1
-                    return [(begin_id, end_words[ind]['id'])]
+                    speaker_utts[s] = [(begin_id, end_words[ind]['id'])]
+                    continue
                 if results[0]['begin'] == 0:
-                    return [(results[0]['end_id'], end_words[1]['id'])]
+                    speaker_utts[s] = [(results[0]['end_id'], end_words[1]['id'])]
+                    continue
                 if results[0]['end'] == end_words[1]['end']:
-                    return [(begin_id, end_words[1]['end_id'])]
+                    speaker_utts[s] = [(begin_id, end_words[1]['end_id'])]
+                    continue
 
             if results[0]['begin'] != 0:
                 current = 0
@@ -185,7 +192,9 @@ class UtteranceCorpus(BaseContext):
                     utterances.append((current_id, end_words[1]['id']))
                 else:
                     utterances[-1] = (utterances[-1][0], end_words[1]['id'])
-        return utterances
+            speaker_utts[s] = utterances
+        print(speaker_utts)
+        return speaker_utts
 
     def get_utterances(self, discourse,
                 min_pause_length = 0.5, min_utterance_length = 0):
@@ -340,7 +349,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
         self.reset_property(self.word_name, 'position_in_utterance')
 
     def encode_speech_rate(self, subset_label, call_back = None, stop_check = None):
-        """ 
+        """
         Encodes speech rate
 
         Parameters

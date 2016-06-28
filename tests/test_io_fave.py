@@ -19,6 +19,7 @@ def test_load_fave(fave_test_dir, graph_db):
         q = q.filter(c.word.speaker.name == 'Gary Salvi')
         q = q.order_by(c.word.begin)
         q = q.columns(c.word.label)
+        print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
 
@@ -26,6 +27,7 @@ def test_load_fave(fave_test_dir, graph_db):
         q = q.filter(c.word.speaker.name == 'Interviewer')
         q = q.order_by(c.word.begin)
         q = q.columns(c.word.label)
+        print(q.cypher())
         results = q.all()
         assert(len(results) == 0)
 
@@ -37,6 +39,7 @@ def test_load_fave(fave_test_dir, graph_db):
         q = q.filter(c.word.speaker.name == 'Gary Salvi')
         q = q.order_by(c.word.begin)
         q = q.columns(c.word.label, c.word.following.label.column_name('following'))
+        print(q.cypher())
         results = q.all()
         assert(len(results) == 1)
         assert(results[0]['following'] == 'JURASSIC')
@@ -44,6 +47,7 @@ def test_load_fave(fave_test_dir, graph_db):
         q = c.query_graph(c.word).filter(c.word.label == 'MURDER')
         q = q.order_by(c.word.begin)
         q = q.columns(c.word.label, c.word.following.label.column_name('following'))
+        print(q.cypher())
         results = q.all()
         assert(len(results) == 2)
         assert(results[0]['following'] == 'KNOW')

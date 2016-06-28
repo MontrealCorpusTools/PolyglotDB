@@ -1,6 +1,7 @@
 import os
 import logging
 import time
+import csv
 from collections import defaultdict
 
 from .base import BaseContext
@@ -31,16 +32,32 @@ class ImportContext(BaseContext):
         data_to_type_csvs(self, types, type_headers)
         import_type_csvs(self, type_headers)
 
-    def initialize_import(self):
+    def initialize_import(self, speakers, token_headers, subannotations = None):
         """ prepares corpus for import of types of annotations """
+        directory = self.config.temporary_directory('csv')
+        for s in speakers:
+            for k, v in token_headers.items():
+                path = os.path.join(directory, '{}_{}.csv'.format(s, k))
+                with open(path, 'w', newline = '', encoding = 'utf8') as f:
+                    w = csv.DictWriter(f, v, delimiter = ',')
+                    w.writeheader()
+            if subannotations is not None:
+                for k,v in subannotations.items():
+                    for sub in v:
+                        path = os.path.join(directory,'{}_{}_{}.csv'.format(s, k, sub))
+                        with open(path, 'w', newline = '', encoding = 'utf8') as f:
+                            header = ['id', 'begin', 'end', 'annotation_id', 'label']
+                            w = csv.DictWriter(f, header, delimiter = ',')
+                            w.writeheader()
         self.execute_cypher('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
         self.execute_cypher('CREATE INDEX ON :Discourse(name)')
         self.execute_cypher('CREATE INDEX ON :Speaker(name)')
 
         self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
 
-    def finalize_import(self):
+    def finalize_import(self, data):
         """ generates hierarchy and saves variables"""
+        import_csvs(self, data)
         self.encode_hierarchy()
         self.hierarchy = self.generate_hierarchy()
         self.save_variables()
@@ -69,7 +86,6 @@ class ImportContext(BaseContext):
                         speaker_name = s)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(self, data)
-        import_csvs(self, data)
         self.update_sql_database(data)
         self.hierarchy.update(data.hierarchy)
         setup_audio(self, data)
@@ -117,15 +133,15 @@ class ImportContext(BaseContext):
 
         """
         data = parser.parse_discourse(path)
-        self.initialize_import()
+        self.initialize_import(data.speakers, data.token_headers, data.hierarchy.subannotations)
         self.add_types(*data.types(self.corpus_name))
         self.add_discourse(data)
-        self.finalize_import()
+        self.finalize_import(data)
         return []
 
     def load_directory(self, parser, path):
         """
-        Checks if it can parse each file in dir, 
+        Checks if it can parse each file in dir,
         initializes, adds types, adds data, and finalizes import
 
         Parameters
@@ -153,13 +169,14 @@ class ImportContext(BaseContext):
                 if not parser.match_extension(filename):
                     continue
                 file_tuples.append((root, filename))
-        self.initialize_import()
         if call_back is not None:
             call_back('Parsing types...')
             call_back(0,len(file_tuples))
             cur = 0
+        speakers = set()
         types = defaultdict(set)
         type_headers = None
+        token_headers = None
         for i, t in enumerate(file_tuples):
             if parser.stop_check is not None and parser.stop_check():
                 return
@@ -169,15 +186,18 @@ class ImportContext(BaseContext):
             root, filename = t
             path = os.path.join(root,filename)
             try:
-                discourse_types, headers = parser.parse_types(path, self.corpus_name)
+                information = parser.parse_information(path, self.corpus_name)
+                speakers.update(information['speakers'])
+                type_headers = information['type_headers']
+                token_headers = information['token_headers']
+                subannotations = information['subannotations']
             except ParseError:
                 continue
-            if type_headers is None:
-                type_headers = headers
-            for k, v in discourse_types.items():
+            for k, v in information['types'].items():
                 types[k].update(v)
         if call_back is not None:
             call_back('Importing types...')
+        self.initialize_import(speakers, token_headers, subannotations)
         self.add_types(types, type_headers)
 
         if call_back is not None:
@@ -200,7 +220,7 @@ class ImportContext(BaseContext):
                 could_not_parse.append(path)
                 continue
             self.add_discourse(data)
-        self.finalize_import()
+        self.finalize_import(data)
         parser.call_back = call_back
         return could_not_parse
 
