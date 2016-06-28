@@ -165,8 +165,8 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         create_syllabic_csvs(self)
         create_nonsyllabic_csvs(self)
 
-        splits = self.discourses
-        process_string = 'Processing discourse {} of {} ({})...'
+        splits = self.speakers
+        process_string = 'Processing speaker {} of {} ({})...'
         if call_back is not None:
             call_back(0, len(splits))
 
@@ -183,27 +183,21 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                 call_back(i)
                 call_back(process_string.format(i, len(splits), s))
             q = self.query_graph(word_type)
-            q = q.filter(word_type.discourse.name == s)
+            q = q.filter(word_type.speaker.name == s)
             q = q.order_by(word_type.begin)
             q = q.columns(word_type.id.column_name('id'), phone_type.id.column_name('phone_id'),
                         phone_type.label.column_name('phones'),
                         phone_type.begin.column_name('begins'),
-                        phone_type.end.column_name('ends'),
-                        word_type.speaker.name.column_name('speaker'))
+                        phone_type.end.column_name('ends'))
             results = q.all()
-            speaker_boundaries = {}
-            speaker_non_syls = {}
+            speaker_boundaries = {s:[]}
+            speaker_non_syls = {s:[]}
             prev_id = None
             for w in results:
                 phones = w['phones']
                 phone_ids = w['phone_id']
                 phone_begins = w['begins']
                 phone_ends = w['ends']
-                speaker = w['speaker']
-                if speaker not in speaker_boundaries:
-                    speaker_boundaries[speaker] = []
-                if speaker not in speaker_non_syls:
-                    speaker_non_syls[speaker] = []
                 vow_inds = [i for i,x in enumerate(phones) if x in syllabics]
                 if len(vow_inds) == 0:
                     cur_id = uuid1()
@@ -220,7 +214,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                             'label': label,
                             'type_id': make_type_id([label], self.corpus_name),
                             'end': phone_ends[-1]}
-                    speaker_non_syls[speaker].append(row)
+                    speaker_non_syls[s].append(row)
                     prev_id = cur_id
                     continue
                 for j, i in enumerate(vow_inds):
@@ -277,11 +271,18 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                         'label': label,
                         'type_id': make_type_id([label], self.corpus_name),
                             'coda_id':cur_coda_id, 'begin': begin, 'end': end}
-                    speaker_boundaries[speaker].append(row)
+                    speaker_boundaries[s].append(row)
                     prev_id = cur_id
             syllables_data_to_csvs(self, speaker_boundaries)
             nonsyls_data_to_csvs(self, speaker_non_syls)
-        import_syllable_csv(self)
-        import_nonsyl_csv(self)
+        import_syllable_csv(self, call_back, stop_check)
+        import_nonsyl_csv(self, call_back, stop_check)
+        if stop_check is not None and stop_check():
+            return
 
+        if call_back is not None:
+            call_back('Cleaning up...')
         self.execute_cypher('MATCH (n:{}:syllable) where n.prev_id is not Null REMOVE n.prev_id'.format(self.cypher_safe_name))
+        if call_back is not None:
+            call_back('Finished!')
+            call_back(1, 1)
