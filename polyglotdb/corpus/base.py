@@ -261,7 +261,7 @@ class BaseContext(object):
         where s.name = {{speaker}}
         with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count'''
 
-        delete_type_statement = '''ATCH (n:{corpus}:{anno}_type)
+        delete_type_statement = '''MATCH (n:{corpus}:{anno}_type)
         with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count'''
 
         if call_back is not None:
