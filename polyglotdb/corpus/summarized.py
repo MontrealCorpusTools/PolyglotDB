@@ -1,7 +1,7 @@
 import math
 from .base import BaseContext
 from polyglotdb.graph.func import *
-
+import re
 
 class SummarizedContext(BaseContext):
 
@@ -15,51 +15,32 @@ class SummarizedContext(BaseContext):
 
     #phones
     """
-    Get the mean duration of a specific phone in a corpus
-
-    Parameters
-    ----------
-    to_find : str
-        the label of the phone 
+    Get the mean duration of each phone in corpus
 
     Returns
     -------
-    result : float
-        the average duration of the phone in the corpus
+    result : list
+        the average duration of each phone in the corpus
     """
-    def phone_mean_duration(self, to_find):
+    def phone_mean_duration(self):
         phone = getattr(self, self.phone_name)
-        q = self.query_graph(phone).filter(phone.label==to_find)
-        result = q.aggregate(Average(phone.duration))
+        q = self.query_graph(phone)#.filter(phone.label==to_find)
+        result = q.group_by(phone.label.column_name('label')).aggregate(Average(phone.duration))
+        #result = q.aggregate(Average(phone.duration))
         return result
 
     """
-    Get the standard deviation of a specific phone in a corpus
-
-    Parameters
-    ----------
-    to_find : str
-        the label of the phone 
+    Get the standard deviation of each phone in a corpus
 
     Returns
     -------
-    result : float
-        the standard deviation of the phone in the corpus
+    result : list
+        the standard deviation of each phone in the corpus
     """
-    def phone_std_dev(self, to_find):
+    def phone_std_dev(self):
         phone = getattr(self, self.phone_name)
-        q = self.query_graph(phone).filter(phone.label==to_find)
+        result = self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Stdev(phone.duration))#.filter(phone.label==to_find)
 
-        allPhones = q.all()
-        avg = q.aggregate(Average(phone.duration))
-        allDiffs = []
-        for phone in allPhones:
-            x = phone.duration
-            diff = x - avg
-            diffSQ = math.pow(diff,2)
-            allDiffs.append(diffSQ)
-        res = sum(allDiffs)/len(allPhones)
-        result = math.sqrt(res)
         return result
 
     """
@@ -72,42 +53,21 @@ class SummarizedContext(BaseContext):
     """
     def all_phone_median(self):
         phone = getattr(self, self.phone_name)
-        q = self.query_graph(phone)
-        phone_durations = []
-        allPhones = q.all()
-        for phone in allPhones:
-            phone_durations.append(phone.duration)
-        phone_durations = sorted(phone_durations)
-        if len(phone_durations) == 0:
-            return 0.0
-        return (phone_durations[math.floor(len(phone_durations)/2)]+phone_durations[math.ceil(len(phone_durations)/2)])/2
+        return self.query_graph(phone).aggregate(Median(phone.duration))
 
 
     """
-    Get the median duration of a specific phone in a corpus
-
-    Parameters
-    ----------
-    to_find : str
-        the label of the phone 
+    Get the median duration of each phone in a corpus
 
     Returns
     -------
-    result : float
-        the median duration of the phone in the corpus
+    result : list
+        the median duration of each phone in the corpus
     """
-    def phone_median(self, to_find):
+    def phone_median(self):
         phone = getattr(self, self.phone_name)
-        q = self.query_graph(phone).filter(phone.label == to_find)
-        phone_durations = []
-        allPhones = q.all()
-        for phone in allPhones:
-            phone_durations.append(phone.duration)
-        phone_durations = sorted(phone_durations)
-        if len(phone_durations) == 0:
-            return 0.0        
-        return (phone_durations[math.floor(len(phone_durations)/2)]+phone_durations[math.ceil(len(phone_durations)/2)])/2
-
+        return self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Median(phone.duration))#.filter(phone.label == to_find)
+      
     """
     Get the mean duration of all words or all phones in the corpus
 
@@ -132,54 +92,40 @@ class SummarizedContext(BaseContext):
             word = getattr(self,self.word_name)
             q = self.query_graph(word)
             result = q.aggregate(Average(word.duration))
+        elif type == 'syllable':
+            syllable = self.syllable
+            q = self.query_graph(syllable)
+            result = q.aggregate(Average(syllable.duration))
         return result
 
     #words
     """
-    Get the mean duration of a specific word
-
-    Parameters
-    ----------
-    to_find : str
-        the label of the word
+    Get the mean duration of each word
 
     Returns
     -------
-    result : float
-        the average duration of the word
+    result : list
+        the average duration of each word
     """
-    def word_mean_duration(self, to_find):
+    def word_mean_duration(self):
         word = getattr(self,self.word_name)
-        q = self.query_graph(word).filter(word.label==to_find)
-        result = q.aggregate(Average(word.duration))        
+        result = self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Average(word.duration))#.filter(word.label==to_find)
+       
         return result
 
 
     """
-    Get the median duration of a specific word
-
-    Parameters
-    ----------
-    to_find : str
-        the label of the word
+    Get the median duration of each word
 
     Returns
     -------
-    loat
-        the median duration of the word
+    list
+        the median duration of each word
     """
-    def word_median(self, to_find):
+    def word_median(self):
         word = getattr(self, self.word_name)
-        q = self.query_graph(word).filter(word.label == to_find)
-        word_durations = []
-        allWords = q.all()
-        for word in allWords:
-            word_durations.append(word.duration)
-        word_durations = sorted(word_durations)
-        if len(word_durations) == 0:
-            return 0.0
-        return (word_durations[math.floor(len(word_durations)/2)]+word_durations[math.ceil(len(word_durations)/2)])/2
-
+        return self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Median(word.duration))#.filter(word.label == to_find)
+      
     """
     Get the median duration of all the words in the corpus
 
@@ -190,94 +136,98 @@ class SummarizedContext(BaseContext):
     """
     def all_word_median(self):
         word = getattr(self, self.word_name)
-        q = self.query_graph(word)
-        word_durations = []
-        allWords = q.all()
-        for word in allWords:
-            word_durations.append(word.duration)
-        word_durations = sorted(word_durations)
-        if len(word_durations) == 0:
-            return 0.0
-        return (word_durations[math.floor(len(word_durations)/2)]+word_durations[math.ceil(len(word_durations)/2)])/2
-
+        return self.query_graph(word).aggregate(Median(word.duration))
 
     """
-    Get the standard deviation of a specific word in a corpus
-
-    Parameters
-    ----------
-    to_find : str
-        the label of the word 
+    Get the standard deviation of each word in a corpus
 
     Returns
     -------
-    result : float
-        the standard deviation of the word in the corpus
+    result : list
+        the standard deviation of each word in the corpus
     """
-    def word_std_dev(self, to_find):
+    def word_std_dev(self):
         word = getattr(self, self.word_name)
-        q = self.query_graph(word).filter(word.label==to_find)
+        return self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Stdev(word.duration))#.filter(word.label==to_find)
+
+
+    """
+    Get the baseline duration of each word in corpus. 
+    Baseline duration is determined by summing the average durations of constituent phones for a word. 
+    If there is no underlying transcription available, the longest duration is considered the baseline.
+
+    Returns
+    -------
+    word_totals : dict
+        a dictionary of words and baseline durations
+    """
+    def baseline_duration(self):
+        buckeye = False
+        if 'buckeye' in self.corpus_name:
+            buckeye = True
+
+        word = getattr(self, self.word_name)
+        q = self.query_graph(word)
 
         allWords = q.all()
-        avg = q.aggregate(Average(word.duration))
-        allDiffs = []
+
+        allPhones = self.phone_mean_duration()
+
+        duration_dict = {}
+        word_totals = {}
+        for tup in allPhones:
+            duration_dict[tup[0]]=tup[1]
+
         for word in allWords:
-            x = word.duration
-            diff = x - avg
-            diffSQ = math.pow(diff,2)
-            allDiffs.append(diffSQ)
-        res = sum(allDiffs)/len(allWords)
-        result = math.sqrt(res)
-        return result
+            total = 0.0
+            if buckeye:
+                for phone in re.split("[\. ]", word.transcription):
+                    try:
+                        total+=duration_dict[phone]
+                    except KeyError:
+                        print("mistake phone %s"%phone)
+            else:
+                for phone in word.phone:
+                    try:
+                        total+=duration_dict[phone.label]
+                    except KeyError:
+                        print("mistake phone %s"%phone.label)         
+            try:         
+                if total > word_totals[word.label]:
+                    print('replacing %s : %f with %s : %f'%(word.label, word_totals[word.label], word.label, total))
+                    word_totals[word.label] = total
+                else:
+                    continue  
+            except KeyError:
+                word_totals[word.label] = total
+        return word_totals
 
-    #syllables
     """
-    Get the mean duration of a specific syllable
-
-    Parameters
-    ----------
-    to_find : str
-        the label of the syllable
+    Get the mean duration of each syllable
 
     Returns
     -------
-    result : float
-        the average duration of the syllable
+    result : list
+        the average duration of each syllable
     """
-    def syllable_mean_duration(self, to_find): 
+    def syllable_mean_duration(self): 
         syllable = self.syllable
-        q = self.query_graph(syllable).filter(syllable.label==to_find)
-        allSyls = q.all()
-        result = q.aggregate(Average(syllable.duration))   
-        return result
+        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Average(syllable.duration))
+
 
 
     """
-    Get median duration of a specific syllable
-    Parameters
-    ----------
-    to_find : str
-        the label of the syllable
-
+    Get median duration of each syllable
+  
     Returns
     -------
-    loat
-        the median duration of the syllable
+    list
+        the median duration of each syllable
     """
-    def syllable_median(self, to_find): #
+    def syllable_median(self): #
         syllable = self.syllable
-        q = self.query_graph(syllable).filter(syllable.label==to_find)
-        allSyls = q.all()
-        syllable_durations = []
-        
-        for syllable in allSyls:
-            syllable_durations.append(syllable.duration)
-            print(syllable.label)
-        syllable_durations = sorted(syllable_durations)
-        if len(syllable_durations) == 0:
-            return 0.0
-        return (syllable_durations[math.floor(len(syllable_durations)/2)]+syllable_durations[math.ceil(len(syllable_durations)/2)])/2
-
+        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Median(syllable.duration))
+       
     """
     Get the median duration of all the syllables in the corpus
 
@@ -288,42 +238,28 @@ class SummarizedContext(BaseContext):
     """
     def all_syllable_median(self):
         syllable = self.syllable
-        q = self.query_graph(syllable)
-        syllable_durations = []
-        allSyls = q.all()
-        for syllable in allSyls:
-            syllable_durations.append(syllable.duration)
-        syllable_durations = sorted(syllable_durations)
-        if len(syllable_durations) == 0:
-            return 0.0
-        return (syllable_durations[math.floor(len(syllable_durations)/2)]+syllable_durations[math.ceil(len(syllable_durations)/2)])/2
-
-
+        return self.query_graph(syllable).aggregate(Median(syllable.duration))
+      
     """
-    Get the standard deviation of a specific syllable in a corpus
-
-    Parameters
-    ----------
-    to_find : str
-        the label of the syllable 
+    Get the standard deviation of each syllable in a corpus
 
     Returns
     -------
-    result : float
-        the standard deviation of the syllable in the corpus
+    result : list
+        the standard deviation of each syllable in the corpus
     """
-    def syllable_std_dev(self, to_find):
+    def syllable_std_dev(self):
         syllable = self.syllable
-        q = self.query_graph(syllable).filter(syllable.label==to_find)
+        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Stdev(syllable.duration))
 
-        allSyls = q.all()
-        avg = q.aggregate(Average(syllable.duration))
-        allDiffs = []
-        for syllable in allSyls:
-            x = syllable.duration
-            diff = x - avg
-            diffSQ = math.pow(diff,2)
-            allDiffs.append(diffSQ)
-        res = sum(allDiffs)/len(allSyls)
-        result = math.sqrt(res)
-        return result
+
+
+    #SPEAKER
+
+    def average_speech_rate(self):
+  
+        word = getattr(self, self.word_name)
+        q = self.query_graph(self.utterance)
+        return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
+
+       
