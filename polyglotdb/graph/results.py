@@ -62,6 +62,8 @@ def hydrate_model(r, to_find, to_find_type, to_preload, corpus):
 class QueryResults(object):
     def __init__(self, query):
         self.corpus = query.corpus
+        self.call_back = query.call_back
+        self.stop_check = query.stop_check
         self.cache = []
         self.cursors = [self.corpus.execute_cypher(query.cypher(), **query.cypher_params())]
 
@@ -171,6 +173,8 @@ class QueryResults(object):
         for r in self.cache:
             yield r
         for i, c in enumerate(self.cursors):
+            if self.stop_check is not None and self.stop_check():
+                break
             while True:
                 try:
                     r = c.next()
