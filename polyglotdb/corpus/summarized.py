@@ -5,28 +5,51 @@ import re
 
 class SummarizedContext(BaseContext):
 
- 
-    def hardcode_mean_duration(self):
-        phone = getattr(self, self.phone_name)
-        q = self.query_graph(phone).filter(phone.label=='ah')
-        result = q.aggregate(Average(phone.duration))
-        print(result)
-        return result
-
-    #phones
     """
     Get the mean duration of each phone in corpus
+
+    Parameters
+    ----------
+    speaker : str
+        a speaker name, if desired (defaults to None)
 
     Returns
     -------
     result : list
         the average duration of each phone in the corpus
     """
-    def phone_mean_duration(self):
+    def phone_mean_duration(self, speaker = None):
         phone = getattr(self, self.phone_name)
-        q = self.query_graph(phone)#.filter(phone.label==to_find)
-        result = q.group_by(phone.label.column_name('label')).aggregate(Average(phone.duration))
-        #result = q.aggregate(Average(phone.duration))
+        self.encode_utterances()
+        if speaker is not None:
+            q = self.query_graph(phone).filter(phone.speaker.name==speaker)
+        else:
+            q = self.query_graph(phone)
+
+        q=q.group_by(phone.label.column_name('label'))
+    
+        result = q.aggregate(Average(phone.duration))
+      
+        return result
+    
+    """
+    Gets average phone durations by speaker
+
+    Returns
+    -------
+    result : list
+        the average duration of each phone in the corpus, by speaker
+    """
+
+    def phone_mean_duration_with_speaker(self):
+        phone = getattr(self, self.phone_name)
+        self.encode_utterances()
+        
+        q = self.query_graph(phone)
+        q=q.group_by(phone.speaker.name.column_name("speaker"), phone.label.column_name('label'))
+        
+        result = q.aggregate(Average(phone.duration))
+        
         return result
 
     """
@@ -115,6 +138,27 @@ class SummarizedContext(BaseContext):
 
 
     """
+    Gets average word durations by speaker
+
+    Returns
+    -------
+    result : list
+        the average duration of each word in the corpus, by speaker
+    """
+
+    def word_mean_duration_with_speaker(self):
+        word = getattr(self, self.word_name)
+        self.encode_utterances()
+        
+        q = self.query_graph(word)
+      
+        #    q = q.columns()
+        q=q.group_by(word.speaker.name.column_name("speaker"), word.label.column_name('label'))
+        
+        result = q.aggregate(Average(word.duration))
+        
+        return result
+    """
     Get the median duration of each word
 
     Returns
@@ -156,12 +200,16 @@ class SummarizedContext(BaseContext):
     Baseline duration is determined by summing the average durations of constituent phones for a word. 
     If there is no underlying transcription available, the longest duration is considered the baseline.
 
+    Parameters
+    ----------
+    speaker : str
+        a speaker name, if desired (defaults to None)
     Returns
     -------
     word_totals : dict
         a dictionary of words and baseline durations
     """
-    def baseline_duration(self):
+    def baseline_duration(self, speaker = None):
         buckeye = False
         if 'buckeye' in self.corpus_name:
             buckeye = True
@@ -171,7 +219,7 @@ class SummarizedContext(BaseContext):
 
         allWords = q.all()
 
-        allPhones = self.phone_mean_duration()
+        allPhones = self.phone_mean_duration(speaker)
 
         duration_dict = {}
         word_totals = {}
@@ -215,6 +263,24 @@ class SummarizedContext(BaseContext):
         return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Average(syllable.duration))
 
 
+    """
+    Gets average syllable durations by speaker
+
+    Returns
+    -------
+    result : list
+        the average duration of each syllable in the corpus, by speaker
+    """
+    def syllable_mean_duration_with_speaker(self):
+        syllable = self.syllable
+        self.encode_utterances()
+        
+        q = self.query_graph(syllable)
+        q=q.group_by(syllable.speaker.name.column_name("speaker"), syllable.label.column_name('label'))
+        
+        result = q.aggregate(Average(syllable.duration))
+        
+        return result
 
     """
     Get median duration of each syllable
@@ -255,11 +321,20 @@ class SummarizedContext(BaseContext):
 
 
     #SPEAKER
+    """
+    Get the average speech rate for each speaker in a corpus
 
+    Returns
+    -------
+    result: list 
+        the average speech rate by speaker
+    """
     def average_speech_rate(self):
   
         word = getattr(self, self.word_name)
         q = self.query_graph(self.utterance)
+        print(self.utterance.label)
+
         return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
 
        
