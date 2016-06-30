@@ -266,9 +266,9 @@ def test_syllable_std_dev(summarized_config):
 
 def test_baseline_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
-        c.reset()
-        parser = inspect_buckeye(buckeye_test_dir)
-        c.load(parser, buckeye_test_dir)
+        #c.reset()
+        #parser = inspect_buckeye(buckeye_test_dir)
+        #c.load(parser, buckeye_test_dir)
         res = c.baseline_duration()
         print(res)
         assert(len(res) == 9)

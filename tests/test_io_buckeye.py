@@ -73,9 +73,9 @@ def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
 
 def test_load_directory_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
-        '''   c.reset()
+        c.reset()
         parser = inspect_buckeye(buckeye_test_dir)
-        '''  c.load(parser, buckeye_test_dir)
+        c.load(parser, buckeye_test_dir)
 
 
         q1 = c.query_graph(c.word).filter(c.word.label == 'that\'s')
