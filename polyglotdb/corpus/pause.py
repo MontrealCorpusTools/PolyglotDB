@@ -1,6 +1,9 @@
 
 from .base import BaseContext
 
+from ..sql.models import Discourse, DiscourseProperty, PropertyType
+from ..sql.helper import get_or_create
+
 class PauseContext(BaseContext):
     def encode_pauses(self, pause_words, call_back = None, stop_check = None):
         """
@@ -39,6 +42,24 @@ class PauseContext(BaseContext):
         self.execute_cypher(statement)
         self.hierarchy.annotation_types.add('pause')
         self.hierarchy.subset_tokens[self.word_name].add('pause')
+
+        statement = '''MATCH (w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
+            with d, max(w.end) as speech_end, min(w.begin) as speech_begin
+            set d.speech_begin = speech_begin,
+                d.speech_end = speech_end
+            return d'''.format(corpus = self.cypher_safe_name,
+                                                    word_type = self.word_name)
+
+        results = self.execute_cypher(statement)
+        sbpt, _ = get_or_create(self.sql_session,
+                                PropertyType, label = 'speech_begin')
+        sept, _ = get_or_create(self.sql_session,
+                                PropertyType, label = 'speech_end')
+        for d in results:
+            discourse = self.sql_session.query(Discourse).filter(Discourse.name == d['d']['name']).first()
+            prop, _ = get_or_create(self.sql_session, DiscourseProperty, discourse = discourse, property_type = sbpt, value = str(d['d']['speech_begin']))
+            prop, _ = get_or_create(self.sql_session, DiscourseProperty, discourse = discourse, property_type = sept, value = str(d['d']['speech_end']))
+        self.hierarchy.add_discourse_properties(self, [('speech_begin', float), ('speech_end', float)])
         self.encode_hierarchy()
         self.refresh_hierarchy()
 

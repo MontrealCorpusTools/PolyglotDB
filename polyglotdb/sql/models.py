@@ -118,6 +118,13 @@ class Discourse(Base):
     speakers = relationship("SpeaksIn",
         back_populates = "discourse")
 
+    def get(self, key):
+        """ Returns frequency of an Annotation object"""
+        for a in self.properties:
+            if a.property_type.label == key:
+                return a.value
+        return None
+
 class Speaker(Base):
     __tablename__ = 'speaker'
 
