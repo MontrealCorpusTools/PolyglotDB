@@ -233,16 +233,16 @@ class SummarizedContext(BaseContext):
                     try:
                         total+=duration_dict[phone]
                     except KeyError:
-                        print("mistake phone %s"%phone)
+                        pass
             else:
                 for phone in word.phone:
                     try:
                         total+=duration_dict[phone.label]
                     except KeyError:
-                        print("mistake phone %s"%phone.label)         
+                        pass        
             try:         
                 if total > word_totals[word.label]:
-                    print('replacing %s : %f with %s : %f'%(word.label, word_totals[word.label], word.label, total))
+                    #print('replacing %s : %f with %s : %f'%(word.label, word_totals[word.label], word.label, total))
                     word_totals[word.label] = total
                 else:
                     continue  
@@ -333,7 +333,7 @@ class SummarizedContext(BaseContext):
   
         word = getattr(self, self.word_name)
         q = self.query_graph(self.utterance)
-        print(self.utterance.label)
+        
 
         return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
 

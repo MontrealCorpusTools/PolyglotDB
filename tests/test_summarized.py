@@ -1,6 +1,6 @@
 
 import pytest
-
+from polyglotdb.graph.func import Count
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_buckeye
 
@@ -308,7 +308,7 @@ def test_average_speech_rate(acoustic_config):
         g.encode_utterances()
         res = g.average_speech_rate()
         print(res)
-
+        assert(abs(res[0][1] - 2.6194399113581532) < 0.001)
         assert(len(res)==1)
 
 
@@ -318,7 +318,7 @@ def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
         parser = inspect_buckeye(buckeye_test_dir)
         c.load(parser, buckeye_test_dir)
         c.encode_utterances()
-        res = g.average_speech_rate()
+        res = c.average_speech_rate()
         print(res)
-
+        assert(abs(res[0][1]-2.4439013552543876) < .0000000000001)
         assert(len(res)==1)
