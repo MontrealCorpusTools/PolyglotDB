@@ -15,20 +15,28 @@
 
 import sys
 import os
-from unittest.mock import MagicMock
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
+import mock
 
 MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
-                'py2neo', 'py2neo.packages', 'py2neo.packages.httpstream',
+                'py2neo', 'py2neo.database', 'py2neo.database.status',
+                'py2neo.packages', 'py2neo.packages.httpstream',
+                'py2neo.packages.httpstream.http',
                 'sqlalchemy',
                 'sqlalchemy.orm', 'sqlalchemy.sql', 'sqlalchemy.sql.expression',
-                'sqlalchemy.ext', 'sqlalchemy.ext.declarative', 'sqlalchemy.ext.orderinglist',
-                'sqlalchemy.ext.associationproxy', 'sqlalchemy.ext.hybrid']
-#sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+                'sqlalchemy.ext', 'sqlalchemy.ext.hybrid','sqlalchemy.ext.declarative', 'sqlalchemy.ext.orderinglist',
+                'sqlalchemy.ext.associationproxy', 'sqlalchemy.ext.hybrid',
+                'numpy', 'resampy', 'audioread',
+                'scipy', 'scipy.signal', 'scipy.io',
+                'librosa', 'librosa.core.spectrum'
+                'acousticsim', 'acousticsim.main', 'acousticsim.utils', 'acousticsim.praat',
+                'acousticsim.representations.pitch',
+                'acousticsim.representations.reaper',
+                'acousticsim.representations.formants',]
+
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+
 import shlex
 import alabaster
 
