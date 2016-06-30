@@ -77,10 +77,13 @@ def test_load_directory_buckeye(graph_db, buckeye_test_dir):
         parser = inspect_buckeye(buckeye_test_dir)
         c.load(parser, buckeye_test_dir)
 
+
+        q1 = c.query_graph(c.word).filter(c.word.label == 'that\'s')
+        assert(q1.count() == 2)
+
         q = c.query_graph(c.phone).filter(c.phone.label == 's')
         assert(q.count() == 3)
-        #q = c.query_graph(c.word).filter(c.word.label == 'that\'s')
-        #assert(q.count() == 2)
+        
         q = q.columns(c.phone.speaker.name.column_name('speaker'))
         print(q.cypher())
         results = q.all()
