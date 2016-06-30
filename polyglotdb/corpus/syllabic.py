@@ -184,20 +184,27 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                 call_back(process_string.format(i, len(splits), s))
             q = self.query_graph(word_type)
             q = q.filter(word_type.speaker.name == s)
+            q = q.order_by(word_type.discourse.name.column_name('discourse'))
             q = q.order_by(word_type.begin)
             q = q.columns(word_type.id.column_name('id'), phone_type.id.column_name('phone_id'),
                         phone_type.label.column_name('phones'),
                         phone_type.begin.column_name('begins'),
-                        phone_type.end.column_name('ends'))
+                        phone_type.end.column_name('ends'),
+                        word_type.discourse.name.column_name('discourse'))
             results = q.all()
             speaker_boundaries = {s:[]}
             speaker_non_syls = {s:[]}
             prev_id = None
+            cur_discourse = None
             for w in results:
                 phones = w['phones']
                 phone_ids = w['phone_id']
                 phone_begins = w['begins']
                 phone_ends = w['ends']
+                discourse = w['discourse']
+                if discourse != cur_discourse:
+                    prev_id = None
+                    cur_discourse = discourse
                 vow_inds = [i for i,x in enumerate(phones) if x in syllabics]
                 if len(vow_inds) == 0:
                     cur_id = uuid1()
