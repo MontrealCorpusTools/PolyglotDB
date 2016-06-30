@@ -404,7 +404,7 @@ def fave_corpus_config(graph_db, fave_test_dir):
 def summarized_config(graph_db, textgrid_test_dir):
     config = CorpusConfig('summarized', **graph_db)
     
-    acoustic_path = os.path.join(textgrid_test_dir, 'summarized_config.TextGrid')
+    acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_config.TextGrid')
     with CorpusContext(config) as c:
         c.reset()
         parser = inspect_textgrid(acoustic_path)
