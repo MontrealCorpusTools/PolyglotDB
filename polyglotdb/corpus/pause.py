@@ -67,10 +67,14 @@ class PauseContext(BaseContext):
         """
         Revert all words marked as pauses to regular words marked as speech
         """
-        ptid = self.sql_session.query(PropertyType.id).filter(PropertyType.label == 'speech_begin').first()[0]
-        self.sql_session.query(DiscourseProperty).filter(DiscourseProperty.property_type_id == ptid).delete()
-        ptid = self.sql_session.query(PropertyType.id).filter(PropertyType.label == 'speech_end').first()[0]
-        self.sql_session.query(DiscourseProperty).filter(DiscourseProperty.property_type_id == ptid).delete()
+        ptid = self.sql_session.query(PropertyType.id).filter(PropertyType.label == 'speech_begin').first()
+        if ptid is not None:
+            ptid = ptid[0]
+            self.sql_session.query(DiscourseProperty).filter(DiscourseProperty.property_type_id == ptid).delete()
+        ptid = self.sql_session.query(PropertyType.id).filter(PropertyType.label == 'speech_end').first()
+        if ptid is not None:
+            ptid = ptid[0]
+            self.sql_session.query(DiscourseProperty).filter(DiscourseProperty.property_type_id == ptid).delete()
         statement = '''MATCH (n:{corpus}:{word_type}:speech)-[r:precedes]->(m:{corpus}:{word_type}:speech)
         WHERE (n)-[:precedes_pause]->()
         DELETE r'''.format(corpus=self.cypher_safe_name, word_type = self.word_name)
