@@ -6,7 +6,7 @@ from polyglotdb.io import inspect_mfa
 
 from polyglotdb import CorpusContext
 
-from polyglotdb.exceptions import TextGridError, GraphQueryError
+from polyglotdb.exceptions import TextGridError, GraphQueryError, ParseError
 
 def test_load_mfa(mfa_test_dir, graph_db):
 
@@ -38,3 +38,11 @@ def test_load_mfa(mfa_test_dir, graph_db):
 
         assert(len(s.discourses) == 1)
         assert([x.discourse.name for x in s.discourses] == ['mfa_test'])
+
+def test_mismatch_parser(timit_test_dir, graph_db):
+
+    with CorpusContext('test_mismatch', **graph_db) as c:
+        c.reset()
+        parser = inspect_mfa(timit_test_dir)
+        with pytest.raises(ParseError):
+            c.load(parser, timit_test_dir)

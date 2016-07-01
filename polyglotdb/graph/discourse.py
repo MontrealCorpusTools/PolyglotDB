@@ -18,6 +18,10 @@ class LongSoundFile(object):
         if self.duration < self.cache_amount:
             self.mode = 'short'
             self.signal, self.sr = librosa.load(self.path, sr = None)
+            if len(self.signal.shape) == 1:
+                self.signal = self.signal.reshape((self.signal.shape[0],1))
+            else:
+                self.signal = self.signal.T
             self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis = 0)
             self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter = 'kaiser_fast', axis = 0)
             self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter = 'kaiser_fast', axis = 0)
@@ -109,6 +113,7 @@ class DiscourseInspecter(object):
         self.sound_file = self.corpus.discourse_sound_file(self.name)
         self.cached_begin = None
         self.cached_end = None
+        self.fully_cached = False
 
         if self.sound_file is not None and os.path.exists(self.sound_file.filepath):
             self.max_time = self.sound_file.duration
@@ -120,6 +125,17 @@ class DiscourseInspecter(object):
             q = q.order_by(highest.end, descending = True)
             q = q.limit(1)
             self.max_time = q.all()[0].end
+
+        self.speech_begin = self.sound_file.discourse.get('speech_begin')
+        if self.speech_begin is None:
+            self.speech_begin = 0
+        else:
+            self.speech_begin = float(self.speech_begin)
+        self.speech_end = self.sound_file.discourse.get('speech_end')
+        if self.speech_end is None:
+            self.speech_end = self.max_time
+        else:
+            self.speech_end = float(self.speech_end)
 
         self._initialize_cache(initial_begin, initial_end)
 
@@ -202,6 +218,8 @@ class DiscourseInspecter(object):
                 self.cached_begin = self.cache[0].begin
             if self.cached_end is None or self.cached_end < self.cache[-1].end:
                 self.cached_end = self.cache[-1].end
+            if self.cached_begin <= self.speech_begin and self.cached_end >= self.speech_end:
+                self.fully_cached = True
 
     def update_times(self, begin, end):
         if begin < 0:

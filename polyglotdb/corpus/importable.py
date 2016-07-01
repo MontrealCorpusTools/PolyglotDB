@@ -169,6 +169,8 @@ class ImportContext(BaseContext):
                 if not parser.match_extension(filename):
                     continue
                 file_tuples.append((root, filename))
+        if len(file_tuples) == 0:
+            raise(ParseError('No files in the specified directory matched the parser. Please check to make sure you have the correct parser.'))
         if call_back is not None:
             call_back('Parsing types...')
             call_back(0,len(file_tuples))
