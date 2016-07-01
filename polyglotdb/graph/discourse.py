@@ -18,6 +18,10 @@ class LongSoundFile(object):
         if self.duration < self.cache_amount:
             self.mode = 'short'
             self.signal, self.sr = librosa.load(self.path, sr = None)
+            if len(self.signal.shape) == 1:
+                self.signal = self.signal.reshape((self.signal.shape[0],1))
+            else:
+                self.signal = self.signal.T
             self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis = 0)
             self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter = 'kaiser_fast', axis = 0)
             self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter = 'kaiser_fast', axis = 0)
