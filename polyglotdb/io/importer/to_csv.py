@@ -1,7 +1,7 @@
 import csv
 import os
 from collections import defaultdict
-from polyglotdb import AlphabetError
+from ...exceptions import AlphabetError
 
 def write_csv_file(path, header, data):
     with open(path, 'w', newline = '') as f:
