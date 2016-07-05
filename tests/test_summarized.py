@@ -263,7 +263,7 @@ def test_syllable_std_dev(summarized_config):
         print("syllable std dev:")
         res = g.syllable_std_dev()
         assert(len(res) == 55)
-
+"""
 def test_baseline_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
         #c.reset()
@@ -274,7 +274,7 @@ def test_baseline_buckeye(graph_db, buckeye_test_dir):
         assert(len(res) == 9)
         
         assert(abs(res['they']-0.11224799999999968)< .0000000000001)
-
+"""
 
 def test_baseline(summarized_config):
     with CorpusContext(summarized_config) as g:
@@ -289,7 +289,7 @@ def test_baseline_speaker(summarized_config):
         print(res)
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
-
+"""
 def test_baseline_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
         c.reset()
@@ -301,7 +301,7 @@ def test_baseline_speaker_buckeye(graph_db, buckeye_test_dir):
         assert(len(res) == 9)
         
         assert(abs(res['they']-0.11224799999999968)< .0000000000001)
-
+"""
 
 def test_average_speech_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
