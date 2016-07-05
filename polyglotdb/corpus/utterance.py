@@ -147,6 +147,10 @@ class UtteranceCorpus(BaseContext):
             end_words = list(self.execute_cypher(statement, discourse = discourse,
                     speaker = s))
 
+            if len(end_words) == 0:
+                speaker_utts[s] = []
+                continue
+
             if len(results) < 2:
                 begin = end_words[0]['begin']
                 begin_id = end_words[0]['id']
