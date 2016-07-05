@@ -1,6 +1,7 @@
 import csv
 import os
 from collections import defaultdict
+from polyglotdb import AlphabetError
 
 def write_csv_file(path, header, data):
     with open(path, 'w', newline = '') as f:
@@ -208,7 +209,10 @@ def feature_data_to_csvs(corpus_context, data):
     """
     directory = corpus_context.config.temporary_directory('csv')
     with open(os.path.join(directory, 'feature_import.csv'), 'w') as f:
-        header = ['label'] + sorted(next(iter(data.values())).keys())
+        try:
+            header = ['label'] + sorted(next(iter(data.values())).keys())
+        except(StopIteration):
+            raise(AlphabetError)
         writer = csv.DictWriter(f, header, delimiter = ',')
         writer.writeheader()
         for k,v in sorted(data.items()):
