@@ -8,11 +8,12 @@ from .utterance import UtteranceCorpus
 from .structured import StructuredContext
 from .syllabic import SyllabicContext
 from .spoken import SpokenContext
+from .summarized import SummarizedContext
 
 
 class CorpusContext(StructuredContext, ImportContext, LexicalContext,
                     PauseContext, UtteranceCorpus, AudioContext,
-                    SyllabicContext, SpokenContext):
+                    SyllabicContext, SpokenContext, SummarizedContext):
     pass
 
 

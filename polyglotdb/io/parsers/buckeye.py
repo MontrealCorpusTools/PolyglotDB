@@ -57,6 +57,7 @@ class BuckeyeParser(BaseParser):
             Parsed data
         '''
         self.make_transcription = False
+        phone_ext = ''
         name, ext = os.path.splitext(os.path.split(word_path)[1])
         if ext == '.words':
             phone_ext = '.phones'
