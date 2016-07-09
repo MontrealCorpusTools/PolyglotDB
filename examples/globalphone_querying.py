@@ -37,25 +37,25 @@ if __name__ == '__main__':
             g.encode_utterances(min_pause_length = 0.15)
             print('Utterance encoding took: {} seconds'.format(time.time() - begin))
         begin = time.time()
-        q = g.query_graph(g.phones).filter(g.phones.label.in_(vowels))
-        q = q.filter(g.phones.following.label.in_(obstruents))
-        q = q.filter(g.phones.following.end == g.word.end)
-        q = q.filter(g.word.end == g.utterance.end)
+        q = g.query_graph(g.phone).filter(g.phone.label.in_(vowels))
+        q = q.filter(g.phone.following.label.in_(obstruents))
+        q = q.filter(g.phone.following.end == g.phone.word.end)
+        q = q.filter(g.phone.word.end == g.phone.word.utterance.end)
 
-        q = q.clear_columns().columns(g.phones.label.column_name('vowel'),
-                                      g.phones.duration.column_name('vowel_duration'),
-                                      g.phones.begin.column_name('vowel_begin'),
-                                      g.phones.end.column_name('vowel_end'),
-                                      g.utterance.phones.rate.column_name('phone_rate'),
-                                      g.word.phones.count.column_name('num_segments_in_word'),
-                                      g.word.discourse.column_name('discourse'),
-                                      g.word.label.column_name('word'),
-                                      g.word.transcription.column_name('word_transcription'),
-                                      g.word.following.label.column_name('following_word'),
-                                      g.word.following.transcription.column_name('following_word_transcription'),
-                                      g.word.following.duration.column_name('following_word_duration'),
+        q = q.clear_columns().columns(g.phone.label.column_name('vowel'),
+                                      g.phone.duration.column_name('vowel_duration'),
+                                      g.phone.begin.column_name('vowel_begin'),
+                                      g.phone.end.column_name('vowel_end'),
+                                      g.phone.word.utterance.phone.rate.column_name('phone_rate'),
+                                      g.phone.word.phone.count.column_name('num_segments_in_word'),
+                                      g.phone.word.discourse.column_name('discourse'),
+                                      g.phone.word.label.column_name('word'),
+                                      g.phone.word.transcription.column_name('word_transcription'),
+                                      g.phone.word.following.label.column_name('following_word'),
+                                      g.phone.word.following.transcription.column_name('following_word_transcription'),
+                                      g.phone.word.following.duration.column_name('following_word_duration'),
                                       g.pause.following.duration.column_name('following_pause_duration'),
-                                      g.phones.following.label.column_name('following_phone'))
+                                      g.phone.following.label.column_name('following_phone'))
         print(q.cypher())
         q.to_csv('bulgarian.csv')
         print('Query took: {} seconds'.format(time.time() - begin))

@@ -1,10 +1,8 @@
 
-from .base import BaseContext
-
 from ..sql.models import Discourse, DiscourseProperty, PropertyType
 from ..sql.helper import get_or_create
 
-class PauseContext(BaseContext):
+class PauseContext(object):
     def encode_pauses(self, pause_words, call_back = None, stop_check = None):
         """
         Set words to be pauses, as opposed to speech.

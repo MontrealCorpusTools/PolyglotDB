@@ -53,7 +53,6 @@ def add_discourse_sound_info(corpus_context, discourse, filepath):
     else:
         low_freq_path = filepath
         low_freq_rate = sample_rate
-    print(consonant_path, vowel_path, low_freq_path)
     d, _ = get_or_create(corpus_context.sql_session, Discourse, name = discourse)
     sf = get_or_create(corpus_context.sql_session, SoundFile, filepath = filepath,
             consonant_filepath = consonant_path,

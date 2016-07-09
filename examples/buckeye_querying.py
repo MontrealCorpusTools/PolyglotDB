@@ -14,22 +14,22 @@ debug = False
 
 with CorpusContext('buckeye', **graph_db) as g:
 
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
-    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
+    q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+    q = q.filter(g.phone.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
 
-    q = q.filter(g.surface_transcription.end == g.word.end)
+    q = q.filter(g.phone.end == g.word.end)
     if debug:
         print(q.cypher())
     print(q.count())
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
-    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
+    q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+    q = q.filter(g.phone.following.label.in_(['p','t','k','b','d','g','dx', 'tq']))
 
-    q = q.filter(g.surface_transcription.following.end == g.word.end)
+    q = q.filter(g.phone.following.end == g.word.end)
 
     print(q.count())
 
     beg = time.time()
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
+    q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
     q = q.filter_contained_by(g.word.label == 'dog')
     if debug:
         print(q.cypher())
@@ -40,22 +40,22 @@ with CorpusContext('buckeye', **graph_db) as g:
     print('Time taken: {}'.format(end - beg))
 
     beg = time.time()
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
-    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
-    q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
+    q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+    q = q.filter(g.phone.following.label.in_(['p','t','k','b','d','g','dx']))
+    q = q.group_by(g.phone.following.label.column_name('following_consonant'))
 
-    results = q.aggregate(Average(g.surface_transcription.duration), Count())
+    results = q.aggregate(Average(g.phone.duration), Count())
     end = time.time()
     print('Duration of \'aa\' before stops (overall):')
     print(results)
     print('Time taken: {}'.format(end - beg))
 
     beg = time.time()
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
-    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
+    q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+    q = q.filter(g.phone.following.label.in_(['p','t','k','b','d','g','dx']))
     q = q.filter_right_aligned(g.word)
-    q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
-    results = q.aggregate(Average(g.surface_transcription.duration), Count())
+    q = q.group_by(g.phone.following.label.column_name('following_consonant'))
+    results = q.aggregate(Average(g.phone.duration), Count())
     end = time.time()
     print('Duration of \'aa\' before stops (across words):')
     print(results)
@@ -63,11 +63,11 @@ with CorpusContext('buckeye', **graph_db) as g:
     print('This uses right alignment')
 
     beg = time.time()
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
-    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
-    q = q.filter(g.surface_transcription.end == g.word.end)
-    q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
-    results = q.aggregate(Average(g.surface_transcription.duration), Count())
+    q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+    q = q.filter(g.phone.following.label.in_(['p','t','k','b','d','g','dx']))
+    q = q.filter(g.phone.end == g.word.end)
+    q = q.group_by(g.phone.following.label.column_name('following_consonant'))
+    results = q.aggregate(Average(g.phone.duration), Count())
     end = time.time()
     print('Duration of \'aa\' before stops (across words):')
     print(results)
@@ -75,19 +75,19 @@ with CorpusContext('buckeye', **graph_db) as g:
     print('This uses filter on end points')
 
     beg = time.time()
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
-    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
-    q = q.filter(g.surface_transcription.end != g.word.end)
-    q = q.times().duration().columns(g.surface_transcription.word.label, g.surface_transcription.word.transcription,
-        g.surface_transcription.word.surface_transcription.label, g.surface_transcription.word.following.label, g.surface_transcription.word.duration,
-        g.surface_transcription.following.label.column_name('following_consonant'))
+    q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+    q = q.filter(g.phone.following.label.in_(['p','t','k','b','d','g','dx']))
+    q = q.filter(g.phone.end != g.phone.word.end)
+    q = q.times().duration().columns(g.phone.word.label, g.phone.word.transcription,
+        g.phone.word.phone.label, g.phone.word.following.label, g.phone.word.duration,
+        g.phone.following.label.column_name('following_consonant'))
 
     if debug:
         print(q.cypher())
     q.to_csv('test.csv')
-    q = q.group_by(g.surface_transcription.following.label.column_name('following_consonant'))
+    q = q.group_by(g.phone.following.label.column_name('following_consonant'))
 
-    results = q.aggregate(Average(g.surface_transcription.duration), Count())
+    results = q.aggregate(Average(g.phone.duration), Count())
 
     end = time.time()
     print('Duration of \'aa\' before stops (within words):')
@@ -96,8 +96,8 @@ with CorpusContext('buckeye', **graph_db) as g:
     print('This uses filter on end points')
 
     beg = time.time()
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'aa')
-    q = q.filter(g.surface_transcription.following.label.in_(['p','t','k','b','d','g','dx']))
+    q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+    q = q.filter(g.phone.following.label.in_(['p','t','k','b','d','g','dx']))
     results = q.all()
 
     end = time.time()
@@ -106,7 +106,7 @@ with CorpusContext('buckeye', **graph_db) as g:
     print('Time taken: {}'.format(end - beg))
 
     beg = time.time()
-    q = g.query_graph(g.surface_transcription).filter(g.surface_transcription.label == 'iy')
+    q = g.query_graph(g.phone).filter(g.phone.label == 'iy')
     q = q.filter_left_aligned(g.word)
     results = q.all()
     end = time.time()
