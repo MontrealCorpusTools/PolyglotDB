@@ -209,6 +209,19 @@ def test_query_alignment(timed_config):
         assert(len(results) == 1)
         assert(results[0]['begin'] == 0.3)
 
+        q = g.query_graph(g.phone).filter(g.phone.label == 's')
+        q = q.filter(g.phone.following.following.end == g.phone.word.end)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 0)
+
+        q = g.query_graph(g.phone).filter(g.phone.following.label == 't')
+        q = q.filter(g.phone.following.end == g.phone.word.end)
+        print(q.cypher())
+        results = q.all()
+        assert(len(results) == 1)
+        assert(results[0]['label'] == 'uw')
+
 def test_query_previous_left_aligned_line(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'ae')
