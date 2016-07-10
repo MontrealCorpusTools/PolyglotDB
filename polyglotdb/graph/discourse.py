@@ -125,13 +125,16 @@ class DiscourseInspecter(object):
             q = q.order_by(highest.end, descending = True)
             q = q.limit(1)
             self.max_time = q.all()[0].end
+        self.speech_begin = None
+        self.speech_end = None
+        if self.sound_file is not None:
+            self.speech_begin = self.sound_file.discourse.get('speech_begin')
+            self.speech_end = self.sound_file.discourse.get('speech_end')
 
-        self.speech_begin = self.sound_file.discourse.get('speech_begin')
         if self.speech_begin is None:
             self.speech_begin = 0
         else:
             self.speech_begin = float(self.speech_begin)
-        self.speech_end = self.sound_file.discourse.get('speech_end')
         if self.speech_end is None:
             self.speech_end = self.max_time
         else:

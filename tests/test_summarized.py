@@ -30,9 +30,6 @@ def test_phone_mean_duration_speaker(summarized_config):
 
 def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as g:
-        g.reset()
-        parser = inspect_buckeye(buckeye_test_dir)
-        g.load(parser, buckeye_test_dir)
         res = g.phone_mean_duration()
         print(res)
         assert(len(res)==16)
@@ -77,7 +74,7 @@ def test_all_phone_median(summarized_config):
         print("all phone median:")
         res = g.all_phone_median()
 
-      
+
         print(res)
         assert(abs(res-0.07682000000000011) < .0000000000001)
         assert(type(res) == float)
@@ -92,11 +89,11 @@ def test_phone_median(summarized_config):
                 break
         assert(abs(res[i][1]-0.059820000000000206) < .0000000000001)
 
-       
+
 def test_get_mean_duration(summarized_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
                 'uh','ah','ao','er','ow']
-    
+
 
     with CorpusContext(summarized_config) as g:
         g.encode_syllabic_segments(syllabics)
@@ -123,7 +120,7 @@ def test_word_mean_duration(summarized_config):
         assert(abs(res[i][1]-0.5340040000000001) < .0000000000001)
 
 
-       
+
 
 def test_word_mean_duration_with_speaker(summarized_config):
     with CorpusContext(summarized_config) as g:
@@ -138,9 +135,6 @@ def test_word_mean_duration_with_speaker(summarized_config):
 
 def test_word_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as g:
-        g.reset()
-        parser = inspect_buckeye(buckeye_test_dir)
-        g.load(parser, buckeye_test_dir)
         g.encode_utterances()
         res=g.word_mean_duration_with_speaker()
         print(res)
@@ -182,14 +176,9 @@ def test_word_std_dev(summarized_config):
                 break
         assert(abs(res[i][1]-0.26996736762060747) < .0000000000001)
 
-
-
-
 def test_syllable_mean_duration(summarized_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
                 'uh','ah','ao','er','ow']
-    
-
     with CorpusContext(summarized_config) as g:
         g.encode_syllabic_segments(syllabics)
         g.encode_syllables()
@@ -224,24 +213,18 @@ def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir)
 def test_syllable_median(summarized_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
                 'uh','ah','ao','er','ow']
-   
-
     with CorpusContext(summarized_config) as g:
         g.encode_syllabic_segments(syllabics)
         g.encode_syllables()
 
         print("syllable median:")
         res = g.syllable_median()
-        print(res) 
+        print(res)
         assert(len(res) == 55)
-
-
 
 def test_all_syllable_median(summarized_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
                 'uh','ah','ao','er','ow']
-   
-
     with CorpusContext(summarized_config) as g:
         g.encode_syllabic_segments(syllabics)
         g.encode_syllables()
@@ -254,8 +237,6 @@ def test_all_syllable_median(summarized_config):
 def test_syllable_std_dev(summarized_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
                 'uh','ah','ao','er','ow']
-   
-
     with CorpusContext(summarized_config) as g:
         g.encode_syllabic_segments(syllabics)
         g.encode_syllables()
@@ -263,18 +244,15 @@ def test_syllable_std_dev(summarized_config):
         print("syllable std dev:")
         res = g.syllable_std_dev()
         assert(len(res) == 55)
+
 @pytest.mark.xfail
 def test_baseline_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
-        #c.reset()
-        #parser = inspect_buckeye(buckeye_test_dir)
-        #c.load(parser, buckeye_test_dir)
         res = c.baseline_duration()
         print(res)
         assert(len(res) == 9)
-        
-        assert(abs(res['they']-0.11224799999999968)< .0000000000001)
 
+        assert(abs(res['they']-0.11224799999999968)< .0000000000001)
 
 def test_baseline(summarized_config):
     with CorpusContext(summarized_config) as g:
@@ -289,17 +267,14 @@ def test_baseline_speaker(summarized_config):
         print(res)
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
+
 @pytest.mark.xfail
 def test_baseline_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
-        c.reset()
-        parser = inspect_buckeye(buckeye_test_dir)
-        c.load(parser, buckeye_test_dir)
-        
         res = c.baseline_duration('tes')
         print(res)
         assert(len(res) == 9)
-        
+
         assert(abs(res['they']-0.11224799999999968)< .0000000000001)
 
 @pytest.mark.xfail
