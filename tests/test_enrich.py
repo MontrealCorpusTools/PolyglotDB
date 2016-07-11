@@ -87,3 +87,14 @@ def test_discourse_enrichment(fave_corpus_config, csv_test_dir):
         res = q.all()
 
         assert(all(x['discourse'] == 'fave_test' for x in res))
+
+def test_subset_enrichment(acoustic_config):
+    syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
+                'uh','ah','ao','er','ow']
+    phone_class = ['ae', 'aa', 'd', 'r']
+    with CorpusContext(acoustic_config) as c:
+        c.reset_class('syllabic')
+        c.reset_class('test')
+        c.encode_class(syllabics, "syllabic")
+        c.encode_class(phone_class, "test")
+        assert(len(c.hierarchy.subset_types['phone'])==2)

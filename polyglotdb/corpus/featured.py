@@ -5,7 +5,7 @@ from ..io.importer import feature_data_to_csvs, import_feature_csvs
 class FeaturedContext(object):
     def encode_class(self, phones, label):
         """
-        encodes word phone classes
+        encodes phone classes
 
         Parameters
         ----------
@@ -48,7 +48,7 @@ class FeaturedContext(object):
 
     def reset_features(self, feature_names):
         """
-        resets featurs back to nothing
+        resets features 
 
         Parameters
         ----------

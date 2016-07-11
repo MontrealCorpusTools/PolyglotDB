@@ -8,11 +8,12 @@ from .utterance import UtteranceContext
 from .structured import StructuredContext
 from .syllabic import SyllabicContext
 from .spoken import SpokenContext
+from .summarized import SummarizedContext
 
 
-class CorpusContext(BaseContext, StructuredContext, ImportContext, LexicalContext,
-                    PauseContext, UtteranceContext, AudioContext,
-                    SyllabicContext, SpokenContext):
+class CorpusContext(StructuredContext, ImportContext, LexicalContext,
+                    PauseContext, UtteranceCorpus, AudioContext,
+                    SyllabicContext, SpokenContext, SummarizedContext):
     """
     Main corpus context, inherits from the more specialized contexts.
 
