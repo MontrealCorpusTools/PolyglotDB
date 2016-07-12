@@ -2,6 +2,7 @@
 from .base import BaseContext
 from .audio import AudioContext
 from .importable import ImportContext
+from .featured import FeaturedContext
 from .lexical import LexicalContext
 from .pause import PauseContext
 from .utterance import UtteranceContext
@@ -11,8 +12,8 @@ from .spoken import SpokenContext
 from .summarized import SummarizedContext
 
 
-class CorpusContext(StructuredContext, ImportContext, LexicalContext,
-                    PauseContext, UtteranceCorpus, AudioContext,
+class CorpusContext(StructuredContext, ImportContext, FeaturedContext, LexicalContext,
+                    PauseContext, UtteranceContext, AudioContext,
                     SyllabicContext, SpokenContext, SummarizedContext):
     """
     Main corpus context, inherits from the more specialized contexts.
