@@ -1,9 +1,7 @@
 
-from .base import BaseContext
-
 from ..io.importer import lexicon_data_to_csvs, import_lexicon_csvs
 
-class LexicalContext(BaseContext):
+class LexicalContext(object):
     def enrich_lexicon(self, lexicon_data, type_data = None, case_sensitive = False):
         """
         adds properties to lexicon, adds properties to hierarchy

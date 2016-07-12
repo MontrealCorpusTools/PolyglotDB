@@ -67,10 +67,12 @@ class MorphemeAnnotationType(OrthographyAnnotationType):
     def add(self, annotations, save = True):
         """
         save annotations  to _list
+
         Parameters
         ----------
         annotations : list
             the annotations to save
+
         save : boolean
             defaults to True
         """
@@ -146,6 +148,7 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
     def add(self, annotations, save = True):
         """
         save annotations  to _list
+
         Parameters
         ----------
         annotations : list
@@ -239,10 +242,12 @@ class NumericAnnotationType(BaseAnnotationType):
     def add(self, annotations, save = True):
         """
         save annotations  to _list
+
         Parameters
         ----------
         annotations : list
             the annotations to save
+
         save : boolean
             defaults to True
         """

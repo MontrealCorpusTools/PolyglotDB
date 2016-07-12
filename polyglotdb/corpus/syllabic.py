@@ -1,8 +1,6 @@
 
 from uuid import uuid1
 
-from .featured import FeaturedContext
-
 from ..io.importer import (syllables_data_to_csvs, import_syllable_csv,
                             nonsyls_data_to_csvs, import_nonsyl_csv,
                             create_syllabic_csvs, create_nonsyllabic_csvs)
@@ -12,7 +10,7 @@ from ..io.helper import make_type_id
 from ..syllabification.probabilistic import norm_count_dict, split_nonsyllabic_prob, split_ons_coda_prob
 from ..syllabification.maxonset import split_nonsyllabic_maxonset, split_ons_coda_maxonset
 
-class SyllabicContext(FeaturedContext):
+class SyllabicContext(object):
     def find_onsets(self):
         """
         Gets syllable onsets

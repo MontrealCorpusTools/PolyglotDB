@@ -31,7 +31,4 @@ if __name__ == '__main__':
     with CorpusContext(config) as g:
         g.encode_pauses('^[{<].*')
         g.encode_utterances(min_pause_length = 0.25)
-        #utterances = g.get_utterances('s1901b', config.pause_words)
-        #print(len(utterances))
-        #print(utterances[-10:])
         g.analyze_acoustics()
