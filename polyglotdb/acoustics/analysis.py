@@ -63,7 +63,8 @@ def acoustic_analysis(corpus_context,
             analyze_formants(corpus_context, sf, stop_check = stop_check)
 
 def analyze_pitch(corpus_context, sound_file, stop_check = None):
-    if not os.path.exists(sound_file.filepath):
+    filepath = os.path.expanduser(sound_file.vowel_filepath)
+    if not os.path.exists(filepath):
         return
     algorithm = corpus_context.config.pitch_algorithm
     if corpus_context.has_pitch(sound_file.discourse.name, algorithm):
@@ -93,13 +94,14 @@ def analyze_pitch(corpus_context, sound_file, stop_check = None):
     for u in utterances:
         segments.append((u.begin, u.end, u.channel))
 
-    output = analyze_long_file(sound_file.vowel_filepath, segments, pitch_function, padding = 1)
+    output = analyze_long_file(filepath, segments, pitch_function, padding = 1)
 
     for k, track in output.items():
         corpus_context.save_pitch(sound_file, track, channel = k[-1], source = algorithm)
 
 def analyze_formants(corpus_context, sound_file, stop_check = None):
-    if not os.path.exists(sound_file.filepath):
+    filepath = os.path.expanduser(sound_file.vowel_filepath)
+    if not os.path.exists(filepath):
         return
     algorithm = corpus_context.config.formant_algorithm
     if corpus_context.has_formants(sound_file.discourse.name, algorithm):
@@ -126,7 +128,7 @@ def analyze_formants(corpus_context, sound_file, stop_check = None):
     for i, u in enumerate(utterances):
         segments.append((u.begin, u.end, u.channel))
 
-    output = analyze_long_file(sound_file.vowel_filepath, segments, formant_function, padding = 1)
+    output = analyze_long_file(filepath, segments, formant_function, padding = 1)
     for k, track in output.items():
         corpus_context.save_formants(sound_file, track, channel = k[-1], source = algorithm)
     corpus_context.sql_session.flush()

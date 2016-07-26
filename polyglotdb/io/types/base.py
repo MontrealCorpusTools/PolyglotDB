@@ -25,11 +25,13 @@ class BaseAnnotationType(object):
     def add(self, annotations, save = True):
         """
         save annotations  to _list
+
         Parameters
         ----------
         annotations : list
             the annotations to save
-        save : boolean  
+
+        save : boolean
             defaults to True
         """
         for a in annotations:

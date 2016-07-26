@@ -41,24 +41,24 @@ def add_discourse_sound_info(corpus_context, discourse, filepath):
     if sample_rate > consonant_rate:
         resample_audio(filepath, consonant_path, consonant_rate)
     else:
-        consonant_path = filepath
+        shutil.copy(filepath, consonant_path)
         consonant_rate = sample_rate
     if sample_rate > vowel_rate:
         resample_audio(consonant_path, vowel_path, vowel_rate)
     else:
-        vowel_path = filepath
+        shutil.copy(filepath, vowel_path)
         vowel_rate = sample_rate
     if sample_rate > low_freq_rate:
         resample_audio(vowel_path, low_freq_path, low_freq_rate)
     else:
-        low_freq_path = filepath
+        shutil.copy(filepath, low_freq_path)
         low_freq_rate = sample_rate
-    print(consonant_path, vowel_path, low_freq_path)
     d, _ = get_or_create(corpus_context.sql_session, Discourse, name = discourse)
+    user_path = os.path.expanduser('~')
     sf = get_or_create(corpus_context.sql_session, SoundFile, filepath = filepath,
-            consonant_filepath = consonant_path,
-            vowel_filepath = vowel_path,
-            low_freq_filepath = low_freq_path,
+            consonant_filepath = consonant_path.replace(user_path, '~'),
+            vowel_filepath = vowel_path.replace(user_path, '~'),
+            low_freq_filepath = low_freq_path.replace(user_path, '~'),
             duration = duration, sampling_rate = sample_rate,
             n_channels = n_channels, discourse = d)
 

@@ -14,6 +14,22 @@ Corpus class
 
    CorpusContext
 
+   AudioContext
+
+   ImportContext
+
+   LexicalContext
+
+   PauseContext
+
+   UtteranceContext
+
+   StructuredContext
+
+   SyllabicContext
+
+   SpokenContext
+
 Corpus structure class
 ----------------------
 

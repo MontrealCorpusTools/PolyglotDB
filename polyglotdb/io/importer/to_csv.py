@@ -1,10 +1,14 @@
 import csv
 import os
 from collections import defaultdict
+from ...exceptions import AlphabetError
 
+<<<<<<< HEAD
 from ...exceptions import AlphabetError
 
 
+=======
+>>>>>>> MontrealCorpusTools/master
 def write_csv_file(path, header, data, mode = 'w'):
     with open(path, mode, newline = '', encoding = 'utf8') as f:
         writer = csv.DictWriter(f, header, delimiter = ',')

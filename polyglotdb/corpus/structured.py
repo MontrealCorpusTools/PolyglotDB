@@ -1,6 +1,4 @@
 
-from .base import BaseContext
-
 from ..structure import Hierarchy
 
 from ..graph.helper import value_for_cypher
@@ -12,7 +10,7 @@ def generate_cypher_property_list(property_set):
     Returns
     -------
     properties : str
-        list of properties   
+        list of properties
     """
     props = []
     for name, t in property_set:
@@ -29,15 +27,16 @@ def generate_cypher_property_list(property_set):
     return ', '.join(props)
 
 
-class StructuredContext(BaseContext):
+class StructuredContext(object):
     def generate_hierarchy(self):
         """
         Creates the hierarchy, which is information on how the corpus is structured
 
         Returns
         -------
-        h : :class: `~polyglotdb.structure.Hierarchy`
+        :class:`~polyglotdb.structure.Hierarchy`
             the structure of the corpus
+
         """
         exists_statement = '''MATCH (c:Corpus)<-[:contained_by]-(s)
         WHERE c.name = {corpus_name} RETURN c LIMIT 1'''
@@ -139,6 +138,7 @@ class StructuredContext(BaseContext):
     def refresh_hierarchy(self):
         """
         Updates the hierarchy
+
         """
         h = self.generate_hierarchy()
         self.hierarchy = h
@@ -158,7 +158,7 @@ class StructuredContext(BaseContext):
 
     def encode_hierarchy(self):
         """
-        encodes hierarchy 
+        encodes hierarchy
         """
         self.reset_hierarchy()
         hierarchy_template = '''({super})<-[:contained_by]-({sub})-[:is_a]->({sub_type})'''
@@ -261,7 +261,7 @@ class StructuredContext(BaseContext):
         name : str
             the column name
         subset : str
-            the annotation subset 
+            the annotation subset
         """
         higher = getattr(self, higher_annotation_type)
         lower = getattr(higher, lower_annotation_type)
@@ -287,7 +287,7 @@ class StructuredContext(BaseContext):
         name : str
             the column name
         subset : str
-            the annotation subset  
+            the annotation subset
         """
         higher = getattr(self, higher_annotation_type)
         lower = getattr(higher, lower_annotation_type)
@@ -308,8 +308,8 @@ class StructuredContext(BaseContext):
         ----------
         annnotation_type : str
             what is being removed
-         name : str
-            the column name  
+        name : str
+            the column name
         """
         q = self.query_graph(getattr(self, annotation_type))
         q.set_token(**{name: None})

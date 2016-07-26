@@ -1,21 +1,20 @@
 
-from .base import BaseContext
-
 from ..io.importer import (speaker_data_to_csvs, import_speaker_csvs,
                             discourse_data_to_csvs, import_discourse_csvs)
 
-class SpokenContext(BaseContext):
+class SpokenContext(object):
     def enrich_speakers(self, speaker_data, type_data = None):
         """
-        adds properties to speakers, adds speaker properties to census
-        adds properties to hierarchy
+        Add properties about speakers to the corpus, allowing them to
+        be queryable.
+
         Parameters
         ----------
         speaker_data : dict
             the data about the speakers to add
         type_data : dict
-            default to None
-        
+            Specifies the type of the data to be added, defaults to None
+
         """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(speaker_data.values())).items()}
@@ -33,16 +32,16 @@ class SpokenContext(BaseContext):
 
     def enrich_discourses(self, discourse_data, type_data = None):
         """
-        adds properties to discourses, adds properties to census
-        adds properties to hierarchy
+        Add properties about discourses to the corpus, allowing them to
+        be queryable.
 
         Parameters
         ----------
         discourse_data : dict
             the data about the discourse to add
         type_data : dict
-            default to None
-        
+            Specifies the type of the data to be added, defaults to None
+
         """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(discourse_data.values())).items()}

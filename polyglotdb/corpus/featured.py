@@ -1,10 +1,8 @@
 
 
-from .base import BaseContext
-
 from ..io.importer import feature_data_to_csvs, import_feature_csvs
 
-class FeaturedContext(BaseContext):
+class FeaturedContext(object):
     def encode_class(self, phones, label):
         """
         encodes phone classes
@@ -37,7 +35,7 @@ class FeaturedContext(BaseContext):
     def encode_features(self, feature_dict):
         """
         gets the phone if it exists, queries for each phone and sets type to kwargs (?)
-        
+
         Parameters
         ----------
         feature_dict : dict

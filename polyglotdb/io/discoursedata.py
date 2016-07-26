@@ -51,6 +51,7 @@ class DiscourseData(object):
         orders hierarchy highest to lowest
 
         Returns
+        -------
         ats : dict
             the ordered hierarchy
         """

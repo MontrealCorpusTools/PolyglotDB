@@ -40,10 +40,10 @@ class BaseContext(object):
 
     Parameters
     ----------
-    args : arguments or :class:`~polyglotdb.config.CorpusConfig`
-        If the first argument is not a CorpusConfig object, it is
+    *args
+        If the first argument is not a :class:`~polyglotdb.config.CorpusConfig` object, it is
         the name of the corpus
-    kwargs : keyword arguments
+    **kwargs
         If a :class:`~polyglotdb.config.CorpusConfig` object is not specified, all arguments and
         keyword arguments are passed to a CorpusConfig object
     """
@@ -252,8 +252,7 @@ class BaseContext(object):
 
     def reset_graph(self, call_back = None, stop_check = None):
         '''
-        Remove all nodes and relationships in the graph that are apart
-        of this corpus.
+        Remove all nodes and relationships in the corpus.
         '''
 
         delete_statement = '''MATCH (n:{corpus}:{anno})-[:spoken_by]->(s:{corpus}:Speaker)
@@ -310,15 +309,18 @@ class BaseContext(object):
 
     def query_graph(self, annotation_type):
         '''
-        Return a :class:`~polyglotdb.config.GraphQuery` for the specified annotation type.
-
-        When extending :class:`~polyglotdb.config.GraphQuery` functionality, this function must be
-        overwritten.
+        Return a Query object for the specified annotation type.
 
         Parameters
         ----------
         annotation_type : str
             The type of annotation to look for in the corpus
+
+        Returns
+        -------
+        GraphQuery
+            Query object
+
         '''
         if annotation_type.type not in self.hierarchy.annotation_types \
                 and annotation_type.type != 'pause': #FIXME make more general

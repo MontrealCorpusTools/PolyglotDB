@@ -19,11 +19,11 @@ def call_back(*args):
     if args:
         print(' '.join(args))
 
-vowels = set(['aa', 'ae', 'ah', 'ao', 'aw', 'ax', 'ax-h', 'axr', 'ay',
+vowels = ['aa', 'ae', 'ah', 'ao', 'aw', 'ax', 'ax-h', 'axr', 'ay',
             'eh', 'el', 'em', 'en', 'eng', 'er', 'ey',
             'ih', 'ix', 'iy',
             'ow',' oy',
-            'uh', 'uw', 'ux'])
+            'uh', 'uw', 'ux']
 
 first_run = True
 
@@ -34,40 +34,37 @@ with CorpusContext('timit', **graph_db) as g:
         g.encode_pauses(['sil']) ## used to be '','sil'
         g.encode_utterances(min_pause_length = 0.150)
 
-        q = g.query_graph(g.surface_transcription)
-        q = q.filter(g.surface_transcription.label.in_(vowels))
-        q.set_type('syllabic')
+    q = g.query_graph(g.phone)
+    q = q.filter(g.phone.label.in_(vowels))
+    q.set_type('syllabic')
 
     begin = time.time()
     print("Doing query 3...")
 
-    syl = g.surface_transcription.subset_type('syllabic')
+    syl = g.phone.subset_type('syllabic')
     q = g.query_graph(syl)
-    q = q.filter(g.word.end==g.utterance.end)
-    #q = q.filter(g.phones.end == g.word.end)
+    q = q.filter(g.phone.word.end == g.phone.word.utterance.end)
 
     q = q.times().duration().columns(syl.label.column_name('vowel'),
                                      syl.duration.column_name('vowel_duration'),
                                      syl.begin.column_name('vowel_begin'),
                                      syl.end.column_name('vowel_end'),
-                                     g.word.label.column_name('word'),
-                                     g.word.duration.column_name('word_duration'),
-                                     g.word.begin.column_name('word_begin'),
-                                     g.word.end.column_name('word_end'),
-                                     g.word.transcription.column_name('word_transcription'),
+                                     g.phone.word.label.column_name('word'),
+                                     g.phone.word.duration.column_name('word_duration'),
+                                     g.phone.word.begin.column_name('word_begin'),
+                                     g.phone.word.end.column_name('word_end'),
                                      g.pause.following.duration.column_name('following_pause_duration'),
                                      g.pause.following.label.column_name('following_pause'),
-                                     g.utterance.surface_transcription.subset_type('syllabic').rate.column_name('utterance_syllables_per_second'),
-                                     g.utterance.begin.column_name('utterance_begin'),
-                                     g.utterance.end.column_name('utterance_end'),
-                                     g.utterance.word.position.column_name('utterance_word_position'),
-                                     g.utterance.word.count.column_name('utterance_word_count'),
-                                     g.word.following.label.column_name('following_word'),
-                                     g.word.following.duration.column_name('following_word_duration'),
-                                     g.word.surface_transcription.subset_type('syllabic').count.column_name('word_syllable_count'),
-                                     g.word.surface_transcription.subset_type('syllabic').position.column_name('word_syllable_position'))
-    # q = q.times().duration().columns(g.phones.label, g.word.discourse, g.word.label, g.word.transcription, g.word.following.label, g.phones.following.label.column_name('following_phone'))
-    q = q.order_by(g.word.discourse)
+                                     g.phone.word.utterance.phone.subset_type('syllabic').rate.column_name('utterance_syllables_per_second'),
+                                     g.phone.word.utterance.begin.column_name('utterance_begin'),
+                                     g.phone.word.utterance.end.column_name('utterance_end'),
+                                     g.phone.word.utterance.word.position.column_name('utterance_word_position'),
+                                     g.phone.word.utterance.word.count.column_name('utterance_word_count'),
+                                     g.phone.word.following.label.column_name('following_word'),
+                                     g.phone.word.following.duration.column_name('following_word_duration'),
+                                     g.phone.word.phone.subset_type('syllabic').count.column_name('word_syllable_count'),
+                                     g.phone.word.phone.subset_type('syllabic').position.column_name('word_syllable_position'))
+    q = q.order_by(g.phone.word.discourse)
 
     q.to_csv(language+'_uttfinalwordvowels.csv')
 
