@@ -1,11 +1,9 @@
 import csv
 import os
 from collections import defaultdict
-<<<<<<< HEAD
-from polyglotdb import AlphabetError
-=======
+
 from ...exceptions import AlphabetError
->>>>>>> MontrealCorpusTools/master
+
 
 def write_csv_file(path, header, data, mode = 'w'):
     with open(path, mode, newline = '', encoding = 'utf8') as f:
