@@ -356,3 +356,32 @@ class SummarizedContext(BaseContext):
         return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
 
        
+    def make_dict(self, data):
+        """
+        turn data results into a dictionary for encoding
+        """
+        finalDict = {}
+        if type(data) == list and len(data[0])==2:
+            for i,r in enumerate(data):
+                finalDict.update({r[0]:{str(data[1].keys()[1]):r[1]}})
+            print(finalDict)
+        elif type(data) == list and len(data[0]) == 3:
+            for i,r in enumerate(data):
+                speaker = r[0]
+                word = r[1]
+                num = r[2]
+                #finalDict.update({str(speaker) : {:}})
+        else:
+            for r in data.keys():
+                finalDict.update({r : {'baseline_duration': data[r]}})   
+            print(finalDict) 
+        return finalDict
+    def encode_measure(self, data, data_type):
+        """
+        encode the data into the graph
+        """   
+        dataDict = self.make_dict(data)
+        if data_type == 'word':
+            self.enrich_lexicon(dataDict)
+        elif data_type == 'phone':
+            self.enrich_features(dataDict)
