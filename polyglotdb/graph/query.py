@@ -511,7 +511,10 @@ class GraphQuery(object):
         Same as ``all``, but the results of the query are output to the
         specified path as a CSV file.
         """
-        self.all().to_csv(path)
+        results = self.all()
+        if self.stop_check is not None and self.stop_check():
+            return
+        results.to_csv(path)
 
     def count(self):
         """
@@ -672,7 +675,7 @@ class SplitQuery(GraphQuery):
         for i, x in enumerate(splitter_names):
             if self.call_back is not None:
                 self.call_back(i)
-                self.call_back('Processing {} {} of {} ({})...'.format(attribute_name, i, len(splitter_names), x))
+                self.call_back('Querying {} {} of {} ({})...'.format(attribute_name, i, len(splitter_names), x))
             base = self.base_query()
             al = base.annotation_levels()
             add_filter = True
@@ -706,7 +709,7 @@ class SplitQuery(GraphQuery):
         results = None
         for q in self.split_queries():
             if self.stop_check is not None and self.stop_check():
-                return None
+                return
             if results is None:
                 r = q.all()
                 results = r

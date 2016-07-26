@@ -178,18 +178,17 @@ class BaseContext(object):
         names : list
             all the speaker names
         """
-        q = self.sql_session.query(Speaker).all()
+        q = self.sql_session.query(Speaker).order_by(Speaker.name).all()
         if not len(q):
             res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.cypher_safe_name))
 
             speakers = []
             for s in res:
-                print(s)
                 instance = Speaker(name = s['speaker'])
                 self.sql_session.add(instance)
                 speakers.append(s['speaker'])
             self.sql_session.flush()
-            return speakers
+            return sorted(speakers)
         return [x.name for x in q]
 
     def __enter__(self):
@@ -261,6 +260,9 @@ class BaseContext(object):
         where s.name = {{speaker}}
         with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count'''
 
+        delete_type_statement = '''MATCH (n:{corpus}:{anno}_type)
+        with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count'''
+
         if call_back is not None:
             call_back('Resetting database...')
             number = self.execute_cypher('''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
@@ -280,6 +282,15 @@ class BaseContext(object):
                     num_deleted += deleted
                     if call_back is not None:
                         call_back(num_deleted)
+
+            deleted = 1000
+            while deleted > 0:
+                if stop_check is not None and stop_check():
+                    break
+                deleted = self.execute_cypher(delete_type_statement.format(corpus = self.cypher_safe_name, anno = a)).evaluate()
+                num_deleted += deleted
+                if call_back is not None:
+                    call_back(num_deleted)
 
         self.execute_cypher('''MATCH (n:{}:Speaker) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.execute_cypher('''MATCH (n:{}:Discourse) DETACH DELETE n '''.format(self.cypher_safe_name))

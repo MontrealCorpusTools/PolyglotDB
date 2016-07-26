@@ -304,9 +304,11 @@ def untimed_config(graph_db, corpus_data_untimed):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types(*corpus_data_untimed.types('untimed'))
-        c.initialize_import()
+        c.initialize_import(corpus_data_untimed.speakers,
+                            corpus_data_untimed.token_headers,
+                            corpus_data_untimed.hierarchy.subannotations)
         c.add_discourse(corpus_data_untimed)
-        c.finalize_import()
+        c.finalize_import(corpus_data_untimed)
     return config
 
 @pytest.fixture(scope='session')
@@ -315,9 +317,11 @@ def timed_config(graph_db, corpus_data_timed):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types(*corpus_data_timed.types('timed'))
-        c.initialize_import()
+        c.initialize_import(corpus_data_timed.speakers,
+                            corpus_data_timed.token_headers,
+                            corpus_data_timed.hierarchy.subannotations)
         c.add_discourse(corpus_data_timed)
-        c.finalize_import()
+        c.finalize_import(corpus_data_timed)
     return config
 
 @pytest.fixture(scope='session')
@@ -326,9 +330,11 @@ def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme_srur):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types(*corpus_data_syllable_morpheme_srur.types('syllable_morpheme'))
-        c.initialize_import()
+        c.initialize_import(corpus_data_syllable_morpheme_srur.speakers,
+                            corpus_data_syllable_morpheme_srur.token_headers,
+                            corpus_data_syllable_morpheme_srur.hierarchy.subannotations)
         c.add_discourse(corpus_data_syllable_morpheme_srur)
-        c.finalize_import()
+        c.finalize_import(corpus_data_syllable_morpheme_srur)
     return config
 
 @pytest.fixture(scope='session')
@@ -337,9 +343,11 @@ def ursr_config(graph_db, corpus_data_ur_sr):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types(*corpus_data_ur_sr.types('ur_sr'))
-        c.initialize_import()
+        c.initialize_import(corpus_data_ur_sr.speakers,
+                            corpus_data_ur_sr.token_headers,
+                            corpus_data_ur_sr.hierarchy.subannotations)
         c.add_discourse(corpus_data_ur_sr)
-        c.finalize_import()
+        c.finalize_import(corpus_data_ur_sr)
     return config
 
 @pytest.fixture(scope='session')
@@ -348,9 +356,11 @@ def subannotation_config(graph_db, subannotation_data):
     with CorpusContext(config) as c:
         c.reset()
         c.add_types(*subannotation_data.types('subannotations'))
-        c.initialize_import()
+        c.initialize_import(subannotation_data.speakers,
+                            subannotation_data.token_headers,
+                            subannotation_data.hierarchy.subannotations)
         c.add_discourse(subannotation_data)
-        c.finalize_import()
+        c.finalize_import(subannotation_data)
     return config
 
 @pytest.fixture(scope = 'session')

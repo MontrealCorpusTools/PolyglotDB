@@ -13,6 +13,8 @@ from ..sql import get_or_create
 from ..sql.models import (SoundFile, Discourse)
 
 def resample_audio(filepath, new_filepath, new_sr):
+    if os.path.exists(new_filepath):
+        return
     sox_path = shutil.which('sox')
     if sox_path is not None:
         subprocess.call(['sox', filepath.replace('\\','/'), new_filepath.replace('\\','/'),
