@@ -23,7 +23,7 @@ def pytest_addoption(parser):
 def test_dir():
     if not os.path.exists('tests/data/generated'):
         os.makedirs('tests/data/generated')
-    return os.path.abspath('tests/data') #was tests/data
+    return os.path.abspath('data') #was tests/data
 
 @pytest.fixture(scope='session')
 def buckeye_test_dir(test_dir):

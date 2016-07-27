@@ -5,7 +5,7 @@ import re
 
 class SummarizedContext(BaseContext):
 
-    
+
     def phone_mean_duration(self, speaker = None):
         """
         Get the mean duration of each phone in corpus
@@ -232,12 +232,10 @@ class SummarizedContext(BaseContext):
         allWords = q.all()
 
         allPhones = self.phone_mean_duration(speaker)
-
         duration_dict = {}
         word_totals = {}
         for tup in allPhones:
             duration_dict[tup[0]]=tup[1]
-
         for word in allWords:
             total = 0.0
             if buckeye:
@@ -260,6 +258,7 @@ class SummarizedContext(BaseContext):
                     continue  
             except KeyError:
                 word_totals[word.label] = total
+
         return word_totals
 
     
@@ -355,7 +354,6 @@ class SummarizedContext(BaseContext):
 
         return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
 
-       
     def make_dict(self, data):
         """
         turn data results into a dictionary for encoding
@@ -374,6 +372,7 @@ class SummarizedContext(BaseContext):
             for r in data.keys():
                 finalDict.update({r : {'baseline_duration': data[r]}})   
         return finalDict
+        
     def encode_measure(self, data, data_type):
         """
         encode the data into the graph
@@ -383,3 +382,9 @@ class SummarizedContext(BaseContext):
             self.enrich_lexicon(dataDict)
         elif data_type == 'phone':
             self.enrich_features(dataDict)
+        elif data_type == 'syllable':
+            self.enrich_syllables(dataDict)
+        elif data_type == 'speaker':
+            self.enrich_speakers(dataDict)
+
+

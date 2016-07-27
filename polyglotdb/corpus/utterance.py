@@ -1,11 +1,8 @@
 
 from uuid import uuid1
 
-<<<<<<< HEAD
-from .base import BaseContext
 
-=======
->>>>>>> MontrealCorpusTools/master
+
 from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs
 from ..graph.func import Max, Min
 from ..graph.query import DiscourseGraphQuery

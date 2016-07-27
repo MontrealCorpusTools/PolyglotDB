@@ -10,8 +10,6 @@ from .structured import StructuredContext
 from .syllabic import SyllabicContext
 from .spoken import SpokenContext
 from .summarized import SummarizedContext
-<<<<<<< HEAD
-=======
 
 
 class CorpusContext(StructuredContext, ImportContext, FeaturedContext, LexicalContext,
@@ -37,7 +35,7 @@ class CorpusContext(StructuredContext, ImportContext, LexicalContext,
                     SyllabicContext, SpokenContext, SummarizedContext):
 =======
     """
->>>>>>> MontrealCorpusTools/master
+
     pass
 
 
