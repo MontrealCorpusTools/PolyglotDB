@@ -364,7 +364,6 @@ class SummarizedContext(BaseContext):
         if type(data) == list and len(data[0])==2:
             for i,r in enumerate(data):
                 finalDict.update({r[0]:{str(data[1].keys()[1]):r[1]}})
-            print(finalDict)
         elif type(data) == list and len(data[0]) == 3:
             for i,r in enumerate(data):
                 speaker = r[0]
@@ -374,7 +373,6 @@ class SummarizedContext(BaseContext):
         else:
             for r in data.keys():
                 finalDict.update({r : {'baseline_duration': data[r]}})   
-            print(finalDict) 
         return finalDict
     def encode_measure(self, data, data_type):
         """
