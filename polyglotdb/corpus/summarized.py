@@ -357,6 +357,16 @@ class SummarizedContext(BaseContext):
     def make_dict(self, data):
         """
         turn data results into a dictionary for encoding
+
+        Parameters
+        ----------
+        data : list/dict
+            a list of tuples or a dict
+
+        Returns
+        -------
+        finalDict : dict
+            the data in the dictionary form needed for encoding
         """
         finalDict = {}
         if type(data) == list and len(data[0])==2:
@@ -376,6 +386,14 @@ class SummarizedContext(BaseContext):
     def encode_measure(self, data, data_type):
         """
         encode the data into the graph
+
+        Parameters
+        ----------
+        data : dict
+            the data to be encoded
+        data_type : str
+            the type of encoding to be done
+            (word, phone, syllable, speaker)
         """   
         dataDict = self.make_dict(data)
         if data_type == 'word':
