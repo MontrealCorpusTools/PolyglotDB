@@ -318,7 +318,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         self.encode_hierarchy()
 
 
-    def encode_stress(self):
+    def encode_stress(self, pattern = '[0-9]'):
         """
         encode stress based off of CMUDict cues
 
@@ -335,15 +335,42 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                     if re.search('[0-2]', seg) is not None:
                         nucleus = seg
                 enrich_dict.update({syl:{}})
+                
+                r = re.search(pattern, nucleus)
+                if r is not None:
+                   # print(type(nucleus[r.start(0):r.end(0)]))
+                    enrich_dict[syl] = {'stress': nucleus[r.start(0):r.end(0)]}
+                """    
                 if '1' in nucleus:
                     enrich_dict[syl] = {'stress':'primary'}
                 elif '2' in nucleus:
                     enrich_dict[syl] = {'stress':'secondary'}
                 elif '0' in nucleus:
                     enrich_dict[syl] = {'stress':'unstressed'}
+                """
         self.enrich_syllables(enrich_dict)
 
+    def encode_tone(self, pattern):
+        """
+        encode tone based off of CMUDict cues
+        """
+        syllable = self.syllable
+        all_syls =  self.query_graph(syllable).all()
+        enrich_dict = {}
+        for x in all_syls.cursors:
+            for item in x:
+                syl = item[0].properties['label']
+                splitsyl = syl.split('.')
+                nucleus = splitsyl[0]
+                for seg in splitsyl:
+                    if re.search('[0-2]', seg) is not None:
+                        nucleus = seg
+                enrich_dict.update({syl:{}})
+                
+                r = re.search(pattern,nucleus)
+                if r is not None:
+                    enrich_dict[syl] = {'tone':nucleus[r.start(0):r.end(0)].replace("_","")}
 
-
+        self.enrich_syllables(enrich_dict)
 
 
