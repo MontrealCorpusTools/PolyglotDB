@@ -1,10 +1,12 @@
 
 from uuid import uuid1
-
-from ..io.importer import (syllables_data_to_csvs, import_syllable_csv,
+import re
+from ..io.importer import  (syllables_data_to_csvs, import_syllable_csv,
                             nonsyls_data_to_csvs, import_nonsyl_csv,
-                            create_syllabic_csvs, create_nonsyllabic_csvs)
+                            create_syllabic_csvs, create_nonsyllabic_csvs, 
+                            syllables_enrichment_data_to_csvs, import_syllable_enrichment_csvs)
 
+#from ..io.importer import syllables_enrichment_data_to_csvs
 from ..io.helper import make_type_id
 
 from ..syllabification.probabilistic import norm_count_dict, split_nonsyllabic_prob, split_ons_coda_prob
@@ -291,3 +293,57 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         if call_back is not None:
             call_back('Finished!')
             call_back(1, 1)
+
+
+    def enrich_syllables(self, syllable_data, type_data = None):
+        """
+        Sets the data type and syllable data, initializes importers for syllable data, adds features to hierarchy for a phone
+
+        Parameters
+        ----------
+        syllable_data : dict
+            the enrichment data
+        type_data : dict
+            By default None
+        """
+        if type_data is None:
+            type_data = {k: type(v) for k,v in next(iter(syllable_data.values())).items()}
+        #labels = set(self.lexicon.phones())
+        #syllable_data = {k: v for k,v in syllable_data.items() if k in labels}
+
+        self.lexicon.add_properties('syllable', syllable_data, type_data)
+        syllables_enrichment_data_to_csvs(self, syllable_data)
+        import_syllable_enrichment_csvs(self, type_data)
+        self.hierarchy.add_type_properties(self, 'syllable', type_data.items())
+        self.encode_hierarchy()
+
+
+    def encode_stress(self):
+        """
+        encode stress based off of CMUDict cues
+
+        """
+        syllable = self.syllable
+        all_syls =  self.query_graph(syllable).all()
+        enrich_dict = {}
+        for x in all_syls.cursors:
+            for item in x:
+                syl = item[0].properties['label']
+                splitsyl = syl.split('.')
+                nucleus = splitsyl[0]
+                for seg in splitsyl:
+                    if re.search('[0-2]', seg) is not None:
+                        nucleus = seg
+                enrich_dict.update({syl:{}})
+                if '1' in nucleus:
+                    enrich_dict[syl] = {'stress':'primary'}
+                elif '2' in nucleus:
+                    enrich_dict[syl] = {'stress':'secondary'}
+                elif '0' in nucleus:
+                    enrich_dict[syl] = {'stress':'unstressed'}
+        self.enrich_syllables(enrich_dict)
+
+
+
+
+
