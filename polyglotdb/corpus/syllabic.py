@@ -130,6 +130,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
             self.hierarchy.remove_token_labels(self, self.phone_name, ['onset','coda','nucleus'])
             self.hierarchy.remove_token_properties(self, self.phone_name, ['syllable_position'])
             del self.hierarchy['syllable']
+            #self.reset_to_old_label()
             self.encode_hierarchy()
             self.refresh_hierarchy()
         except KeyError:
@@ -318,7 +319,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         self.encode_hierarchy()
 
 
-    def encode_stress(self, pattern = '[0-9]'):
+    def encode_stress(self, pattern):
         """
         encode stress based off of CMUDict cues
 
@@ -326,13 +327,14 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         syllable = self.syllable
         all_syls =  self.query_graph(syllable).all()
         enrich_dict = {}
-        for x in all_syls.cursors:
+      
+        for i,x in enumerate(all_syls.cursors):
             for item in x:
                 syl = item[0].properties['label']
                 splitsyl = syl.split('.')
                 nucleus = splitsyl[0]
                 for seg in splitsyl:
-                    if re.search('[0-2]', seg) is not None:
+                    if re.search(pattern, seg) is not None:
                         nucleus = seg
                 enrich_dict.update({syl:{}})
                 
@@ -340,16 +342,9 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                 if r is not None:
                    # print(type(nucleus[r.start(0):r.end(0)]))
                     enrich_dict[syl] = {'stress': nucleus[r.start(0):r.end(0)]}
-                """    
-                if '1' in nucleus:
-                    enrich_dict[syl] = {'stress':'primary'}
-                elif '2' in nucleus:
-                    enrich_dict[syl] = {'stress':'secondary'}
-                elif '0' in nucleus:
-                    enrich_dict[syl] = {'stress':'unstressed'}
-                """
+                   
         self.enrich_syllables(enrich_dict)
-
+      
     def encode_tone(self, pattern):
         """
         encode tone based off of CMUDict cues
