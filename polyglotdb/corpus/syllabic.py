@@ -321,7 +321,12 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
 
     def encode_stress(self, pattern):
         """
-        encode stress based off of CMUDict cues
+        encode stress onto syllables based off of stress information attached to phones
+
+        Parameters
+        ----------
+        pattern : str
+            regex pattern for stress information
 
         """
         syllable = self.syllable
@@ -347,7 +352,12 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
       
     def encode_tone(self, pattern):
         """
-        encode tone based off of CMUDict cues
+        encode tone onto syllables based off of tone information attached to phones
+
+        Parameters
+        ----------
+        pattern : str
+            regex pattern for tone information
         """
         syllable = self.syllable
         all_syls =  self.query_graph(syllable).all()
