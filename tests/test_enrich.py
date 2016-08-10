@@ -108,3 +108,9 @@ def test_stress_enrichment(stressed_config):
 
         assert(c.hierarchy.has_type_property("syllable","stress"))
 
+def test_relativized_enrichment(acoustic_config):
+    with CorpusContext(acoustic_config) as c:
+        c.encode_measure("word_median")
+
+        assert(c.hierarchy.has_type_property("word","median_duration"))
+
