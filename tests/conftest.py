@@ -23,7 +23,7 @@ def pytest_addoption(parser):
 def test_dir():
     if not os.path.exists('tests/data/generated'):
         os.makedirs('tests/data/generated')
-    return os.path.abspath('tests/data') #was tests/data
+    return os.path.abspath('data') #was tests/data
 
 @pytest.fixture(scope='session')
 def buckeye_test_dir(test_dir):
@@ -420,4 +420,16 @@ def summarized_config(graph_db, textgrid_test_dir):
         parser = inspect_textgrid(acoustic_path)
         c.load(parser, acoustic_path)
     
+    return config
+
+
+@pytest.fixture(scope='session')
+def stressed_config(graph_db, textgrid_test_dir):
+    config = CorpusConfig('stressed', **graph_db)
+
+    stressed_path = os.path.join(textgrid_test_dir,'stressed_corpus.TextGrid')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_textgrid(stressed_path)
+        c.load(parser, stressed_path)
     return config
