@@ -5,7 +5,7 @@ import re
 
 class SummarizedContext(BaseContext):
 
-    
+
     def phone_mean_duration(self, speaker = None):
         """
         Get the mean duration of each phone in corpus
@@ -227,17 +227,25 @@ class SummarizedContext(BaseContext):
             buckeye = True
 
         word = getattr(self, self.word_name)
+        phone = getattr(self,self.phone_name)
         q = self.query_graph(word)
 
         allWords = q.all()
-
-        allPhones = self.phone_mean_duration(speaker)
-
+        allPhones = []
+        if self.hierarchy.has_type_property('phone','average_duration'):
+            statement = '''MATCH (n:{phone_name}_type:{corpus_name})
+        RETURN n.label AS label, n.average_duration AS average_duration'''.format(phone_name=self.phone_name, 
+            corpus_name=self.cypher_safe_name)
+            results = self.execute_cypher(statement)
+            for item in results:
+                if item['average_duration'] is not None:
+                    allPhones.append(item)
+        else:
+            allPhones = self.phone_mean_duration(speaker)
         duration_dict = {}
         word_totals = {}
         for tup in allPhones:
             duration_dict[tup[0]]=tup[1]
-
         for word in allWords:
             total = 0.0
             if buckeye:
@@ -355,4 +363,88 @@ class SummarizedContext(BaseContext):
 
         return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
 
-       
+    def make_dict(self, data):
+        """
+        turn data results into a dictionary for encoding
+        """
+        finalDict = {}
+        if type(data) == list and len(data[0])==2:
+            for i,r in enumerate(data):
+                finalDict.update({r[0]:{str(data[1].keys()[1]):r[1]}})
+        elif type(data) == list and len(data[0]) == 3:
+            for i,r in enumerate(data):
+                speaker = r[0]
+                word = r[1]
+                num = r[2]
+                #finalDict.update({str(speaker) : {:}})
+        else:
+            for r in data.keys():
+                finalDict.update({r : {'baseline_duration': data[r]}})   
+        return finalDict
+        
+    def encode_measure(self, measure):
+        """
+        encode the data into the graph
+        """   
+        res = None
+        data_type = 'word'
+        if measure == 'word_median':
+            res = self.word_median()
+        elif measure == 'all_word_median':
+            res = self.all_word_median()
+        elif measure == 'word_mean_duration':
+            res = self.word_mean_duration()
+        elif measure == 'word_std_dev':
+            res = self.word_std_dev()
+        elif measure == 'baseline_duration':
+            res = self.baseline_duration()
+        elif measure == 'phone_mean':
+            data_type = 'phone'
+            res = self.phone_mean_duration()
+        elif measure == 'phone_median':
+            data_type = 'phone'
+            res = self.phone_median()
+        elif measure == 'phone_std_dev':
+            data_type = 'phone'
+            res = self.phone_std_dev()
+        elif measure == 'all_word_median':
+            res = self.all_word_median()
+        elif measure == 'phone_mean_duration_with_speaker':
+            data_type = 'speaker'
+            res = self.phone_mean_duration_with_speaker()
+        elif measure == 'word_mean_by_speaker':
+            data_type = 'speaker'
+            res = self.word_mean_duration_with_speaker()
+        elif measure == 'all_phone_median':
+            data_type = 'phone'
+            res = self.all_phone_median()
+        elif measure == 'syllable_mean':
+            data_type = 'syllable'
+            res = self.syllable_mean_duration()
+        elif measure == 'syllable_median':
+            data_type = 'syllable'
+            res = self.syllable_median()
+        elif measure == 'syllable_std_dev':
+            data_type = 'syllable'
+            res = self.syllable_std_dev()
+        elif measure == 'mean_speech_rate':
+            data_type = 'speaker'
+            res = self.average_speech_rate()
+
+        else:
+            print("error")
+        
+
+
+        dataDict = self.make_dict(res)
+
+        if data_type == 'word':
+            self.enrich_lexicon(dataDict)
+        elif data_type == 'phone':
+            self.enrich_features(dataDict)
+        elif data_type == 'syllable':
+            self.enrich_syllables(dataDict)
+        elif data_type == 'speaker':
+            self.enrich_speakers(dataDict)
+
+
