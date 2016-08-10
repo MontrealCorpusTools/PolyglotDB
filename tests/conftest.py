@@ -9,7 +9,7 @@ from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
 
 from polyglotdb.io.parsers.base import BaseParser
 
-from polyglotdb.io import (inspect_textgrid, inspect_fave)
+from polyglotdb.io import (inspect_textgrid, inspect_fave, inspect_mfa)
 
 from polyglotdb.corpus import CorpusContext
 from polyglotdb.structure import Hierarchy
@@ -23,7 +23,7 @@ def pytest_addoption(parser):
 def test_dir():
     if not os.path.exists('tests/data/generated'):
         os.makedirs('tests/data/generated')
-    return os.path.abspath('data') #was tests/data
+    return os.path.abspath('tests/data') #was tests/data
 
 @pytest.fixture(scope='session')
 def buckeye_test_dir(test_dir):
@@ -430,6 +430,6 @@ def stressed_config(graph_db, textgrid_test_dir):
     stressed_path = os.path.join(textgrid_test_dir,'stressed_corpus.TextGrid')
     with CorpusContext(config) as c:
         c.reset()
-        parser = inspect_textgrid(stressed_path)
+        parser = inspect_mfa(stressed_path)
         c.load(parser, stressed_path)
     return config

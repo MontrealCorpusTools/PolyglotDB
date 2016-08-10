@@ -72,6 +72,7 @@ class FeaturedContext(object):
         type_data : dict
             By default None
         """
+
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(feature_data.values())).items()}
         labels = set(self.lexicon.phones())
@@ -84,15 +85,6 @@ class FeaturedContext(object):
 
 
     def remove_pattern(self, pattern='[0-2]'):
-        """
-        After encoding stress/tone, this removes the alphanumeric info that indicated it before from the character set
-
-        Parameters
-        ----------
-        pattern : str
-            Regex matching stress/tone info
-            defaults to '[0-2]' 
-        """
         phone = getattr(self,self.phone_name)
         if pattern == '':
             pattern = '[0-2]'
@@ -111,7 +103,6 @@ class FeaturedContext(object):
                     oldphones.append(phone)
                     newphones.append(newphone)
                     toAdd.update({'label':newphone})
-
         statement = '''MATCH (n:{phone_name}{type}:{corpus_name}) WHERE n.label in {{oldphones}} 
         SET n.oldlabel = n.label 
         SET n.label=substring(n.label,0,length(n.label)-{length})'''
@@ -124,11 +115,7 @@ class FeaturedContext(object):
         self.encode_syllabic_segments(newphones)
         self.encode_syllables('maxonset')
         self.refresh_hierarchy()
-
     def reset_to_old_label(self):
-        """
-        Resets the characters back to include alphanumeric stress/tone info
-        """
         phones = []
         phone = getattr(self,self.phone_name)
         getphone = '''MATCH (n:{phone_name}_type:{corpus_name})

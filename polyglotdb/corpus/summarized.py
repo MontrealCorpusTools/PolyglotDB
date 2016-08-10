@@ -21,16 +21,24 @@ class SummarizedContext(BaseContext):
             the average duration of each phone in the corpus
         """
         phone = getattr(self, self.phone_name)
-        self.encode_utterances()
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
         if speaker is not None:
             q = self.query_graph(phone).filter(phone.speaker.name==speaker)
         else:
             q = self.query_graph(phone)
 
-        q=q.group_by(phone.label.column_name('label'))
+       # q=q.group_by(phone.label.column_name('label'))
     
-        result = q.aggregate(Average(phone.duration))
-      
+       # result = q.aggregate(Average(phone.duration))
+        statement = "MATCH (p:phone:{corpus_name}) RETURN p.label as phone, avg(p.end - p.begin) as average_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+
         return result
     
     
@@ -45,7 +53,8 @@ class SummarizedContext(BaseContext):
             the average duration of each phone in the corpus, by speaker
         """
         phone = getattr(self, self.phone_name)
-        self.encode_utterances()
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
         
         q = self.query_graph(phone)
         q=q.group_by(phone.speaker.name.column_name("speaker"), phone.label.column_name('label'))
@@ -65,8 +74,14 @@ class SummarizedContext(BaseContext):
             the standard deviation of each phone in the corpus
         """
         phone = getattr(self, self.phone_name)
-        result = self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Stdev(phone.duration))#.filter(phone.label==to_find)
+        #result = self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Stdev(phone.duration))#.filter(phone.label==to_find)
+        statement = "MATCH (p:phone:{corpus_name}) RETURN p.label as phone, stdev(p.end - p.begin) as standard_deviation".format(corpus_name = self.corpus_name)
+        
 
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
         return result
 
     
@@ -94,7 +109,15 @@ class SummarizedContext(BaseContext):
             the median duration of each phone in the corpus
         """
         phone = getattr(self, self.phone_name)
-        return self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Median(phone.duration))#.filter(phone.label == to_find)
+        statement = "MATCH (p:phone:{corpus_name}) RETURN p.label as phone, percentileDisc(p.end - p.begin, .5) as median_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+        return result
+        #self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Median(phone.duration))#.filter(phone.label == to_find)
       
     
 
@@ -139,8 +162,14 @@ class SummarizedContext(BaseContext):
             the average duration of each word
         """
         word = getattr(self,self.word_name)
-        result = self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Average(word.duration))#.filter(word.label==to_find)
-       
+        #result = self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Average(word.duration))#.filter(word.label==to_find)
+        statement = "MATCH (p:word:{corpus_name}) RETURN p.label as word, avg(p.end - p.begin) as average_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
         return result
 
 
@@ -156,7 +185,8 @@ class SummarizedContext(BaseContext):
             the average duration of each word in the corpus, by speaker
         """
         word = getattr(self, self.word_name)
-        self.encode_utterances()
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
         
         q = self.query_graph(word)
       
@@ -177,7 +207,15 @@ class SummarizedContext(BaseContext):
             the median duration of each word
         """
         word = getattr(self, self.word_name)
-        return self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Median(word.duration))#.filter(word.label == to_find)
+        statement = "MATCH (p:word:{corpus_name}) RETURN p.label as word, percentileDisc(p.end - p.begin, .5) as median_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+        return result
+        #self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Median(word.duration))#.filter(word.label == to_find)
       
     
     def all_word_median(self):
@@ -203,7 +241,16 @@ class SummarizedContext(BaseContext):
             the standard deviation of each word in the corpus
         """
         word = getattr(self, self.word_name)
-        return self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Stdev(word.duration))#.filter(word.label==to_find)
+        statement = "MATCH (p:word:{corpus_name}) RETURN p.label as word, stdev(p.end - p.begin) as standard_deviation".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+
+        return result
+        #self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Stdev(word.duration))#.filter(word.label==to_find)
 
 
     
@@ -281,9 +328,15 @@ class SummarizedContext(BaseContext):
             the average duration of each syllable
         """
         syllable = self.syllable
-        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Average(syllable.duration))
+        #return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Average(syllable.duration))
+        statement = "MATCH (p:syllable:{corpus_name}) RETURN p.label as syllable, avg(p.end - p.begin) as average_duration".format(corpus_name = self.corpus_name)
+        
 
-
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+        return result
     
     def syllable_mean_duration_with_speaker(self):
         """
@@ -295,7 +348,8 @@ class SummarizedContext(BaseContext):
             the average duration of each syllable in the corpus, by speaker
         """
         syllable = self.syllable
-        self.encode_utterances()
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
         
         q = self.query_graph(syllable)
         q=q.group_by(syllable.speaker.name.column_name("speaker"), syllable.label.column_name('label'))
@@ -315,7 +369,15 @@ class SummarizedContext(BaseContext):
             the median duration of each syllable
         """
         syllable = self.syllable
-        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Median(syllable.duration))
+        statement = "MATCH (p:syllable:{corpus_name}) RETURN p.label as syllable, percentileDisc(p.end - p.begin, .5) as median_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+        return result
+        #self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Median(syllable.duration))
        
     
     def all_syllable_median(self):
@@ -341,7 +403,17 @@ class SummarizedContext(BaseContext):
             the standard deviation of each syllable in the corpus
         """
         syllable = self.syllable
-        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Stdev(syllable.duration))
+
+        statement = "MATCH (p:syllable:{corpus_name}) RETURN p.label as syllable, stdev(p.end - p.begin) as standard_deviation".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+
+        return result
+        #self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Stdev(syllable.duration))
 
 
 
