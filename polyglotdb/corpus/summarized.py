@@ -438,6 +438,16 @@ class SummarizedContext(BaseContext):
     def make_dict(self, data):
         """
         turn data results into a dictionary for encoding
+
+        Parameters
+        ----------
+        data : list 
+            a list returned by cypher 
+
+        Returns
+        -------
+        finaldict : dict
+            a dictionary in the format for enrichment
         """
         finalDict = {}
         if type(data) == list and len(data[0])==2:
@@ -457,6 +467,12 @@ class SummarizedContext(BaseContext):
     def encode_measure(self, measure):
         """
         encode the data into the graph
+
+        Parameters
+        ----------
+        measure: str
+            desired measure to encode
+        
         """   
         res = None
         data_type = 'word'

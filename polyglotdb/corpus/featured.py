@@ -85,6 +85,16 @@ class FeaturedContext(object):
 
 
     def remove_pattern(self, pattern='[0-2]'):
+        """
+        removes a stress or tone pattern from all phones
+
+        Parameters
+        ----------
+        pattern : str
+            the regular expression for the pattern to remove
+            Defaults to '[0-2]'
+
+        """
         phone = getattr(self,self.phone_name)
         if pattern == '':
             pattern = '[0-2]'
@@ -116,6 +126,9 @@ class FeaturedContext(object):
         self.encode_syllables('maxonset')
         self.refresh_hierarchy()
     def reset_to_old_label(self):
+        """
+        Reset phones back to their old labels which include stress and tone
+        """
         phones = []
         phone = getattr(self,self.phone_name)
         getphone = '''MATCH (n:{phone_name}_type:{corpus_name})
