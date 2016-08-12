@@ -18,10 +18,10 @@ class SpokenContext(object):
         """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(speaker_data.values())).items()}
-
         speakers = set(self.speakers)
         speaker_data = {k: v for k,v in speaker_data.items() if k in speakers}
         self.census.add_speaker_properties(speaker_data, type_data)
+        
         speaker_data_to_csvs(self, speaker_data)
         import_speaker_csvs(self, type_data)
         self.hierarchy.add_speaker_properties(self, type_data.items())
