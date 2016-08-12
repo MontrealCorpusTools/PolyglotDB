@@ -141,7 +141,6 @@ class BaseParser(object):
                     if not rl.subannotation:
                         continue
                     for sub in rl:
-
                         annotation = annotation_types[k].lookup(sub.midpoint, speaker = speaker)
                         if isinstance(sub, Tobi):
                             a = PGSubAnnotation(sub.label, 'tone', sub.begin, sub.end)
@@ -164,8 +163,8 @@ class BaseParser(object):
                         try:
                             a.super_id = super_annotation.id
                         except AttributeError:
-                            print(a.begin, a.end, a.speaker)
-                            raise
+                            pass
+                            #raise 
             if self.make_transcription and segment_type is not None and v.is_word:
                 v.type_property_keys.update(['transcription'])
                 annotation_types[segment_type].optimize_lookups()

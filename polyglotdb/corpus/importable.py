@@ -111,7 +111,9 @@ class ImportContext(object):
             list of files that it could not parse
         """
         if os.path.isdir(path):
+            print("loading {} with {}".format(path, parser))
             could_not_parse = self.load_directory(parser, path)
+
         else:
             could_not_parse = self.load_discourse(parser, path)
         return could_not_parse

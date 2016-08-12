@@ -21,16 +21,24 @@ class SummarizedContext(BaseContext):
             the average duration of each phone in the corpus
         """
         phone = getattr(self, self.phone_name)
-        self.encode_utterances()
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
         if speaker is not None:
             q = self.query_graph(phone).filter(phone.speaker.name==speaker)
         else:
             q = self.query_graph(phone)
 
-        q=q.group_by(phone.label.column_name('label'))
+       # q=q.group_by(phone.label.column_name('label'))
     
-        result = q.aggregate(Average(phone.duration))
-      
+       # result = q.aggregate(Average(phone.duration))
+        statement = "MATCH (p:phone:{corpus_name}) RETURN p.label as phone, avg(p.end - p.begin) as average_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+
         return result
     
     
@@ -45,7 +53,8 @@ class SummarizedContext(BaseContext):
             the average duration of each phone in the corpus, by speaker
         """
         phone = getattr(self, self.phone_name)
-        self.encode_utterances()
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
         
         q = self.query_graph(phone)
         q=q.group_by(phone.speaker.name.column_name("speaker"), phone.label.column_name('label'))
@@ -65,8 +74,14 @@ class SummarizedContext(BaseContext):
             the standard deviation of each phone in the corpus
         """
         phone = getattr(self, self.phone_name)
-        result = self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Stdev(phone.duration))#.filter(phone.label==to_find)
+        #result = self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Stdev(phone.duration))#.filter(phone.label==to_find)
+        statement = "MATCH (p:phone:{corpus_name}) RETURN p.label as phone, stdev(p.end - p.begin) as standard_deviation".format(corpus_name = self.corpus_name)
+        
 
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
         return result
 
     
@@ -94,7 +109,15 @@ class SummarizedContext(BaseContext):
             the median duration of each phone in the corpus
         """
         phone = getattr(self, self.phone_name)
-        return self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Median(phone.duration))#.filter(phone.label == to_find)
+        statement = "MATCH (p:phone:{corpus_name}) RETURN p.label as phone, percentileDisc(p.end - p.begin, .5) as median_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+        return result
+        #self.query_graph(phone).group_by(phone.label.column_name('label')).aggregate(Median(phone.duration))#.filter(phone.label == to_find)
       
     
 
@@ -139,8 +162,14 @@ class SummarizedContext(BaseContext):
             the average duration of each word
         """
         word = getattr(self,self.word_name)
-        result = self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Average(word.duration))#.filter(word.label==to_find)
-       
+        #result = self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Average(word.duration))#.filter(word.label==to_find)
+        statement = "MATCH (p:word:{corpus_name}) RETURN p.label as word, avg(p.end - p.begin) as average_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
         return result
 
 
@@ -156,7 +185,8 @@ class SummarizedContext(BaseContext):
             the average duration of each word in the corpus, by speaker
         """
         word = getattr(self, self.word_name)
-        self.encode_utterances()
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
         
         q = self.query_graph(word)
       
@@ -177,7 +207,15 @@ class SummarizedContext(BaseContext):
             the median duration of each word
         """
         word = getattr(self, self.word_name)
-        return self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Median(word.duration))#.filter(word.label == to_find)
+        statement = "MATCH (p:word:{corpus_name}) RETURN p.label as word, percentileDisc(p.end - p.begin, .5) as median_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+        return result
+        #self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Median(word.duration))#.filter(word.label == to_find)
       
     
     def all_word_median(self):
@@ -203,7 +241,16 @@ class SummarizedContext(BaseContext):
             the standard deviation of each word in the corpus
         """
         word = getattr(self, self.word_name)
-        return self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Stdev(word.duration))#.filter(word.label==to_find)
+        statement = "MATCH (p:word:{corpus_name}) RETURN p.label as word, stdev(p.end - p.begin) as standard_deviation".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+
+        return result
+        #self.query_graph(word).group_by(word.label.column_name('label')).aggregate(Stdev(word.duration))#.filter(word.label==to_find)
 
 
     
@@ -227,11 +274,23 @@ class SummarizedContext(BaseContext):
             buckeye = True
 
         word = getattr(self, self.word_name)
+        phone = getattr(self,self.phone_name)
         q = self.query_graph(word)
 
         allWords = q.all()
 
-        allPhones = self.phone_mean_duration(speaker)
+        allPhones = []
+        if self.hierarchy.has_type_property('phone','average_duration'):
+            statement = '''MATCH (n:{phone_name}_type:{corpus_name})
+        RETURN n.label AS label, n.average_duration AS average_duration'''.format(phone_name=self.phone_name, 
+            corpus_name=self.cypher_safe_name)
+            results = self.execute_cypher(statement)
+            for item in results:
+                if item['average_duration'] is not None:
+                    allPhones.append(item)
+        else:
+            allPhones = self.phone_mean_duration(speaker)
+
         duration_dict = {}
         word_totals = {}
         for tup in allPhones:
@@ -272,9 +331,15 @@ class SummarizedContext(BaseContext):
             the average duration of each syllable
         """
         syllable = self.syllable
-        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Average(syllable.duration))
+        #return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Average(syllable.duration))
+        statement = "MATCH (p:syllable:{corpus_name}) RETURN p.label as syllable, avg(p.end - p.begin) as average_duration".format(corpus_name = self.corpus_name)
+        
 
-
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+        return result
     
     def syllable_mean_duration_with_speaker(self):
         """
@@ -286,7 +351,8 @@ class SummarizedContext(BaseContext):
             the average duration of each syllable in the corpus, by speaker
         """
         syllable = self.syllable
-        self.encode_utterances()
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
         
         q = self.query_graph(syllable)
         q=q.group_by(syllable.speaker.name.column_name("speaker"), syllable.label.column_name('label'))
@@ -306,7 +372,15 @@ class SummarizedContext(BaseContext):
             the median duration of each syllable
         """
         syllable = self.syllable
-        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Median(syllable.duration))
+        statement = "MATCH (p:syllable:{corpus_name}) RETURN p.label as syllable, percentileDisc(p.end - p.begin, .5) as median_duration".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+        return result
+        #self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Median(syllable.duration))
        
     
     def all_syllable_median(self):
@@ -332,7 +406,17 @@ class SummarizedContext(BaseContext):
             the standard deviation of each syllable in the corpus
         """
         syllable = self.syllable
-        return self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Stdev(syllable.duration))
+
+        statement = "MATCH (p:syllable:{corpus_name}) RETURN p.label as syllable, stdev(p.end - p.begin) as standard_deviation".format(corpus_name = self.corpus_name)
+        
+
+        result = []
+        res = self.execute_cypher(statement)
+        for item in res:
+            result.append(item)
+
+        return result
+        #self.query_graph(syllable).group_by(syllable.label.column_name('label')).aggregate(Stdev(syllable.duration))
 
 
 
@@ -360,6 +444,7 @@ class SummarizedContext(BaseContext):
 
         Parameters
         ----------
+
         data : list/dict
             a list of tuples or a dict
 
@@ -367,6 +452,7 @@ class SummarizedContext(BaseContext):
         -------
         finalDict : dict
             the data in the dictionary form needed for encoding
+
         """
         finalDict = {}
         if type(data) == list and len(data[0])==2:
@@ -383,19 +469,70 @@ class SummarizedContext(BaseContext):
                 finalDict.update({r : {'baseline_duration': data[r]}})   
         return finalDict
         
-    def encode_measure(self, data, data_type):
+    def encode_measure(self, measure):
+
         """
         encode the data into the graph
 
         Parameters
         ----------
-        data : dict
-            the data to be encoded
-        data_type : str
-            the type of encoding to be done
-            (word, phone, syllable, speaker)
+        measure: str
+            desired measure to encode
+        
         """   
-        dataDict = self.make_dict(data)
+        res = None
+        data_type = 'word'
+        if measure == 'word_median':
+            res = self.word_median()
+        elif measure == 'all_word_median':
+            res = self.all_word_median()
+        elif measure == 'word_mean_duration':
+            res = self.word_mean_duration()
+        elif measure == 'word_std_dev':
+            res = self.word_std_dev()
+        elif measure == 'baseline_duration':
+            res = self.baseline_duration()
+        elif measure == 'phone_mean':
+            data_type = 'phone'
+            res = self.phone_mean_duration()
+        elif measure == 'phone_median':
+            data_type = 'phone'
+            res = self.phone_median()
+        elif measure == 'phone_std_dev':
+            data_type = 'phone'
+            res = self.phone_std_dev()
+        elif measure == 'all_word_median':
+            res = self.all_word_median()
+        elif measure == 'phone_mean_duration_with_speaker':
+            data_type = 'speaker'
+            res = self.phone_mean_duration_with_speaker()
+        elif measure == 'word_mean_by_speaker':
+            data_type = 'speaker'
+            res = self.word_mean_duration_with_speaker()
+        elif measure == 'all_phone_median':
+            data_type = 'phone'
+            res = self.all_phone_median()
+        elif measure == 'syllable_mean':
+            data_type = 'syllable'
+            res = self.syllable_mean_duration()
+        elif measure == 'syllable_median':
+            data_type = 'syllable'
+            res = self.syllable_median()
+        elif measure == 'syllable_std_dev':
+            data_type = 'syllable'
+            res = self.syllable_std_dev()
+        elif measure == 'mean_speech_rate':
+            data_type = 'speaker'
+            res = self.average_speech_rate()
+
+        else:
+            print("error")
+        
+
+
+        dataDict = self.make_dict(res)
+
+
         if data_type == 'word':
             self.enrich_lexicon(dataDict)
         elif data_type == 'phone':

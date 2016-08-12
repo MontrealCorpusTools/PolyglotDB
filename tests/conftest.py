@@ -9,7 +9,7 @@ from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
 
 from polyglotdb.io.parsers.base import BaseParser
 
-from polyglotdb.io import (inspect_textgrid, inspect_fave)
+from polyglotdb.io import (inspect_textgrid, inspect_fave, inspect_mfa)
 
 from polyglotdb.corpus import CorpusContext
 from polyglotdb.structure import Hierarchy
@@ -48,6 +48,10 @@ def mfa_test_dir(textgrid_test_dir):
 @pytest.fixture(scope='session')
 def labbcat_test_dir(textgrid_test_dir):
     return os.path.join(textgrid_test_dir, 'labbcat')
+
+@pytest.fixture(scope='session')
+def partitur_test_dir(test_dir):
+    return os.path.join(test_dir,'partitur')
 
 @pytest.fixture(scope='session')
 def text_transcription_test_dir(test_dir):
@@ -420,4 +424,27 @@ def summarized_config(graph_db, textgrid_test_dir):
         parser = inspect_textgrid(acoustic_path)
         c.load(parser, acoustic_path)
     
+    return config
+
+
+@pytest.fixture(scope='session')
+def stressed_config(graph_db, textgrid_test_dir):
+    config = CorpusConfig('stressed', **graph_db)
+
+    stressed_path = os.path.join(textgrid_test_dir,'stressed_corpus.TextGrid')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_mfa(stressed_path)
+        c.load(parser, stressed_path)
+    return config
+
+@pytest.fixture(scope='session')
+def partitur_corpus_config(graph_db, partitur_test_dir):
+    config = CorpusConfig('partitur', **graph_db)
+
+    partitur_path = os.path.join(partitur_test_dir, 'partitur_test.par,2')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_partitur(partitur_path)
+        c.load(parser, partitur_path)
     return config

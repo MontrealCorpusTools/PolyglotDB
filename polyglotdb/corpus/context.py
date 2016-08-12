@@ -24,16 +24,10 @@ class CorpusContext(StructuredContext, ImportContext, FeaturedContext, LexicalCo
     *args
         Either a CorpusConfig object or sequence of arguments to be
         passed to a CorpusConfig object
->>>>>>> MontrealCorpusTools/master
-
     **kwargs
         sequence of keyword arguments to be passed to a CorpusConfig object
 
-<<<<<<< HEAD
-class CorpusContext(StructuredContext, ImportContext, LexicalContext,
-                    PauseContext, UtteranceCorpus, AudioContext,
-                    SyllabicContext, SpokenContext, SummarizedContext):
-=======
+
     """
 
     pass

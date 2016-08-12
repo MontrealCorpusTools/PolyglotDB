@@ -27,6 +27,6 @@ class LexicalContext(object):
         import_lexicon_csvs(self, type_data, case_sensitive = case_sensitive)
         self.hierarchy.add_type_properties(self, self.word_name, type_data.items())
         self.encode_hierarchy()
-
+        print(self.hierarchy.type_properties['word'])
     def reset_lexicon(self):
         pass

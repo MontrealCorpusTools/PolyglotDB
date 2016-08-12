@@ -38,7 +38,7 @@ class BaseAnnotationType(object):
             if save or len(self._list) < 10:
                 #If save is False, only the first 10 annotations are saved
                 self._list.append(self.annotation_class(*a))
-
+                pass
     def __iter__(self):
         for x in self._list:
             yield x
