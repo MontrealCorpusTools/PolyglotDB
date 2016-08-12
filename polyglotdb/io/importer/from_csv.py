@@ -298,7 +298,7 @@ def import_feature_csvs(corpus_context, typed_data):
 
 def import_syllable_enrichment_csvs(corpus_context, typed_data):
     """
-    Import syllable features from csv file
+    Import features from csv file
 
     Parameters
     ----------

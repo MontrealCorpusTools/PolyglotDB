@@ -60,7 +60,7 @@ class BasePropertyStore(object):
 
 class Lexicon(BasePropertyStore):
     """
-    The primary way of querying Word entries in a relational database.
+    The primary way of querying Word, Phone, and Syllable entries in a relational database.
     """
     def __init__(self, corpus_context):
         super(Lexicon, self).__init__(corpus_context)
@@ -276,6 +276,20 @@ class Lexicon(BasePropertyStore):
         q = q.filter(AnnotationType.label == self.corpus_context.phone_name)
         return sorted([x[0] for x in q.all()])
 
+    def syllables(self):
+        """
+        Lists syllables of an Annotation
+        
+        Returns
+        -------
+        list
+            a sorted list of syllables of that Annotation     
+         """
+        q = self.corpus_context.sql_session.query(Annotation.label)
+        q = q.join(AnnotationType)
+        q = q.filter(AnnotationType.label == 'syllable')
+        return sorted([x[0] for x in q.all()])
+
 class Census(BasePropertyStore):
     def __getitem__(self, key):
         if key not in self.cache:
@@ -347,3 +361,23 @@ class Census(BasePropertyStore):
                 v = str(v)
                 prop, _ = get_or_create(self.corpus_context.sql_session, DiscourseProperty,
                                     discourse = discourse, property_type = pt, value = v)
+
+    def get_speaker_property_levels(self, property_type):
+        """
+        Searches for matching Property matching property_type, gets property levels from that
+        Parameters
+        ----------
+        property_type : str
+            the label of the property type
+        
+          
+        Returns
+        -------
+        list
+            list of property levels for property_type
+        """
+        q = self.corpus_context.sql_session.query(distinct(SpeakerProperty.value))
+        q = q.join(PropertyType, SpeakerProperty.property_type_id == PropertyType.id)
+        q = q.filter(PropertyType.label == property_type)
+        
+        return [x[0] for x in q.all()]
