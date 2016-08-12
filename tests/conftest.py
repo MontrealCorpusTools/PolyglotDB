@@ -50,6 +50,10 @@ def labbcat_test_dir(textgrid_test_dir):
     return os.path.join(textgrid_test_dir, 'labbcat')
 
 @pytest.fixture(scope='session')
+def partitur_test_dir(test_dir):
+    return os.path.join(test_dir,'partitur')
+
+@pytest.fixture(scope='session')
 def text_transcription_test_dir(test_dir):
     return os.path.join(test_dir, 'text_transcription')
 
@@ -432,4 +436,15 @@ def stressed_config(graph_db, textgrid_test_dir):
         c.reset()
         parser = inspect_mfa(stressed_path)
         c.load(parser, stressed_path)
+    return config
+
+@pytest.fixture(scope='session')
+def partitur_corpus_config(graph_db, partitur_test_dir):
+    config = CorpusConfig('partitur', **graph_db)
+
+    partitur_path = os.path.join(partitur_test_dir, 'partitur_test.par,2')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_partitur(partitur_path)
+        c.load(parser, partitur_path)
     return config

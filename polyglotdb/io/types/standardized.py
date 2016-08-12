@@ -134,7 +134,6 @@ class PGAnnotationType(object):
             while cur < len(self._list):
                 self._lookup_dict[cur] = self._list[cur].begin
                 cur += 1000
-
     def add(self, annotation):
         """
         adds annotation to PGAnnotationType object

@@ -1,5 +1,6 @@
 
 from uuid import uuid1
+
 import re
 from ..io.importer import  (syllables_data_to_csvs, import_syllable_csv,
                             nonsyls_data_to_csvs, import_nonsyl_csv,
@@ -401,3 +402,5 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         self.enrich_syllables(enrich_dict)
         self.encode_hierarchy()
         self.refresh_hierarchy()
+
+ 
