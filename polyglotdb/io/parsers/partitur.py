@@ -16,6 +16,19 @@ class PartiturParser(BaseParser):
                     stop_check = stop_check, call_back = call_back)
 		self.speaker_parser = DirectorySpeakerParser()
 	def parse_discourse(self, path, types_only = False):
+		'''
+        Parse a BAS Partitur file for later importing.
+
+        Parameters
+        ----------
+        path : str
+            Path to TextGrid file
+
+        Returns
+        -------
+        :class:`~polyglotdb.io.discoursedata.DiscourseData`
+            Parsed data from the file
+        '''
 		speaker = parse_speaker(path)
 		for a in self.annotation_types:
 			a.reset()
@@ -41,6 +54,18 @@ class PartiturParser(BaseParser):
 		return data
 
 def parse_speaker(path):
+	"""
+	Get speaker id from a BAS partitur file
+
+	Parameters
+	----------
+	path : str
+		a path to the file
+	Returns
+	-------
+	str or None
+		the speaker id
+	"""
 	speaker = ''
 	with open(path, 'r') as f:
 		lines = f.readlines()
@@ -52,6 +77,18 @@ def parse_speaker(path):
 	return None
 
 def read_words(path):
+	"""
+	Get all word info from a BAS partitur file
+
+	Parameters
+	----------
+	path : str
+		a path to the file
+	Returns
+	-------
+	dict
+		dictionary of words and their indexes
+	"""
 	words = {}
 	with open(path, 'r') as f:
 		lines = f.readlines()
@@ -62,6 +99,18 @@ def read_words(path):
 
 	return words
 def read_phones(path):
+	"""
+	Get all phone info from a BAS partitur file
+
+	Parameters
+	----------
+	path : str
+		a path to the file
+	Returns
+	-------
+	dict
+		dictionary of phones, their word indexes, and their begin and end
+	"""
 	phones = {}
 	with open(path, 'r') as f:
 		lines = f.readlines()
@@ -78,6 +127,18 @@ def read_phones(path):
 
 	return phones
 def match_words(words, phones):
+	"""
+	Matches a dict of phones to a dict of words using their indexes 
+	produces a dict of words with begin time (begin of first phone)
+	and end time (end of last phone)
+
+	Parameters
+	----------
+	words : dict
+		a dict of words and their indexes
+	phones : dict
+		a dict of phones, their indexes, and their begins and ends
+	"""
 	for i,key in enumerate(words):
 		v = words[key]
 		#"Kuchen": '3'
