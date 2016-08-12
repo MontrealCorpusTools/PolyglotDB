@@ -24,11 +24,12 @@ class CorpusContext(StructuredContext, ImportContext, FeaturedContext, LexicalCo
     *args
         Either a CorpusConfig object or sequence of arguments to be
         passed to a CorpusConfig object
-
     **kwargs
         sequence of keyword arguments to be passed to a CorpusConfig object
 
+
     """
+
     pass
 
 
