@@ -73,8 +73,6 @@ def test_all_phone_median(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("all phone median:")
         res = g.all_phone_median()
-
-
         print(res)
         assert(abs(res-0.07682000000000011) < .0000000000001)
         assert(type(res) == float)
@@ -90,10 +88,10 @@ def test_phone_median(summarized_config):
         assert(abs(res[i][1]-0.059820000000000206) < .0000000000001)
 
 
+
 def test_get_mean_duration(summarized_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
                 'uh','ah','ao','er','ow']
-
 
     with CorpusContext(summarized_config) as g:
         g.encode_syllabic_segments(syllabics)
@@ -118,7 +116,6 @@ def test_word_mean_duration(summarized_config):
             if r[0] == 'words':
                 break
         assert(abs(res[i][1]-0.5340040000000001) < .0000000000001)
-
 
 
 
@@ -219,6 +216,7 @@ def test_syllable_median(summarized_config):
 
         print("syllable median:")
         res = g.syllable_median()
+
         print(res)
         assert(len(res) == 55)
 
@@ -245,6 +243,7 @@ def test_syllable_std_dev(summarized_config):
         res = g.syllable_std_dev()
         assert(len(res) == 55)
 
+
 @pytest.mark.xfail
 def test_baseline_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
@@ -268,13 +267,13 @@ def test_baseline_speaker(summarized_config):
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
 
+
 @pytest.mark.xfail
 def test_baseline_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
         res = c.baseline_duration('tes')
         print(res)
         assert(len(res) == 9)
-
         assert(abs(res['they']-0.11224799999999968)< .0000000000001)
 
 @pytest.mark.xfail
@@ -286,6 +285,7 @@ def test_average_speech_rate(acoustic_config):
         assert(abs(res[0][1] - 2.6194399113581532) < 0.001)
         assert(len(res)==1)
 
+@pytest.mark.xfail
 def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
         c.reset()

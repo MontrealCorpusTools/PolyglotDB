@@ -121,10 +121,9 @@ def syllables_data_to_csvs(corpus_context, speaker_data):
     ----------
     corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
         the corpus object
-    data : :class:`~polyglotdb.io.helper.DiscourseData`
-        Data to load into a graph
-    split_name : str
-        identifier of the file to load
+    data : dict
+        Data to load into a csv
+  
 
     """
     for s, data in speaker_data.items():
@@ -132,6 +131,30 @@ def syllables_data_to_csvs(corpus_context, speaker_data):
                             '{}_syllable.csv'.format(s))
         header = ['id', 'prev_id', 'vowel_id', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
         write_csv_file(path, header, data, 'a')
+
+def syllables_enrichment_data_to_csvs(corpus_context, data):
+    """
+    Convert syllable enrichment data into a CSV file
+
+    Parameters
+    ----------
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+        the corpus object
+    data : Dict
+        Data to load into a csv
+    """
+    directory = corpus_context.config.temporary_directory('csv')
+    with open(os.path.join(directory, 'syllable_import.csv'), 'w') as f:
+        try:
+            header = ['label'] + sorted(next(iter(data.values())).keys())
+        except(StopIteration):
+            raise(AlphabetError)
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for k,v in sorted(data.items()):
+            v['label'] = k
+            writer.writerow(v)
+
 
 def nonsyls_data_to_csvs(corpus_context, speaker_data):
     """

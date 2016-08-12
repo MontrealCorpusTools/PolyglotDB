@@ -2,6 +2,7 @@
 from ..sql.models import Discourse, DiscourseProperty, PropertyType
 from ..sql.helper import get_or_create
 
+
 class PauseContext(object):
     def encode_pauses(self, pause_words, call_back = None, stop_check = None):
         """

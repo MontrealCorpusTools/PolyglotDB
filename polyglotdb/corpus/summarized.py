@@ -5,7 +5,7 @@ import re
 
 class SummarizedContext(BaseContext):
 
-    
+
     def phone_mean_duration(self, speaker = None):
         """
         Get the mean duration of each phone in corpus
@@ -232,12 +232,10 @@ class SummarizedContext(BaseContext):
         allWords = q.all()
 
         allPhones = self.phone_mean_duration(speaker)
-
         duration_dict = {}
         word_totals = {}
         for tup in allPhones:
             duration_dict[tup[0]]=tup[1]
-
         for word in allWords:
             total = 0.0
             if buckeye:
@@ -260,6 +258,7 @@ class SummarizedContext(BaseContext):
                     continue  
             except KeyError:
                 word_totals[word.label] = total
+
         return word_totals
 
     
@@ -355,4 +354,55 @@ class SummarizedContext(BaseContext):
 
         return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
 
-       
+    def make_dict(self, data):
+        """
+        turn data results into a dictionary for encoding
+
+        Parameters
+        ----------
+        data : list/dict
+            a list of tuples or a dict
+
+        Returns
+        -------
+        finalDict : dict
+            the data in the dictionary form needed for encoding
+        """
+        finalDict = {}
+        if type(data) == list and len(data[0])==2:
+            for i,r in enumerate(data):
+                finalDict.update({r[0]:{str(data[1].keys()[1]):r[1]}})
+        elif type(data) == list and len(data[0]) == 3:
+            for i,r in enumerate(data):
+                speaker = r[0]
+                word = r[1]
+                num = r[2]
+                #finalDict.update({str(speaker) : {:}})
+        else:
+            for r in data.keys():
+                finalDict.update({r : {'baseline_duration': data[r]}})   
+        return finalDict
+        
+    def encode_measure(self, data, data_type):
+        """
+        encode the data into the graph
+
+        Parameters
+        ----------
+        data : dict
+            the data to be encoded
+        data_type : str
+            the type of encoding to be done
+            (word, phone, syllable, speaker)
+        """   
+        dataDict = self.make_dict(data)
+        if data_type == 'word':
+            self.enrich_lexicon(dataDict)
+        elif data_type == 'phone':
+            self.enrich_features(dataDict)
+        elif data_type == 'syllable':
+            self.enrich_syllables(dataDict)
+        elif data_type == 'speaker':
+            self.enrich_speakers(dataDict)
+
+
