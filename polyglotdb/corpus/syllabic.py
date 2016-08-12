@@ -2,12 +2,9 @@
 from uuid import uuid1
 
 import re
-
-
-
 from ..io.importer import  (syllables_data_to_csvs, import_syllable_csv,
                             nonsyls_data_to_csvs, import_nonsyl_csv,
-                            create_syllabic_csvs, create_nonsyllabic_csvs, 
+                            create_syllabic_csvs, create_nonsyllabic_csvs,
                             syllables_enrichment_data_to_csvs, import_syllable_enrichment_csvs)
 
 #from ..io.importer import syllables_enrichment_data_to_csvs
@@ -337,7 +334,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         syllable = self.syllable
         all_syls =  self.query_graph(syllable).all()
         enrich_dict = {}
-      
+
         for i,x in enumerate(all_syls.cursors):
             for item in x:
                 syl = item[0].properties['label']
@@ -347,7 +344,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
 
                     if re.search(pattern, seg) is not None:
                         nucleus = seg
-                
+
                 r = re.search(pattern, nucleus)
                 if r is not None:
                     end = nucleus[r.start(0):r.end(0)].replace("_","")
@@ -356,11 +353,11 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                     syl = re.sub(fullpatt, nucleus, syl)
 
                     enrich_dict.update({syl:{'stress':end} })
-                
-        return enrich_dict   
+
+        return enrich_dict
 
         #self.enrich_syllables(enrich_dict)
-      
+
     def encode_tone(self, pattern):
         """
         encode tone based off of CMUDict cues
@@ -377,7 +374,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
                     if re.search(pattern, seg) is not None:
                         nucleus = seg
                 #enrich_dict.update({syl:{}})
-                
+
                 r = re.search(pattern,nucleus)
                 if r is not None:
                     end = nucleus[r.start(0):r.end(0)].replace("_","")
@@ -406,15 +403,9 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         self.encode_hierarchy()
         self.refresh_hierarchy()
 
-        #labels = set(self.lexicon.phones())
-        #syllable_data = {k: v for k,v in syllable_data.items() if k in labels}
-
-
         self.lexicon.add_properties('syllable', syllable_data, type_data)
         syllables_enrichment_data_to_csvs(self, syllable_data)
         import_syllable_enrichment_csvs(self, type_data)
         self.hierarchy.add_type_properties(self, 'syllable', type_data.items())
         self.encode_hierarchy()
-
-
 
