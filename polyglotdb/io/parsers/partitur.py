@@ -22,7 +22,7 @@ class PartiturParser(BaseParser):
         Parameters
         ----------
         path : str
-            Path to TextGrid file
+            Path to Partitur file
 
         Returns
         -------
@@ -42,15 +42,22 @@ class PartiturParser(BaseParser):
 
 		for i, tup in enumerate(words):
 			#tup = (key, words[key][0], words[key][1])
-			self.annotation_types[0].add([tup])
+
+			word = tup[0]
+			self.annotation_types[0].add([tup[0:3]])
+			self.annotation_types[1].add([(str(tup[3]), tup[1], tup[2])])
+		
+
+			#self.annotation_types[0][-1].type_properties['transcription'] = tup[3]
 
 		for tup in phones.values():
-			self.annotation_types[1].add(((x for x in tup)))
+			self.annotation_types[2].add(((x for x in tup)))
 		pg_annotations = self._parse_annotations(types_only)
 		data = DiscourseData(name, pg_annotations, self.hierarchy)
 
 		for a in self.annotation_types:
 			a.reset()
+
 		return data
 
 def parse_speaker(path):
@@ -95,8 +102,18 @@ def read_words(path):
 	for line in lines:
 		splitline = re.split("\s", line)
 		if splitline[0] == 'ORT:':
-			words.update({splitline[2].strip():splitline[1].strip()})
-
+			try:	
+				words[splitline[1]][0] = splitline[2]
+			except KeyError:
+				words[splitline[1]] = [None,None]
+				words[splitline[1]][0] = splitline[2]
+			#words.update({splitline[1].strip():splitline[2].strip()})
+		if splitline[0] == 'KAN:':
+			try:
+				words[splitline[1]][-1] = splitline[2]
+			except KeyError:
+				words[splitline[1]] = [None,None]
+				words[splitline[1]][-1] = splitline[2]
 	return words
 def read_phones(path):
 	"""
@@ -139,10 +156,13 @@ def match_words(words, phones):
 	phones : dict
 		a dict of phones, their indexes, and their begins and ends
 	"""
+	newwords = {}
 	for i,key in enumerate(words):
 		v = words[key]
+		word = words[key][0]
+		transcription = words[key][1]
 		#"Kuchen": '3'
-		in_word = phones[v]
+		in_word = phones[key]
 		begmin = in_word[0][2]
 		endmax = in_word[0][1]
 		for tup in in_word:
@@ -151,7 +171,10 @@ def match_words(words, phones):
 			if tup[2] > endmax:
 				endmax = tup[2]
 			
-		words[key] = (key, begmin, endmax)
+		#words[key] = (key, begmin, endmax)
+		newwords[word] = (word, begmin, endmax, transcription)
 
-	return words
+
+
+	return newwords
 
