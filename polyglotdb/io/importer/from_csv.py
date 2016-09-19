@@ -296,6 +296,49 @@ def import_feature_csvs(corpus_context, typed_data):
         corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name,h))
     #os.remove(path) # FIXME Neo4j 2.3 does not release files
 
+def import_syllable_enrichment_csvs(corpus_context, typed_data):
+    """
+    Import syllable features from csv file
+
+    Parameters
+    ----------
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+        the corpus to load into
+    typed_data : dict
+        the data
+    """
+    string_set_template = 'n.{name} = csvLine.{name}'
+    float_set_template = 'n.{name} = toFloat(csvLine.{name})'
+    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
+    properties = []
+    for h, v in typed_data.items():
+        if v == int:
+            template = int_set_template
+        elif v == bool:
+            template = bool_set_template
+        elif v == float:
+            template = float_set_template
+        else:
+            template = string_set_template
+        properties.append(template.format(name = h))
+    properties = ',\n'.join(properties)
+    directory = corpus_context.config.temporary_directory('csv')
+    path = os.path.join(directory,'syllable_import.csv')
+    syl_path = 'file:///{}'.format(make_path_safe(path))
+    import_statement = '''CYPHER planner=rule
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    MATCH (n:{phone_type}_type:{corpus_name}) where n.label = csvLine.label
+    SET {new_properties}'''
+
+    statement = import_statement.format(path = syl_path,
+                                corpus_name = corpus_context.cypher_safe_name,
+                                phone_type = "syllable",
+                                new_properties = properties)
+    corpus_context.execute_cypher(statement)
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("syllable",h))
+
 def import_speaker_csvs(corpus_context, typed_data):
     """
     Import a speaker from csv file

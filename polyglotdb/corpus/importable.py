@@ -4,8 +4,6 @@ import time
 import csv
 from collections import defaultdict
 
-from .base import BaseContext
-
 from ..sql.models import (Base, Annotation, Property, NumericProperty, SpeaksIn,
                     AnnotationType, PropertyType, Discourse, Speaker, SoundFile)
 
@@ -18,7 +16,7 @@ from ..io.importer import (data_to_graph_csvs, import_csvs,
 
 from ..exceptions import ParseError
 
-class ImportContext(BaseContext):
+class ImportContext(object):
     def add_types(self, types, type_headers):
         '''
         This function imports types of annotations into the corpus.
@@ -96,22 +94,26 @@ class ImportContext(BaseContext):
 
     def load(self, parser, path):
         """
-            Checks if it can load the path
+        Use a specified parser on a path to either a directory or a single
+        file
 
-            Parameters
-            ----------
-            parser : :class: `~polyglotdb.io.parsers.BaseParser`
-                the type of parser used for corpus
-            path : str
-                the location of the corpus
+        Parameters
+        ----------
+        parser : :class:`~polyglotdb.io.parsers.BaseParser`
+            The type of parser used for corpus
 
-            Returns
-            -------
-            could_not_parse : list
-                list of files that it could not parse
+        path : str
+            The location of the corpus
+
+        Returns
+        -------
+        could_not_parse : list
+            list of files that it could not parse
         """
         if os.path.isdir(path):
+            print("loading {} with {}".format(path, parser))
             could_not_parse = self.load_directory(parser, path)
+
         else:
             could_not_parse = self.load_discourse(parser, path)
         return could_not_parse
@@ -122,7 +124,7 @@ class ImportContext(BaseContext):
 
         Parameters
         ----------
-        parser : :class: `~polyglotdb.io.parsers.BaseParser`
+        parser : :class:`~polyglotdb.io.parsers.BaseParser`
                 the type of parser used for corpus
         path : str
             the location of the discourse
@@ -146,7 +148,7 @@ class ImportContext(BaseContext):
 
         Parameters
         ----------
-        parser : :class: `~polyglotdb.io.parsers.BaseParser`
+        parser : :class:`~polyglotdb.io.parsers.BaseParser`
                 the type of parser used for corpus
         path : str
             the location of the directory

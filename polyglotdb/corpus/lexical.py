@@ -1,9 +1,7 @@
 
-from .base import BaseContext
-
 from ..io.importer import lexicon_data_to_csvs, import_lexicon_csvs
 
-class LexicalContext(BaseContext):
+class LexicalContext(object):
     def enrich_lexicon(self, lexicon_data, type_data = None, case_sensitive = False):
         """
         adds properties to lexicon, adds properties to hierarchy
@@ -29,6 +27,6 @@ class LexicalContext(BaseContext):
         import_lexicon_csvs(self, type_data, case_sensitive = case_sensitive)
         self.hierarchy.add_type_properties(self, self.word_name, type_data.items())
         self.encode_hierarchy()
-
+        print(self.hierarchy.type_properties['word'])
     def reset_lexicon(self):
         pass

@@ -10,8 +10,14 @@ from resampy import resample
 class LongSoundFile(object):
     cache_amount = 60
     def __init__(self, sound_file, initial_begin = None, initial_end = None):
-        self.path = sound_file.filepath
+        self.path = os.path.expanduser(sound_file.consonant_filepath)
+        if not os.path.exists(self.path):
+            self.path = os.path.expanduser(sound_file.vowel_filepath)
+            if not os.path.exists(self.path):
+                self.path = os.path.expanduser(sound_file.low_freq_filepath)
+
         self.mode = None
+
 
         self.duration = sound_file.duration
         self.num_channels = sound_file.n_channels
@@ -140,7 +146,30 @@ class DiscourseInspecter(object):
         else:
             self.speech_end = float(self.speech_end)
 
+        self.speech_begin = self.sound_file.discourse.get('speech_begin')
+        if self.speech_begin is None:
+            self.speech_begin = 0
+        else:
+            self.speech_begin = float(self.speech_begin)
+        self.speech_end = self.sound_file.discourse.get('speech_end')
+        if self.speech_end is None:
+            self.speech_end = self.max_time
+        else:
+            self.speech_end = float(self.speech_end)
+
         self._initialize_cache(initial_begin, initial_end)
+
+    @property
+    def cached_to_begin(self):
+        if self.cached_begin <= self.speech_begin:
+            return True
+        return False
+
+    @property
+    def cached_to_end(self):
+        if self.cached_end >= self.speech_end:
+            return True
+        return False
 
     def _initialize_cache(self, begin, end):
         q = self._base_discourse_query(begin, end)

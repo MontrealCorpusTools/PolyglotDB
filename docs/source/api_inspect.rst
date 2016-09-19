@@ -1,5 +1,5 @@
 
-.. _io_parsers_api:
+.. _io_inspect_api:
 
 *****************
 Inspect Functions

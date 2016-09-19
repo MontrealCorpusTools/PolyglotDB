@@ -113,7 +113,7 @@ def inspect_directory(directory):
     Function to inspect a directory and return the most likely type of
     files within it.
 
-    Searches currently for 'textgrid', 'text', 'buckeye' and 'timit' file
+    Searches currently for 'textgrid', 'text', 'buckeye', 'timit', and 'partitur' file
     types.
 
     Parameters
@@ -128,7 +128,7 @@ def inspect_directory(directory):
     dict
         Dictionary of the found files separated by the types searched for
     """
-    types = ['textgrid', 'text', 'buckeye', 'timit']
+    types = ['textgrid', 'text', 'buckeye', 'timit', 'partitur']
     counter = {x: 0 for x in types}
     relevant_files = {x: [] for x in types}
     for root, subdirs, files in os.walk(directory):
@@ -142,12 +142,14 @@ def inspect_directory(directory):
                 t = 'buckeye'
             elif ext == '.wrd':
                 t = 'timit'
+            elif ext == '.par,2':
+                t = 'partitur'
             else:
                 continue
             counter[t] += 1
             relevant_files[t].append(f)
     max_value = max(counter.values())
-    for t in ['textgrid', 'buckeye', 'timit', 'text']:
+    for t in ['textgrid', 'buckeye', 'timit', 'text', 'partitur']:
         if counter[t] == max_value:
             likely_type = t
             break

@@ -1,18 +1,19 @@
 
 from uuid import uuid1
 
-from .featured import FeaturedContext
-
-from ..io.importer import (syllables_data_to_csvs, import_syllable_csv,
+import re
+from ..io.importer import  (syllables_data_to_csvs, import_syllable_csv,
                             nonsyls_data_to_csvs, import_nonsyl_csv,
-                            create_syllabic_csvs, create_nonsyllabic_csvs)
+                            create_syllabic_csvs, create_nonsyllabic_csvs,
+                            syllables_enrichment_data_to_csvs, import_syllable_enrichment_csvs)
 
+#from ..io.importer import syllables_enrichment_data_to_csvs
 from ..io.helper import make_type_id
 
 from ..syllabification.probabilistic import norm_count_dict, split_nonsyllabic_prob, split_ons_coda_prob
 from ..syllabification.maxonset import split_nonsyllabic_maxonset, split_ons_coda_maxonset
 
-class SyllabicContext(FeaturedContext):
+class SyllabicContext(object):
     def find_onsets(self):
         """
         Gets syllable onsets
@@ -130,6 +131,7 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
             self.hierarchy.remove_token_labels(self, self.phone_name, ['onset','coda','nucleus'])
             self.hierarchy.remove_token_properties(self, self.phone_name, ['syllable_position'])
             del self.hierarchy['syllable']
+            #self.reset_to_old_label()
             self.encode_hierarchy()
             self.refresh_hierarchy()
         except KeyError:
@@ -144,7 +146,9 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         algorithm : str defaults to 'probabilistic'
             determines which algorithm will be used to encode syllables
         """
+
         self.reset_syllables(call_back, stop_check)
+
         onsets = self.find_onsets()
         if algorithm == 'probabilistic':
             onsets = norm_count_dict(onsets, onset = True)
@@ -293,3 +297,110 @@ return coda, count(coda) as freq'''.format(corpus_name = self.cypher_safe_name,
         if call_back is not None:
             call_back('Finished!')
             call_back(1, 1)
+
+
+    def enrich_syllables(self, syllable_data, type_data = None):
+        """
+        Sets the data type and syllable data, initializes importers for syllable data, adds features to hierarchy for a phone
+
+        Parameters
+        ----------
+        syllable_data : dict
+            the enrichment data
+        type_data : dict
+            By default None
+        """
+        if type_data is None:
+            type_data = {k: type(v) for k,v in next(iter(syllable_data.values())).items()}
+
+       # labels = set(self.lexicon.syllables())
+      #  syllable_data = {k: v for k,v in syllable_data.items() if k in labels}
+        self.lexicon.add_properties('syllable', syllable_data, type_data)
+        for x in syllable_data.keys():
+            self.lexicon.get_or_create_annotation(x, 'syllable')
+        self.lexicon.add_properties('syllable',syllable_data, type_data)
+        syllables_enrichment_data_to_csvs(self, syllable_data)
+        import_syllable_enrichment_csvs(self, type_data)
+        #self.hierarchy.add_type_labels(self, 'syllable', ['test'])
+        self.hierarchy.add_type_properties(self, 'syllable', type_data.items())
+
+        self.encode_hierarchy()
+    def encode_stress(self, pattern):
+        """
+        encode stress based off of CMUDict cues
+
+        """
+
+        syllable = self.syllable
+        all_syls =  self.query_graph(syllable).all()
+        enrich_dict = {}
+
+        for i,x in enumerate(all_syls.cursors):
+            for item in x:
+                syl = item[0].properties['label']
+                splitsyl = syl.split('.')
+                nucleus = splitsyl[0]
+                for j,seg in enumerate(splitsyl):
+
+                    if re.search(pattern, seg) is not None:
+                        nucleus = seg
+
+                r = re.search(pattern, nucleus)
+                if r is not None:
+                    end = nucleus[r.start(0):r.end(0)].replace("_","")
+                    nucleus = re.sub(pattern, "", nucleus)
+                    fullpatt = str(nucleus)+str(pattern).replace("$","")
+                    syl = re.sub(fullpatt, nucleus, syl)
+
+                    enrich_dict.update({syl:{'stress':end} })
+
+        return enrich_dict
+
+        #self.enrich_syllables(enrich_dict)
+
+    def encode_tone(self, pattern):
+        """
+        encode tone based off of CMUDict cues
+        """
+        syllable = self.syllable
+        all_syls =  self.query_graph(syllable).all()
+        enrich_dict = {}
+        for x in all_syls.cursors:
+            for item in x:
+                syl = item[0].properties['label']
+                splitsyl = syl.split('.')
+                nucleus = splitsyl[0]
+                for seg in splitsyl:
+                    if re.search(pattern, seg) is not None:
+                        nucleus = seg
+                #enrich_dict.update({syl:{}})
+
+                r = re.search(pattern,nucleus)
+                if r is not None:
+                    end = nucleus[r.start(0):r.end(0)].replace("_","")
+                    nucleus = re.sub(pattern, "", nucleus)
+                    fullpatt = str(nucleus)+str(pattern).replace("$","")
+                    syl = re.sub(fullpatt, nucleus, syl)
+
+                    enrich_dict.update({syl:{'tone':end} })
+        return enrich_dict
+        #self.enrich_syllables(enrich_dict)
+
+    def encode_stresstone_to_syllables(self, encode_type, regex):
+
+
+        if encode_type == 'stress':
+            if regex == "":
+                enrich_dict = self.encode_stress('[0-9]')
+            else:
+                enrich_dict = self.encode_stress(regex)
+        else:
+            enrich_dict = self.encode_tone(regex)
+
+
+        self.remove_pattern(regex)
+        self.enrich_syllables(enrich_dict)
+        self.encode_hierarchy()
+        self.refresh_hierarchy()
+
+ 

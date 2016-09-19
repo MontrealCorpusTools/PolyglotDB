@@ -25,18 +25,20 @@ class BaseAnnotationType(object):
     def add(self, annotations, save = True):
         """
         save annotations  to _list
+
         Parameters
         ----------
         annotations : list
             the annotations to save
-        save : boolean  
+
+        save : boolean
             defaults to True
         """
         for a in annotations:
             if save or len(self._list) < 10:
                 #If save is False, only the first 10 annotations are saved
                 self._list.append(self.annotation_class(*a))
-
+                pass
     def __iter__(self):
         for x in self._list:
             yield x
