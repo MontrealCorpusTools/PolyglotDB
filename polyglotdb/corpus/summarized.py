@@ -1,9 +1,8 @@
 import math
-from .base import BaseContext
 from polyglotdb.graph.func import *
 import re
 
-class SummarizedContext(BaseContext):
+class SummarizedContext(object):
 
 
     def phone_mean_duration(self, speaker = None):

@@ -51,6 +51,10 @@ class CorpusConfig(object):
     """
     def __init__(self, corpus_name, **kwargs):
         self.corpus_name = corpus_name
+        self.acoustic_user = None
+        self.acoustic_password = None
+        self.acoustic_host = 'localhost'
+        self.acoustic_port = 8086
         self.graph_user = None
         self.graph_password = None
         self.graph_host = 'localhost'
@@ -108,6 +112,17 @@ class CorpusConfig(object):
     @property
     def graph_hostname(self):
         return '{}:{}'.format(self.graph_host, self.graph_port)
+
+    @property
+    def acoustic_conncetion_kwargs(self):
+        kwargs = {'host': self.acoustic_host,
+                'port': self.acoustic_port,
+                'database': self.corpus_name}
+        if self.acoustic_user is not None:
+            kwargs['username'] = self.acoustic_user
+        if self.acoustic_password is not None:
+            kwargs['password'] = self.acoustic_password
+        return kwargs
 
     @property
     def graph_connection_kwargs(self):

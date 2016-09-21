@@ -8,7 +8,7 @@ from functools import partial
 
 import sqlalchemy
 
-from ..sql.models import SoundFile, Pitch, Formants, Discourse
+from ..sql.models import SoundFile, Discourse
 
 from ..exceptions import GraphQueryError
 

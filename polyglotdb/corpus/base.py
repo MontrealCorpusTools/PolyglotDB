@@ -300,6 +300,7 @@ class BaseContext(object):
         '''
         Reset the graph and SQL databases for a corpus.
         '''
+        self.reset_acoustics(call_back, stop_check)
         self.reset_graph(call_back, stop_check)
         try:
             Base.metadata.drop_all(self.engine)

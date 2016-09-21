@@ -12,9 +12,11 @@ from .spoken import SpokenContext
 from .summarized import SummarizedContext
 
 
-class CorpusContext(StructuredContext, ImportContext, FeaturedContext, LexicalContext,
+class CorpusContext(StructuredContext, ImportContext,
+                    FeaturedContext, LexicalContext,
                     PauseContext, UtteranceContext, AudioContext,
-                    SyllabicContext, SpokenContext, SummarizedContext):
+                    SyllabicContext, SpokenContext, SummarizedContext,
+                    BaseContext):
     """
     Main corpus context, inherits from the more specialized contexts.
 

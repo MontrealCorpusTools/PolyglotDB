@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 import pytest
 
 from polyglotdb import CorpusContext
@@ -24,11 +25,11 @@ def test_analyze_acoustics(acoustic_utt_config):
 def test_query_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.pitch_algorithm = 'dummy'
-        expected_pitch = {4.23: 98,
-                            4.24:100,
-                            4.25:99,
-                            4.26:95.8,
-                            4.27:95.8}
+        expected_pitch = {Decimal('4.23'): 98,
+                            Decimal('4.24'):100,
+                            Decimal('4.25'):99,
+                            Decimal('4.26'):95.8,
+                            Decimal('4.27'):95.8}
         g.save_pitch('acoustic_corpus', expected_pitch)
 
         q = g.query_graph(g.phone)
@@ -63,11 +64,11 @@ def test_query_aggregate_pitch(acoustic_utt_config):
 def test_query_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.formant_algorithm = 'dummy'
-        expected_formants = {4.23: (501, 1500, 2500),
-                            4.24: (502, 1499, 2500),
-                            4.25: (503, 1498, 2500),
-                            4.26: (504, 1497, 2500),
-                            4.27: (505, 1496, 2500)}
+        expected_formants = {Decimal('4.23'): (501, 1500, 2500),
+                            Decimal('4.24'): (502, 1499, 2500),
+                            Decimal('4.25'): (503, 1498, 2500),
+                            Decimal('4.26'): (504, 1497, 2500),
+                            Decimal('4.27'): (505, 1496, 2500)}
         g.save_formants('acoustic_corpus', expected_formants)
 
         q = g.query_graph(g.phone)

@@ -2,7 +2,7 @@
 from statistics import mean
 from sqlalchemy import text
 
-from ...sql.models import Pitch, Formants, SoundFile, Discourse
+from ...sql.models import SoundFile, Discourse
 
 from .base import AnnotationAttribute, Attribute
 
@@ -143,12 +143,7 @@ class PitchAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {'F0':{}}
-            q = corpus.sql_session.query(Pitch.time, Pitch.F0).join(SoundFile, Discourse)
-            q = q.filter(Pitch.time >= begin, Pitch.time <= end)
-            q = q.filter(Discourse.name == discourse)
-            q = q.filter(Pitch.source == corpus.config.pitch_algorithm)
-            q = q.filter(Pitch.channel == channel)
-            results = q.all()
+            results = corpus.get_pitch(discourse, begin, end, channel)
             for line in results:
                 data['F0'][line[0]] = line[1]
             self.cached_settings = (discourse, begin, end, channel)
@@ -186,16 +181,11 @@ class FormantAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {'F1':{}, 'F2':{}, 'F3':{}}
-            q = corpus.sql_session.query(Formants).join(SoundFile, Discourse)
-            q = q.filter(Formants.time >= begin, Formants.time <= end)
-            q = q.filter(Discourse.name == discourse)
-            q = q.filter(Formants.channel == channel)
-            q = q.filter(Formants.source == corpus.config.formant_algorithm)
-            results = q.all()
+            results = corpus.get_formants(discourse, begin, end, channel)
             for line in results:
-                data['F1'][line.time] = line.F1
-                data['F2'][line.time] = line.F2
-                data['F3'][line.time] = line.F3
+                data['F1'][line[0]] = line[1]
+                data['F2'][line[0]] = line[2]
+                data['F3'][line[0]] = line[3]
             self.cached_settings = (discourse, begin, end, channel)
             self.cached_data = data
         return data
