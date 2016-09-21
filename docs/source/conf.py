@@ -28,7 +28,7 @@ MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
                 'sqlalchemy.ext.associationproxy', 'sqlalchemy.ext.hybrid',
                 'numpy', 'resampy', 'audioread',
                 'scipy', 'scipy.signal', 'scipy.io',
-                'librosa', 'librosa.core.spectrum'
+                'librosa', 'librosa.core.spectrum',
                 'acousticsim', 'acousticsim.main', 'acousticsim.utils', 'acousticsim.praat',
                 'acousticsim.representations.pitch',
                 'acousticsim.representations.reaper',
