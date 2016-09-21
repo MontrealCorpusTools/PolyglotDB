@@ -36,3 +36,5 @@ def test_load_partitur(partitur_test_dir, graph_db):
 		s = c.census['alz']
 		assert(len(s.discourses) == 1)
 		assert([x.discourse.name for x in s.discourses] == ['partitur_test'])
+
+		assert(c.hierarchy.has_type_property('word', 'transcription'))
