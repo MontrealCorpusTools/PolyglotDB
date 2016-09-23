@@ -507,8 +507,12 @@ class SummarizedContext(BaseContext):
             res = self.word_mean_duration()
         elif measure == 'word_std_dev':
             res = self.word_std_dev()
-        elif measure == 'baseline_duration':
-            res = self.baseline_duration()
+        elif measure == 'baseline_duration_utterance':
+            res = self.baseline_duration('utterance')
+        elif measure == 'baseline_duration_word':
+            res = self.baseline_duration('word')
+        elif measure == 'baseline_duration_syllable':
+            res = self.baseline_duration('syllable')
         elif measure == 'phone_mean':
             data_type = 'phone'
             res = self.phone_mean_duration()
