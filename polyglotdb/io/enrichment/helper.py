@@ -2,8 +2,11 @@
 import csv
 from collections import defaultdict
 
+def sanitize_name(string):
+    return string.strip().replace(' ', '_').lower()
+
 def parse_string(value):
-    """ 
+    """
     parses string for python keywords or numeric value
 
     Parameters
@@ -51,7 +54,7 @@ def parse_file(path, case_sensitive = True):
         reader = csv.DictReader(csvfile, dialect = dialect)
         header = reader.fieldnames
         key_name = header[0]
-        sanitized_names = [x.strip().replace(' ', '_') for x in header]
+        sanitized_names = [sanitize_name(x) for x in header]
         data = {}
         type_data = {}
         for line in reader:

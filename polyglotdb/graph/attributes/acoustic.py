@@ -139,6 +139,7 @@ class PitchAttribute(AcousticAttribute):
         data : dict
             A dictionary with 'F0' as the keys and a dictionary of times and F0 values as the value
          """
+
         if self.cached_settings == (discourse, begin, end, channel):
             data = self.cached_data
         else:

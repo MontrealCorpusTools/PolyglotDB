@@ -58,7 +58,8 @@ if __name__ == '__main__':
           'textgrid',
           'acousticsim',
           'py2neo',
-          'librosa'
+          'librosa',
+          'influxdb'
       ],
     cmdclass={'test': PyTest},
     extras_require={

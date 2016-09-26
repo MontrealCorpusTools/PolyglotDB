@@ -424,6 +424,18 @@ class Hierarchy(object):
             self.subannotations[linguistic_type] = set()
         self.subannotations[linguistic_type].add(subannotation_type)
 
+    def has_speaker_property(self, key):
+        for name, t in self.speaker_properties:
+            if name == key:
+                return True
+        return False
+
+    def has_discourse_property(self, key):
+        for name, t in self.discourse_properties:
+            if name == key:
+                return True
+        return False
+
     def has_token_property(self, type, key):
         if type not in self.token_properties:
             return False

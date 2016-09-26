@@ -37,7 +37,11 @@ def to_nano(seconds):
     return int(seconds * Decimal('1e9'))
 
 def to_seconds(timestring):
-    d = datetime.strptime(timestring, '%Y-%m-%dT%H:%M:%S.%fZ')
+    try:
+        d = datetime.strptime(timestring, '%Y-%m-%dT%H:%M:%S.%fZ')
+    except:
+        d = datetime.strptime(timestring, '%Y-%m-%dT%H:%M:%SZ')
+
     s = d.second + d.microsecond / 1e6
     s = Decimal(s).quantize(Decimal('0.001'))
     return s
@@ -46,15 +50,15 @@ class AudioContext(object):
     """
     Class that contains methods for dealing with audio files for corpora
     """
-    def analyze_acoustics(self):
+    def analyze_acoustics(self, stop_check = None, call_back = None):
         """
         Runs all acoustic analyses for the corpus.
         """
         if not self.has_sound_files:
             raise(NoSoundFileError)
-        acoustic_analysis(self)
+        acoustic_analysis(self, stop_check = stop_check, call_back = call_back)
 
-    def reset_acoustics(self, call_back, stop_check):
+    def reset_acoustics(self, call_back = None, stop_check = None):
         self.acoustic_client().drop_database(self.corpus_name)
 
     def acoustic_client(self):
@@ -184,7 +188,6 @@ class AudioContext(object):
         for r in result.get_points('formants'):
             s = to_seconds(r['time'])
             listing.append((s, r['F1'], r['F2'], r['F3']))
-        print(listing)
         return listing
 
 
@@ -216,11 +219,12 @@ class AudioContext(object):
         if source is None:
             source = self.config.pitch_algorithm
         client = self.acoustic_client()
-        result = client.query('''select "time", "F0" from "pitch"
+        query = '''select "time", "F0" from "pitch"
                         WHERE "discourse" = '{}' AND "source" = '{}'
                         AND "time" >= {}
                         AND "time" <= {};'''.format(discourse, source,
-                                                to_nano(begin),to_nano(end)))
+                                                to_nano(begin),to_nano(end))
+        result = client.query(query)
         listing = []
         for r in result.get_points('pitch'):
             s = to_seconds(r['time'])
@@ -262,7 +266,7 @@ class AudioContext(object):
             data.append(d)
         self.acoustic_client().write_points(data)
 
-    def save_pitch(self, sound_file, pitch_track, channel = 0, source = None):
+    def save_pitch(self, sound_file, pitch_track, channel = 0, speaker = None, source = None):
         """
         Save a pitch track for a sound file
 
@@ -285,15 +289,20 @@ class AudioContext(object):
         if source is None:
             source = self.config.pitch_algorithm
         data = []
+        tag_dict = {'discourse': sound_file.discourse.name,
+                    'channel': channel}
+        if speaker is not None:
+            tag_dict['speaker'] = speaker
+        if source is not None:
+            tag_dict['source'] = source
         for timepoint, value in pitch_track.items():
             try:
                 value = float(value[0])
             except TypeError:
                 value = float(value)
+
             d = {'measurement': 'pitch',
-                'tags': {'discourse': sound_file.discourse.name,
-                        'channel': channel,
-                        'source': source},
+                'tags': tag_dict,
                 "time": to_nano(timepoint),
                 "fields": {'F0': value}
                 }
@@ -308,7 +317,7 @@ class AudioContext(object):
         if source is None:
             source = self.config.pitch_algorithm
         result = client.query('''select "F1" from "formants" WHERE "discourse" = '{}' AND "source" = '{}' LIMIT 1;'''.format(discourse, source))
-        if result is None:
+        if len(result) == 0:
             return False
         return True
 
@@ -320,6 +329,6 @@ class AudioContext(object):
         if source is None:
             source = self.config.pitch_algorithm
         result = client.query('''select "F0" from "pitch" WHERE "discourse" = '{}' AND "source" = '{}' LIMIT 1;'''.format(discourse, source))
-        if result is None:
+        if len(result) == 0:
             return False
         return True

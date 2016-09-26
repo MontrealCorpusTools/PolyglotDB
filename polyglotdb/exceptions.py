@@ -146,6 +146,9 @@ class BuckeyeParseError(ParseError):
 class NoSoundFileError(PGError):
     pass
 
+class AcousticError(PGError):
+    pass
+
 class GraphQueryError(PGError):
     pass
 

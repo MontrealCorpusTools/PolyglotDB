@@ -10,14 +10,14 @@ import sqlalchemy
 
 from ..sql.models import SoundFile, Discourse
 
-from ..exceptions import GraphQueryError
+from ..exceptions import GraphQueryError, AcousticError
 
 from acousticsim.utils import extract_audio
 
 from acousticsim.representations.pitch import signal_to_pitch as ASPitch
 from acousticsim.representations.formants import signal_to_formants as ASFormants
 
-from acousticsim.praat import (to_pitch_praat as PraatPitch,
+from acousticsim.praat import (signal_to_pitch_praat as PraatPitch,
                                 to_intensity_praat as PraatIntensity,
                                 to_formants_praat as PraatFormants)
 
@@ -56,33 +56,34 @@ def acoustic_analysis(corpus_context,
             call_back(i)
         if acoustics is None:
             analyze_pitch(corpus_context, sf, stop_check = stop_check)
-            analyze_formants(corpus_context, sf, stop_check = stop_check)
+            #analyze_formants(corpus_context, sf, stop_check = stop_check)
         elif acoustics == 'pitch':
             analyze_pitch(corpus_context, sf, stop_check = stop_check)
         elif acoustics == 'formants':
             analyze_formants(corpus_context, sf, stop_check = stop_check)
 
-def analyze_pitch(corpus_context, sound_file, stop_check = None):
+def analyze_pitch(corpus_context, sound_file, stop_check = None, use_gender = True):
     filepath = os.path.expanduser(sound_file.vowel_filepath)
     if not os.path.exists(filepath):
         return
     algorithm = corpus_context.config.pitch_algorithm
     if corpus_context.has_pitch(sound_file.discourse.name, algorithm):
         return
+    freq_lims = (70,300)
+    time_step = 0.01
     if algorithm == 'reaper':
         if getattr(corpus_context.config, 'reaper_path', None) is not None:
-            pitch_function = partial(ReaperPitch, reaper = corpus_context.config.reaper_path,
-                                time_step = 0.01, freq_lims = (50,500))
+            pitch_function = partial(ReaperPitch, reaper = corpus_context.config.reaper_path)
         else:
-            return
+            raise(AcousticError('Could not find the REAPER executable'))
     elif algorithm == 'praat':
+        print(corpus_context.config.praat_path)
         if getattr(corpus_context.config, 'praat_path', None) is not None:
-            pitch_function = partial(PraatPitch, praatpath = corpus_context.config.praat_path,
-                                time_step = 0.01, freq_lims = (75,500))
+            pitch_function = partial(PraatPitch, praatpath = corpus_context.config.praat_path)
         else:
-            return
+            raise(AcousticError('Could not find the Praat executable'))
     else:
-        pitch_function = partial(ASPitch, time_step = 0.01, freq_lims = (75,500), window_shape = 'gaussian')
+        pitch_function = partial(ASPitch, window_shape = 'gaussian')
 
     atype = corpus_context.hierarchy.highest
     prob_utt = getattr(corpus_context, atype)
@@ -91,13 +92,26 @@ def analyze_pitch(corpus_context, sound_file, stop_check = None):
     q = q.preload(prob_utt.discourse, prob_utt.speaker)
     utterances = q.all()
     segments = []
+    gender = None
     for u in utterances:
-        segments.append((u.begin, u.end, u.channel))
+        if use_gender and u.speaker.gender is not None:
+            if gender is None:
+                gender = u.speaker.gender
+                if gender.lower().startswith('f'):
+                    freq_lims = (100,300)
+                else:
+                    freq_lims = (70,250)
+            elif gender != u.speaker.gender:
+                raise(AcousticError('Using gender only works with one gender per file.'))
 
+        segments.append((u.begin, u.end, u.channel, u.speaker.name))
+
+    pitch_function = partial(pitch_function, time_step = time_step, freq_lims = freq_lims)
     output = analyze_long_file(filepath, segments, pitch_function, padding = 1)
 
     for k, track in output.items():
-        corpus_context.save_pitch(sound_file, track, channel = k[-1], source = algorithm)
+        corpus_context.save_pitch(sound_file, track, channel = k[-2],
+                                    speaker = k[-1], source = algorithm)
 
 def analyze_formants(corpus_context, sound_file, stop_check = None):
     filepath = os.path.expanduser(sound_file.vowel_filepath)
@@ -107,13 +121,12 @@ def analyze_formants(corpus_context, sound_file, stop_check = None):
     if corpus_context.has_formants(sound_file.discourse.name, algorithm):
         return
     if algorithm == 'praat':
-        if getattr(corpus_context.config, 'praat_path', None) is not None:
-            formant_function = partial(PraatFormants,
-                                praatpath = corpus_context.config.praat_path,
-                                max_freq = 5500, num_formants = 5, win_len = 0.025,
-                                time_step = 0.01)
-        else:
-            return
+        if getattr(corpus_context.config, 'praat_path', None) is None:
+            raise(AcousticError('Could not find the Praat executable'))
+        formant_function = partial(PraatFormants,
+                            praatpath = corpus_context.config.praat_path,
+                            max_freq = 5500, num_formants = 5, win_len = 0.025,
+                            time_step = 0.01)
     else:
 
         formant_function = partial(ASFormants, freq_lims = (0, 5500),
