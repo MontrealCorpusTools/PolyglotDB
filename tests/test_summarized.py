@@ -3,7 +3,7 @@ import pytest
 from polyglotdb.graph.func import Count
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_buckeye
-"""
+
 def test_phone_mean_duration(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("phone mean:")
@@ -275,7 +275,7 @@ def test_baseline_speaker_buckeye_word(graph_db, buckeye_test_dir):
         print(res)
         assert(len(res) == 9)
         assert(abs(res['they']-0.11224799999999968)< .0000000000001)
-"""
+
 def test_baseline_utterance(acoustic_config):
 
     with CorpusContext(acoustic_config) as g:
@@ -283,7 +283,7 @@ def test_baseline_utterance(acoustic_config):
         g.encode_utterances(min_pause_length = 0.15)
         res = g.baseline_duration('utterance')
         print(res)
-"""
+
 def test_baseline_syllable(acoustic_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
                 'uh','ah','ao','er','ow']
@@ -314,4 +314,3 @@ def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
         print(res)
         assert(abs(res[0][1]-2.4439013552543876) < .0000000000001)
         assert(len(res)==1)
-"""
