@@ -49,7 +49,7 @@ def parse_file(path, case_sensitive = True):
 
     """
     with open(path, 'r', encoding = 'utf-8-sig') as csvfile:
-        dialect = csv.Sniffer().sniff(csvfile.read(1024))
+        dialect = csv.Sniffer().sniff(csvfile.read())
         csvfile.seek(0)
         reader = csv.DictReader(csvfile, dialect = dialect)
         header = reader.fieldnames

@@ -12,8 +12,6 @@ from ..sql.models import SoundFile, Discourse
 
 from ..exceptions import GraphQueryError, AcousticError
 
-from acousticsim.utils import extract_audio
-
 from acousticsim.representations.pitch import signal_to_pitch as ASPitch
 from acousticsim.representations.formants import signal_to_formants as ASFormants
 
@@ -24,6 +22,7 @@ from acousticsim.praat import (signal_to_pitch_praat as PraatPitch,
 from acousticsim.representations.reaper import signal_to_pitch_reaper as ReaperPitch
 
 from acousticsim.main import analyze_long_file
+ from acousticsim.multiprocessing import generate_cache, default_njobs
 
 padding = 0.1
 
@@ -48,7 +47,9 @@ def acoustic_analysis(corpus_context,
     if call_back is not None:
         call_back('Analyzing files...')
         call_back(0, num_sound_files)
-    for i, sf in enumerate(sound_files):
+    long_files = filter(lambda x: x.duration > 30, sound_files)
+    short_files = filter(lambda x: x.duration < 30, sound_files)
+    for i, sf in enumerate(long_files):
         if stop_check is not None and stop_check():
             break
         if call_back is not None:
@@ -62,15 +63,16 @@ def acoustic_analysis(corpus_context,
         elif acoustics == 'formants':
             analyze_formants(corpus_context, sf, stop_check = stop_check)
 
-def analyze_pitch(corpus_context, sound_file, stop_check = None, use_gender = True):
-    filepath = os.path.expanduser(sound_file.vowel_filepath)
-    if not os.path.exists(filepath):
-        return
+def generate_base_pitch_function(corpus_context, gender = None):
     algorithm = corpus_context.config.pitch_algorithm
-    if corpus_context.has_pitch(sound_file.discourse.name, algorithm):
-        return
     freq_lims = (70,300)
     time_step = 0.01
+    if gender is not None:
+        if gender.lower().startswith('f'):
+            freq_lims = (100,300)
+        elif gender.lower().startswith('m'):
+            freq_lims = (70,250)
+
     if algorithm == 'reaper':
         if getattr(corpus_context.config, 'reaper_path', None) is not None:
             pitch_function = partial(ReaperPitch, reaper = corpus_context.config.reaper_path)
@@ -84,6 +86,40 @@ def analyze_pitch(corpus_context, sound_file, stop_check = None, use_gender = Tr
             raise(AcousticError('Could not find the Praat executable'))
     else:
         pitch_function = partial(ASPitch, window_shape = 'gaussian')
+    pitch_function = partial(pitch_function, time_step = time_step, freq_lims = freq_lims)
+    return pitch_function
+
+
+def analyze_pitch_short_files(corpus_context, files, stop_check = None, use_gender = True):
+    mappings = []
+    functions = []
+    discouse_sf_map = {k: v for s in files}
+    if use_gender:
+        # Figure out gender levels
+        genders = corpus_context.genders()
+        for g in genders:
+            mappings.append([(os.path.expanduser(x.vowel_filepath),) for x in
+                            filter(lambda x: x.get('gender') == g, files)])
+            functions.append(generate_base_pitch_function(corpus_context, g))
+    else:
+        mappings.append([(os.path.expanduser(x.vowel_filepath),) for x in files])
+        functions.append(generate_base_pitch_function(corpus_context))
+
+
+    for i in range(len(mappings)):
+        cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, None, None)
+        for k, v in cache.items():
+            discourse = os.path.basename(os.path.dirname(k))
+            corpus_context.save_pitch(discourse, v, channel = 0, # Doesn't deal with multiple channels well!
+                                        speaker = None, source = algorithm)
+
+def analyze_pitch(corpus_context, sound_file, stop_check = None, use_gender = True):
+    filepath = os.path.expanduser(sound_file.vowel_filepath)
+    if not os.path.exists(filepath):
+        return
+    algorithm = corpus_context.config.pitch_algorithm
+    if corpus_context.has_pitch(sound_file.discourse.name, algorithm):
+        return
 
     atype = corpus_context.hierarchy.highest
     prob_utt = getattr(corpus_context, atype)
@@ -97,16 +133,12 @@ def analyze_pitch(corpus_context, sound_file, stop_check = None, use_gender = Tr
         if use_gender and u.speaker.gender is not None:
             if gender is None:
                 gender = u.speaker.gender
-                if gender.lower().startswith('f'):
-                    freq_lims = (100,300)
-                else:
-                    freq_lims = (70,250)
             elif gender != u.speaker.gender:
                 raise(AcousticError('Using gender only works with one gender per file.'))
 
         segments.append((u.begin, u.end, u.channel, u.speaker.name))
 
-    pitch_function = partial(pitch_function, time_step = time_step, freq_lims = freq_lims)
+    pitch_function = generate_base_pitch_function(corpus_context, gender)
     output = analyze_long_file(filepath, segments, pitch_function, padding = 1)
 
     for k, track in output.items():

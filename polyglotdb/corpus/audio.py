@@ -58,6 +58,15 @@ class AudioContext(object):
             raise(NoSoundFileError)
         acoustic_analysis(self, stop_check = stop_check, call_back = call_back)
 
+    def genders(self):
+
+        res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.cypher_safe_name))
+        genders = set()
+        for s in res:
+            genders.add(s.gender)
+        return sorted(genders)
+
+
     def reset_acoustics(self, call_back = None, stop_check = None):
         self.acoustic_client().drop_database(self.corpus_name)
 
@@ -266,7 +275,7 @@ class AudioContext(object):
             data.append(d)
         self.acoustic_client().write_points(data)
 
-    def save_pitch(self, sound_file, pitch_track, channel = 0, speaker = None, source = None):
+    def save_pitch(self, sound_file, pitch_track, channel = None, speaker = None, source = None):
         """
         Save a pitch track for a sound file
 
@@ -289,12 +298,17 @@ class AudioContext(object):
         if source is None:
             source = self.config.pitch_algorithm
         data = []
-        tag_dict = {'discourse': sound_file.discourse.name,
-                    'channel': channel}
+        tag_dict = {}
+        if isinstance(sound_file, str):
+            tag_dict['discourse'] = sound_file
+        else:
+            tag_dict['discourse'] = sound_file.discourse.name
         if speaker is not None:
             tag_dict['speaker'] = speaker
         if source is not None:
             tag_dict['source'] = source
+        if channel is not None:
+            tag_dict['channel'] = channel
         for timepoint, value in pitch_track.items():
             try:
                 value = float(value[0])
