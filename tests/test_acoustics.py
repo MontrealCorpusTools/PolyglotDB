@@ -22,6 +22,15 @@ def test_analyze_acoustics(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.analyze_acoustics()
 
+@acoustic
+def test_analyze_acoustics_praat(acoustic_utt_config, praat_path):
+    acoustic_utt_config.pitch_algorithm = 'praat'
+    acoustic_utt_config.praat_path = praat_path
+    with CorpusContext(acoustic_utt_config) as g:
+        g.analyze_acoustics()
+
+        assert(g.has_pitch('acoustic_corpus'))
+
 def test_query_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.pitch_algorithm = 'dummy'

@@ -12,14 +12,15 @@ from ..sql.models import SoundFile, Discourse
 
 from ..exceptions import GraphQueryError, AcousticError
 
-from acousticsim.representations.pitch import signal_to_pitch as ASPitch
-from acousticsim.representations.formants import signal_to_formants as ASFormants
+from acousticsim.representations.pitch import signal_to_pitch as ASPitch_signal, file_to_pitch as ASPitch_file
+from acousticsim.representations.formants import signal_to_formants as ASFormants_signal, file_to_formants as ASFormants_file
 
-from acousticsim.praat import (signal_to_pitch_praat as PraatPitch,
-                                to_intensity_praat as PraatIntensity,
-                                to_formants_praat as PraatFormants)
+from acousticsim.praat import (signal_to_pitch_praat as PraatPitch_signal,file_to_pitch_praat as PraatPitch_file,
+                               file_to_intensity_praat as PraatIntensity,
+                               file_to_formants_praat as PraatFormants)
 
-from acousticsim.representations.reaper import signal_to_pitch_reaper as ReaperPitch
+from acousticsim.representations.reaper import signal_to_pitch_reaper as ReaperPitch_signal, \
+                                                file_to_pitch_reaper as ReaperPitch_file
 
 from acousticsim.main import analyze_long_file
 from acousticsim.multiprocessing import generate_cache, default_njobs
@@ -47,15 +48,14 @@ def acoustic_analysis(corpus_context,
     if call_back is not None:
         call_back('Analyzing files...')
         call_back(0, num_sound_files)
-    long_files = filter(lambda x: x.duration > 30, sound_files)
-    short_files = filter(lambda x: x.duration < 30, sound_files)
+    long_files = list(filter(lambda x: x.duration > 30, sound_files))
+    short_files = list(filter(lambda x: x.duration <= 30, sound_files))
     for i, sf in enumerate(long_files):
         if stop_check is not None and stop_check():
             break
         if call_back is not None:
             call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.filepath))
             call_back(i)
-            print(sf.duration)
         if acoustics is None:
             analyze_pitch(corpus_context, sf, stop_check = stop_check)
             #analyze_formants(corpus_context, sf, stop_check = stop_check)
@@ -69,7 +69,7 @@ def acoustic_analysis(corpus_context,
     analyze_pitch_short_files(corpus_context, short_files,
                 call_back = call_back, stop_check = stop_check)
 
-def generate_base_pitch_function(corpus_context, gender = None):
+def generate_base_pitch_function(corpus_context,signal = False, gender = None):
     algorithm = corpus_context.config.pitch_algorithm
     freq_lims = (70,300)
     time_step = 0.01
@@ -80,17 +80,28 @@ def generate_base_pitch_function(corpus_context, gender = None):
             freq_lims = (70,250)
 
     if algorithm == 'reaper':
+        if signal:
+            ReaperPitch = ReaperPitch_signal
+        else:
+            ReaperPitch = ReaperPitch_file
         if getattr(corpus_context.config, 'reaper_path', None) is not None:
             pitch_function = partial(ReaperPitch, reaper = corpus_context.config.reaper_path)
         else:
             raise(AcousticError('Could not find the REAPER executable'))
     elif algorithm == 'praat':
-        print(corpus_context.config.praat_path)
+        if signal:
+            PraatPitch = PraatPitch_signal
+        else:
+            PraatPitch = PraatPitch_file
         if getattr(corpus_context.config, 'praat_path', None) is not None:
             pitch_function = partial(PraatPitch, praatpath = corpus_context.config.praat_path)
         else:
             raise(AcousticError('Could not find the Praat executable'))
     else:
+        if signal:
+            ASPitch = ASPitch_signal
+        else:
+            ASPitch = ASPitch_file
         pitch_function = partial(ASPitch, window_shape = 'gaussian')
     pitch_function = partial(pitch_function, time_step = time_step, freq_lims = freq_lims)
     return pitch_function
@@ -99,8 +110,9 @@ def generate_base_pitch_function(corpus_context, gender = None):
 def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_check = None, use_gender = True):
     mappings = []
     functions = []
-    discouse_sf_map = {s.vowel_filepath:s.discourse.name  for s in files}
-    if use_gender:
+
+    discouse_sf_map = {os.path.expanduser(s.vowel_filepath):s.discourse.name  for s in files}
+    if use_gender and corpus_context.hierarchy.has_speaker_property('gender'):
         # Figure out gender levels
         genders = corpus_context.genders()
         for g in genders:
@@ -110,14 +122,12 @@ def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_chec
     else:
         mappings.append([(os.path.expanduser(x.vowel_filepath),) for x in files])
         functions.append(generate_base_pitch_function(corpus_context))
-
-
     for i in range(len(mappings)):
         cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, call_back, stop_check)
         for k, v in cache.items():
             discourse = discouse_sf_map[k]
             corpus_context.save_pitch(discourse, v, channel = 0, # Doesn't deal with multiple channels well!
-                                        speaker = None, source = algorithm)
+                                        speaker = None, source = corpus_context.config.pitch_algorithm)
 
 def analyze_pitch(corpus_context, sound_file, stop_check = None, use_gender = True):
     filepath = os.path.expanduser(sound_file.vowel_filepath)
@@ -145,7 +155,7 @@ def analyze_pitch(corpus_context, sound_file, stop_check = None, use_gender = Tr
         segments.append((u.begin, u.end, u.channel, u.speaker.name))
 
     pitch_function = generate_base_pitch_function(corpus_context, gender)
-    output = analyze_long_file(filepath, segments, pitch_function, padding = 1)
+    output = analyze_long_file(filepath, segments, pitch_function, padding = 1, stop_check = stop_check)
 
     for k, track in output.items():
         corpus_context.save_pitch(sound_file, track, channel = k[-2],
