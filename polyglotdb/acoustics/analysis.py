@@ -108,6 +108,7 @@ def generate_base_pitch_function(corpus_context,signal = False, gender = None):
 
 
 def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_check = None, use_gender = True):
+    files = [x for x in files if not corpus_context.has_pitch(x.discourse.name,corpus_context.config.pitch_algorithm)]
     mappings = []
     functions = []
 
