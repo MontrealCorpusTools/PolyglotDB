@@ -99,7 +99,7 @@ def generate_base_pitch_function(corpus_context, gender = None):
 def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_check = None, use_gender = True):
     mappings = []
     functions = []
-    discouse_sf_map = {sf.vowel_filepath:s.discourse.name  for s in files}
+    discouse_sf_map = {s.vowel_filepath:s.discourse.name  for s in files}
     if use_gender:
         # Figure out gender levels
         genders = corpus_context.genders()
