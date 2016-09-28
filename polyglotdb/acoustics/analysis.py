@@ -55,6 +55,7 @@ def acoustic_analysis(corpus_context,
         if call_back is not None:
             call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.filepath))
             call_back(i)
+            print(sf.duration)
         if acoustics is None:
             analyze_pitch(corpus_context, sf, stop_check = stop_check)
             #analyze_formants(corpus_context, sf, stop_check = stop_check)
@@ -62,6 +63,11 @@ def acoustic_analysis(corpus_context,
             analyze_pitch(corpus_context, sf, stop_check = stop_check)
         elif acoustics == 'formants':
             analyze_formants(corpus_context, sf, stop_check = stop_check)
+
+    if call_back is not None:
+        call_back('Analyzing short files...')
+    analyze_pitch_short_files(corpus_context, short_files,
+                call_back = call_back, stop_check = stop_check)
 
 def generate_base_pitch_function(corpus_context, gender = None):
     algorithm = corpus_context.config.pitch_algorithm
@@ -90,7 +96,7 @@ def generate_base_pitch_function(corpus_context, gender = None):
     return pitch_function
 
 
-def analyze_pitch_short_files(corpus_context, files, stop_check = None, use_gender = True):
+def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_check = None, use_gender = True):
     mappings = []
     functions = []
     discouse_sf_map = {k: v for s in files}
@@ -107,7 +113,7 @@ def analyze_pitch_short_files(corpus_context, files, stop_check = None, use_gend
 
 
     for i in range(len(mappings)):
-        cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, None, None)
+        cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, call_back, stop_check)
         for k, v in cache.items():
             discourse = os.path.basename(os.path.dirname(k))
             corpus_context.save_pitch(discourse, v, channel = 0, # Doesn't deal with multiple channels well!
