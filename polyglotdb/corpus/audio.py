@@ -60,7 +60,7 @@ class AudioContext(object):
 
     def genders(self):
 
-        res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.cypher_safe_name))
+        res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.gender as gender'''.format(corpus_name = self.cypher_safe_name))
         genders = set()
         for s in res:
             genders.add(s.gender)
