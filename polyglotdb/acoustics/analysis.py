@@ -99,7 +99,7 @@ def generate_base_pitch_function(corpus_context, gender = None):
 def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_check = None, use_gender = True):
     mappings = []
     functions = []
-    discouse_sf_map = {k: v for s in files}
+    discouse_sf_map = {sf.vowel_filepath:s.discourse.name  for s in files}
     if use_gender:
         # Figure out gender levels
         genders = corpus_context.genders()
@@ -115,7 +115,7 @@ def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_chec
     for i in range(len(mappings)):
         cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, call_back, stop_check)
         for k, v in cache.items():
-            discourse = os.path.basename(os.path.dirname(k))
+            discourse = discouse_sf_map[k]
             corpus_context.save_pitch(discourse, v, channel = 0, # Doesn't deal with multiple channels well!
                                         speaker = None, source = algorithm)
 
