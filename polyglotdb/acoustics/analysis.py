@@ -22,7 +22,7 @@ from acousticsim.praat import (signal_to_pitch_praat as PraatPitch,
 from acousticsim.representations.reaper import signal_to_pitch_reaper as ReaperPitch
 
 from acousticsim.main import analyze_long_file
- from acousticsim.multiprocessing import generate_cache, default_njobs
+from acousticsim.multiprocessing import generate_cache, default_njobs
 
 padding = 0.1
 
