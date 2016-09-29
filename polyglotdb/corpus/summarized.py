@@ -311,7 +311,6 @@ class SummarizedContext(BaseContext):
             duration_dict[tup[0]]=tup[1]
         for element in all_elements:
          #   print(vars(element))
-            print(getattr(element,index))
             total = 0.0
             if buckeye:
                 for phone in re.split("[\. ]", element.transcription):
@@ -498,21 +497,28 @@ class SummarizedContext(BaseContext):
 
         """
         res = None
-        data_type = 'word'
         if measure == 'word_median':
+            data_type = 'word'
             res = self.word_median()
         elif measure == 'all_word_median':
+            data_type = 'word'
             res = self.all_word_median()
         elif measure == 'word_mean_duration':
+            data_type = 'word'
             res = self.word_mean_duration()
         elif measure == 'word_std_dev':
+            data_type = 'word'
             res = self.word_std_dev()
         elif measure == 'baseline_duration_utterance':
+            data_type = 'utterance'
             res = self.baseline_duration('utterance')
         elif measure == 'baseline_duration_word':
+            data_type = 'word'
             res = self.baseline_duration('word')
         elif measure == 'baseline_duration_syllable':
+            data_type = 'syllable'
             res = self.baseline_duration('syllable')
+            print(len(res), " is length of res")
         elif measure == 'phone_mean':
             data_type = 'phone'
             res = self.phone_mean_duration()
@@ -561,5 +567,6 @@ class SummarizedContext(BaseContext):
             self.enrich_syllables(dataDict)
         elif data_type == 'speaker':
             self.enrich_speakers(dataDict)
-
+        elif data_type == 'utterance':
+            self.enrich_utterances(dataDict)
 
