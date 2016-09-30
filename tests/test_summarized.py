@@ -294,6 +294,24 @@ def test_baseline_syllable(acoustic_config):
         print(res)
 
 
+def test_baseline_utterance(acoustic_config):
+
+    with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil'])
+        g.encode_utterances(min_pause_length = 0.15)
+        res = g.baseline_duration('utterance')
+        print(res)
+
+def test_baseline_syllable(acoustic_config):
+    syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
+                'uh','ah','ao','er','ow']
+    with CorpusContext(acoustic_config) as g:
+        g.encode_syllabic_segments(syllabics)
+        g.encode_syllables()
+        res = g.baseline_duration('syllable')
+        print(res)
+
+
 @pytest.mark.xfail
 def test_average_speech_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
