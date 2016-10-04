@@ -6,7 +6,7 @@ from polyglotdb import CorpusContext
 
 from polyglotdb.io.enrichment import (enrich_lexicon_from_csv, enrich_features_from_csv,
                                     enrich_discourses_from_csv, enrich_speakers_from_csv)
-
+"""
 def test_lexicon_enrichment(timed_config, csv_test_dir):
     path = os.path.join(csv_test_dir, 'timed_enrichment.txt')
     with CorpusContext(timed_config) as c:
@@ -108,9 +108,24 @@ def test_stress_enrichment(stressed_config):
 
         assert(c.hierarchy.has_type_property("syllable","stress"))
 
-def test_relativized_enrichment(acoustic_config):
+def test_relativized_enrichment_syllables(acoustic_config):
     with CorpusContext(acoustic_config) as c:
-        c.encode_measure("word_median")
+        # c.encode_measure("word_median")
 
-        assert(c.hierarchy.has_type_property("word","median_duration"))
+        # assert(c.hierarchy.has_type_property("word","median_duration"))
+        syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
+                'uh','ah','ao','er','ow']
+        c.encode_syllabic_segments(syllabics)
+        c.encode_syllables()
+        c.encode_measure("baseline_duration_syllable")
 
+        assert(c.hierarchy.has_type_property("syllable","baseline_duration"))
+"""
+def test_relativized_enrichment_utterances(acoustic_config):
+    with CorpusContext(acoustic_config) as c:
+        c.encode_pauses(['sil', 'um'])
+        c.encode_utterances(min_pause_length = 0)
+
+        c.encode_measure('baseline_duration_utterance')
+
+        assert(c.hierarchy.has_type_property('utterance', 'baseline_duration'))

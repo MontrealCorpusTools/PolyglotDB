@@ -405,6 +405,21 @@ def acoustic_utt_config(graph_db, textgrid_test_dir):
     return config
 
 @pytest.fixture(scope='session')
+def french_config(graph_db, textgrid_test_dir):
+    config= CorpusConfig('french',**graph_db)
+
+    french_path = os.path.join(textgrid_test_dir, 'FR001_5.TextGrid')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_textgrid(french_path)
+        c.load(parser, french_path)
+
+        c.encode_pauses(['sil','<SIL>'])
+        c.encode_utterances(min_pause_length = .15)
+
+    return config
+
+@pytest.fixture(scope='session')
 def fave_corpus_config(graph_db, fave_test_dir):
     config = CorpusConfig('fave_test_corpus', **graph_db)
 
