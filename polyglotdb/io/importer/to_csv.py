@@ -129,13 +129,11 @@ def utterance_enriched_data_to_csvs(corpus_context, utterance_data):
         the timing data
     """
     directory = corpus_context.config.temporary_directory('csv')
-    with open(os.path.join(directory, 'utterance_import.csv'), 'w') as f:
+    with open(os.path.join(directory, 'utterance_enrichment.csv'), 'w') as f:
         header = ['id'] + sorted(next(iter(utterance_data.values())).keys())
         writer = csv.DictWriter(f, header, delimiter = ',')
         writer.writeheader()
         for k,v in sorted(utterance_data.items()):
-            if not case_sensitive:
-                k = '(?i)' + k
             v['id'] = k
             writer.writerow(v)
 

@@ -3,7 +3,7 @@ from uuid import uuid1
 
 
 
-from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs, utterance_enriched_data_to_csvs
+from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs, utterance_enriched_data_to_csvs, import_utterance_enrichment_csvs
 from ..graph.func import Max, Min
 from ..graph.query import DiscourseGraphQuery
 
@@ -370,7 +370,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
         self.reset_property('utterance', 'speech_rate')
 
 
-    def enrich_utterances(self, utterance_data, type_data = None, case_sensitive = False):
+    def enrich_utterances(self, utterance_data, type_data = None):
         """
         adds properties to lexicon, adds properties to hierarchy
 
@@ -380,8 +380,6 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
             the data to enrich with
         type_data : dict
             default to None
-        case_sensitive : bool
-            default to False
         """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(utterance_data.values())).items()}
@@ -389,7 +387,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
         print(utterance_data)    
         #self.add_type_properties('utterance', type_data)            
         utterance_enriched_data_to_csvs(self, utterance_data)
-        import_utterance_csv(self, type_data)
+        import_utterance_enrichment_csvs(self, type_data)
         self.hierarchy.add_type_properties(self, 'utterance', type_data.items())
         self.encode_hierarchy()
 
