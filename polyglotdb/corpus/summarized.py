@@ -273,68 +273,35 @@ class SummarizedContext(BaseContext):
         if 'buckeye' in self.corpus_name:
             buckeye = True
         
-
+        index = 'label'
         word = getattr(self, self.word_name)
         phone = getattr(self,self.phone_name)
-        if annotation == 'word':
-            q = self.query_graph(word)
-            index = 'label'
-        elif annotation == 'utterance':
-            q = self.query_graph(self.utterance)
+        # if annotation == 'word':
+        #     annotation = word
+        if annotation == 'utterance':
             ## TODO: find a good key for utterances (labels too long anyway and are None)
             index = 'id'
-        elif annotation == 'syllable':
-            q = self.query_graph(self.syllable)
-            index = 'label'
-        else:
-            raise(AttributeError('Annotation type \'{}\' not found.'.format(annotation)))
-            q = None
-            index = None
+            if not self.hierarchy.has_type_property('utterance','label'):
+                raise(AttributeError('Annotation type \'{}\' not found.'.format(annotation)))
+        if annotation == 'syllable':
+            if not self.hierarchy.has_type_property('syllable','label'):
+                raise(AttributeError('Annotation type \'{}\' not found.'.format(annotation)))
+
+        statement = '''
+MATCH (m:phone:{corpus_name}) 
+with m.{index} as l, avg(m.end-m.begin) as dur 
+with l,dur match (p:phone:{corpus_name}) 
+where p.{index} = l set p.average_duration = dur 
+with p as phone  match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
+with n,phone with n, n.{index} as l, sum(phone.average_duration) as baseline 
+set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation,\
+ corpus_name=self.corpus_name, index = index)
         
-        all_elements = q.all()
-
-        allPhones = []
-        if self.hierarchy.has_type_property('phone','average_duration'):
-            statement = '''MATCH (n:{phone_name}_type:{corpus_name})
-        RETURN n.label AS label, n.average_duration AS average_duration'''.format(phone_name=self.phone_name,
-            corpus_name=self.cypher_safe_name)
-            results = self.execute_cypher(statement)
-            for item in results:
-                if item['average_duration'] is not None:
-                    allPhones.append(item)
-        else:
-            allPhones = self.phone_mean_duration(speaker)
-
-        duration_dict = {}
-        annotation_totals = {}
-        for tup in allPhones:
-            duration_dict[tup[0]]=tup[1]
-        for element in all_elements:
-         #   print(vars(element))
-            total = 0.0
-            if buckeye:
-                for phone in re.split("[\. ]", element.transcription):
-                    try:
-                        total+=duration_dict[phone]
-                    except KeyError:
-                        pass
-            else:
-                for phone in element.phone:
-                    try:
-                        total+=duration_dict[phone.label]
-                    except KeyError:
-                        pass
-            try:
-                
-                if total > annotation_totals[getattr(element,index)]:
-                    #print('replacing %s : %f with %s : %f'%(word.label, word_totals[word.label], word.label, total))
-                    annotation_totals[getattr(element,index)] = total
-                else:
-                    continue
-            except KeyError:
-                annotation_totals[getattr(element,index)] = total
-        return annotation_totals
-
+        res = self.execute_cypher(statement)     
+        result = {}
+        for c in res:
+            result.update({c[0]:c[1]})
+        return result
 
     def syllable_mean_duration(self):
         """
