@@ -190,5 +190,5 @@ class SoundFile(Base):
     def genders(self):
         genders = []
         for s in self.discourse.speakers:
-            genders.append(s.gender)
+            genders.append(s.speaker.gender)
         return genders
