@@ -297,6 +297,11 @@ with n,phone with n, n.{index} as l, sum(phone.average_duration) as baseline
 set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation,\
  corpus_name=self.corpus_name, index = index)
         
+        if speaker is not None:
+            prefix = '''MATCH (speaker:Speaker:{corpus_name}) 
+            where speaker.name = '{speaker}' with speaker'''.format(corpus_name=self.corpus_name,speaker=speaker)
+            statement = prefix+statement
+
         res = self.execute_cypher(statement)     
         result = {}
         for c in res:
