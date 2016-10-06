@@ -31,7 +31,7 @@ def parse_string(value):
     except ValueError:
         return value
 
-def parse_file(path, case_sensitive = True):
+def parse_file(path, labels = None, case_sensitive = True):
     """
     Parses a csv file into data and type_data
 
@@ -61,6 +61,8 @@ def parse_file(path, case_sensitive = True):
             p = line[key_name]
             if not case_sensitive:
                 p = p.lower()
+            if labels is not None and p not in labels:
+                continue
             data[p] = {}
             for i, f in enumerate(header):
                 if f == key_name:
