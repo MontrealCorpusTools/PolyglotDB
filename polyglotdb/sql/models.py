@@ -186,3 +186,9 @@ class SoundFile(Base):
 
     discourse_id = Column(Integer, ForeignKey('discourse.id'), nullable = False)
     discourse = relationship(Discourse)
+
+    def genders(self):
+        genders = []
+        for s in self.discourse.speakers:
+            genders.append(s.gender)
+        return genders

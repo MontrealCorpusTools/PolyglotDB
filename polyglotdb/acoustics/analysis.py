@@ -117,9 +117,14 @@ def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_chec
         # Figure out gender levels
         genders = corpus_context.genders()
         for g in genders:
-            mappings.append([(os.path.expanduser(x.vowel_filepath),) for x in
-                            filter(lambda x: x.get('gender') == g, files)])
+            mappings.append([])
             functions.append(generate_base_pitch_function(corpus_context, g))
+        for f in files:
+            genders = f.genders()
+            if len(genders) > 1:
+                raise(AcousticError('We cannot process files with multiple genders.'))
+            i = genders.index(genders[0])
+            mappings[i].append(f.vowel_filepath)
     else:
         mappings.append([(os.path.expanduser(x.vowel_filepath),) for x in files])
         functions.append(generate_base_pitch_function(corpus_context))
