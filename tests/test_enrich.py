@@ -6,7 +6,7 @@ from polyglotdb import CorpusContext
 
 from polyglotdb.io.enrichment import (enrich_lexicon_from_csv, enrich_features_from_csv,
                                     enrich_discourses_from_csv, enrich_speakers_from_csv)
-"""
+
 def test_lexicon_enrichment(timed_config, csv_test_dir):
     path = os.path.join(csv_test_dir, 'timed_enrichment.txt')
     with CorpusContext(timed_config) as c:
@@ -120,7 +120,7 @@ def test_relativized_enrichment_syllables(acoustic_config):
         c.encode_measure("baseline_duration_syllable")
 
         assert(c.hierarchy.has_type_property("syllable","baseline_duration"))
-"""
+
 def test_relativized_enrichment_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         c.encode_pauses(['sil', 'um'])
