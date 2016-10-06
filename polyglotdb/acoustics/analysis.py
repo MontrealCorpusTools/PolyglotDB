@@ -69,7 +69,7 @@ def acoustic_analysis(corpus_context,
     analyze_pitch_short_files(corpus_context, short_files,
                 call_back = call_back, stop_check = stop_check)
 
-def generate_base_pitch_function(corpus_context,signal = False, gender = None):
+def generate_base_pitch_function(corpus_context, signal = False, gender = None):
     algorithm = corpus_context.config.pitch_algorithm
     freq_lims = (70,300)
     time_step = 0.01
@@ -118,7 +118,7 @@ def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_chec
         genders = corpus_context.genders()
         for g in genders:
             mappings.append([])
-            functions.append(generate_base_pitch_function(corpus_context, g))
+            functions.append(generate_base_pitch_function(corpus_context, signal = False, gender = g))
         for f in files:
             genders = f.genders()
             if len(genders) > 1:
@@ -127,7 +127,7 @@ def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_chec
             mappings[i].append(f.vowel_filepath)
     else:
         mappings.append([(os.path.expanduser(x.vowel_filepath),) for x in files])
-        functions.append(generate_base_pitch_function(corpus_context))
+        functions.append(generate_base_pitch_function(corpus_context, signal = False))
     for i in range(len(mappings)):
         cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, call_back, stop_check)
         for k, v in cache.items():
@@ -160,7 +160,7 @@ def analyze_pitch(corpus_context, sound_file, stop_check = None, use_gender = Tr
 
         segments.append((u.begin, u.end, u.channel, u.speaker.name))
 
-    pitch_function = generate_base_pitch_function(corpus_context, gender)
+    pitch_function = generate_base_pitch_function(corpus_context, signal = True, gender = gender)
     output = analyze_long_file(filepath, segments, pitch_function, padding = 1, stop_check = stop_check)
 
     for k, track in output.items():
