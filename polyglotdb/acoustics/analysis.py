@@ -129,7 +129,7 @@ def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_chec
         mappings.append([(os.path.expanduser(x.vowel_filepath),) for x in files])
         functions.append(generate_base_pitch_function(corpus_context, signal = False))
     for i in range(len(mappings)):
-        cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, call_back, stop_check)
+        cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, call_back, stop_check, ignore_errors=True)
         for k, v in cache.items():
             discourse = discouse_sf_map[k]
             corpus_context.save_pitch(discourse, v, channel = 0, # Doesn't deal with multiple channels well!
