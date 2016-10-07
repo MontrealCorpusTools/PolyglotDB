@@ -37,6 +37,7 @@ def to_nano(seconds):
     return int(seconds * Decimal('1e9'))
 
 def to_seconds(timestring):
+    print(timestring)
     try:
         d = datetime.strptime(timestring, '%Y-%m-%dT%H:%M:%S.%fZ')
     except:
