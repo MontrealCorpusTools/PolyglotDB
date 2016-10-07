@@ -447,7 +447,7 @@ class Speaker(SubAnnotation):
             raise(GraphModelError('This object is not bound to a corpus context.'))
         if key in self._node.properties:
             return self._node.properties[key]
-        raise(AttributeError)
+        return None
 
     @property
     def node(self):
