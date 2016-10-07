@@ -37,7 +37,6 @@ def to_nano(seconds):
     return int(seconds * Decimal('1e9'))
 
 def to_seconds(timestring):
-    print(timestring)
     try:
         d = datetime.strptime(timestring, '%Y-%m-%dT%H:%M:%S.%fZ')
     except:
@@ -232,7 +231,6 @@ class AudioContext(object):
         if source is None:
             source = self.config.pitch_algorithm
         client = self.acoustic_client()
-        print(begin,end)
         query = '''select "time", "F0" from "pitch"
                         WHERE "discourse" = '{}' AND "source" = '{}'
                         AND "time" >= {}
@@ -242,7 +240,6 @@ class AudioContext(object):
         listing = []
         for r in result.get_points('pitch'):
             s = to_seconds(r['time'])
-            print(s)
             listing.append((s, r['F0']))
         return listing
 
