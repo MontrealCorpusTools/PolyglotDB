@@ -43,7 +43,7 @@ def to_seconds(timestring):
     except:
         d = datetime.strptime(timestring, '%Y-%m-%dT%H:%M:%SZ')
 
-    s = d.second + d.microsecond / 1e6
+    s = 60*60*d.hour + 60*d.minute + d.second + d.microsecond / 1e6
     s = Decimal(s).quantize(Decimal('0.001'))
     return s
 
