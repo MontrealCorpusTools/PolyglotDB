@@ -5,7 +5,7 @@ from polyglotdb import CorpusContext
 from polyglotdb.graph.models import LinguisticAnnotation, SubAnnotation
 
 from polyglotdb.exceptions import SubannotationError
-"""
+
 def test_models(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         q = c.query_graph(c.phone).order_by(c.phone.begin)
@@ -22,7 +22,7 @@ def test_models(acoustic_config):
 
         assert(model.following.following.label == 'ih')
         assert(model.previous is None)
-"""
+
 def test_type_properties(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         c.reset_pauses()
@@ -36,7 +36,7 @@ def test_type_properties(acoustic_config):
         model.load(id)
         assert(model.label == 'this')
         assert(model.transcription == 'dh.ih.s')
-"""
+
 def test_for_pauses(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         q = c.query_graph(c.word).order_by(c.word.begin)
@@ -184,4 +184,3 @@ def test_delete(subannotation_config):
         model.load(id)
 
         assert(model.voicing_during_closure == [])
-"""
