@@ -37,13 +37,6 @@ def test_type_properties(acoustic_config):
         assert(model.label == 'this')
         assert(model.transcription == 'dh.ih.s')
 
-def test_for_pauses(acoustic_config):
-    with CorpusContext(acoustic_config) as c:
-        q = c.query_graph(c.word).order_by(c.word.begin)
-        results = q.all()
-        assert results[0]._node.label == 'sil'
-        
-
 def test_hierarchical(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         q = c.query_graph(c.word).order_by(c.word.begin)
