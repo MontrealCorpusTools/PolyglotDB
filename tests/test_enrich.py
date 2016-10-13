@@ -108,11 +108,26 @@ def test_stress_enrichment(stressed_config):
 
         assert(c.hierarchy.has_type_property("syllable","stress"))
 
-def test_relativized_enrichment(acoustic_config):
+def test_relativized_enrichment_syllables(acoustic_config):
     with CorpusContext(acoustic_config) as c:
-        c.encode_measure("word_median")
+        # c.encode_measure("word_median")
 
-        assert(c.hierarchy.has_type_property("word","median_duration"))
+        # assert(c.hierarchy.has_type_property("word","median_duration"))
+        syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
+                'uh','ah','ao','er','ow']
+        c.encode_syllabic_segments(syllabics)
+        c.encode_syllables()
+        c.encode_measure("baseline_duration_syllable")
+
+        assert(c.hierarchy.has_type_property("syllable","baseline_duration"))
+
+def test_relativized_enrichment_utterances(acoustic_config):
+    with CorpusContext(acoustic_config) as c:
+        c.encode_pauses(['sil', 'um'])
+        c.encode_utterances(min_pause_length = 0)
+
+        c.encode_measure('baseline_duration_utterance')
+
 
 """
 def test_speaker_annotation(acoustic_config):
@@ -129,3 +144,5 @@ def test_baseline_speaker_word(acoustic_config):
         print(res)
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
+
+

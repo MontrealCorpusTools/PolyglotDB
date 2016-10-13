@@ -255,6 +255,8 @@ def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
 
 def test_baseline_word(summarized_config):
     with CorpusContext(summarized_config) as g:
+        res1 = g.phone_mean_duration()
+        print(res1)
         res = g.baseline_duration("word")
         print(res)
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
@@ -292,6 +294,8 @@ def test_baseline_syllable(acoustic_config):
         g.encode_syllables()
         res = g.baseline_duration('syllable')
         print(res)
+
+
 
 
 @pytest.mark.xfail
