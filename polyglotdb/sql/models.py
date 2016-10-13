@@ -150,6 +150,20 @@ class SpeakerProperty(Base):
     value = Column(String(250), nullable = False)
 
 
+class SpeakerAnnotation(Base):
+    __tablename__ = 'speaker_annotation'
+
+    #speaker id
+    id = Column(Integer, primary_key = True)
+
+    speaker_id = Column(Integer, ForeignKey('speaker.id'))
+
+    annotation_id = Column(Integer, ForeignKey('annotation.id'))
+
+    property_type_id = Column(Integer, ForeignKey('property_type.id'))
+
+    numerical_value = Column(Integer)
+
 class DiscourseProperty(Base):
     __tablename__ = 'discourse_property'
 

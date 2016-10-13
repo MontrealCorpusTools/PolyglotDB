@@ -6,7 +6,7 @@ from polyglotdb import CorpusContext
 
 from polyglotdb.io.enrichment import (enrich_lexicon_from_csv, enrich_features_from_csv,
                                     enrich_discourses_from_csv, enrich_speakers_from_csv)
-
+"""
 def test_lexicon_enrichment(timed_config, csv_test_dir):
     path = os.path.join(csv_test_dir, 'timed_enrichment.txt')
     with CorpusContext(timed_config) as c:
@@ -114,3 +114,18 @@ def test_relativized_enrichment(acoustic_config):
 
         assert(c.hierarchy.has_type_property("word","median_duration"))
 
+"""
+def test_speaker_annotation(acoustic_config):
+    data = {'unknown' : {'average_duration' : {'uw' : 0.08043999}}}
+
+    with CorpusContext(acoustic_config) as c:
+        c.enrich_speaker_annotations(data)
+
+
+
+def test_baseline_speaker_word(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        res = g.baseline_duration("word",'unknown')
+        print(res)
+        assert(abs(res['this']-0.20937191666666685)< .0000000000001)
+        assert(len(res)==44)

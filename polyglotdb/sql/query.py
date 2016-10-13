@@ -4,7 +4,7 @@ from sqlalchemy import distinct
 
 from .models import (AnnotationType, PropertyType, Property,
                         NumericProperty, Annotation, Speaker, Discourse,
-                        SpeakerProperty, DiscourseProperty)
+                        SpeakerProperty, DiscourseProperty, SpeakerAnnotation)
 
 from .helper import get_or_create
 
@@ -316,6 +316,23 @@ class Census(BasePropertyStore):
         discourse = q.first()
         return discourse
 
+    def lookup_speaker(self,name):
+        """
+        looks up speaker by name
+
+        Parameters
+        ----------
+        name :str
+            name of speaker
+        Returns
+        -------
+        speaker : Speaker
+            found speaker
+        """
+        q = self.corpus_context.sql_session.query(Speaker).filter(Speaker.name == name)
+        speaker = q.first()
+        return speaker
+
     def add_speaker_properties(self, data, types):
         """
         Adds speaker properties to the Census
@@ -381,3 +398,49 @@ class Census(BasePropertyStore):
         q = q.filter(PropertyType.label == property_type)
         
         return [x[0] for x in q.all()]
+
+
+    def add_speaker_annotation(self, data):
+        """
+        Adds per-speaker data to census
+
+        Parameters
+        ----------
+        data : dict
+            the properties to add
+            format : {speaker : {property_type : {annotation : value}}}
+                    {'speaker1' : {average_duration : {'aa1' : 0.3221, 'sh' : 1.222}}}
+        """
+        for name, d in data.items():
+            speaker = self.lookup_speaker(name)
+            if speaker is None:
+                continue
+
+            for k, v in d.items():
+                if v is None:
+                    continue
+                pt = self.get_or_create_property_type(k)
+                for a, value in v:
+                    print("speaker_id: {} annotation_id: {} property_type_id: {} numerical value {}".format(\
+                        speaker.id, a, pt, value))
+                    prop, _ = get_or_create(self.corpus_context.sql_session, SpeakerAnnotation, speaker_id = speaker.id, \
+                    annotation_id = a, property_type_id = pt.id, numerical_value = value)
+
+    def get_speaker_annotations(self, property, speaker):
+        """
+        Searches for matching Property matching property_type spoken by speaker, gets property levels from that
+        Parameters
+        ----------
+        property_type : str
+            the label of the property type
+        
+        Returns
+        -------
+        list
+            list of property levels for property_type
+        """
+        q = self.corpus_context.sql_session.query(SpeakerAnnotation).filter(SpeakerAnnotation.property_type_id == property.id)
+        q = q.filter(SpeakerAnnotation.speaker_id == speaker.id)
+
+        return [x[0] for x in q.all()]
+
