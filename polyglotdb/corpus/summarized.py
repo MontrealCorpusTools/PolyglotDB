@@ -425,7 +425,7 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
 
         return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
 
-    def make_dict(self, data):
+    def make_dict(self, data, speaker = False):
         """
         turn data results into a dictionary for encoding
 
@@ -442,18 +442,21 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
 
         """
         finalDict = {}
-        if type(data) == list and len(data[0])==2:
-            for i,r in enumerate(data):
-                finalDict.update({r[0]:{str(data[1].keys()[1]):r[1]}})
-        elif type(data) == list and len(data[0]) == 3:
-            for i,r in enumerate(data):
-                speaker = r[0]
-                word = r[1]
-                num = r[2]
-                #finalDict.update({str(speaker) : {:}})
-        else:
-            for r in data.keys():
-                finalDict.update({r : {'baseline_duration': data[r]}})
+        if not speaker:
+            if type(data) == list and len(data[0])==2:
+                for i,r in enumerate(data):
+                    finalDict.update({r[0]:{str(data[1].keys()[1]):r[1]}})
+            else:
+                for r in data.keys():
+                    finalDict.update({r : {'baseline_duration': data[r]}})
+
+        if speaker:
+            keys = data[0].keys()
+            speaker = data[0].values()[0]
+            prop = keys[2]
+            firstDict = {x['label']:x[prop] for x in data  }
+            speakerDict = self.make_speaker_annotations_dict(firstDict, speaker, prop)
+            return speakerDict
         return finalDict
 
 
@@ -469,6 +472,7 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
 
         """
         res = None
+        speaker = False
         if measure == 'word_median':
             data_type = 'word'
             res = self.word_median()
@@ -490,7 +494,6 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         elif measure == 'baseline_duration_syllable':
             data_type = 'syllable'
             res = self.baseline_duration('syllable')
-            print(len(res), " is length of res")
         elif measure == 'phone_mean':
             data_type = 'phone'
             res = self.phone_mean_duration()
@@ -505,9 +508,11 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         elif measure == 'phone_mean_duration_with_speaker':
             data_type = 'speaker'
             res = self.phone_mean_duration_with_speaker()
+            speaker = True
         elif measure == 'word_mean_by_speaker':
             data_type = 'speaker'
             res = self.word_mean_duration_with_speaker()
+            speaker = True
         elif measure == 'all_phone_median':
             data_type = 'phone'
             res = self.all_phone_median()
@@ -523,13 +528,14 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         elif measure == 'mean_speech_rate':
             data_type = 'speaker'
             res = self.average_speech_rate()
+            speaker = True
 
         else:
             print("error")
 
 
 
-        dataDict = self.make_dict(res)
+        dataDict = self.make_dict(res,speaker)
 
         if data_type == 'word':
             self.enrich_lexicon(dataDict)
@@ -538,7 +544,7 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         elif data_type == 'syllable':
             self.enrich_syllables(dataDict)
         elif data_type == 'speaker':
-            self.enrich_speakers(dataDict)
+            self.enrich_speaker_annotations(dataDict)
         elif data_type == 'utterance':
             self.enrich_utterances(dataDict)
 

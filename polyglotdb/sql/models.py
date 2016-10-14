@@ -156,11 +156,19 @@ class SpeakerAnnotation(Base):
     #speaker id
     id = Column(Integer, primary_key = True)
 
-    speaker_id = Column(Integer, ForeignKey('speaker.id'))
+    speaker_id = Column(Integer, ForeignKey('speaker.id'), nullable=False)
 
-    annotation_id = Column(Integer, ForeignKey('annotation.id'))
+    annotation_id = Column(Integer, ForeignKey('annotation_type.id') , nullable=False)
 
-    property_type_id = Column(Integer, ForeignKey('property_type.id'))
+    property_type_id = Column(Integer, ForeignKey('property_type.id'), nullable=False)
+
+    property_type = relationship(PropertyType)
+
+    annotation_type = relationship(AnnotationType)
+
+    speaker = relationship(Speaker)
+
+
 
     numerical_value = Column(Integer)
 
