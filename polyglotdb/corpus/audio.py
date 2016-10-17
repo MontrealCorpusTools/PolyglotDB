@@ -12,21 +12,21 @@ from ..graph.discourse import DiscourseInspecter
 
 def sanitize_formants(value):
     try:
-        f1 = value[0][0]
+        f1 = value['F1'][0]
     except TypeError:
-        f1 = value[0]
+        f1 = value['F1']
     if f1 is None:
         f1 = 0
     try:
-        f2 = value[1][0]
+        f2 = value['F2'][0]
     except TypeError:
-        f2 = value[1]
+        f2 = value['F2']
     if f2 is None:
         f2 = 0
     try:
-        f3 = value[2][0]
+        f3 = value['F3'][0]
     except TypeError:
-        f3 = value[2]
+        f3 = value['F3']
     if f3 is None:
         f3 = 0
     return f1, f2, f3
@@ -314,9 +314,15 @@ class AudioContext(object):
             tag_dict['channel'] = channel
         for timepoint, value in pitch_track.items():
             try:
-                value = float(value[0])
+                value = float(value['F0'])
             except TypeError:
-                value = float(value)
+                try:
+                    value = float(value[0])
+                except TypeError:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        continue
 
             d = {'measurement': 'pitch',
                 'tags': tag_dict,

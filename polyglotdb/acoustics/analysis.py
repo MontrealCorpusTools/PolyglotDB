@@ -111,7 +111,6 @@ def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_chec
     files = [x for x in files if not corpus_context.has_pitch(x.discourse.name,corpus_context.config.pitch_algorithm)]
     mappings = []
     functions = []
-    print(len(files))
     discouse_sf_map = {os.path.expanduser(s.vowel_filepath):s.discourse.name  for s in files}
     if use_gender and corpus_context.hierarchy.has_speaker_property('gender'):
         # Figure out gender levels
@@ -128,7 +127,6 @@ def analyze_pitch_short_files(corpus_context, files, call_back = None, stop_chec
     else:
         mappings.append([(os.path.expanduser(x.vowel_filepath),) for x in files])
         functions.append(generate_base_pitch_function(corpus_context, signal = False))
-    print([len(x) for x in mappings])
     for i in range(len(mappings)):
         cache = generate_cache(mappings[i], functions[i], None, default_njobs() - 1, call_back, stop_check)
         for k, v in cache.items():

@@ -25,6 +25,8 @@ class AcousticAttribute(Attribute):
             return Max(self)
         elif key == 'mean':
             return Mean(self)
+        elif key == 'track':
+            return Track(self)
 
     def hydrate(self, corpus, discourse, begin, end):
         pass
@@ -81,11 +83,11 @@ class AggregationAttribute(AcousticAttribute):
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel)
         agg_data = {}
         for i, c in enumerate(self.output_columns):
-            d = data[self.attribute.output_columns[i]]
-            if not d:
+            gen = [x[self.attribute.output_columns[i]] for x in data.values() if self.attribute.output_columns[i] in x]
+            gen = [x for x in gen if x is not None]
+            if not gen:
                 agg_data[c] = None
             else:
-                gen = [x for x in d.values() if x is not None]
                 if self.ignore_negative:
                     gen = [x for x in gen if x > 0]
                 if gen:
@@ -111,6 +113,15 @@ class Mean(AggregationAttribute):
 
     def function(self, data):
         return mean(data)
+
+class Track(AggregationAttribute):
+    @property
+    def output_columns(self):
+        return ['time'] + [x for x in self.attribute.output_columns]
+
+    def hydrate(self, corpus, discourse, begin, end, channel = 0):
+        data = self.attribute.hydrate(corpus, discourse, begin, end, channel)
+        return data
 
 class PitchAttribute(AcousticAttribute):
     output_columns = ['F0']
@@ -143,10 +154,10 @@ class PitchAttribute(AcousticAttribute):
         if self.cached_settings == (discourse, begin, end, channel):
             data = self.cached_data
         else:
-            data = {'F0':{}}
+            data = {}
             results = corpus.get_pitch(discourse, begin, end, channel)
             for line in results:
-                data['F0'][line[0]] = line[1]
+                data[line[0]] = {'F0':line[1]}
             self.cached_settings = (discourse, begin, end, channel)
             self.cached_data = data
         return data
@@ -181,12 +192,10 @@ class FormantAttribute(AcousticAttribute):
         if self.cached_settings == (discourse, begin, end, channel):
             data = self.cached_data
         else:
-            data = {'F1':{}, 'F2':{}, 'F3':{}}
+            data = {}
             results = corpus.get_formants(discourse, begin, end, channel)
             for line in results:
-                data['F1'][line[0]] = line[1]
-                data['F2'][line[0]] = line[2]
-                data['F3'][line[0]] = line[3]
+                data[line[0]] = {'F1':line[1], 'F2':line[2], 'F3': line[3]}
             self.cached_settings = (discourse, begin, end, channel)
             self.cached_data = data
         return data
