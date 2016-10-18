@@ -1,4 +1,4 @@
-
+import time
 import csv
 from collections import defaultdict
 
@@ -45,6 +45,7 @@ def parse_file(path, case_sensitive = True):
         data and type_data for a csv file
 
     """
+    t0 = time.clock()
     with open(path, 'r', encoding = 'utf-8-sig') as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read(1024))
         csvfile.seek(0)
@@ -54,6 +55,7 @@ def parse_file(path, case_sensitive = True):
         sanitized_names = [x.strip().replace(' ', '_') for x in header]
         data = {}
         type_data = {}
+        print("time before first for loop in parse_file: {}".format(time.clock()-t0))
         for line in reader:
             p = line[key_name]
             if not case_sensitive:
@@ -69,5 +71,7 @@ def parse_file(path, case_sensitive = True):
                 if v != None:
                     type_data[k][type(v)] += 1
                 data[p][k] = v
+        print("time to completion of for loops in parse_file: {}".format(time.clock()-t0))
     type_data = {k: max(v.keys(), key = lambda x: v[x]) for k, v in type_data.items()}
+    print("time to return in parse_file: {}".format(time.clock()-t0))
     return data, type_data
