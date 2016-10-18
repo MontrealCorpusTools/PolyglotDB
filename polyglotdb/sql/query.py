@@ -162,21 +162,18 @@ class Lexicon(BasePropertyStore):
             if annotation is None:
                 continue
             for k, v in d.items():
-                if v is None or v == "":
+                if v is None:
                     continue
                 pt = self.get_or_create_property_type(k)
                 if types[k] in [int, float]:
                     c = NumericProperty
                     v = float(v)
-                    
                 else:
                     c = Property
                     v = str(v)
-                try:
-                    prop, _ = get_or_create(self.corpus_context.sql_session, c,
+                prop, _ = get_or_create(self.corpus_context.sql_session, c,
                                     annotation = annotation, property_type = pt, value = v)
-                except:
-                    print(pt)
+
     def get_property_levels(self, property_type, annotation_type = None):
         """
         Searches for matching Property matching property_type, gets property levels from that
