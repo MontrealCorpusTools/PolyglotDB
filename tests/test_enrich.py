@@ -181,4 +181,6 @@ def test_baseline_speaker_annotation(acoustic_config):
 
         assert(set(result['unknown']['baseline_duration'].items()) == set(res.items()))
 
+        result2 = g.query_speaker('unknown', 'baseline_duration')
 
+        assert(dicthelper(result, result2))
