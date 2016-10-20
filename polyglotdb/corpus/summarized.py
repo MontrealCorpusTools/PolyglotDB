@@ -460,91 +460,93 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         return finalDict
 
 
-    def encode_measure(self, measure):
+    def encode_measure(self, data_name, statistic, annotation_type, by_speaker = False, speaker = None):
 
         """
         encode the data into the graph
 
         Parameters
         ----------
-        measure: str
-            desired measure to encode
-
+        data_name : str
+            the aspect to summarize (duration, pitch, formants, etc)
+        statistic : str
+            how to summarize (mean, stdev, median, etc)
+        annotation_type : str
+            the annotation to summarize
+        by_speaker : boolean
+            whether to summarize by speaker or not
+        speaker : str
+            the specific speaker to encode baseline duration for (only for baseline duration)
         """
-        res = None
-        speaker = False
-        if measure == 'word_median':
-            data_type = 'word'
-            res = self.word_median()
-        elif measure == 'all_word_median':
-            data_type = 'word'
-            res = self.all_word_median()
-        elif measure == 'word_mean_duration':
-            data_type = 'word'
-            res = self.word_mean_duration()
-        elif measure == 'word_std_dev':
-            data_type = 'word'
-            res = self.word_std_dev()
-        elif measure == 'baseline_duration_utterance':
-            data_type = 'utterance'
-            res = self.baseline_duration('utterance')
-        elif measure == 'baseline_duration_word':
-            data_type = 'word'
-            res = self.baseline_duration('word')
-        elif measure == 'baseline_duration_syllable':
-            data_type = 'syllable'
-            res = self.baseline_duration('syllable')
-        elif measure == 'phone_mean':
-            data_type = 'phone'
-            res = self.phone_mean_duration()
-        elif measure == 'phone_median':
-            data_type = 'phone'
-            res = self.phone_median()
-        elif measure == 'phone_std_dev':
-            data_type = 'phone'
-            res = self.phone_std_dev()
-        elif measure == 'all_word_median':
-            res = self.all_word_median()
-        elif measure == 'phone_mean_duration_with_speaker':
-            data_type = 'speaker'
-            res = self.phone_mean_duration_with_speaker()
-            speaker = True
-        elif measure == 'word_mean_by_speaker':
-            data_type = 'speaker'
-            res = self.word_mean_duration_with_speaker()
-            speaker = True
-        elif measure == 'all_phone_median':
-            data_type = 'phone'
-            res = self.all_phone_median()
-        elif measure == 'syllable_mean':
-            data_type = 'syllable'
-            res = self.syllable_mean_duration()
-        elif measure == 'syllable_median':
-            data_type = 'syllable'
-            res = self.syllable_median()
-        elif measure == 'syllable_std_dev':
-            data_type = 'syllable'
-            res = self.syllable_std_dev()
-        elif measure == 'mean_speech_rate':
-            data_type = 'speaker'
-            res = self.average_speech_rate()
-            speaker = True
 
-        else:
-            print("error")
+        if data_name == 'duration':
 
 
+            res = None
 
-        dataDict = self.make_dict(res,speaker)
+            end = ""
+            
+            if statistic == "mean":
+                if annotation_type == "word":
+                    if by_speaker:
+                        res = self.word_mean_duration_with_speaker()
+                    else:
+                        res= self.word_mean_duration()
+                if annotation_type == "phone":
+                    if by_speaker:
+                        res = self.phone_mean_duration_with_speaker()
+                    else:
+                        res= self.phone_mean_duration()
+                if annotation_type == "syllable":
+                    res= self.syllable_mean()
+            if statistic == "median":
+                if annotation_type == "word":
+                    res= self.word_median()
+                if annotation_type == "phone":
+                    res = self.phone_median()
+                if annotation_type == "syllable":
+                    res= self.syllable_median()    
 
-        if data_type == 'word':
-            self.enrich_lexicon(dataDict)
-        elif data_type == 'phone':
-            self.enrich_features(dataDict)
-        elif data_type == 'syllable':
-            self.enrich_syllables(dataDict)
-        elif data_type == 'speaker':
+            if statistic == "stdev":
+                if annotation_type == "word":
+                    res= self.word_std_dev()
+                if annotation_type == "phone":
+                    res = self.phone_std_dev()
+                if annotation_type == "syllable":
+                    res= self.syllable_std_dev()   
+
+            if statistic == "baseline":
+                if annotation_type == "word":
+                    res= self.baseline_duration("word", speaker)
+                if annotation_type == "syllable":
+                    res= self.baseline_duration("syllable",speaker)   
+                if annotation_type == "utterance":
+                    res = self.baseline_duration("utterance",speaker)
+
+        if data_name == "speech_rate":
+            if statistic == "mean":
+                if by_speaker:
+                    res= self.average_speech_rate()
+
+            
+        else: 
+            print("ERROR, this set of options is invalid")    
+            
+          
+        
+
+        dataDict = self.make_dict(res,by_speaker)
+
+        if not by_speaker:
+            if annotation_type == 'utterance':
+                self.enrich_utterances(dataDict)
+            elif annotation_type == 'word':
+                self.enrich_lexicon(dataDict)
+            elif annotation_type == 'phone':
+                self.enrich_features(dataDict)
+            elif annotation_type == 'syllable':
+                self.enrich_syllables(dataDict)
+        elif by_speaker:
             self.enrich_speaker_annotations(dataDict)
-        elif data_type == 'utterance':
-            self.enrich_utterances(dataDict)
+        
 

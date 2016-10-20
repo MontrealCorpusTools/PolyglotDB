@@ -117,7 +117,7 @@ def test_relativized_enrichment_syllables(acoustic_config):
                 'uh','ah','ao','er','ow']
         c.encode_syllabic_segments(syllabics)
         c.encode_syllables()
-        c.encode_measure("baseline_duration_syllable")
+        c.encode_measure('duration', 'baseline', 'syllable')
 
         assert(c.hierarchy.has_type_property("syllable","baseline_duration"))
 
@@ -126,7 +126,7 @@ def test_relativized_enrichment_utterances(acoustic_config):
         c.encode_pauses(['sil', 'um'])
         c.encode_utterances(min_pause_length = 0)
 
-        c.encode_measure('baseline_duration_utterance')
+        c.encode_measure('duration', 'baseline', 'utterance')
 
 
 
@@ -155,7 +155,7 @@ def test_speaker_enrichment(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         expected = {'unknown': {'average_duration': {'th': 0.04493500000000017, '<SIL>': 0.6284645454545452, 'y': 0.05754000000000037, 'b': 0.06809999999999894, 'er': 0.1971710000000002, 'uw': 0.08043999999999973, 'ow': 0.18595500000000018, 'p': 0.051516666666666655, 'z': 0.08597333333333353, 'jh': 0.04727999999999977, 'l': 0.1076199999999997, 'sh': 0.09417000000000186, 'w': 0.07460249999999968, 'n': 0.0737177777777775, 'ch': 0.05305000000000071, 'ih': 0.06382066666666676, 'eh': 0.05799199999999978, 'r': 0.09273624999999973, 'ng': 0.05112571428571457, 'ae': 0.19313571428571402, 's': 0.10893125000000002, 'ah': 0.1770525000000001, 'aa': 0.08004000000000093, 't': 0.0645437499999999, 'iy': 0.1256781818181817, 'g': 0.04078499999999963, 'ay': 0.14554000000000014, 'd': 0.09151333333333334, 'm': 0.13204625000000064, 'hh': 0.05832999999999977, 'f': 0.0654300000000001, 'k': 0.09175999999999981, 'dh': 0.036620000000000055}}}
 
-        c.encode_measure("phone_mean_duration_with_speaker")
+        c.encode_measure('duration', 'mean', 'phone', True)
         
         result = c.census.get_speaker_annotations('average_duration', 'unknown')        
 
