@@ -31,33 +31,41 @@ class SummarizedContext(BaseContext):
         print(statistic)
         percent = ""
         if data_name == "duration":
-            m = ""
-            if statistic == "mean" or statistic == 'average':
-                m = "avg"
-            elif statistic == "stdev": 
-                m = statistic
-            elif statistic == 'median':
-                m = 'percentileDisc'
-                percent = ", .5"
-            elif statistic == "baseline":
-                baseline = True
-                result = self.baseline_duration(annotation_type, speaker)
-            else:
-                raise(AttributeError("The statistic {} is not a valid option. Options are mean, median, stdev, or baseline".format(statistic)))
+            num_prop = "p.end - p.begin"
+        if data_name == "speech_rate":
+            num_prop = ""
+            statement = """
+            match (w:word:{corpus_name})-[:contained_by]->(p:utterance:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) 
+            where s.name ='{speaker}' 
+            with s,w,p, count(w) as c return s.name as speaker, avg((p.end-p.begin)/c) as rate
+            """
+        m = ""
+        if statistic == "mean" or statistic == 'average':
+            m = "avg"
+        elif statistic == "stdev": 
+            m = statistic
+        elif statistic == 'median':
+            m = 'percentileDisc'
+            percent = ", .5"
+        elif statistic == "baseline":
+            baseline = True
+            result = self.baseline_duration(annotation_type, speaker)
+        else:
+            raise(AttributeError("The statistic {} is not a valid option. Options are mean, median, stdev, or baseline".format(statistic)))
 
 
 
-            if not self.hierarchy.has_type_property('utterance','label'):
-                self.encode_utterances()
-            if speaker is not None:
-                statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) where s.name = '{speaker}' RETURN p.label as {annotation_type}, {measure}(p.end - p.begin{percent}) as {column}".format(\
-                    corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m, percent = percent, speaker = speaker, column = column)
-            if by_speaker:
-                statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) RETURN s.name as speaker, p.label as {annotation_type}, {measure}(p.end - p.begin{percent}) as {column}".format(\
-                    corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m, percent = percent, column = column)
-            else:
-                statement = "MATCH (p:{annotation_type}:{corpus_name}) RETURN p.label as {annotation_type}, {measure}(p.end - p.begin{percent}) as {column}".format(\
-                    corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m, percent = percent, column = column)
+        if not self.hierarchy.has_type_property('utterance','label'):
+            self.encode_utterances()
+        if speaker is not None:
+            statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) where s.name = '{speaker}' RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
+                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop percent = percent, speaker = speaker, column = column)
+        if by_speaker:
+            statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) RETURN s.name as speaker, p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
+                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop percent = percent, column = column)
+        else:
+            statement = "MATCH (p:{annotation_type}:{corpus_name}) RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
+                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop percent = percent, column = column)
 
         if not baseline:
             result = []
@@ -67,72 +75,6 @@ class SummarizedContext(BaseContext):
 
         return result
 
-
-
-    
-
-    def all_phone_median(self):
-        """
-        Get the median duration of all the phones in the corpus
-
-        Returns
-        -------
-        float
-            median duration of all the phones in the corpus
-        """
-        phone = getattr(self, self.phone_name)
-        return self.query_graph(phone).aggregate(Median(phone.duration))
-
-
-
- 
-    def get_mean_duration(self, type):
-        """
-        Get the mean duration of all words or all phones in the corpus
-
-        Parameters
-        ----------
-        type : str
-            the type (word or phone)
-
-        Returns
-        -------
-        result : float
-            the average duration of all words or all phones
-        """
-        result = 0.0
-        if type == 'phone':
-            phone = getattr(self, self.phone_name)
-            q = self.query_graph(phone)
-            result = q.aggregate(Average(phone.duration))
-        elif type == 'word':
-            word = getattr(self,self.word_name)
-            q = self.query_graph(word)
-            result = q.aggregate(Average(word.duration))
-        elif type == 'syllable':
-            syllable = self.syllable
-            q = self.query_graph(syllable)
-            result = q.aggregate(Average(syllable.duration))
-        return result
-
-    #words
-
-   
-
-    def all_word_median(self):
-        """
-        Get the median duration of all the words in the corpus
-
-        Returns
-        -------
-        float
-            median duration of all the words in the corpus
-        """
-        word = getattr(self, self.word_name)
-        return self.query_graph(word).aggregate(Median(word.duration))
-
-
-   
 
     def baseline_duration(self, annotation, speaker = None):
         """
@@ -194,21 +136,6 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
 
         print(result)
         return result
-
-    
-
-    def all_syllable_median(self):
-        """
-        Get the median duration of all the syllables in the corpus
-
-        Returns
-        -------
-        float
-            median duration of all the syllables in the corpus
-        """
-        syllable = self.syllable
-        return self.query_graph(syllable).aggregate(Median(syllable.duration))
-
 
  
     #SPEAKER

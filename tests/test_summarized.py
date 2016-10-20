@@ -81,13 +81,7 @@ def test_phone_std_dev(summarized_config):
         assert(len(res)==33)
         assert(abs(res[i][1]-0.026573072836990105) < .0000000000001)
 
-def test_all_phone_median(summarized_config):
-    with CorpusContext(summarized_config) as g:
-        print("all phone median:")
-        res = g.all_phone_median()
-        print(res)
-        assert(abs(res-0.07682000000000011) < .0000000000001)
-        assert(type(res) == float)
+
 
 def test_phone_median(summarized_config):
     with CorpusContext(summarized_config) as g:
@@ -100,24 +94,6 @@ def test_phone_median(summarized_config):
         assert(abs(res[i][1]-0.059820000000000206) < .0000000000001)
 
 
-
-def test_get_mean_duration(summarized_config):
-    syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
-                'uh','ah','ao','er','ow']
-
-    with CorpusContext(summarized_config) as g:
-        g.encode_syllabic_segments(syllabics)
-        g.encode_syllables()
-
-        print("get mean duration (syl):")
-        toget = 'phone'
-        res = g.get_mean_duration(toget)
-        print(res)
-
-        assert(type(res) == float)
-        if toget == 'phone':
-            assert(abs(res-0.13164172413793104) < .0000000000001 )
-
 def test_word_mean_duration(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("mean duration (word):")
@@ -128,8 +104,6 @@ def test_word_mean_duration(summarized_config):
             if r[0] == 'words':
                 break
         assert(abs(res[i][1]-0.5340040000000001) < .0000000000001)
-
-
 
 def test_word_mean_duration_with_speaker(summarized_config):
     with CorpusContext(summarized_config) as g:
@@ -163,15 +137,6 @@ def test_word_median(summarized_config):
             if r[0] == 'words':
                 break
         assert(abs(res[i][1]-0.5489699999999971) < .0000000000001)
-
-def test_all_word_median(summarized_config):
-    with CorpusContext(summarized_config) as g:
-        print("all word median:")
-        res = g.all_word_median()
-        print(res)
-        assert(type(res) == float)
-        assert(abs(res-0.2736300000000007) < .0000000000001)
-
 
 def test_word_std_dev(summarized_config):
     with CorpusContext(summarized_config) as g:
@@ -231,18 +196,6 @@ def test_syllable_median(summarized_config):
 
         print(res)
         assert(len(res) == 55)
-
-def test_all_syllable_median(summarized_config):
-    syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
-                'uh','ah','ao','er','ow']
-    with CorpusContext(summarized_config) as g:
-        g.encode_syllabic_segments(syllabics)
-        g.encode_syllables()
-
-        print("all syllable median:")
-        res = g.all_syllable_median()
-        print(res)
-        assert(type(res) == float)
 
 def test_syllable_std_dev(summarized_config):
     syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
