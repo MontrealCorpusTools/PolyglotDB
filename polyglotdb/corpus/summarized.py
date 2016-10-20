@@ -32,15 +32,8 @@ class SummarizedContext(BaseContext):
         percent = ""
         if data_name == "duration":
             num_prop = "p.end - p.begin"
-        if data_name == "speech_rate":
-            num_prop = ""
-            statement = """
-            match (w:word:{corpus_name})-[:contained_by]->(p:utterance:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) 
-            where s.name ='{speaker}' 
-            with s,w,p, count(w) as c return s.name as speaker, avg((p.end-p.begin)/c) as rate
-            """
         m = ""
-        if statistic == "mean" or statistic == 'average':
+        if statistic == "mean":
             m = "avg"
         elif statistic == "stdev": 
             m = statistic
@@ -59,13 +52,13 @@ class SummarizedContext(BaseContext):
             self.encode_utterances()
         if speaker is not None:
             statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) where s.name = '{speaker}' RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
-                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop percent = percent, speaker = speaker, column = column)
+                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop, percent = percent, speaker = speaker, column = column)
         if by_speaker:
             statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) RETURN s.name as speaker, p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
-                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop percent = percent, column = column)
+                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop ,percent = percent, column = column)
         else:
             statement = "MATCH (p:{annotation_type}:{corpus_name}) RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
-                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop percent = percent, column = column)
+                corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop, percent = percent, column = column)
 
         if not baseline:
             result = []
@@ -156,7 +149,7 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
 
         return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
 
-    def make_dict(self, data, speaker = False):
+    def make_dict(self, data, speaker = False, label = None):
         """
         turn data results into a dictionary for encoding
 
@@ -185,7 +178,7 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
             keys = data[0].keys()
             speaker = data[0].values()[0]
             prop = keys[2]
-            firstDict = {x['label']:x[prop] for x in data  }
+            firstDict = {x[label]:x[prop] for x in data  }
             speakerDict = self.make_speaker_annotations_dict(firstDict, speaker, prop)
             return speakerDict
         return finalDict
@@ -213,7 +206,7 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
 
         res = self.get_measure(data_name, statistic, annotation_type, by_speaker, speaker)
 
-        dataDict = self.make_dict(res,by_speaker)
+        dataDict = self.make_dict(res,by_speaker,annotation_type)
         if not by_speaker:
             if annotation_type == 'utterance':
                 self.enrich_utterances(dataDict)

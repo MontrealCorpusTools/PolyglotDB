@@ -157,7 +157,7 @@ def test_speaker_enrichment(acoustic_config):
 
         c.encode_measure('duration', 'mean', 'phone', True)
         
-        result = c.census.get_speaker_annotations('average_duration', 'unknown')        
+        result = c.census.get_speaker_annotations('mean_duration', 'unknown')        
 
         assert(dicthelper(result,expected))
         
