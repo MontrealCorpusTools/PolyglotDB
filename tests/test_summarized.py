@@ -4,7 +4,7 @@ from polyglotdb.graph.func import Count
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_buckeye
 
-"""
+
 def test_get_measure(summarized_config):
     with CorpusContext(summarized_config) as g:
         res = g.get_measure('duration','mean','phone')
@@ -254,7 +254,7 @@ def test_syllable_std_dev(summarized_config):
         print("syllable std dev:")
         res = g.get_measure('duration','stdev','syllable')
         assert(len(res) == 55)
-"""
+
 
 @pytest.mark.xfail
 def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
@@ -280,7 +280,7 @@ def test_baseline_speaker_word(summarized_config):
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
 
-"""
+
 @pytest.mark.xfail
 def test_baseline_speaker_buckeye_word(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
@@ -329,4 +329,3 @@ def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
         print(res)
         assert(abs(res[0][1]-2.4439013552543876) < .0000000000001)
         assert(len(res)==1)
-"""
