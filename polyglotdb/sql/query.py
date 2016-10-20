@@ -428,7 +428,7 @@ class Census(BasePropertyStore):
                 for a, value in v.items():
                     at = self.get_or_create_annotation_type(a)
                     prop, _ = get_or_create(self.corpus_context.sql_session, SpeakerAnnotation, speaker= speaker, \
-                    annotation_type = at, property_type = pt, numerical_value = value)
+                    annotation_type = at, property_type = pt, value = value)
 
     def get_speaker_annotations(self, property, speaker):
         """
@@ -448,5 +448,5 @@ class Census(BasePropertyStore):
         q = self.corpus_context.sql_session.query(SpeakerAnnotation).filter(SpeakerAnnotation.property_type_id == pt.id)
         q = q.filter(SpeakerAnnotation.speaker_id == spk.id)
 
-        return {spk.name:{pt.label:{x.annotation_type.label:x.numerical_value for x in q.all()} }}
+        return {spk.name:{pt.label:{x.annotation_type.label:x.value for x in q.all()} }}
 

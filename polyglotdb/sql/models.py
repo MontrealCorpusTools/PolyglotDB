@@ -170,7 +170,7 @@ class SpeakerAnnotation(Base):
 
 
 
-    numerical_value = Column(Integer)
+    value = Column(Float, nullable = False)
 
 class DiscourseProperty(Base):
     __tablename__ = 'discourse_property'

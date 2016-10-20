@@ -269,9 +269,6 @@ class SummarizedContext(BaseContext):
         word_totals : dict
             a dictionary of words and baseline durations
         """
-        buckeye = False
-        if 'buckeye' in self.corpus_name:
-            buckeye = True
         
         index = 'label'
         word = getattr(self, self.word_name)
@@ -289,11 +286,11 @@ class SummarizedContext(BaseContext):
 
         statement = '''
 MATCH (m:phone:{corpus_name}) 
-with m.{index} as l, avg(m.end-m.begin) as dur 
-with l,dur match (p:phone:{corpus_name}) 
-where p.{index} = l set p.average_duration = dur 
+with m.{index} as target, avg(m.end-m.begin) as dur 
+with target,dur match (p:phone:{corpus_name}) 
+where p.{index} = target set p.average_duration = dur 
 with p as phone  match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
-with n,phone with n, n.{index} as l, sum(phone.average_duration) as baseline 
+with n,phone with n, n.{index} as target, sum(phone.average_duration) as baseline 
 set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation,\
  corpus_name=self.corpus_name, index = index)
         
