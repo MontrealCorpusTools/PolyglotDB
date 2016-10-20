@@ -4,10 +4,21 @@ from polyglotdb.graph.func import Count
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_buckeye
 
+"""
+def test_get_measure(summarized_config):
+    with CorpusContext(summarized_config) as g:
+        res = g.get_measure('duration','mean','phone')
+        print(res)
+        assert(len(res)==33)
+        for i, r in enumerate(res):
+            if r[0] == 'uw':
+                break
+        assert(abs(res[i][1]-0.08043999999999973) < .0000000000001)
+
 def test_phone_mean_duration(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("phone mean:")
-        res = g.phone_mean_duration()
+        res = g.get_measure('duration','mean','phone')
         print(res)
         assert(len(res)==33)
         for i, r in enumerate(res):
@@ -19,7 +30,7 @@ def test_phone_mean_duration_speaker(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("phone mean:")
         g.encode_utterances()
-        res = g.phone_mean_duration('unknown')
+        res = g.get_measure('duration','mean','phone', False, 'unknown')
         print(res)
         assert(len(res)==33)
         for i, r in enumerate(res):
@@ -30,7 +41,7 @@ def test_phone_mean_duration_speaker(summarized_config):
 
 def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as g:
-        res = g.phone_mean_duration()
+        res = g.get_measure('duration','mean','phone')
         print(res)
         assert(len(res)==16)
         dx,eh= 0,0
@@ -49,7 +60,8 @@ def test_phone_mean_duration_with_speaker(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("phone mean by speaker:")
         g.encode_utterances()
-        res =g.phone_mean_duration_with_speaker()
+        # res =g.phone_mean_duration_with_speaker()
+        res = g.get_measure('duration','mean','phone', True)
         print(res)
         assert(len(res)==33)
         for i, r in enumerate(res):
@@ -60,7 +72,7 @@ def test_phone_mean_duration_with_speaker(summarized_config):
 def test_phone_std_dev(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("phone std dev:")
-        res = g.phone_std_dev()
+        res = g.get_measure('duration','stdev','phone')
         print(res)
         for i, r in enumerate(res):
             if r[0] == 'uw':
@@ -80,7 +92,7 @@ def test_all_phone_median(summarized_config):
 def test_phone_median(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("phone median:")
-        res = g.phone_median()
+        res = g.get_measure('duration','median','phone')
         print(res)
         for i, r in enumerate(res):
             if r[0] == 'n':
@@ -109,7 +121,7 @@ def test_get_mean_duration(summarized_config):
 def test_word_mean_duration(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("mean duration (word):")
-        res = g.word_mean_duration()
+        res = g.get_measure('duration','mean','word')
         print(res)
         assert(len(res)==44)
         for i, r in enumerate(res):
@@ -122,18 +134,18 @@ def test_word_mean_duration(summarized_config):
 def test_word_mean_duration_with_speaker(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("word mean:")
-        res = g.word_mean_duration_with_speaker()
+        res = g.get_measure('duration','mean','word', True)
         print(res)
         assert(len(res)==44)
         for i, r in enumerate(res):
             if r[1] == 'words':
                 break
         assert(abs(res[i][2]-0.5340040000000001) < .0000000000001)
-
+@pytest.mark.xfail
 def test_word_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as g:
         g.encode_utterances()
-        res=g.word_mean_duration_with_speaker()
+        res = g.get_measure('duration','mean','word', True)
         print(res)
         for i, r in enumerate(res):
             if r[1] == 'that\'s':
@@ -144,7 +156,7 @@ def test_word_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
 def test_word_median(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("word median:")
-        res = g.word_median()
+        res = g.get_measure('duration','median','word')
         print(res)
         assert(len(res) == 44)
         for i, r in enumerate(res):
@@ -164,7 +176,7 @@ def test_all_word_median(summarized_config):
 def test_word_std_dev(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("word std dev:")
-        res = g.word_std_dev()
+        res = g.get_measure('duration','stdev','word')
         print(res)
 
         assert(len(res)==44)
@@ -181,7 +193,7 @@ def test_syllable_mean_duration(summarized_config):
         g.encode_syllables()
 
         print("syllable mean:")
-        res =g.syllable_mean_duration()
+        res = g.get_measure('duration','mean','syllable')
         print(res)
         assert(len(res) == 55)
         for i, r in enumerate(res):
@@ -198,7 +210,7 @@ def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir)
         g.load(parser, buckeye_test_dir)
         g.encode_syllabic_segments(syllabics)
         g.encode_syllables()
-        res = g.syllable_mean_duration_with_speaker()
+        res = g.get_measure('duration','mean','syllable', True)
         print(res)
         assert(len(res) == 11)
         for i, r in enumerate(res):
@@ -215,7 +227,7 @@ def test_syllable_median(summarized_config):
         g.encode_syllables()
 
         print("syllable median:")
-        res = g.syllable_median()
+        res = g.get_measure('duration','median','syllable')
 
         print(res)
         assert(len(res) == 55)
@@ -240,14 +252,14 @@ def test_syllable_std_dev(summarized_config):
         g.encode_syllables()
 
         print("syllable std dev:")
-        res = g.syllable_std_dev()
+        res = g.get_measure('duration','stdev','syllable')
         assert(len(res) == 55)
-
+"""
 
 @pytest.mark.xfail
 def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
-        res = c.baseline_duration("word",)
+        res = g.get_measure('duration','baseline','word')
         print(res)
         assert(len(res) == 9)
 
@@ -255,25 +267,24 @@ def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
 
 def test_baseline_word(summarized_config):
     with CorpusContext(summarized_config) as g:
-        res1 = g.phone_mean_duration()
-        print(res1)
-        res = g.baseline_duration("word")
+        res = g.get_measure('duration','baseline','word')
         print(res)
+        
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
 
 def test_baseline_speaker_word(summarized_config):
     with CorpusContext(summarized_config) as g:
-        res = g.baseline_duration("word",'unknown')
+        res = g.get_measure('duration','baseline','word', False, 'unknown')
         print(res)
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
 
-
+"""
 @pytest.mark.xfail
 def test_baseline_speaker_buckeye_word(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
-        res = c.baseline_duration('word','tes')
+        res = g.get_measure('duration','baseline','word', False, 'tes')
         print(res)
         assert(len(res) == 9)
         assert(abs(res['they']-0.11224799999999968)< .0000000000001)
@@ -283,7 +294,7 @@ def test_baseline_utterance(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_pauses(['sil'])
         g.encode_utterances(min_pause_length = 0.15)
-        res = g.baseline_duration('utterance')
+        res = g.get_measure('duration','baseline','utterance')
         print(res)
 
 def test_baseline_syllable(acoustic_config):
@@ -292,7 +303,7 @@ def test_baseline_syllable(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_syllabic_segments(syllabics)
         g.encode_syllables()
-        res = g.baseline_duration('syllable')
+        res = g.get_measure('duration','baseline','syllable')
         print(res)
 
 
@@ -318,3 +329,4 @@ def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
         print(res)
         assert(abs(res[0][1]-2.4439013552543876) < .0000000000001)
         assert(len(res)==1)
+"""
