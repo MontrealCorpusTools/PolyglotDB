@@ -284,8 +284,18 @@ class SummarizedContext(BaseContext):
             if not self.hierarchy.has_type_property('syllable','label'):
                 raise(AttributeError('Annotation type \'{}\' not found.'.format(annotation)))
 
+        speaker_statement = '''
+MATCH (m:phone:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) where s.name = '{speaker}'
+with m.{index} as target, avg(m.end-m.begin) as dur 
+with target,dur match (p:phone:{corpus_name}) 
+where p.{index} = target set p.average_duration = dur 
+with p as phone  match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
+with n,phone with n, n.{index} as target, sum(phone.average_duration) as baseline 
+set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation,\
+ corpus_name=self.corpus_name, index = index, speaker = speaker)
+        
         statement = '''
-MATCH (m:phone:{corpus_name}) 
+MATCH (m:phone:{corpus_name})
 with m.{index} as target, avg(m.end-m.begin) as dur 
 with target,dur match (p:phone:{corpus_name}) 
 where p.{index} = target set p.average_duration = dur 
@@ -293,11 +303,9 @@ with p as phone  match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n
 with n,phone with n, n.{index} as target, sum(phone.average_duration) as baseline 
 set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation,\
  corpus_name=self.corpus_name, index = index)
-        
         if speaker is not None:
-            prefix = '''MATCH (speaker:Speaker:{corpus_name}) 
-            where speaker.name = '{speaker}' with speaker'''.format(corpus_name=self.corpus_name,speaker=speaker)
-            statement = prefix+statement
+            statement=speaker_statement
+        
 
         res = self.execute_cypher(statement)     
         result = {}
