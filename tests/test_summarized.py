@@ -245,36 +245,54 @@ def test_syllable_std_dev(summarized_config):
 
 
 @pytest.mark.xfail
-def test_baseline_buckeye(graph_db, buckeye_test_dir):
+def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
-        res = c.baseline_duration()
+        res = c.baseline_duration("word",)
         print(res)
         assert(len(res) == 9)
 
         assert(abs(res['they']-0.11224799999999968)< .0000000000001)
 
-def test_baseline(summarized_config):
+def test_baseline_word(summarized_config):
     with CorpusContext(summarized_config) as g:
-        res = g.baseline_duration()
+        res = g.baseline_duration("word")
         print(res)
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
 
-def test_baseline_speaker(summarized_config):
+def test_baseline_speaker_word(summarized_config):
     with CorpusContext(summarized_config) as g:
-        res = g.baseline_duration('unknown')
+        res = g.baseline_duration("word",'unknown')
         print(res)
         assert(abs(res['this']-0.20937191666666685)< .0000000000001)
         assert(len(res)==44)
 
 
 @pytest.mark.xfail
-def test_baseline_speaker_buckeye(graph_db, buckeye_test_dir):
+def test_baseline_speaker_buckeye_word(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
-        res = c.baseline_duration('tes')
+        res = c.baseline_duration('word','tes')
         print(res)
         assert(len(res) == 9)
         assert(abs(res['they']-0.11224799999999968)< .0000000000001)
+
+def test_baseline_utterance(acoustic_config):
+
+    with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil'])
+        g.encode_utterances(min_pause_length = 0.15)
+        res = g.baseline_duration('utterance')
+        print(res)
+
+def test_baseline_syllable(acoustic_config):
+    syllabics = ['ae','aa','uw','ay','eh', 'ih', 'aw', 'ey', 'iy',
+                'uh','ah','ao','er','ow']
+    with CorpusContext(acoustic_config) as g:
+        g.encode_syllabic_segments(syllabics)
+        g.encode_syllables()
+        res = g.baseline_duration('syllable')
+        print(res)
+
 
 @pytest.mark.xfail
 def test_average_speech_rate(acoustic_config):

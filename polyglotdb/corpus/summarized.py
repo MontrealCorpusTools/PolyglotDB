@@ -254,7 +254,7 @@ class SummarizedContext(BaseContext):
 
 
 
-    def baseline_duration(self, speaker = None):
+    def baseline_duration(self, annotation, speaker = None):
         """
         Get the baseline duration of each word in corpus.
         Baseline duration is determined by summing the average durations of constituent phones for a word.
@@ -272,12 +272,26 @@ class SummarizedContext(BaseContext):
         buckeye = False
         if 'buckeye' in self.corpus_name:
             buckeye = True
+        
 
         word = getattr(self, self.word_name)
         phone = getattr(self,self.phone_name)
-        q = self.query_graph(word)
-
-        allWords = q.all()
+        if annotation == 'word':
+            q = self.query_graph(word)
+            index = 'label'
+        elif annotation == 'utterance':
+            q = self.query_graph(self.utterance)
+            ## TODO: find a good key for utterances (labels too long anyway and are None)
+            index = 'id'
+        elif annotation == 'syllable':
+            q = self.query_graph(self.syllable)
+            index = 'label'
+        else:
+            raise(AttributeError('Annotation type \'{}\' not found.'.format(annotation)))
+            q = None
+            index = None
+        
+        all_elements = q.all()
 
         allPhones = []
         if self.hierarchy.has_type_property('phone','average_duration'):
@@ -292,33 +306,35 @@ class SummarizedContext(BaseContext):
             allPhones = self.phone_mean_duration(speaker)
 
         duration_dict = {}
-        word_totals = {}
+        annotation_totals = {}
         for tup in allPhones:
             duration_dict[tup[0]]=tup[1]
-        for word in allWords:
+        for element in all_elements:
+         #   print(vars(element))
+            print(getattr(element,index))
             total = 0.0
             if buckeye:
-                for phone in re.split("[\. ]", word.transcription):
+                for phone in re.split("[\. ]", element.transcription):
                     try:
                         total+=duration_dict[phone]
                     except KeyError:
                         pass
             else:
-                for phone in word.phone:
+                for phone in element.phone:
                     try:
                         total+=duration_dict[phone.label]
                     except KeyError:
                         pass
             try:
-                if total > word_totals[word.label]:
+                
+                if total > annotation_totals[getattr(element,index)]:
                     #print('replacing %s : %f with %s : %f'%(word.label, word_totals[word.label], word.label, total))
-                    word_totals[word.label] = total
+                    annotation_totals[getattr(element,index)] = total
                 else:
                     continue
             except KeyError:
-                word_totals[word.label] = total
-
-        return word_totals
+                annotation_totals[getattr(element,index)] = total
+        return annotation_totals
 
 
     def syllable_mean_duration(self):
@@ -491,8 +507,12 @@ class SummarizedContext(BaseContext):
             res = self.word_mean_duration()
         elif measure == 'word_std_dev':
             res = self.word_std_dev()
-        elif measure == 'baseline_duration':
-            res = self.baseline_duration()
+        elif measure == 'baseline_duration_utterance':
+            res = self.baseline_duration('utterance')
+        elif measure == 'baseline_duration_word':
+            res = self.baseline_duration('word')
+        elif measure == 'baseline_duration_syllable':
+            res = self.baseline_duration('syllable')
         elif measure == 'phone_mean':
             data_type = 'phone'
             res = self.phone_mean_duration()
