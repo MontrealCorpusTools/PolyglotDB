@@ -372,3 +372,18 @@ class BaseContext(object):
         q = q.filter(w.discourse.name == name)
         q = q.order_by(w.begin)
         return q.all()
+
+    def query_speaker(self, name, property):
+        """
+        query for an individual speaker's property
+
+        Parameters
+        ----------
+        name : str
+            the speaker's name
+        property : str
+            the name of the property
+        """
+        res = self.census.get_speaker_annotations(property, name)
+
+        return res

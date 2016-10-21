@@ -113,6 +113,31 @@ def utterance_data_to_csvs(corpus_context, speaker_data):
         header = ['id', 'prev_id', 'begin_word_id', 'end_word_id']
         write_csv_file(path, header, data, 'a')
 
+def utterance_enriched_data_to_csvs(corpus_context, utterance_data):
+    """
+    Convert time data into a CSV file
+
+    Parameters
+    ----------
+    type : obj
+        the type of data
+    directory : str
+        path to the directory
+    discourse : str
+        the name of the discourse
+    timed_data : list
+        the timing data
+    """
+    directory = corpus_context.config.temporary_directory('csv')
+    with open(os.path.join(directory, 'utterance_enrichment.csv'), 'w') as f:
+        header = ['id'] + sorted(next(iter(utterance_data.values())).keys())
+        writer = csv.DictWriter(f, header, delimiter = ',')
+        writer.writeheader()
+        for k,v in sorted(utterance_data.items()):
+            v['id'] = k
+            writer.writerow(v)
+
+
 def syllables_data_to_csvs(corpus_context, speaker_data):
     """
     Convert syllable data into a CSV file
