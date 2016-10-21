@@ -17,12 +17,12 @@ def test_wav_info(acoustic_utt_config):
         assert(sf.sampling_rate == 16000)
         assert(sf.n_channels == 1)
 
-@acoustic
+#@acoustic
 def test_analyze_acoustics(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.analyze_acoustics()
 
-@acoustic
+#@acoustic
 def test_analyze_acoustics_praat(acoustic_utt_config, praat_path):
     acoustic_utt_config.pitch_algorithm = 'praat'
     acoustic_utt_config.praat_path = praat_path
@@ -34,26 +34,26 @@ def test_analyze_acoustics_praat(acoustic_utt_config, praat_path):
 def test_query_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.pitch_algorithm = 'dummy'
-        expected_pitch = {Decimal('4.23'): 98,
-                            Decimal('4.24'):100,
-                            Decimal('4.25'):99,
-                            Decimal('4.26'):95.8,
-                            Decimal('4.27'):95.8}
+        expected_pitch = {Decimal('4.23'): {'F0':98},
+                            Decimal('4.24'):{'F0':100},
+                            Decimal('4.25'):{'F0':99},
+                            Decimal('4.26'):{'F0':95.8},
+                            Decimal('4.27'):{'F0':95.8}}
         g.save_pitch('acoustic_corpus', expected_pitch)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
-        q = q.columns(g.phone.label, g.phone.pitch)
+        q = q.columns(g.phone.label, g.phone.pitch.track)
         print(q.cypher())
         results = q.all()
 
         times = list(expected_pitch.keys())
 
         print(sorted(expected_pitch.items()))
-        print(sorted(results[0]['F0'].items()))
-        for k, v in results[0]['F0'].items():
-            assert(round(v,1) == expected_pitch[k])
+        print(sorted(results[0].track.items()))
+        for k, v in results[0].track.items():
+            assert(round(v['F0'],1) == expected_pitch[k]['F0'])
 
 def test_query_aggregate_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
@@ -73,30 +73,28 @@ def test_query_aggregate_pitch(acoustic_utt_config):
 def test_query_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.formant_algorithm = 'dummy'
-        expected_formants = {Decimal('4.23'): (501, 1500, 2500),
-                            Decimal('4.24'): (502, 1499, 2500),
-                            Decimal('4.25'): (503, 1498, 2500),
-                            Decimal('4.26'): (504, 1497, 2500),
-                            Decimal('4.27'): (505, 1496, 2500)}
+        expected_formants = {Decimal('4.23'): {'F1':501, 'F2': 1500, 'F3': 2500},
+                            Decimal('4.24'): {'F1':502, 'F2': 1499, 'F3': 2500},
+                            Decimal('4.25'): {'F1':503, 'F2': 1498, 'F3': 2500},
+                            Decimal('4.26'): {'F1':504, 'F2': 1497, 'F3': 2500},
+                            Decimal('4.27'): {'F1':505, 'F2': 1496, 'F3': 2500}}
         g.save_formants('acoustic_corpus', expected_formants)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
-        q = q.columns(g.phone.label, g.phone.formants)
+        q = q.columns(g.phone.label, g.phone.formants.track)
         print(q.cypher())
         results = q.all()
 
         times = list(expected_formants.keys())
 
         print(sorted(expected_formants.items()))
-        print(sorted(results[0]['F1'].items()))
-        print(sorted(results[0]['F2'].items()))
-        print(sorted(results[0]['F3'].items()))
-        for k, v in results[0]['F1'].items():
-            assert(round(v,1) == expected_formants[k][0])
-            assert(round(results[0]['F2'][k],1) == expected_formants[k][1])
-            assert(round(results[0]['F3'][k],1) == expected_formants[k][2])
+        print(sorted(results[0].track.items()))
+        for k, v in results[0].track.items():
+            assert(round(v['F1'],1) == expected_formants[k]['F1'])
+            assert(round(v['F2'],1) == expected_formants[k]['F2'])
+            assert(round(v['F3'],1) == expected_formants[k]['F3'])
 
 def test_query_aggregate_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
@@ -121,3 +119,21 @@ def test_query_aggregate_formants(acoustic_utt_config):
         assert(results[0]['Min_F3'] == 2500)
         assert(results[0]['Max_F3'] == 2500)
         assert(round(results[0]['Mean_F3'], 2) == 2500)
+
+def test_export_pitch(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_algorithm = 'dummy'
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.label.column_name('label'), g.phone.pitch.track)
+        print(q.cypher())
+        results = q.all()
+
+        t = results.rows_for_csv()
+        assert(next(t) == {'label':'ow','time': Decimal('4.23'), 'F0': 98})
+        assert(next(t) == {'label':'ow','time': Decimal('4.24'), 'F0': 100})
+        assert(next(t) == {'label':'ow','time': Decimal('4.25'), 'F0': 99})
+        assert(next(t) == {'label':'ow','time': Decimal('4.26'), 'F0': 95.8})
+        assert(next(t) == {'label':'ow','time': Decimal('4.27'), 'F0': 95.8})
