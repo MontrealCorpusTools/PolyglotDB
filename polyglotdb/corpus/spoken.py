@@ -27,6 +27,42 @@ class SpokenContext(object):
         self.hierarchy.add_speaker_properties(self, type_data.items())
         self.encode_hierarchy()
 
+
+    def make_speaker_annotations_dict(self, data, speaker, property):
+        """
+        helper function to turn dict of {} format to {speaker :{property :{data}}}
+
+        Parameters
+        ----------
+        data : dict
+            annotations and values
+        property : str
+            the name of the property being encoded
+        speaker : str
+            the name of the speaker
+        """
+        return {speaker:{property: data}}
+
+    def enrich_speaker_annotations(self, data, type_data = None):
+        """
+        add properties speaker-specific annotation properties
+
+        Parameters
+        ----------
+        data : dict
+            the data  to add
+        type_data : dict
+            Specifies the type of the data to be added, defaults to None
+        """
+        if type_data is None:
+            type_data = {k: type(v)  for x in data.values() for k, y in x.items() for v in y.values()}
+        speakers = set(self.speakers)
+        data = {k: v for k,v in data.items() if k in speakers}
+        self.census.add_speaker_annotation(data)
+        self.hierarchy.add_speaker_properties(self, type_data.items())
+        self.encode_hierarchy()
+
+
     def reset_speakers(self):
         pass
 

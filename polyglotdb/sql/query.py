@@ -4,7 +4,7 @@ from sqlalchemy import distinct
 
 from .models import (AnnotationType, PropertyType, Property,
                         NumericProperty, Annotation, Speaker, Discourse,
-                        SpeakerProperty, DiscourseProperty)
+                        SpeakerProperty, DiscourseProperty, SpeakerAnnotation)
 
 from .helper import get_or_create
 
@@ -57,21 +57,47 @@ class BasePropertyStore(object):
             self.prop_type_cache[property_type] = pt
         return self.prop_type_cache[property_type]
 
+    def get_or_create_annotation_type(self, annotation_type):
+        """ 
+        Gets annotation_type if it is in the cache, creates it otherwise 
 
-class Lexicon(BasePropertyStore):
-    """
-    The primary way of querying Word, Phone, and Syllable entries in a relational database.
-    """
-    def __init__(self, corpus_context):
-        super(Lexicon, self).__init__(corpus_context)
-        self.anno_type_cache = {}
+        Parameters
+        ----------
+        annotation_type : str 
+            the annotation_type label
 
-    def __getitem__(self, key):
-        if key not in self.cache:
-            q =  self.corpus_context.sql_session.query(Annotation).filter(Annotation.label == key)
-            word = q.first()
-            self.cache[key] = word
-        return self.cache[key]
+        Returns
+        -------
+        the value of the cache at the annotation_type
+        """
+        if annotation_type not in self.anno_type_cache:
+            at, _ = get_or_create(self.corpus_context.sql_session,
+                                    AnnotationType, label = annotation_type)
+            self.anno_type_cache[annotation_type] = at
+        return self.anno_type_cache[annotation_type]
+
+
+    def get_annotation_type(self, annotation_type):
+        """ 
+        Gets annotation_type if it is in the cache, throws error otherwise
+
+        Parameters
+        ----------
+        annotation_type : str
+            the AnnotationType label
+
+        Returns
+        -------
+        the value of the cache at the annotation_type
+        """
+        if annotation_type not in self.anno_type_cache:
+            q = self.corpus_context.sql_session.query(AnnotationType)
+            q = q.filter(AnnotationType.label == annotation_type)
+            at = q.first()
+            if at is None:
+                raise(AttributeError('Annotation type \'{}\' not found.'.format(annotation_type)))
+            self.anno_type_cache[annotation_type] = at
+        return self.anno_type_cache[annotation_type]
 
     def lookup(self, key, annotation_type, case_sensitive = False):
         """
@@ -100,6 +126,21 @@ class Lexicon(BasePropertyStore):
             q = q.filter(Annotation.label_insensitive == key)
         annotation = q.first()
         return annotation
+
+class Lexicon(BasePropertyStore):
+    """
+    The primary way of querying Word, Phone, and Syllable entries in a relational database.
+    """
+    def __init__(self, corpus_context):
+        super(Lexicon, self).__init__(corpus_context)
+        self.anno_type_cache = {}
+
+    def __getitem__(self, key):
+        if key not in self.cache:
+            q =  self.corpus_context.sql_session.query(Annotation).filter(Annotation.label == key)
+            word = q.first()
+            self.cache[key] = word
+        return self.cache[key]
 
     def add_properties(self, annotation_type, data, types, case_sensitive = False):
         """
@@ -160,47 +201,6 @@ class Lexicon(BasePropertyStore):
             q = q.join(AnnotationType, Annotation.annotation_type_id == AnnotationType.id)
             q = q.filter(AnnotationType.label == annotation_type)
         return [x[0] for x in q.all()]
-
-    def get_or_create_annotation_type(self, annotation_type):
-        """ 
-        Gets annotation_type if it is in the cache, creates it otherwise 
-
-        Parameters
-        ----------
-        annotation_type : str 
-            the annotation_type label
-
-        Returns
-        -------
-        the value of the cache at the annotation_type
-        """
-        if annotation_type not in self.anno_type_cache:
-            at, _ = get_or_create(self.corpus_context.sql_session,
-                                    AnnotationType, label = annotation_type)
-            self.anno_type_cache[annotation_type] = at
-        return self.anno_type_cache[annotation_type]
-
-    def get_annotation_type(self, annotation_type):
-        """ 
-        Gets annotation_type if it is in the cache, throws error otherwise
-
-        Parameters
-        ----------
-        annotation_type : str
-            the AnnotationType label
-
-        Returns
-        -------
-        the value of the cache at the annotation_type
-        """
-        if annotation_type not in self.anno_type_cache:
-            q = self.corpus_context.sql_session.query(AnnotationType)
-            q = q.filter(AnnotationType.label == annotation_type)
-            at = q.first()
-            if at is None:
-                raise(AttributeError('Annotation type \'{}\' not found.'.format(annotation_type)))
-            self.anno_type_cache[annotation_type] = at
-        return self.anno_type_cache[annotation_type]
 
 
     def get_or_create_annotation(self, label, annotation_type):
@@ -294,6 +294,10 @@ class Lexicon(BasePropertyStore):
         return sorted([x[0] for x in q.all()])
 
 class Census(BasePropertyStore):
+    def __init__(self, corpus_context):
+        super(Census, self).__init__(corpus_context)
+        self.anno_type_cache = {}
+
     def __getitem__(self, key):
         if key not in self.cache:
             q =  self.corpus_context.sql_session.query(Speaker).filter(Speaker.name == key)
@@ -318,6 +322,23 @@ class Census(BasePropertyStore):
         q =  self.corpus_context.sql_session.query(Discourse).filter(Discourse.name == name)
         discourse = q.first()
         return discourse
+
+    def lookup_speaker(self,name):
+        """
+        looks up speaker by name
+
+        Parameters
+        ----------
+        name :str
+            name of speaker
+        Returns
+        -------
+        speaker : Speaker
+            found speaker
+        """
+        q = self.corpus_context.sql_session.query(Speaker).filter(Speaker.name == name)
+        speaker = q.first()
+        return speaker
 
     def add_speaker_properties(self, data, types):
         """
@@ -384,3 +405,51 @@ class Census(BasePropertyStore):
         q = q.filter(PropertyType.label == property_type)
         
         return [x[0] for x in q.all()]
+
+
+    def add_speaker_annotation(self, data):
+        """
+        Adds per-speaker data to census
+
+        Parameters
+        ----------
+        data : dict
+            the properties to add
+            format : {speaker : {property_type : {annotation : value}}}
+                    {'speaker1' : {average_duration : {'aa1' : 0.3221, 'sh' : 1.222}}}
+        """
+        for name, d in data.items():
+            speaker = self.lookup_speaker(name)
+            if speaker is None:
+                continue
+
+            for k, v in d.items():
+                if v is None:
+                    continue
+                pt = self.get_or_create_property_type(k)
+
+                for a, value in v.items():
+                    at = self.get_or_create_annotation_type(a)
+                    prop, _ = get_or_create(self.corpus_context.sql_session, SpeakerAnnotation, speaker= speaker, \
+                    annotation_type = at, property_type = pt, value = value)
+
+    def get_speaker_annotations(self, property, speaker):
+        """
+        Searches for matching Property matching property_type spoken by speaker, gets property levels from that
+        Parameters
+        ----------
+        property_type : str
+            the label of the property type
+        
+        Returns
+        -------
+        list
+            list of property levels for property_type
+        """
+        pt = self.get_property_type(property)
+        spk = self.lookup_speaker(speaker)
+        q = self.corpus_context.sql_session.query(SpeakerAnnotation).filter(SpeakerAnnotation.property_type_id == pt.id)
+        q = q.filter(SpeakerAnnotation.speaker_id == spk.id)
+
+        return {spk.name:{pt.label:{x.annotation_type.label:x.value for x in q.all()} }}
+

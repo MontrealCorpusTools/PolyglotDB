@@ -4,6 +4,7 @@ import pytest
 from polyglotdb import CorpusContext
 
 from polyglotdb.io import inspect_textgrid
+from polyglotdb.graph.func import Count
 
 def test_get_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -282,3 +283,20 @@ def test_complex_query(acoustic_config):
         assert(len(results) == 2)
         assert(results[0]['num_segments_in_word'] == 5)
         assert(results[0]['num_syllables_in_word'] == 2)
+
+@pytest.mark.xfail
+def test_utterance_minimum_pause(french_config):
+    with CorpusContext(french_config) as g:
+        g.encode_utterances(min_pause_length=0.15)
+
+        q = g.query_graph(g.utterance)
+        res = q.all()
+        assert(len(res) == 2)
+
+
+        q1= g.query_graph(g.phone)
+        q1 = q1.filter(g.phone.begin == g.phone.utterance.begin)
+        q1 = q1.filter(g.phone.label.in_(['T','t']))
+        secondres = q1.aggregate(Count())
+
+        assert(secondres == 0)

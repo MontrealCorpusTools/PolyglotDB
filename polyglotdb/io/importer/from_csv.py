@@ -328,7 +328,7 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
     syl_path = 'file:///{}'.format(make_path_safe(path))
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:{phone_type}_type:{corpus_name}) where n.label = csvLine.label
+    MATCH (n:syllable_type:{corpus_name}) where n.label = csvLine.label
     SET {new_properties}'''
 
     statement = import_statement.format(path = syl_path,
@@ -338,6 +338,49 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("syllable",h))
+
+def import_utterance_enrichment_csvs(corpus_context, typed_data):
+    """
+    Import syllable features from csv file
+
+    Parameters
+    ----------
+    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+        the corpus to load into
+    typed_data : dict
+        the data
+    """
+    string_set_template = 'n.{name} = csvLine.{name}'
+    float_set_template = 'n.{name} = toFloat(csvLine.{name})'
+    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
+    properties = []
+    for h, v in typed_data.items():
+        if v == int:
+            template = int_set_template
+        elif v == bool:
+            template = bool_set_template
+        elif v == float:
+            template = float_set_template
+        else:
+            template = string_set_template
+        properties.append(template.format(name = h))
+    properties = ',\n'.join(properties)
+    directory = corpus_context.config.temporary_directory('csv')
+    path = os.path.join(directory,'utterance_enrichment.csv')
+    utt_path = 'file:///{}'.format(make_path_safe(path))
+    import_statement = '''CYPHER planner=rule
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    MATCH (n:utterance:{corpus_name}) where n.id = csvLine.id
+    SET {new_properties}'''
+
+    statement = import_statement.format(path = utt_path,
+                                corpus_name = corpus_context.cypher_safe_name,
+                                phone_type = "syllable",
+                                new_properties = properties)
+    corpus_context.execute_cypher(statement)
+    for h, v in typed_data.items():
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("utterance",h))
 
 def import_speaker_csvs(corpus_context, typed_data):
     """
@@ -440,9 +483,6 @@ def import_utterance_csv(corpus_context, call_back = None, stop_check = None):
     if call_back is not None:
         call_back('Importing data...')
         call_back(0,len(speakers))
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
-    corpus_context.execute_cypher('CREATE INDEX ON :utterance(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :utterance(end)')
     for i, s in enumerate(speakers):
         if stop_check is not None and stop_check():
             return
