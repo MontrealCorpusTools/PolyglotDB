@@ -25,6 +25,7 @@ def test_models(acoustic_config):
 
 def test_type_properties(acoustic_config):
     with CorpusContext(acoustic_config) as c:
+        c.reset_pauses()
         q = c.query_graph(c.word).order_by(c.word.begin)
         q = q.columns(c.word.id.column_name('id'))
 

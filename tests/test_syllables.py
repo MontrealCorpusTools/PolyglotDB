@@ -24,7 +24,7 @@ def test_find_codas(timed_config):
         codas = c.find_codas()
         assert(set(codas.keys()) == expected_codas)
         assert(codas == expected_freqs)
-
+@pytest.mark.xfail
 def test_probabilistic_syllabification(acoustic_config, timed_config):
     with CorpusContext(timed_config) as c:
         onsets = norm_count_dict(c.find_onsets())
