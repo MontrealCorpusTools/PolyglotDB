@@ -149,9 +149,9 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
             raise(GraphQueryError('Syllables must be encodes to calculate average speech rate.'))
         word = getattr(self, self.word_name)
         q = self.query_graph(self.utterance)
-
-
-        return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.syllable.rate))
+        res = q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.syllable.rate))
+        print(q.cypher())
+        return res
 
     def make_dict(self, data, speaker = False, label = None):
         """
@@ -252,7 +252,7 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         self.encode_hierarchy()
 
 
-    def encode_baseline_duration(self, annotation_type, by_speaker = False):
+    def encode_baseline(self, annotation_type, property_name, by_speaker = False):
         if by_speaker:
             exists_statement = '''MATCH (a_type:{annotation_type}_type:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
                             RETURN 1 LIMIT 1'''.format(annotation_type = annotation_type, corpus_name = self.corpus_name)
@@ -261,9 +261,9 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
             statement = '''MATCH (a:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
             with a, s
             MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})-[r:spoken_by]->(s)
-            WITH a, sum(r.mean_duration) as baseline_duration
-            SET a.baseline_duration_by_speaker = baseline_duration'''.format(corpus_name = self.corpus_name, phone_name = self.phone_name,
-                                                                             annotation_type = annotation_type)
+            WITH a, sum(r.mean_{property_name}) as baseline
+            SET a.baseline_{property_name}_by_speaker = baseline'''.format(corpus_name = self.corpus_name, phone_name = self.phone_name,
+                                                                             property_name=property_name, annotation_type = annotation_type)
             self.execute_cypher(statement)
             self.hierarchy.add_token_properties(self, annotation_type, [('baseline_duration_by_speaker', float)])
         else:
@@ -272,9 +272,9 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
             statement = '''MATCH (a:{annotation_type}:{corpus_name})
             with a
             MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})
-            WITH a, sum(pt.mean_duration) as baseline_duration
-            SET a.baseline_duration = baseline_duration'''.format(corpus_name = self.corpus_name, phone_name = self.phone_name,
-                                                                             annotation_type = annotation_type)
+            WITH a, sum(pt.mean_{property_name}) as baseline
+            SET a.baseline_{property_name} = baseline'''.format(corpus_name = self.corpus_name, phone_name = self.phone_name,
+                                                                  property_name=property_name, annotation_type = annotation_type)
             self.execute_cypher(statement)
             self.hierarchy.add_token_properties(self, annotation_type, [('baseline_duration', float)])
 

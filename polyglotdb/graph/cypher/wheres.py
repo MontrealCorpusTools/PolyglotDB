@@ -19,6 +19,8 @@ def generate_wheres(criterion, wheres = None):
     """
     properties = []
     for c in criterion:
+        if not c.is_matrix():
+            continue
         properties.append(c.for_cypher())
     if wheres is not None:
         properties.extend(wheres)

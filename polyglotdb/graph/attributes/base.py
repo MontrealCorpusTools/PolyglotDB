@@ -60,6 +60,11 @@ class Attribute(object):
             return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
 
+    def for_filter(self):
+        return self.for_cypher()
+
+    def for_column(self):
+        return self.for_cypher()
 
     @property
     def base_annotation(self):

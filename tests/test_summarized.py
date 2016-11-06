@@ -1,8 +1,8 @@
 
 import pytest
-from polyglotdb.graph.func import Count
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_buckeye
+from polyglotdb.exceptions import GraphQueryError
 
 
 def test_get_measure(summarized_config):
@@ -271,13 +271,21 @@ def test_average_speech_rate(acoustic_config):
         assert(abs(res[0][1] - 2.6194399113581532) < 0.001)
         assert(len(res)==1)
 
+@pytest.mark.xfail
 def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as c:
         c.reset()
         parser = inspect_buckeye(buckeye_test_dir)
         c.load(parser, buckeye_test_dir)
-        c.encode_utterances()
+        with pytest.raises(GraphQueryError):
+            res = c.average_speech_rate()
+        c.encode_pauses('^[{<].*$')
+        c.encode_utterances(min_pause_length=0)
+        with pytest.raises(GraphQueryError):
+            res = c.average_speech_rate()
+        c.encode_syllabic_segments(['eh','ae','ah','er','ey','ao'])
+        c.encode_syllables('maxonset')
         res = c.average_speech_rate()
         print(res)
-        assert(abs(res[0][1]-2.4439013552543876) < .0000000000001)
+        assert(abs(res[0][1]-5.929060725) < .00001)
         assert(len(res)==1)

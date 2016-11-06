@@ -51,12 +51,37 @@ class ClauseElement(object):
         Return a Cypher representation of the clause.
         """
         try:
-            value = self.value.for_cypher()
+            value = self.value.for_filter()
         except AttributeError:
             value = self.cypher_value_string()
-        return self.template.format(self.attribute.for_cypher(),
+        return self.template.format(self.attribute.for_filter(),
                                 self.sign,
                                 value)
+
+    def is_matrix(self):
+        from .attributes import SubPathAnnotation
+        if isinstance(self.attribute.annotation, SubPathAnnotation):
+            return False
+        try:
+            if isinstance(self.value.annotation, SubPathAnnotation):
+                return False
+        except AttributeError:
+            pass
+        return True
+
+    def involves(self, annotation):
+        from .attributes import PathAnnotation
+        to_match = 'alias'
+        if isinstance(annotation, PathAnnotation):
+            to_match = 'path_alias'
+        if getattr(self.attribute.annotation, to_match, None) == getattr(annotation, to_match):
+            return True
+        try:
+            if getattr(self.value.annotation, to_match, None) == getattr(annotation, to_match):
+                return True
+        except AttributeError:
+            pass
+        return False
 
 class PrecedenceClauseElement(ClauseElement):
     value_alias_prefix = ''
@@ -88,6 +113,13 @@ class PrecedenceClauseElement(ClauseElement):
         key = self.annotation.alias
 
         return self.template.format(node_alias = key, id_string = self.cypher_value_string())
+
+    def is_matrix(self):
+        from .attributes import SubPathAnnotation
+        if isinstance(self.annotation, SubPathAnnotation):
+            return False
+        return True
+
 
 class PrecedesClauseElement(PrecedenceClauseElement):
     value_alias_prefix = 'precedes_'
@@ -262,6 +294,15 @@ class AlignmentClauseElement(ClauseElement):
             kwargs['depth'] = ''
         return self.template.format(**kwargs)
 
+    def is_matrix(self):
+        from .attributes import SubPathAnnotation
+        if isinstance(self.first, SubPathAnnotation):
+            return False
+        if isinstance(self.second, SubPathAnnotation):
+            return False
+        return True
+
+
 class RightAlignedClauseElement(AlignmentClauseElement):
     """
     Clause for filtering based on right alignment.
@@ -295,6 +336,12 @@ class ComplexClause(object):
     def __init__(self, *args):
         self.clauses = args
         self.add_prefix(self.type_string)
+
+    def is_matrix(self):
+        for c in self.clauses:
+            if not c.is_matrix():
+                return False
+        return True
 
     @property
     def annotations(self):
