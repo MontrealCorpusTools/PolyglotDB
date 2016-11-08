@@ -62,7 +62,6 @@ def generate_withs(query, all_withs):
             if a.with_alias not in all_withs:
                 a.with_subannotations = True
                 statement = a.subquery(all_withs, query._criterion)
-                statement = a.subquery(all_withs, query._criterion)
                 statements.append(statement)
 
                 all_withs.update(a.withs)

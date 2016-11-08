@@ -120,6 +120,15 @@ class PrecedenceClauseElement(ClauseElement):
             return False
         return True
 
+    def involves(self, annotation):
+        from .attributes import PathAnnotation
+        to_match = 'alias'
+        if isinstance(annotation, PathAnnotation):
+            to_match = 'path_alias'
+        if getattr(self.annotation, to_match, None) == getattr(annotation, to_match):
+            return True
+        return False
+
 
 class PrecedesClauseElement(PrecedenceClauseElement):
     value_alias_prefix = 'precedes_'
@@ -302,6 +311,17 @@ class AlignmentClauseElement(ClauseElement):
             return False
         return True
 
+    def involves(self, annotation):
+        from .attributes import PathAnnotation
+        to_match = 'alias'
+        if isinstance(annotation, PathAnnotation):
+            to_match = 'path_alias'
+        if getattr(self.first, to_match, None) == getattr(annotation, to_match):
+            return True
+        if getattr(self.second, to_match, None) == getattr(annotation, to_match):
+            return True
+        return False
+
 
 class RightAlignedClauseElement(AlignmentClauseElement):
     """
@@ -342,6 +362,12 @@ class ComplexClause(object):
             if not c.is_matrix():
                 return False
         return True
+
+    def involves(self, annotation):
+        for c in self.clauses:
+            if c.involves(annotation):
+                return True
+        return False
 
     @property
     def annotations(self):
