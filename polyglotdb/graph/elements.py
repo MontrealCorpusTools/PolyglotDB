@@ -134,9 +134,46 @@ class PrecedesClauseElement(PrecedenceClauseElement):
     value_alias_prefix = 'precedes_'
     template = "({node_alias})-[:precedes*]->({{id: {id_string}}})"
 
+
 class FollowsClauseElement(PrecedenceClauseElement):
     value_alias_prefix = 'follows_'
     template = "({{id: {id_string}}})-[:precedes*]->({node_alias})"
+
+
+class NotPrecedesClauseElement(PrecedenceClauseElement):
+    value_alias_prefix = 'precedes_'
+    template = "not ({node_alias})-[:precedes*]->({{id: {id_string}}})"
+
+
+class NotFollowsClauseElement(PrecedenceClauseElement):
+    value_alias_prefix = 'follows_'
+    template = "not ({{id: {id_string}}})-[:precedes*]->({node_alias})"
+
+
+class PausePrecedenceClauseElement(PrecedenceClauseElement):
+    def __init__(self, annotation):
+        self.annotation = annotation
+
+    def for_cypher(self):
+        key = self.annotation.alias
+        return self.template.format(alias = key)
+
+
+class FollowsPauseClauseElement(PausePrecedenceClauseElement):
+    template = '(:pause)-[:precedes_pause]->({alias})'
+
+
+class NotFollowsPauseClauseElement(PausePrecedenceClauseElement):
+    template = 'not (:pause)-[:precedes_pause]->({alias})'
+
+
+class PrecedesPauseClauseElement(PausePrecedenceClauseElement):
+    template = '({alias})-[:precedes_pause]->(:pause)'
+
+
+class NotPrecedesPauseClauseElement(PausePrecedenceClauseElement):
+    template = 'not ({alias})-[:precedes_pause]->(:pause)'
+
 
 class SubsetClauseElement(ClauseElement):
     template = "{}:{}"

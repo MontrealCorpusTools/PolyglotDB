@@ -48,6 +48,34 @@ class PauseAnnotation(AnnotationAttribute):
 class PauseAttribute(Attribute):
     pass
 
+
+class NearPauseAttribute(PauseAttribute):
+    def __init__(self, annotation):
+        self.annotation = annotation
+
+
+class FollowsPauseAttribute(NearPauseAttribute):
+
+    def __eq__(self, other):
+        if not isinstance(other, bool):
+            raise(ValueError('Value must be a boolean for follows_pause.'))
+        from ..elements import FollowsPauseClauseElement, NotFollowsPauseClauseElement
+        if other:
+            return FollowsPauseClauseElement(self.annotation)
+        else:
+            return NotFollowsPauseClauseElement(self.annotation)
+
+class PrecedesPauseAttribute(NearPauseAttribute):
+
+    def __eq__(self, other):
+        if not isinstance(other, bool):
+            raise(ValueError('Value must be a boolean for precedes_pause.'))
+        from ..elements import PrecedesPauseClauseElement, NotPrecedesPauseClauseElement
+        if other:
+            return PrecedesPauseClauseElement(self.annotation)
+        else:
+            return NotPrecedesPauseClauseElement(self.annotation)
+
 class PausePathAnnotation(PathAnnotation):
     def additional_where(self):
         """
@@ -65,9 +93,16 @@ class PausePathAnnotation(PathAnnotation):
         return PausePathAttribute(self, key, False)
 
 class PausePathAttribute(PathAttribute):
+    duration_filter_template = 'extract(n in nodes({alias})[-1..]| n.end)[0] - extract(n in nodes({alias})[0..1]| n.begin)[0]'
     duration_return_template = 'extract(n in {alias}[-1..]| n.end)[0] - extract(n in {alias}[0..1]| n.begin)[0]'
+    filter_template = 'extract(n in nodes({alias})|n.{property})'
 
     @property
     def with_alias(self):
         """ Returns annotation's path_type_alias"""
         return self.annotation.path_type_alias
+
+    def for_filter(self):
+        if self.label == 'duration':
+            return self.duration_filter_template.format(alias = self.annotation.path_alias)
+        return self.filter_template.format(alias = self.annotation.path_alias, property = self.label)

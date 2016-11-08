@@ -255,6 +255,7 @@ class AnnotationAttribute(Attribute):
     end_template = '{}_{}_end'
     alias_template = '{prefix}node_{t}'
     rel_type_template = 'r_{t}'
+
     def __init__(self, type, pos = 0, corpus = None, hierarchy = None):
         self.type = type
         self.pos = pos
@@ -367,6 +368,12 @@ class AnnotationAttribute(Attribute):
             else:
                 pos = self.pos + 1
             return AnnotationAttribute(self.type, pos, corpus = self.corpus, hierarchy = self.hierarchy)
+        elif key == 'follows_pause':
+            from .pause import FollowsPauseAttribute
+            return FollowsPauseAttribute(self)
+        elif key == 'precedes_pause':
+            from .pause import PrecedesPauseAttribute
+            return PrecedesPauseAttribute(self)
         elif key == 'speaker':
             from .speaker import SpeakerAnnotation
             return SpeakerAnnotation(self, corpus = self.corpus)
