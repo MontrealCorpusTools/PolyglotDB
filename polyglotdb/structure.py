@@ -347,7 +347,6 @@ class Hierarchy(object):
                 else:
                     self.type_properties[k] = self.type_properties[k] & v
                 if k not in self.token_properties.items():
-                    print(k)
                     self.token_properties[k] = other.token_properties[k]
                 else:
                     self.type_properties[k] = self.type_properties[k] & other.token_properties[k]

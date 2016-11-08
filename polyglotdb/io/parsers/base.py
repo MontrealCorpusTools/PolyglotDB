@@ -68,6 +68,7 @@ class BaseParser(object):
             if 'word' in k:
                 annotation_types[k].is_word = True # FIXME?
                 self.hierarchy.type_properties['word'] = set()
+                self.hierarchy.token_properties['word'] = set()
             if k not in self.hierarchy.values() and not annotation_types[k].is_word:
                 segment_type = k
 
@@ -99,7 +100,6 @@ class BaseParser(object):
                     begin = None
                     end = None
                     for rl in speaker_levels:
-                        print(rl.name)
                         if types_only and not rl.type_property:
                             continue
                         if rl.subannotation:
@@ -181,7 +181,6 @@ class BaseParser(object):
                         a.label = ''.join(a.type_properties['transcription'])
                         annotation_types[k].type_property_keys.add('label')
                         annotation_types[k].token_property_keys.add('label')
-        print([(k,v.token_properties) for k,v in annotation_types.items()])
         return annotation_types
 
     def parse_information(self, path, corpus_name):
