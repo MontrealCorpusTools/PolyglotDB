@@ -62,6 +62,8 @@ def test_load_discourse_buckeye(graph_db, buckeye_test_dir):
         parser = inspect_buckeye(word_path)
         c.load(parser, word_path)
 
+        assert(c.hierarchy.has_type_property('word', 'transcription'))
+
         q = c.query_graph(c.phone).filter(c.phone.label == 's')
         assert(q.count() == 3)
 

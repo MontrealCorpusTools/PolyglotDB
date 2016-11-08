@@ -11,6 +11,8 @@ def test_load_partitur(partitur_test_dir, graph_db):
 		parser = inspect_partitur(partitur_test_dir)
 		c.load(parser, partitur_test_dir)
 
+		assert(c.hierarchy.has_type_property('word', 'transcription'))
+
 		q = c.query_graph(c.word).filter(c.word.label == 'möchte')
 		q = q.filter(c.word.speaker.name == 'alz')
 		results = q.all()
@@ -37,4 +39,4 @@ def test_load_partitur(partitur_test_dir, graph_db):
 		assert(len(s.discourses) == 1)
 		assert([x.discourse.name for x in s.discourses] == ['partitur_test'])
 
-		assert(c.hierarchy.has_type_property('word', 'transcription'))
+		

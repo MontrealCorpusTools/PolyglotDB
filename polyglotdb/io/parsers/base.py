@@ -67,6 +67,7 @@ class BaseParser(object):
             annotation_types[k].supertype = v
             if 'word' in k:
                 annotation_types[k].is_word = True # FIXME?
+                self.hierarchy.type_properties['word'] = set()
             if k not in self.hierarchy.values() and not annotation_types[k].is_word:
                 segment_type = k
 
@@ -98,6 +99,7 @@ class BaseParser(object):
                     begin = None
                     end = None
                     for rl in speaker_levels:
+                        print(rl.name)
                         if types_only and not rl.type_property:
                             continue
                         if rl.subannotation:
@@ -171,12 +173,15 @@ class BaseParser(object):
                 for a in annotation_types[k]:
                     transcription = annotation_types[segment_type].lookup_range(a.begin, a.end, speaker = a.speaker)
                     a.type_properties['transcription'] = [x.label for x in transcription]
+                v.type_properties |=  set([(tuple(['transcription',type("string")]))])
+                self.hierarchy.type_properties['word'] |=  set([(tuple(['transcription',type("string")]))])
             if self.make_label and 'transcription' in v.type_property_keys and v.is_word:
                 for a in annotation_types[k]:
                     if a.label is None:
                         a.label = ''.join(a.type_properties['transcription'])
                         annotation_types[k].type_property_keys.add('label')
                         annotation_types[k].token_property_keys.add('label')
+        print([(k,v.token_properties) for k,v in annotation_types.items()])
         return annotation_types
 
     def parse_information(self, path, corpus_name):
@@ -217,7 +222,7 @@ class BaseParser(object):
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data
         '''
-        pg_annotations = self._parse_annotations(types_only)
 
+        pg_annotations = self._parse_annotations(types_only)
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         return data

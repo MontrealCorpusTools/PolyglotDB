@@ -1,4 +1,4 @@
-
+import inspect
 from .graph.helper import value_for_cypher
 
 class Hierarchy(object):
@@ -347,6 +347,7 @@ class Hierarchy(object):
                 else:
                     self.type_properties[k] = self.type_properties[k] & v
                 if k not in self.token_properties.items():
+                    print(k)
                     self.token_properties[k] = other.token_properties[k]
                 else:
                     self.type_properties[k] = self.type_properties[k] & other.token_properties[k]
@@ -433,6 +434,8 @@ class Hierarchy(object):
         return False
 
     def has_type_property(self, type, key):
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
         if type not in self.type_properties:
             return False
         for name, t in self.type_properties[type]:

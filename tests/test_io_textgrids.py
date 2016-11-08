@@ -10,6 +10,8 @@ from polyglotdb import CorpusContext
 
 from polyglotdb.exceptions import TextGridError, GraphQueryError
 
+
+
 def test_tobi(textgrid_test_dir):
     path = os.path.join(textgrid_test_dir, 'tobi.TextGrid')
     parser = inspect_textgrid(path)
@@ -97,3 +99,23 @@ def test_load_pronunciation(textgrid_test_dir, graph_db):
         results = q.all()
         assert(results[0]['dict_pron'] == 'p.r.aa.b.ah.b.l.iy')
         assert(results[0]['act_pron'] == 'p.r.aa.b.ah.b.l.iy')
+
+
+def test_word_transcription(graph_db, textgrid_test_dir):
+    with CorpusContext("discourse_textgrid") as c:
+        c.reset()
+        path = os.path.join(textgrid_test_dir,'acoustic_corpus.TextGrid')
+        parser = inspect_textgrid(path)
+        c.load(parser, path)
+        assert(c.hierarchy.has_type_property('word','transcription'))
+
+
+
+
+
+
+
+
+
+
+
