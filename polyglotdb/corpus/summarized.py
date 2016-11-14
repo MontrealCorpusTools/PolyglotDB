@@ -26,7 +26,6 @@ class SummarizedContext(object):
         """
         baseline = False
         column = statistic +"_" + data_name
-        print(statistic)
         percent = ""
         if data_name == "duration":
             num_prop = "p.end - p.begin"
@@ -127,8 +126,6 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         result = {}
         for c in res:
             result.update({c[0]:c[1]})
-
-        print(result)
         return result
 
  

@@ -14,6 +14,8 @@ def test_load_mfa(mfa_test_dir, graph_db):
         c.reset()
         parser = inspect_mfa(mfa_test_dir)
         c.load(parser, mfa_test_dir)
+        assert(c.hierarchy.has_type_property('word', 'transcription'))
+
 
         q = c.query_graph(c.word).filter(c.word.label == 'JURASSIC')
         q = q.filter(c.word.speaker.name == 'mfa')
@@ -46,3 +48,5 @@ def test_mismatch_parser(timit_test_dir, graph_db):
         parser = inspect_mfa(timit_test_dir)
         with pytest.raises(ParseError):
             c.load(parser, timit_test_dir)
+
+

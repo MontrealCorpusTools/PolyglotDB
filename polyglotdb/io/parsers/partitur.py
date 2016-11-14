@@ -57,7 +57,6 @@ class PartiturParser(BaseParser):
 
         for a in self.annotation_types:
             a.reset()
-
         return data
 
 def parse_speaker(path):
