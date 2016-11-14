@@ -22,7 +22,6 @@ before_install:
   #- sudo apt-get update && sudo apt-get install oracle-java8-installer
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - bash continuous-integration/travis/install.sh
-  - ls $HOME/neo4j/neo4j
 
 # Install packages
 install:
