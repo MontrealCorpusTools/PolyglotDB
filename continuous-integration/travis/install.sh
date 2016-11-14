@@ -17,9 +17,9 @@ else
   echo "Miniconda already installed."
 fi
 
-if [ ! -d "$HOME/pgdb" ]; then
+if [ ! -d "$HOME/pgdb/data" ]; then
   source activate test-environment
   python pgdb.py install ~/pgdb
 else
-  echo "Neo4j already installed."
+  echo "Neo4j and InfluxDB already installed."
 fi

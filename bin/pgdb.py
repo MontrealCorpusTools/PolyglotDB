@@ -30,7 +30,10 @@ def load_config():
         c['Neo4j_wrapper']= { 'max_heap': 2048}
         c['InfluxDB'] = {'http_port': 8086,
                          'udp_port': 8087,
-                         'auth_enabled': 'false'}
+                         'auth_enabled': 'false',
+                         'data_directory': os.path.join(DEFAULT_DATA_DIR, 'influxdb', 'data'),
+                         'wal_directory': os.path.join(DEFAULT_DATA_DIR, 'influxdb', 'wal'),
+                         'meta_directory': os.path.join(DEFAULT_DATA_DIR, 'influxdb', 'meta')}
         c['Data'] = {'directory': DEFAULT_DATA_DIR}
         global CONFIG_CHANGED
         CONFIG_CHANGED = True
@@ -237,6 +240,9 @@ if __name__ == '__main__':
                 sys.exit(1)
         else:
             CONFIG['Data']['directory'] = directory
+            CONFIG['InfluxDB']['data_directory'] = os.path.join(directory, 'influxdb', 'data')
+            CONFIG['InfluxDB']['wal_directory'] = os.path.join(directory, 'influxdb', 'wal'),
+            CONFIG['InfluxDB']['meta_directory'] = os.path.join(directory, 'influxdb', 'meta')
             CONFIG_CHANGED = True
         download_neo4j(directory)
         configure_neo4j(directory)
