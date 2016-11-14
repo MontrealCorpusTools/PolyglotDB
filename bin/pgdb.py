@@ -160,10 +160,10 @@ def start(name):
     neo4j_bin = os.path.join(CONFIG['Data']['directory'],'neo4j','bin',exe)
     subprocess.call([neo4j_bin,'start'])
     if sys.platform.startswith('win'):
-        exe = 'influxd.exe'
+        influxdb_bin = os.path.join(CONFIG['Data']['directory'],'influxdb', 'influxd.exe')
     else:
         exe = 'influxd'
-    influxdb_bin = os.path.join(CONFIG['Data']['directory'],'influxdb', exe)
+        influxdb_bin = os.path.join(CONFIG['Data']['directory'],'influxdb', 'usr','bin', 'influxd')
     influxdb_conf = os.path.join(CONFIG['Data']['directory'],'influxdb', 'influxdb.conf')
     influx_proc = subprocess.Popen([influxdb_bin,'-config', influxdb_conf],
                         stdout=subprocess.DEVNULL,
@@ -183,10 +183,16 @@ def stop(name):
     neo4j_bin = os.path.join(CONFIG['Data']['directory'],'neo4j','bin',exe)
     subprocess.call([neo4j_bin,'stop'])
     pid_file = os.path.join(CONFIG_DIR, 'influxd.pid')
-    with open(pid_file, 'r') as f:
-        pid = int(f.read().strip())
-    os.kill(pid, signal.SIGINT)
-
+    try:
+        with open(pid_file, 'r') as f:
+            pid = int(f.read().strip())
+        try:
+            os.kill(pid, signal.SIGINT)
+        except ProcessLookupError:
+            pass
+        os.remove(pid_file)
+    except FileNotFoundError:
+        pass
 
 def status(name):
     pass
