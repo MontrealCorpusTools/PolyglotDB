@@ -84,6 +84,11 @@ class BaseContext(object):
 
         self.config.query_behavior = 'speaker'
 
+    def exists(self):
+        statement = '''MATCH (c:Corpus) where c.name = '{}' return c '''.format(self.corpus_name)
+        res = list(self.execute_cypher(statement))
+        return len(res) > 0
+
     def load_variables(self):
         """
         Loads variables into Hierarchy
@@ -142,7 +147,7 @@ class BaseContext(object):
             raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
         except (TransientError):
             raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
-        except ConstraintError:
+        except ConstraintError as e:
             pass
         except Exception:
             raise
@@ -294,12 +299,14 @@ class BaseContext(object):
         self.execute_cypher('''MATCH (n:{}:Speaker) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.execute_cypher('''MATCH (n:{}:Discourse) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.reset_hierarchy()
+        self.execute_cypher('''MATCH (n:Corpus) where n.name = {corpus_name} DELETE n ''', corpus_name = self.corpus_name)
         self.hierarchy = Hierarchy({})
 
     def reset(self, call_back = None, stop_check = None):
         '''
         Reset the graph and SQL databases for a corpus.
         '''
+        self.reset_acoustics(call_back, stop_check)
         self.reset_graph(call_back, stop_check)
         try:
             Base.metadata.drop_all(self.engine)

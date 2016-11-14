@@ -22,7 +22,6 @@ before_install:
   #- sudo apt-get update && sudo apt-get install oracle-java8-installer
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - bash continuous-integration/travis/install.sh
-  - ls $HOME/neo4j/neo4j
 
 # Install packages
 install:
@@ -33,9 +32,8 @@ install:
 
 # Run test
 script:
-  - $HOME/neo4j/neo4j/bin/neo4j start
+  - python bin/pgdb.py start
   - sleep 10
-  - $HOME/neo4j/neo4j/bin/neo4j status
   - "coverage run --source=polyglotdb setup.py test"
 
 # Calculate coverage
@@ -44,5 +42,7 @@ after_success:
 
 cache:
   pip: true
+  apt: true
   directories:
     - $HOME/miniconda
+    - $HOME/pgdb

@@ -167,7 +167,10 @@ class Lexicon(BasePropertyStore):
                 pt = self.get_or_create_property_type(k)
                 if types[k] in [int, float]:
                     c = NumericProperty
-                    v = float(v)
+                    try:
+                        v = float(v)
+                    except ValueError:
+                        continue
                 else:
                     c = Property
                     v = str(v)

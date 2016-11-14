@@ -1,5 +1,6 @@
 import pytest
 import os
+import sys
 
 from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
                                         GroupingTier, TextOrthographyTier,
@@ -9,7 +10,7 @@ from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
 
 from polyglotdb.io.parsers.base import BaseParser
 
-from polyglotdb.io import (inspect_textgrid, inspect_fave, inspect_mfa)
+from polyglotdb.io import (inspect_textgrid, inspect_fave, inspect_mfa, inspect_partitur)
 
 from polyglotdb.corpus import CorpusContext
 from polyglotdb.structure import Hierarchy
@@ -21,9 +22,11 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope='session')
 def test_dir():
-    if not os.path.exists('tests/data/generated'):
-        os.makedirs('tests/data/generated')
-    return os.path.abspath('tests/data') #was tests/data
+    base = os.path.dirname(os.path.abspath(__file__))
+    generated = os.path.join(base, 'data', 'generated')
+    if not os.path.exists(generated):
+        os.makedirs(generated)
+    return os.path.join(base, 'data') #was tests/data
 
 @pytest.fixture(scope='session')
 def buckeye_test_dir(test_dir):
@@ -259,29 +262,6 @@ def corpus_data_syllable_morpheme_srur():
     return data
 
 @pytest.fixture(scope='session')
-def unspecified_test_corpus():
-    return None
-    corpus_data = [{'spelling':'atema','transcription':['ɑ','t','e','m','ɑ'],'frequency':11.0},
-                    {'spelling':'enuta','transcription':['e','n','u','t','ɑ'],'frequency':11.0},
-                    {'spelling':'mashomisi','transcription':['m','ɑ','ʃ','o','m','i','s','i'],'frequency':5.0},
-                    {'spelling':'mata','transcription':['m','ɑ','t','ɑ'],'frequency':2.0},
-                    {'spelling':'nata','transcription':['n','ɑ','t','ɑ'],'frequency':2.0},
-                    {'spelling':'sasi','transcription':['s','ɑ','s','i'],'frequency':139.0},
-                    {'spelling':'shashi','transcription':['ʃ','ɑ','ʃ','i'],'frequency':43.0},
-                    {'spelling':'shisata','transcription':['ʃ','i','s','ɑ','t','ɑ'],'frequency':3.0},
-                    {'spelling':'shushoma','transcription':['ʃ','u','ʃ','o','m','ɑ'],'frequency':126.0},
-                    {'spelling':'ta','transcription':['t','ɑ'],'frequency':67.0},
-                    {'spelling':'tatomi','transcription':['t','ɑ','t','o','m','i'],'frequency':7.0},
-                    {'spelling':'tishenishu','transcription':['t','i','ʃ','e','n','i','ʃ','u'],'frequency':96.0},
-                    {'spelling':'toni','transcription':['t','o','n','i'],'frequency':33.0},
-                    {'spelling':'tusa','transcription':['t','u','s','ɑ'],'frequency':32.0},
-                    {'spelling':'ʃi','transcription':['ʃ','i'],'frequency':2.0}]
-    corpus = Corpus('test')
-    for w in corpus_data:
-        corpus.add_word(Word(**w))
-    return corpus
-
-@pytest.fixture(scope='session')
 def graph_user():
     return 'neo4j'
 
@@ -432,13 +412,13 @@ def fave_corpus_config(graph_db, fave_test_dir):
 @pytest.fixture(scope='session')
 def summarized_config(graph_db, textgrid_test_dir):
     config = CorpusConfig('summarized', **graph_db)
-    
+
     acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
     with CorpusContext(config) as c:
         c.reset()
         parser = inspect_textgrid(acoustic_path)
         c.load(parser, acoustic_path)
-    
+
     return config
 
 
@@ -463,3 +443,12 @@ def partitur_corpus_config(graph_db, partitur_test_dir):
         parser = inspect_partitur(partitur_path)
         c.load(parser, partitur_path)
     return config
+
+@pytest.fixture(scope='session')
+def praat_path():
+    if sys.platform == 'win32':
+        return 'praatcon.exe'
+    elif os.environ.get('TRAVIS', False):
+        return os.path.expanduser('~/tools/mfa_test_data')
+    else:
+        return 'praat'

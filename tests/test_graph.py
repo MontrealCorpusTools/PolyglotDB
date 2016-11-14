@@ -133,10 +133,9 @@ def test_query_time(timed_config):
         print(q.cypher())
         assert(len(list(q.all())) == 1)
 
-@pytest.mark.xfail
 def test_query_contains(timed_config):
     with CorpusContext(timed_config) as g:
-        q = g.query_graph(g.word).filter_contains(g.word.phone.label == 'aa')
+        q = g.query_graph(g.word).filter(g.word.phone.label == 'aa')
         print(q.cypher())
         assert(len(list(q.all())) == 3)
 
