@@ -33,9 +33,8 @@ install:
 
 # Run test
 script:
-  - $HOME/neo4j/neo4j/bin/neo4j start
+  - python bin/pgdb.py start
   - sleep 10
-  - $HOME/neo4j/neo4j/bin/neo4j status
   - "coverage run --source=polyglotdb setup.py test"
 
 # Calculate coverage
@@ -46,3 +45,4 @@ cache:
   pip: true
   directories:
     - $HOME/miniconda
+    - $HOME/pgdb

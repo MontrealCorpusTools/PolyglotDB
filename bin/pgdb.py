@@ -223,7 +223,7 @@ if __name__ == '__main__':
     if args.which == 'help':
         pass
     elif args.which == 'install':
-        directory = args.directory
+        directory = os.path.expanduser(args.directory)
         if not directory:
             directory = DEFAULT_DATA_DIR
             user_input = input('No install directory was specified, so required files will be installed to {}. Is that okay? (Y/N)'.format(directory))
