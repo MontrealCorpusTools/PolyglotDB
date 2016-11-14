@@ -19,7 +19,7 @@ fi
 
 if [ ! -d "$HOME/pgdb/data" ]; then
   source activate test-environment
-  python pgdb.py install ~/pgdb
+  python bin/pgdb.py install ~/pgdb
 else
   echo "Neo4j and InfluxDB already installed."
 fi
