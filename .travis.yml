@@ -42,6 +42,7 @@ after_success:
 
 cache:
   pip: true
+  apt: true
   directories:
     - $HOME/miniconda
     - $HOME/pgdb

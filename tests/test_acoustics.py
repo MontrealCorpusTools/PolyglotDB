@@ -17,12 +17,12 @@ def test_wav_info(acoustic_utt_config):
         assert(sf.sampling_rate == 16000)
         assert(sf.n_channels == 1)
 
-#@acoustic
+@acoustic
 def test_analyze_acoustics(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.analyze_acoustics()
 
-#@acoustic
+@acoustic
 def test_analyze_acoustics_praat(acoustic_utt_config, praat_path):
     acoustic_utt_config.pitch_algorithm = 'praat'
     acoustic_utt_config.praat_path = praat_path
