@@ -383,8 +383,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
         """
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(utterance_data.values())).items()}
-        
-        print(utterance_data)    
+          
         #self.add_type_properties('utterance', type_data)            
         utterance_enriched_data_to_csvs(self, utterance_data)
         import_utterance_enrichment_csvs(self, type_data)

@@ -29,7 +29,12 @@ class TextgridParser(BaseParser):
         Function to output progress messages
     '''
     _extensions = ['.textgrid']
-
+    def __init__(self, annotation_types, hierarchy, make_transcription = True, 
+        make_label = False, 
+        stop_check = None, call_back = None):
+        super(TextgridParser, self).__init__(annotation_types, hierarchy,
+                    make_transcription = True, make_label = True,
+                    stop_check = stop_check, call_back = call_back)
     def load_textgrid(self, path):
         tg = TextGrid()
         try:
@@ -79,6 +84,5 @@ class TextgridParser(BaseParser):
         data = DiscourseData(name, pg_annotations, self.hierarchy)
         for a in self.annotation_types:
             a.reset()
-
         data.wav_path = find_wav_path(path)
         return data

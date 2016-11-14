@@ -14,6 +14,8 @@ def test_load_fave(fave_test_dir, graph_db):
         c.reset()
         parser = inspect_fave(fave_test_dir)
         c.load(parser, fave_test_dir)
+        assert(c.hierarchy.has_type_property('word', 'transcription'))
+
 
         q = c.query_graph(c.word).filter(c.word.label == 'JURASSIC')
         q = q.filter(c.word.speaker.name == 'Gary Salvi')

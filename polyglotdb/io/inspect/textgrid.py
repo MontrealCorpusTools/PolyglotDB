@@ -266,5 +266,7 @@ def inspect_textgrid(path):
                     anno_types[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti), save = False)
                 except AttributeError:
                     anno_types[i].add(((x.mark.strip(), x.time) for x in ti), save = False)
+    
+
     parser = TextgridParser(anno_types, hierarchy)
     return parser
