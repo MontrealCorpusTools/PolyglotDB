@@ -152,6 +152,10 @@ def remove_database(name):
     pass
 
 def start(name):
+    try:
+        shutil.rmtree(os.path.expanduser('~/.neo4j'))
+    except FileNotFoundError:
+        pass
     if sys.platform.startswith('win'):
         exe = 'neo4j.bat'
     else:
