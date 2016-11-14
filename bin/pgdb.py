@@ -241,7 +241,7 @@ if __name__ == '__main__':
         else:
             CONFIG['Data']['directory'] = directory
             CONFIG['InfluxDB']['data_directory'] = os.path.join(directory, 'influxdb', 'data')
-            CONFIG['InfluxDB']['wal_directory'] = os.path.join(directory, 'influxdb', 'wal'),
+            CONFIG['InfluxDB']['wal_directory'] = os.path.join(directory, 'influxdb', 'wal')
             CONFIG['InfluxDB']['meta_directory'] = os.path.join(directory, 'influxdb', 'meta')
             CONFIG_CHANGED = True
         download_neo4j(directory)
