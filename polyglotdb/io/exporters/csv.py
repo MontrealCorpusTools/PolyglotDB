@@ -45,8 +45,9 @@ def save_results(results, path, header = None, mode = 'w'):
         writer = DictWriter(f, header)
         if mode != 'a':
             writer.writeheader()
-        for i, line in enumerate(results):
-            writer.writerow({k: make_safe(line[k], '/') for k in header})
+        for line in results:
+            line = {k: make_safe(line[k], '/') for k in header}
+            writer.writerow(line)
 
 def export_corpus_csv(corpus, path,
                     delimiter = ',', trans_delimiter = '.',

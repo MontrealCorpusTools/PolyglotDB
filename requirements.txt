@@ -6,3 +6,4 @@ scipy
 sqlalchemy
 py2neo
 textgrid
+influxdb

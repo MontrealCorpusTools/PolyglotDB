@@ -64,7 +64,6 @@ def test_to_csv(graph_db, export_test_dir):
             i += 1
 
 
-@pytest.mark.xfail
 def test_inspect_example(csv_test_dir):
     example_path = os.path.join(csv_test_dir, 'example.txt')
     parser = inspect_csv(example_path)

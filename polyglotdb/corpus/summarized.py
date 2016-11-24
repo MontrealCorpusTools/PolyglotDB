@@ -1,10 +1,8 @@
 import math
-from .base import BaseContext
 from polyglotdb.graph.func import *
-import re
+from polyglotdb.exceptions import GraphQueryError
 
-class SummarizedContext(BaseContext):
-
+class SummarizedContext(object):
 
 
     def get_measure(self, data_name, statistic, annotation_type, by_speaker = False, speaker = None):
@@ -50,13 +48,16 @@ class SummarizedContext(BaseContext):
         if not self.hierarchy.has_type_property('utterance','label'):
             self.encode_utterances()
         if speaker is not None:
-            statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) where s.name = '{speaker}' RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
+            statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) " \
+                        "where s.name = '{speaker}' " \
+                        "RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(
                 corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop, percent = percent, speaker = speaker, column = column)
         if by_speaker:
-            statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) RETURN s.name as speaker, p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
+            statement = "MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) " \
+                        "RETURN s.name as speaker, p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(
                 corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop ,percent = percent, column = column)
         else:
-            statement = "MATCH (p:{annotation_type}:{corpus_name}) RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(\
+            statement = "MATCH (p:{annotation_type}:{corpus_name}) RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(
                 corpus_name = self.corpus_name, annotation_type = annotation_type, measure= m,num_prop = num_prop, percent = percent, column = column)
 
         if not baseline:
@@ -139,12 +140,15 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         result: list
             the average speech rate by speaker
         """
-
+        if not 'utterance' in self.annotation_types:
+            raise(GraphQueryError('Utterances must be encodes to calculate average speech rate.'))
+        if not 'syllable' in self.annotation_types:
+            raise(GraphQueryError('Syllables must be encodes to calculate average speech rate.'))
         word = getattr(self, self.word_name)
         q = self.query_graph(self.utterance)
-
-
-        return q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.word.rate))
+        res = q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(Average(self.utterance.syllable.rate))
+        print(q.cypher())
+        return res
 
     def make_dict(self, data, speaker = False, label = None):
         """
@@ -181,39 +185,135 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         return finalDict
 
 
-    def encode_measure(self, data_name, statistic, annotation_type, by_speaker = False, speaker = None):
+    # def encode_measure(self, data_name, statistic, annotation_type, by_speaker = False, speaker = None):
+    #
+    #     """
+    #     encode the data into the graph
+    #
+    #     Parameters
+    #     ----------
+    #     data_name : str
+    #         the aspect to summarize (duration, pitch, formants, etc)
+    #     statistic : str
+    #         how to summarize (mean, stdev, median, etc)
+    #     annotation_type : str
+    #         the annotation to summarize
+    #     by_speaker : boolean
+    #         whether to summarize by speaker or not
+    #     speaker : str
+    #         the specific speaker to encode baseline duration for (only for baseline duration)
+    #     """
+    #
+    #
+    #     res = self.get_measure(data_name, statistic, annotation_type, by_speaker, speaker)
+    #
+    #     dataDict = self.make_dict(res,by_speaker,annotation_type)
+    #     if not by_speaker:
+    #         if annotation_type == 'utterance':
+    #             self.enrich_utterances(dataDict)
+    #         elif annotation_type == 'word':
+    #             self.enrich_lexicon(dataDict)
+    #         elif annotation_type == 'phone':
+    #             self.enrich_features(dataDict)
+    #         elif annotation_type == 'syllable':
+    #             self.enrich_syllables(dataDict)
+    #     elif by_speaker:
+    #         self.enrich_speaker_annotations(dataDict)
 
-        """
-        encode the data into the graph
+    def encode_measure(self, property_name, statistic, annotation_type, by_speaker = False):
+        if property_name == 'duration':
+            property = 'a.end - a.begin'
+        else:
+            property = 'a.{}'.format(property_name)
+        if statistic.lower() in ['mean', 'average','avg']:
+            func = 'avg'
+            name = 'mean'
+        elif statistic.lower() in ['sd','stdev']:
+            func = 'stdev'
+            name = 'sd'
+        if by_speaker:
+            statement = '''MATCH (a_type:{annotation_type}_type:{corpus_name})<-[:is_a]-(a:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+            with a_type, s, {func}({property}) as value
+            MERGE (a_type)-[r:spoken_by]->(s)
+            with r, value
+            set r.{func_name}_{property_name} = value'''
+        else:
+            statement = '''MATCH (a_type:{annotation_type}_type:{corpus_name})<-[:is_a]-(a:{annotation_type}:{corpus_name})
+            with a_type, {func}({property}) as value
+            set a_type.{func_name}_{property_name} = value
+            '''
+        self.execute_cypher(statement.format(corpus_name = self.corpus_name, annotation_type = annotation_type, property = property,
+                        func_name = name, func = func, property_name = property_name))
+        self.hierarchy.add_type_properties(self, annotation_type, [('_'.join([name, property_name]), float)])
 
-        Parameters
-        ----------
-        data_name : str
-            the aspect to summarize (duration, pitch, formants, etc)
-        statistic : str
-            how to summarize (mean, stdev, median, etc)
-        annotation_type : str
-            the annotation to summarize
-        by_speaker : boolean
-            whether to summarize by speaker or not
-        speaker : str
-            the specific speaker to encode baseline duration for (only for baseline duration)
-        """
+        self.encode_hierarchy()
 
 
-        res = self.get_measure(data_name, statistic, annotation_type, by_speaker, speaker)
+    def encode_baseline(self, annotation_type, property_name, by_speaker = False):
+        if by_speaker:
+            exists_statement = '''MATCH (a_type:{annotation_type}_type:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+                            RETURN 1 LIMIT 1'''.format(annotation_type = annotation_type, corpus_name = self.corpus_name)
+            if len(list(self.execute_cypher(exists_statement))) == 0:
+                self.encode_measure('duration','mean','phone',by_speaker)
+            statement = '''MATCH (a:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+            with a, s
+            MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})-[r:spoken_by]->(s)
+            WITH a, sum(r.mean_{property_name}) as baseline
+            SET a.baseline_{property_name}_by_speaker = baseline'''.format(corpus_name = self.corpus_name, phone_name = self.phone_name,
+                                                                             property_name=property_name, annotation_type = annotation_type)
+            self.execute_cypher(statement)
+            self.hierarchy.add_token_properties(self, annotation_type, [('baseline_duration_by_speaker', float)])
+        else:
+            if not self.hierarchy.has_type_property('phone', 'mean_duration'):
+                self.encode_measure('duration','mean','phone',by_speaker)
+            statement = '''MATCH (a:{annotation_type}:{corpus_name})
+            with a
+            MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})
+            WITH a, sum(pt.mean_{property_name}) as baseline
+            SET a.baseline_{property_name} = baseline'''.format(corpus_name = self.corpus_name, phone_name = self.phone_name,
+                                                                  property_name=property_name, annotation_type = annotation_type)
+            self.execute_cypher(statement)
+            self.hierarchy.add_token_properties(self, annotation_type, [('baseline_duration', float)])
 
-        dataDict = self.make_dict(res,by_speaker,annotation_type)
-        if not by_speaker:
-            if annotation_type == 'utterance':
-                self.enrich_utterances(dataDict)
-            elif annotation_type == 'word':
-                self.enrich_lexicon(dataDict)
-            elif annotation_type == 'phone':
-                self.enrich_features(dataDict)
-            elif annotation_type == 'syllable':
-                self.enrich_syllables(dataDict)
-        elif by_speaker:
-            self.enrich_speaker_annotations(dataDict)
 
-  
+    def encode_relativized(self, annotation_type, property_name, by_speaker = False):
+        if property_name == 'duration':
+            property_descriptor = '(p.end - p.begin)'
+        else:
+            property_descriptor = 'p.{}'.format(property_name)
+        if by_speaker:
+            exists_statement = '''MATCH (a_type:{annotation_type}_type:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+                            RETURN 1 LIMIT 1'''.format(annotation_type = annotation_type, corpus_name = self.corpus_name)
+            res = list(self.execute_cypher(exists_statement))
+            if len(res) == 0:
+                self.encode_measure(property_name,'mean','phone',by_speaker)
+                self.encode_measure(property_name,'sd','phone',by_speaker)
+            else:
+                if res[0].get('mean_{}'.format(property_name), None) is None:
+                    self.encode_measure(property_name,'mean','phone',by_speaker)
+                if res[0].get('sd_{}'.format(property_name), None) is None:
+                    self.encode_measure(property_name,'sd','phone',by_speaker)
+
+            statement = '''MATCH (a:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+            with a, s
+            MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})-[r:spoken_by]->(s)
+            WITH a, sum(case when r.sd_{property_name} > 0 THEN ({property_descriptor} - r.mean_{property_name}) / r.sd_{property_name} ELSE 0 END) as relativized
+            SET a.relativized_{property_name}_by_speaker = relativized'''.format(corpus_name = self.corpus_name, phone_name = self.phone_name,
+                                                                             annotation_type = annotation_type, property_name = property_name,
+                                                                                 property_descriptor = property_descriptor)
+            self.execute_cypher(statement)
+            self.hierarchy.add_token_properties(self, annotation_type, [('relativized_{}_by_speaker'.format(property_name), float)])
+        else:
+            if not self.hierarchy.has_type_property('phone', 'mean_{}'.format(property_name)):
+                self.encode_measure(property_name,'mean','phone',by_speaker)
+            if not self.hierarchy.has_type_property('phone', 'sd_{}'.format(property_name)):
+                self.encode_measure(property_name,'sd','phone',by_speaker)
+            statement = '''MATCH (a:{annotation_type}:{corpus_name})
+            with a
+            MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})
+            WITH a, sum(case when pt.sd_{property_name} > 0 THEN ({property_descriptor} - pt.mean_{property_name}) / pt.sd_{property_name} ELSE 0 END) as relativized
+            SET a.relativized_{property_name} = relativized'''.format(corpus_name = self.corpus_name, phone_name = self.phone_name,
+                                                                             annotation_type = annotation_type, property_name = property_name,
+                                                                                 property_descriptor = property_descriptor)
+            self.execute_cypher(statement)
+            self.hierarchy.add_token_properties(self, annotation_type, [('relativized_{}'.format(property_name), float)])

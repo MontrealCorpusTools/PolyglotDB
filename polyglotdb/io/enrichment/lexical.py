@@ -14,5 +14,9 @@ def enrich_lexicon_from_csv(corpus_context, path, case_sensitive = False):
     case_sensitive : boolean
         Defaults to false
     """
-    data, type_data = parse_file(path, case_sensitive = case_sensitive)
+    if case_sensitive:
+        labels = set(corpus_context.lexicon.words())
+    else:
+        labels = set(x.lower() for x in corpus_context.lexicon.words())
+    data, type_data = parse_file(path, labels = labels, case_sensitive = case_sensitive)
     corpus_context.enrich_lexicon(data, type_data, case_sensitive = case_sensitive)

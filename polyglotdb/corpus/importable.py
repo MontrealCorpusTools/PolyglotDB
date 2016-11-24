@@ -51,7 +51,7 @@ class ImportContext(object):
         self.execute_cypher('CREATE INDEX ON :Discourse(name)')
         self.execute_cypher('CREATE INDEX ON :Speaker(name)')
 
-        self.execute_cypher('''MERGE (n:Corpus {name: {corpus_name}})''', corpus_name = self.corpus_name)
+        self.execute_cypher('''MERGE (n:Corpus {{name: '{}'}}) return n'''.format(self.corpus_name))
 
     def finalize_import(self, data, call_back = None, stop_check = None):
         """ generates hierarchy and saves variables"""

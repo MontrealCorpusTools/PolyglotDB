@@ -119,7 +119,6 @@ class Discourse(Base):
         back_populates = "discourse")
 
     def get(self, key):
-        """ Returns frequency of an Annotation object"""
         for a in self.properties:
             if a.property_type.label == key:
                 return a.value
@@ -136,6 +135,12 @@ class Speaker(Base):
 
     discourses = relationship("SpeaksIn",
         back_populates="speaker")
+
+    def get(self, key):
+        for a in self.properties:
+            if a.property_type.label == key:
+                return a.value
+        return None
 
 class SpeakerProperty(Base):
     __tablename__ = 'speaker_property'
@@ -204,44 +209,11 @@ class SoundFile(Base):
     discourse_id = Column(Integer, ForeignKey('discourse.id'), nullable = False)
     discourse = relationship(Discourse)
 
-    formants = relationship("Formants", back_populates = "sound_file",
-                            cascade="all, delete, delete-orphan")
-
-    pitches = relationship("Pitch", back_populates = "sound_file",
-                            cascade="all, delete, delete-orphan")
-
-class Formants(Base):
-    __tablename__ = 'formants'
-
-    id = Column(Integer, primary_key = True)
-
-    file_id = Column(Integer, ForeignKey('sound_file.id'), nullable = False)
-    sound_file = relationship(SoundFile, back_populates="formants")
-
-    time = Column(Float, nullable = False)
-
-    F1 = Column(Integer, nullable = False)
-
-    F2 = Column(Integer, nullable = False)
-
-    F3 = Column(Integer, nullable = False)
-
-    channel = Column(Integer, default = 0)
-
-    source = Column(String(250), nullable = False)
-
-class Pitch(Base):
-    __tablename__ = 'pitch'
-
-    id = Column(Integer, primary_key = True)
-
-    file_id = Column(Integer, ForeignKey('sound_file.id'), nullable = False)
-    sound_file = relationship(SoundFile, back_populates= "pitches")
-
-    time = Column(Float, nullable = False)
-
-    F0 = Column(Float, nullable = False)
-
-    channel = Column(Integer, default = 0)
-
-    source = Column(String(250), nullable = False)
+    def genders(self):
+        genders = []
+        for s in self.discourse.speakers:
+            g = s.speaker.get('gender')
+            if g is None:
+                g = ''
+            genders.append(g)
+        return genders

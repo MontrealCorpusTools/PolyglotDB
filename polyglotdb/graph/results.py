@@ -2,9 +2,12 @@
 
 from polyglotdb.io import save_results
 
+from polyglotdb.exceptions import GraphQueryError
+
 from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
                             SubAnnotation as QuerySubAnnotation,
-                            SpeakerAnnotation, DiscourseAnnotation)
+                            SpeakerAnnotation, DiscourseAnnotation,
+                            Track)
 
 from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 
@@ -69,6 +72,8 @@ class QueryResults(object):
 
         self.evaluated = []
         self.current_ind = 0
+        self.num_tracks = 0
+        self.track_columns = set()
         if query._columns:
             self.models = False
             self._preload = None
@@ -77,6 +82,9 @@ class QueryResults(object):
             self._acoustic_columns = query._acoustic_columns
             self.columns = [x.output_alias.replace('`','') for x in query._columns]
             for x in query._acoustic_columns:
+                if isinstance(x, Track):
+                    self.num_tracks += 1
+                    self.track_columns.update(x.output_columns)
                 self.columns.extend(x.output_columns)
         else:
             self.models = True
@@ -84,6 +92,7 @@ class QueryResults(object):
             self._to_find = query.to_find.alias
             self._to_find_type = query.to_find.type_alias
             self.columns = None
+
 
     def __getitem__(self, key):
         if key < 0:
@@ -166,7 +175,12 @@ class QueryResults(object):
                 elif a.label in cache:
                     cache[a.label] = a.cached_settings, a.cached_data
                 for k in a.output_columns:
-                    r.add_acoustic(k, t[k])
+                    if k == 'time':
+                        continue
+                    if k in self.track_columns:
+                        r.add_track(t)
+                    else:
+                        r.add_acoustic(k, t[k])
         return r
 
     def __iter__(self):
@@ -187,8 +201,25 @@ class QueryResults(object):
                 self.cache.append(r)
                 yield r
 
+    def rows_for_csv(self):
+        header = self.columns
+        for line in self:
+            baseline = {k: line[k] for k in header if k not in self.track_columns}
+            if line.track:
+                for k,v in sorted(line.track.items()):
+                    line = {}
+                    line.update(baseline)
+                    line.update({'time':k})
+                    line.update(v)
+                    yield line
+            else:
+                yield baseline
+
+
     def to_csv(self, path):
-        save_results(self, path)
+        if self.num_tracks > 1:
+            raise(GraphQueryError('Only one track attribute can currently be exported to csv.'))
+        save_results(self.rows_for_csv(), path, header = self.columns)
 
     def __len__(self):
         self._cache_cursor()
@@ -200,6 +231,8 @@ class Record(object):
         self.values = result.values()
         self.acoustic_columns = []
         self.acoustic_values = []
+        self.track = {}
+        self.track_columns = []
 
     def __getitem__(self, key):
         if key in self.columns:
@@ -211,3 +244,14 @@ class Record(object):
     def add_acoustic(self, key, value):
         self.acoustic_columns.append(key)
         self.acoustic_values.append(value)
+
+    def add_track(self, track):
+        # Could use interpolation of tracks?
+        columns = set(self.track_columns)
+        for k, v in track.items():
+            if k not in self.track:
+                self.track[k] = v
+            else:
+                self.track[k].update(v)
+            columns.update(v.keys())
+        self.track_columns = sorted(columns)

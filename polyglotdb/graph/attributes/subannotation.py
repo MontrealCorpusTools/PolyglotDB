@@ -5,11 +5,12 @@ from .path import SubPathAnnotation, PathAttribute
 
 class SubAnnotation(SubPathAnnotation):
     subquery_template = '''OPTIONAL MATCH ({def_path_alias})-[:annotates]->({alias})
+        {where_string}
         WITH {input_with_string}, {path_alias}
         ORDER BY {path_alias}.begin
         WITH {output_with_string}'''
 
-    def generate_subquery(self, output_with_string, input_with_string):
+    def generate_subquery(self, output_with_string, input_with_string, filters = None):
         """
         Generates a subquery 
         
@@ -20,9 +21,17 @@ class SubAnnotation(SubPathAnnotation):
         input_with_string : str
             the string limiting the input
          """
+        where_string = ''
+        if filters is not None:
+            relevant = []
+            for c in filters:
+                if c.involves(self):
+                    relevant.append(c.for_cypher())
+            if relevant:
+                where_string = 'WHERE '+ '\nAND '.join(relevant)
         return self.subquery_template.format(alias = self.annotation.alias,
                         input_with_string = input_with_string, output_with_string = output_with_string,
-                        def_path_alias = self.def_path_alias, path_alias = self.path_alias)
+                        def_path_alias = self.def_path_alias, path_alias = self.path_alias, where_string = where_string)
 
     @property
     def withs(self):

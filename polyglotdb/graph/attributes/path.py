@@ -9,14 +9,15 @@ class PathAnnotation(AnnotationAttribute):
 
     subquery_template = '''UNWIND (CASE WHEN length({path_alias}) > 0 THEN nodes({path_alias})[1..-1] ELSE [null] END) as n
         OPTIONAL MATCH (n)-[:is_a]->({path_type_alias})
+        {where_string}
         WITH {output_with_string}'''
 
-    def subquery(self, withs):
+    def subquery(self, withs, filters = None):
         """Generates a subquery given a list of alias and type_alias """
         input_with = ', '.join(withs)
         new_withs = withs - set([self.path_alias])
         output_with = ', '.join(new_withs) + ', ' + self.with_statement()
-        return self.generate_subquery(output_with, input_with)
+        return self.generate_subquery(output_with, input_with, filters)
 
 
     def generate_times_subquery(self, output_with_string, input_with_string):
@@ -25,14 +26,21 @@ class PathAnnotation(AnnotationAttribute):
         """
         return '''WITH {}'''.format(output_with_string)
 
-    def generate_subquery(self, output_with_string, input_with_string):
+    def generate_subquery(self, output_with_string, input_with_string, filters = None):
         """ formats output_with_string into a subquery"""
+        where_string = ''
+        if filters is not None:
+            relevant = []
+            for c in filters:
+                if c.involves(self):
+                    relevant.append(c.for_cypher())
+            if relevant:
+                where_string = 'WHERE '+ '\nAND '.join(relevant)
         return self.subquery_template.format(path_alias = self.path_alias,
                         output_with_string = output_with_string,
                         key = self.key,
+                        where_string = where_string,
                         path_type_alias = self.def_path_type_alias)
-
-
 
     def with_statement(self):
         """ """
@@ -111,6 +119,7 @@ class PathAnnotation(AnnotationAttribute):
 
 class SubPathAnnotation(PathAnnotation):
     subquery_template = '''MATCH ({def_path_type_alias})<-[:is_a]-({def_path_alias})-[:contained_by*]->({alias})
+        {where_string}
         WITH {input_with_string}, {path_type_alias}, {path_alias}
         {subannotation_query}
         ORDER BY {path_alias}.begin
@@ -138,7 +147,7 @@ class SubPathAnnotation(PathAnnotation):
     def __hash__(self):
         return hash((self.annotation, self.sub))
 
-    def generate_subquery(self, output_with_string, input_with_string):
+    def generate_subquery(self, output_with_string, input_with_string, filters = None):
         """
         Generates a subquery
 
@@ -153,11 +162,19 @@ class SubPathAnnotation(PathAnnotation):
             subannotation_query = self.generate_subannotation_query(input_with_string)
         else:
             subannotation_query = ''
+        where_string = ''
+        if filters is not None:
+            relevant = []
+            for c in filters:
+                if c.involves(self):
+                    relevant.append(c.for_cypher())
+            if relevant:
+                where_string = 'WHERE '+ '\nAND '.join(relevant)
         return self.subquery_template.format(alias = self.annotation.alias,
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         path_type_alias = self.path_type_alias, def_path_type_alias = self.def_path_type_alias,
                         def_path_alias = self.def_path_alias, path_alias = self.path_alias,
-                        subannotation_query = subannotation_query)
+                        subannotation_query = subannotation_query, where_string = where_string)
 
     def generate_subannotation_query(self, input_with_string):
         """
@@ -298,7 +315,7 @@ class PositionalAnnotation(SubPathAnnotation):
             raise(AttributeError('Annotations cannot have annotations.'))
         return PositionalAttribute(self, key, False)
 
-    def generate_subquery(self, output_with_string, input_with_string):
+    def generate_subquery(self, output_with_string, input_with_string, filters = None):
         """
         Generates a subquery
 
@@ -309,10 +326,18 @@ class PositionalAnnotation(SubPathAnnotation):
         input_with_string : str
             the string limiting the input
          """
+        where_string = ''
+        if filters is not None:
+            relevant = []
+            for c in filters:
+                if c.involves(self):
+                    relevant.append(c.for_cypher())
+            if relevant:
+                where_string = 'WHERE '+ '\nAND '.join(relevant)
         return self.subquery_template.format(alias = self.annotation.annotation.alias,
                         input_with_string = input_with_string, output_with_string = output_with_string,
                         path_type_alias = self.path_type_alias, def_path_type_alias = self.def_path_type_alias,
-                        def_path_alias = self.def_path_alias, path_alias = self.path_alias,
+                        def_path_alias = self.def_path_alias, path_alias = self.path_alias, where_string = where_string,
                         subannotation_query = '')
 
     def with_statement(self):
@@ -358,6 +383,7 @@ class PositionalAnnotation(SubPathAnnotation):
         return self.annotation.path_type_alias
 
 class PathAttribute(Attribute):
+    filter_template = '{alias}.{property}'
     type_return_template = 'extract(n in {alias}|n.{property})'
     duration_return_template = 'extract(n in {alias}|n.end - n.begin)'
     count_return_template = 'size({alias})'
@@ -403,6 +429,10 @@ class PathAttribute(Attribute):
                                                     node_alias = self.annotation.sub.alias)
         else:
             return self.type_return_template.format(alias = self.annotation.path_alias, property = self.label)
+
+    def for_filter(self):
+        return self.filter_template.format(alias = self.annotation.path_alias, property = self.label)
+
     @property
     def is_type_attribute(self):
         """ Returns True"""

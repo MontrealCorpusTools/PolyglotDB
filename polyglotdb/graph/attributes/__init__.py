@@ -1,6 +1,8 @@
 
 from .base import AnnotationAttribute, Attribute
 
+from .acoustic import Track
+
 from .aggregate import AggregateAttribute
 
 from .path import (PathAnnotation, PathAttribute, SubPathAnnotation,

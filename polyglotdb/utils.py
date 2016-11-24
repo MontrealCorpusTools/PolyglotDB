@@ -45,7 +45,7 @@ def add_default_annotations(corpus_context, linguistic_type,
                 row = dict(id = uuid1(), annotated_id = a.id, **props)
                 data.append(row)
             props = sorted(data[0].keys())
-            subannoations_data_to_csv(corpus_context, t, data)
+            subannotations_data_to_csv(corpus_context, t, data)
             import_subannotation_csv(corpus_context, t, linguistic_type,
                                     props) #,transaction = tx)
 
