@@ -38,7 +38,10 @@ class DiscourseData(object):
         self.wav_path = None
         for k, at in self.data.items():
             self.hierarchy.type_properties[at.name] = at.type_properties
-            self.hierarchy.token_properties[at.name] = at.token_properties
+            if not at.token_properties:
+                self.hierarchy.token_properties[at.name] = set((x, type(None)) for x in at.token_property_keys)
+            else:
+                self.hierarchy.token_properties[at.name] = at.token_properties
 
     def __getitem__(self, key):
         return self.data[key]
@@ -71,8 +74,8 @@ class DiscourseData(object):
     def token_headers(self):
         headers = {}
         for x in self.annotation_types:
-            token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse']
-            token_header += sorted(self[x].token_property_keys)
+            token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse', 'label']
+            token_header += sorted(y[0] for y in self.hierarchy.token_properties[x] if y[0] != 'label')
             supertype = self[x].supertype
             if supertype is not None:
                 token_header.append(supertype)

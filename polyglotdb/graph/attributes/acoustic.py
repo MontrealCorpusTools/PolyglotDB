@@ -17,6 +17,8 @@ class AcousticAttribute(Attribute):
         self.end_alias = annotation.alias + '_end'
         self.cached_data = None
         self.cached_settings = None
+        self.relative = False
+        self.relative_times = False
 
     def __getattr__(self, key):
         if key == 'min':
@@ -27,6 +29,10 @@ class AcousticAttribute(Attribute):
             return Mean(self)
         elif key == 'track':
             return Track(self)
+        elif key == 'sampled_track':
+            return SampledTrack(self)
+        elif key == 'interpolated_track':
+            return InterpolatedTrack(self)
 
     def hydrate(self, corpus, discourse, begin, end):
         pass
@@ -36,7 +42,7 @@ class AggregationAttribute(AcousticAttribute):
         self.attribute = acoustic_attribute
         self.output_label = None
         self.ignore_negative = False
-        if isinstance(self.attribute, PitchAttribute):
+        if isinstance(self.attribute, PitchAttribute) and not self.attribute.relative:
             self.ignore_negative = True
 
     @property
@@ -123,13 +129,57 @@ class Track(AggregationAttribute):
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel)
         return data
 
+class SampledTrack(Track):
+    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=10):
+        data = self.attribute.hydrate(corpus, discourse, begin, end, channel, num_points)
+        return data
+
+
+class InterpolatedTrack(Track):
+    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=10):
+        from scipy import interpolate
+        data = self.attribute.hydrate(corpus, discourse, begin, end, channel, padding = 0.01)
+        duration = end - begin
+        time_step = duration / (num_points-1)
+
+        new_data = {begin + x*time_step:dict() for x in range(0,num_points)}
+        x = sorted(data.keys())
+        undef_regions = []
+        for i, x1 in enumerate(x):
+            if i != len(x) - 1:
+                if x[i+1] - x1 > 0.015:
+                    undef_regions.append((x1, x[i+1]))
+        for o in self.attribute.output_columns:
+            y = [data[x1][o] for x1 in x]
+            if len(y) > 1:
+                f = interpolate.interp1d([float(x1) for x1 in x],y)
+            for k in new_data.keys():
+                if len(y) < 2:
+                    new_data[k][o] = None
+                    continue
+                for r in undef_regions:
+                    if k > r[0] and k < r[1]:
+                        new_data[k][o] = None
+                        break
+                else:
+                    try:
+                        new_data[k][o] = f([k])[0]
+                    except ValueError:
+                        new_data[k][o] = None
+        return new_data
+
 class PitchAttribute(AcousticAttribute):
-    output_columns = ['F0']
-    def __init__(self, annotation):
+
+    def __init__(self, annotation, relative = False):
         super(PitchAttribute, self).__init__(annotation)
         self.label = 'pitch'
+        self.relative = relative
+        self.output_columns = ['F0']
+        if relative:
+            self.label += '_relative'
+            self.output_columns[0] += '_relative'
 
-    def hydrate(self, corpus, discourse, begin, end, channel = 0):
+    def hydrate(self, corpus, discourse, begin, end, channel = 0, num_points=0, padding=0):
         """
         Gets all F0 from a discourse
 
@@ -151,24 +201,79 @@ class PitchAttribute(AcousticAttribute):
             A dictionary with 'F0' as the keys and a dictionary of times and F0 values as the value
          """
 
+        #if self.cached_settings == (discourse, begin, end, channel, self.relative, num_points):
+        #    data = self.cached_data
+        #else:
+        data = {}
+        begin -= padding
+        end += padding
+        results = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative, num_points=num_points)
+        for line in results:
+            data[line[0]] = {self.output_columns[0]:line[1]}
+         #   self.cached_settings = (discourse, begin, end, channel, self.relative, num_points)
+         #   self.cached_data = data
+        return data
+
+
+class IntensityAttribute(AcousticAttribute):
+
+    def __init__(self, annotation, relative = False):
+        super(IntensityAttribute, self).__init__(annotation)
+        self.label = 'intensity'
+        self.relative = relative
+        self.output_columns = ['Intensity']
+        if relative:
+            self.label += '_relative'
+            self.output_columns[0] += '_relative'
+
+    def hydrate(self, corpus, discourse, begin, end, channel = 0, num_points=0):
+        """
+        Gets all Intensity from a discourse
+
+        Parameters
+        ----------
+        corpus : :class:`~polyglotdb.corpus.CorpusContext`
+            The corpus to query
+        discourse : str
+            the discourse to query
+        begin : float
+            the start time of the pitch
+        end : float
+            the end time of the pitch
+        aggregation : defaults to None
+
+        Returns
+        -------
+        data : dict
+            A dictionary with 'Intensity' as the keys and a dictionary of times and F0 values as the value
+         """
+
         if self.cached_settings == (discourse, begin, end, channel):
             data = self.cached_data
         else:
             data = {}
-            results = corpus.get_pitch(discourse, begin, end, channel)
+            results = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative, num_points=0)
             for line in results:
-                data[line[0]] = {'F0':line[1]}
-            self.cached_settings = (discourse, begin, end, channel)
+                data[line[0]] = {self.output_columns[0]:line[1]}
+            self.cached_settings = (discourse, begin, end, channel, self.relative)
             self.cached_data = data
         return data
 
+
 class FormantAttribute(AcousticAttribute):
-    output_columns = ['F1', 'F2', 'F3']
-    def __init__(self, annotation):
+
+    def __init__(self, annotation, relative = False):
         super(FormantAttribute, self).__init__(annotation)
         self.label = 'formants'
+        self.output_columns = ['F1', 'F2', 'F3']
+        self.relative = relative
+        if relative:
+            self.label += '_relative'
+            for i in range(3):
+                self.output_columns[i] += '_relative'
 
-    def hydrate(self, corpus, discourse, begin, end, channel = 0):
+
+    def hydrate(self, corpus, discourse, begin, end, channel = 0, num_points=0):
         """
         Gets all formants from a discourse
 
@@ -193,9 +298,9 @@ class FormantAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {}
-            results = corpus.get_formants(discourse, begin, end, channel)
+            results = corpus.get_formants(discourse, begin, end, channel=channel, relative = self.relative, num_points=0)
             for line in results:
-                data[line[0]] = {'F1':line[1], 'F2':line[2], 'F3': line[3]}
-            self.cached_settings = (discourse, begin, end, channel)
+                data[line[0]] = {self.output_columns[i]: line[i] for i in range(3)}
+            self.cached_settings = (discourse, begin, end, channel, self.relative)
             self.cached_data = data
         return data

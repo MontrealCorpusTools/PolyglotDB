@@ -483,6 +483,7 @@ def import_utterance_csv(corpus_context, call_back = None, stop_check = None):
     if call_back is not None:
         call_back('Importing data...')
         call_back(0,len(speakers))
+    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
     for i, s in enumerate(speakers):
         if stop_check is not None and stop_check():
             return
@@ -493,10 +494,10 @@ def import_utterance_csv(corpus_context, call_back = None, stop_check = None):
         path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(s))
         csv_path = 'file:///{}'.format(make_path_safe(path))
 
-        statement = '''CYPHER planner=rule USING PERIODIC COMMIT 1000
+        statement = '''USING PERIODIC COMMIT 1000
                 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus})
-                OPTIONAL MATCH (d)<-[:spoken_in]-(end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
+                MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus}),
+                (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
                 CREATE (utt:utterance:{corpus}:speech {{id: csvLine.id, begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus}),
                     (d)<-[:spoken_in]-(utt),
                     (s)<-[:spoken_by]-(utt)

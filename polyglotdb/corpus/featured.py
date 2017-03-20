@@ -75,7 +75,7 @@ class FeaturedContext(object):
 
         if type_data is None:
             type_data = {k: type(v) for k,v in next(iter(feature_data.values())).items()}
-        labels = set(self.lexicon.phones())
+        labels = set(self.lexicon.phones)
         feature_data = {k: v for k,v in feature_data.items() if k in labels}
         self.lexicon.add_properties(self.phone_name, feature_data, type_data)
         feature_data_to_csvs(self, feature_data)

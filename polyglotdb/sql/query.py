@@ -251,6 +251,7 @@ class Lexicon(BasePropertyStore):
         q = q.filter(AnnotationType.label == annotation_type)
         return sorted([x[0] for x in q.all()])
 
+    @property
     def words(self):
         """
         Lists words of an Annotation
@@ -265,6 +266,7 @@ class Lexicon(BasePropertyStore):
         q = q.filter(AnnotationType.label == self.corpus_context.word_name)
         return sorted([x[0] for x in q.all()])
 
+    @property
     def phones(self):
         """
         Lists phones of an Annotation
@@ -279,6 +281,7 @@ class Lexicon(BasePropertyStore):
         q = q.filter(AnnotationType.label == self.corpus_context.phone_name)
         return sorted([x[0] for x in q.all()])
 
+    @property
     def syllables(self):
         """
         Lists syllables of an Annotation
@@ -339,6 +342,15 @@ class Census(BasePropertyStore):
         q = self.corpus_context.sql_session.query(Speaker).filter(Speaker.name == name)
         speaker = q.first()
         return speaker
+
+    def lookup_channel(self, speaker, discourse):
+        speaker = self[speaker]
+        channel = 0
+        for x in speaker.discourses:
+            if x.discourse.name == discourse:
+                channel = x.channel
+                break
+        return channel
 
     def add_speaker_properties(self, data, types):
         """

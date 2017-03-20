@@ -160,12 +160,7 @@ class QueryResults(object):
                 elif a.label in cache:
                     a.cached_settings, a.cached_data = cache[a.label]
                 discourse = r[a.discourse_alias]
-                speaker = self.corpus.census[r[a.speaker_alias]]
-                channel = 0
-                for x in speaker.discourses:
-                    if x.discourse.name == discourse:
-                        channel = x.channel
-                        break
+                channel = self.corpus.census.lookup_channel(r[a.speaker_alias], discourse)
                 t = a.hydrate(self.corpus, discourse,
                             r[a.begin_alias],
                             r[a.end_alias],

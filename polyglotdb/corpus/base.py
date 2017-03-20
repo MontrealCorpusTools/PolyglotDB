@@ -161,17 +161,20 @@ class BaseContext(object):
         '''
         Return a list of all discourses in the corpus.
         '''
-        q = self.sql_session.query(Discourse).all()
-        if not len(q):
-            res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.cypher_safe_name))
-            discourses = []
-            for d in res:
-                instance = Discourse(name = d.discourse)
-                self.sql_session.add(instance)
-                discourses.append(d.discourse)
-            self.sql_session.flush()
-            return discourses
-        return [x.name for x in q]
+        try:
+            q = self.sql_session.query(Discourse).all()
+            if not len(q):
+                res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.cypher_safe_name))
+                discourses = []
+                for d in res:
+                    instance = Discourse(name = d['discourse'])
+                    self.sql_session.add(instance)
+                    discourses.append(d['discourse'])
+                self.sql_session.flush()
+                return discourses
+            return [x.name for x in q]
+        except AttributeError as error:
+            raise(RuntimeError("AttributeError: " + str(error), sys.exc_info()[2]))
 
     @property
     def speakers(self):

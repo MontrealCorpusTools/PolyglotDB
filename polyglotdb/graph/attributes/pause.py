@@ -3,6 +3,7 @@ from polyglotdb.graph.attributes.base import AnnotationAttribute, Attribute, key
 
 from polyglotdb.graph.attributes.path import PathAnnotation, PathAttribute
 
+
 class PauseAnnotation(AnnotationAttribute):
     def __init__(self, pos = 0, corpus = None, hierarchy = None):
         self.type = 'pause'
@@ -45,6 +46,7 @@ class PauseAnnotation(AnnotationAttribute):
         """Returns 'pause' """
         return 'pause'
 
+
 class PauseAttribute(Attribute):
     pass
 
@@ -65,6 +67,7 @@ class FollowsPauseAttribute(NearPauseAttribute):
         else:
             return NotFollowsPauseClauseElement(self.annotation)
 
+
 class PrecedesPauseAttribute(NearPauseAttribute):
 
     def __eq__(self, other):
@@ -75,6 +78,7 @@ class PrecedesPauseAttribute(NearPauseAttribute):
             return PrecedesPauseClauseElement(self.annotation)
         else:
             return NotPrecedesPauseClauseElement(self.annotation)
+
 
 class PausePathAnnotation(PathAnnotation):
     def additional_where(self):
@@ -91,6 +95,7 @@ class PausePathAnnotation(PathAnnotation):
         if key == 'annotation':
             raise(AttributeError('Annotations cannot have annotations.'))
         return PausePathAttribute(self, key, False)
+
 
 class PausePathAttribute(PathAttribute):
     duration_filter_template = 'extract(n in nodes({alias})[-1..]| n.end)[0] - extract(n in nodes({alias})[0..1]| n.begin)[0]'

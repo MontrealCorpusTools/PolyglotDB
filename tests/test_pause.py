@@ -86,6 +86,31 @@ def test_query_with_pause(acoustic_config):
         assert(results[0]['following_pause'] == ['sil'])
         assert(abs(results[0]['following_pause_duration'] - 1.152438) < 0.001)
 
+
+def test_pause_both_sides(acoustic_config):
+    with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil', 'uh','um'])
+        q = g.query_graph(g.word).filter(g.word.label == 'cares')
+        q = q.columns(g.word.following.label.column_name('following'),
+                    g.pause.following.label.column_name('following_pause'),
+                    g.pause.following.duration.column_name('following_pause_duration'),
+                      g.word.previous.label.column_name('previous'),
+                      g.pause.previous.label.column_name('previous_pause'),
+                      g.pause.previous.duration.column_name('previous_pause_duration')
+                      )
+        q = q.order_by(g.word.begin)
+        print(q.cypher())
+        results = q.all()
+        print(results)
+        assert(len(results) == 1)
+        assert(results[0]['following'] == 'this')
+        assert(results[0]['following_pause'] == ['sil','um'])
+        assert(abs(results[0]['following_pause_duration'] - 1.035027) < 0.001)
+        assert(results[0]['previous'] == 'who')
+        assert(results[0]['previous_pause'] == [])
+        assert(results[0]['previous_pause_duration'] is None)
+
+
 def test_hierarchical_pause_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.word.label == 'words')

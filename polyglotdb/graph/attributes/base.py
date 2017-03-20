@@ -383,12 +383,15 @@ class AnnotationAttribute(Attribute):
         elif key == 'pause':
             from .pause import PauseAnnotation
             return PauseAnnotation(self.pos, corpus = self.corpus, hierarchy = self.hierarchy)
-        elif key == 'pitch':
+        elif key.startswith('pitch'):
             from .acoustic import PitchAttribute
-            return PitchAttribute(self)
-        elif key == 'formants':
+            return PitchAttribute(self, relative=('relative' in key))
+        elif key.startswith('intensity'):
+            from .acoustic import IntensityAttribute
+            return IntensityAttribute(self, relative=('relative' in key))
+        elif key.startswith('formants'):
             from .acoustic import FormantAttribute
-            return FormantAttribute(self)
+            return FormantAttribute(self, relative=('relative' in key))
         elif self.hierarchy is not None and key in self.hierarchy.contained_by(self.type):
             from .hierarchical import HierarchicalAnnotation
             return HierarchicalAnnotation(key, self, corpus = self.corpus, hierarchy = self.hierarchy)

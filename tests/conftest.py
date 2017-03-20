@@ -16,9 +16,11 @@ from polyglotdb.corpus import CorpusContext
 from polyglotdb.structure import Hierarchy
 from polyglotdb.config import CorpusConfig
 
+
 def pytest_addoption(parser):
     parser.addoption("--skipacoustics", action="store_true",
         help="skip acoustic tests")
+
 
 @pytest.fixture(scope='session')
 def test_dir():
@@ -28,53 +30,66 @@ def test_dir():
         os.makedirs(generated)
     return os.path.join(base, 'data') #was tests/data
 
+
 @pytest.fixture(scope='session')
 def buckeye_test_dir(test_dir):
     return os.path.join(test_dir, 'buckeye')
+
 
 @pytest.fixture(scope='session')
 def timit_test_dir(test_dir):
     return os.path.join(test_dir, 'timit')
 
+
 @pytest.fixture(scope='session')
 def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
+
 
 @pytest.fixture(scope='session')
 def fave_test_dir(textgrid_test_dir):
     return os.path.join(textgrid_test_dir, 'fave')
 
+
 @pytest.fixture(scope='session')
 def mfa_test_dir(textgrid_test_dir):
     return os.path.join(textgrid_test_dir, 'mfa')
+
 
 @pytest.fixture(scope='session')
 def labbcat_test_dir(textgrid_test_dir):
     return os.path.join(textgrid_test_dir, 'labbcat')
 
+
 @pytest.fixture(scope='session')
 def partitur_test_dir(test_dir):
     return os.path.join(test_dir,'partitur')
+
 
 @pytest.fixture(scope='session')
 def text_transcription_test_dir(test_dir):
     return os.path.join(test_dir, 'text_transcription')
 
+
 @pytest.fixture(scope='session')
 def text_spelling_test_dir(test_dir):
     return os.path.join(test_dir, 'text_spelling')
+
 
 @pytest.fixture(scope='session')
 def ilg_test_dir(test_dir):
     return os.path.join(test_dir, 'ilg')
 
+
 @pytest.fixture(scope='session')
 def csv_test_dir(test_dir):
     return os.path.join(test_dir, 'csv')
 
+
 @pytest.fixture(scope='session')
 def features_test_dir(test_dir):
     return os.path.join(test_dir, 'features')
+
 
 @pytest.fixture(scope='session')
 def export_test_dir(test_dir):
@@ -82,6 +97,7 @@ def export_test_dir(test_dir):
     if not os.path.exists(path):
         os.makedirs(path)
     return path
+
 
 @pytest.fixture(scope='session')
 def corpus_data_timed():
@@ -108,6 +124,7 @@ def corpus_data_timed():
     parser = BaseParser(levels, hierarchy)
     data = parser.parse_discourse('test_timed')
     return data
+
 
 @pytest.fixture(scope='session')
 def subannotation_data():
@@ -144,6 +161,7 @@ def corpus_data_onespeaker(corpus_data_timed):
     for k in corpus_data_timed.data.keys():
         corpus_data_timed.data[k].speaker = 'some_speaker'
     return corpus_data_timed
+
 
 @pytest.fixture(scope='session')
 def corpus_data_untimed():
@@ -261,21 +279,26 @@ def corpus_data_syllable_morpheme_srur():
     data = parser.parse_discourse('test_syllable_morpheme')
     return data
 
+
 @pytest.fixture(scope='session')
 def graph_user():
     return 'neo4j'
+
 
 @pytest.fixture(scope='session')
 def graph_pw():
     return 'test'
 
+
 @pytest.fixture(scope='session')
 def graph_host():
     return 'localhost'
 
+
 @pytest.fixture(scope='session')
 def graph_port():
     return 7474
+
 
 @pytest.fixture(scope='session')
 def graph_db(graph_host, graph_port, graph_user, graph_pw):
@@ -295,6 +318,7 @@ def untimed_config(graph_db, corpus_data_untimed):
         c.finalize_import(corpus_data_untimed)
     return config
 
+
 @pytest.fixture(scope='session')
 def timed_config(graph_db, corpus_data_timed):
     config = CorpusConfig('timed', **graph_db)
@@ -307,6 +331,7 @@ def timed_config(graph_db, corpus_data_timed):
         c.add_discourse(corpus_data_timed)
         c.finalize_import(corpus_data_timed)
     return config
+
 
 @pytest.fixture(scope='session')
 def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme_srur):
@@ -321,6 +346,7 @@ def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme_srur):
         c.finalize_import(corpus_data_syllable_morpheme_srur)
     return config
 
+
 @pytest.fixture(scope='session')
 def ursr_config(graph_db, corpus_data_ur_sr):
     config = CorpusConfig('ur_sr', **graph_db)
@@ -333,6 +359,7 @@ def ursr_config(graph_db, corpus_data_ur_sr):
         c.add_discourse(corpus_data_ur_sr)
         c.finalize_import(corpus_data_ur_sr)
     return config
+
 
 @pytest.fixture(scope='session')
 def subannotation_config(graph_db, subannotation_data):
@@ -347,12 +374,14 @@ def subannotation_config(graph_db, subannotation_data):
         c.finalize_import(subannotation_data)
     return config
 
+
 @pytest.fixture(scope = 'session')
 def lexicon_test_data():
     data = {'cats': {'POS': 'NNS'}, 'are':{'POS':'VB'}, 'cute':{'POS': 'JJ'},
             'dogs':{'POS': 'NNS'}, 'too':{'POS':'IN'}, 'i':{'POS':'PRP'},
             'guess':{'POS':'VB'}}
     return data
+
 
 @pytest.fixture(scope='session')
 def acoustic_config(graph_db, textgrid_test_dir):
@@ -366,6 +395,7 @@ def acoustic_config(graph_db, textgrid_test_dir):
     config.pitch_algorithm = 'acousticsim'
     config.formant_algorithm = 'acousticsim'
     return config
+
 
 @pytest.fixture(scope='session')
 def acoustic_utt_config(graph_db, textgrid_test_dir):
@@ -384,6 +414,7 @@ def acoustic_utt_config(graph_db, textgrid_test_dir):
     config.formant_algorithm = 'acousticsim'
     return config
 
+
 @pytest.fixture(scope='session')
 def french_config(graph_db, textgrid_test_dir):
     config= CorpusConfig('french',**graph_db)
@@ -399,6 +430,7 @@ def french_config(graph_db, textgrid_test_dir):
 
     return config
 
+
 @pytest.fixture(scope='session')
 def fave_corpus_config(graph_db, fave_test_dir):
     config = CorpusConfig('fave_test_corpus', **graph_db)
@@ -408,6 +440,7 @@ def fave_corpus_config(graph_db, fave_test_dir):
         parser = inspect_fave(fave_test_dir)
         c.load(parser, fave_test_dir)
     return config
+
 
 @pytest.fixture(scope='session')
 def summarized_config(graph_db, textgrid_test_dir):
@@ -433,6 +466,7 @@ def stressed_config(graph_db, textgrid_test_dir):
         c.load(parser, stressed_path)
     return config
 
+
 @pytest.fixture(scope='session')
 def partitur_corpus_config(graph_db, partitur_test_dir):
     config = CorpusConfig('partitur', **graph_db)
@@ -443,6 +477,7 @@ def partitur_corpus_config(graph_db, partitur_test_dir):
         parser = inspect_partitur(partitur_path)
         c.load(parser, partitur_path)
     return config
+
 
 @pytest.fixture(scope='session')
 def praat_path():

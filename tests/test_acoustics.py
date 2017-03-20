@@ -31,14 +31,15 @@ def test_analyze_acoustics_praat(acoustic_utt_config, praat_path):
 
         assert(g.has_pitch('acoustic_corpus'))
 
+
 def test_query_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.pitch_algorithm = 'dummy'
         expected_pitch = {Decimal('4.23'): {'F0':98},
-                            Decimal('4.24'):{'F0':100},
-                            Decimal('4.25'):{'F0':99},
-                            Decimal('4.26'):{'F0':95.8},
-                            Decimal('4.27'):{'F0':95.8}}
+                          Decimal('4.24'):{'F0':100},
+                          Decimal('4.25'):{'F0':99},
+                          Decimal('4.26'):{'F0':95.8},
+                          Decimal('4.27'):{'F0':95.8}}
         g.save_pitch('acoustic_corpus', expected_pitch)
 
         q = g.query_graph(g.phone)
@@ -48,12 +49,34 @@ def test_query_pitch(acoustic_utt_config):
         print(q.cypher())
         results = q.all()
 
-        times = list(expected_pitch.keys())
-
         print(sorted(expected_pitch.items()))
         print(sorted(results[0].track.items()))
         for k, v in results[0].track.items():
             assert(round(v['F0'],1) == expected_pitch[k]['F0'])
+
+
+def test_query_intensity(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.intensity_algorithm = 'dummy'
+        expected_intensity = {Decimal('4.23'): {'Intensity':98},
+                          Decimal('4.24'):{'Intensity':100},
+                          Decimal('4.25'):{'Intensity':99},
+                          Decimal('4.26'):{'Intensity':95.8},
+                          Decimal('4.27'):{'Intensity':95.8}}
+        g.save_intensity('acoustic_corpus', expected_intensity)
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.label, g.phone.intensity.track)
+        print(q.cypher())
+        results = q.all()
+
+        print(sorted(expected_intensity.items()))
+        print(sorted(results[0].track.items()))
+        for k, v in results[0].track.items():
+            assert(round(v['Intensity'],1) == expected_intensity[k]['Intensity'])
+
 
 def test_query_aggregate_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
@@ -69,6 +92,7 @@ def test_query_aggregate_pitch(acoustic_utt_config):
         assert(results[0]['Min_F0'] == 95.8)
         assert(results[0]['Max_F0'] == 100)
         assert(round(results[0]['Mean_F0'], 2) == 97.72)
+
 
 def test_query_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
@@ -87,14 +111,13 @@ def test_query_formants(acoustic_utt_config):
         print(q.cypher())
         results = q.all()
 
-        times = list(expected_formants.keys())
-
         print(sorted(expected_formants.items()))
         print(sorted(results[0].track.items()))
         for k, v in results[0].track.items():
             assert(round(v['F1'],1) == expected_formants[k]['F1'])
             assert(round(v['F2'],1) == expected_formants[k]['F2'])
             assert(round(v['F3'],1) == expected_formants[k]['F3'])
+
 
 def test_query_aggregate_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
@@ -119,6 +142,7 @@ def test_query_aggregate_formants(acoustic_utt_config):
         assert(results[0]['Min_F3'] == 2500)
         assert(results[0]['Max_F3'] == 2500)
         assert(round(results[0]['Mean_F3'], 2) == 2500)
+
 
 def test_export_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:

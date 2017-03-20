@@ -101,6 +101,7 @@ class BaseParser(object):
                     end = None
                     for rl in speaker_levels:
                         if types_only and not rl.type_property:
+                            annotation_types[k].token_property_keys.add(rl.name)
                             continue
                         if rl.subannotation:
                             continue
@@ -126,10 +127,13 @@ class BaseParser(object):
                             elif rl[i].value is not None:
                                 label = rl[i].value
                         elif rl.type_property:
+                            if False and not types_only:
+                                print(rl.name, 'is type!')
                             type_properties[rl.name] = rl[i].value
                         else:
+                            if False and not types_only:
+                                print(rl.name, 'is token!')
                             token_properties[rl.name] = rl[i].value
-
                     a = PGAnnotation(label, begin, end)
                     a.type_properties.update(type_properties)
                     a.token_properties.update(token_properties)

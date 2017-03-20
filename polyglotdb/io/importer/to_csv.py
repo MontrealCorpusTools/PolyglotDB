@@ -54,7 +54,6 @@ def data_to_graph_csvs(corpus_context, data):
             path = os.path.join(directory,'{}_{}.csv'.format(s,x))
             rfs[s, x] = open(path, 'a', newline = '', encoding = 'utf8')
             rel_writers[s, x] = csv.DictWriter(rfs[s, x], token_headers[x], delimiter = ',')
-
     subanno_files = {}
     subanno_writers = {}
     for sp in data.speakers:

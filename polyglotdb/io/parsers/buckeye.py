@@ -15,6 +15,13 @@ FILLERS = set(['uh','um','okay','yes','yeah','oh','heh','yknow','um-huh',
 
 from ..helper import find_wav_path
 
+def contained_by(word, phone):
+    phone_midpoint = phone[1] + (phone[2] - phone[1]) / 2
+    word_midpoint = word['begin'] + (word['end'] - word['begin']) /2
+    if (phone_midpoint > word['begin'] and phone_midpoint < word['end']) or (word_midpoint > phone[1] and word_midpoint < phone[2]):
+        return True
+    return False
+
 class BuckeyeParser(BaseParser):
     '''
     Parser for the Buckeye corpus.
@@ -95,25 +102,30 @@ class BuckeyeParser(BaseParser):
                     self.call_back(cur)
             annotations = {}
             word = w['spelling']
+            if word[0] == '{':
+                continue
             beg = w['begin']
             end = w['end']
 
             found = []
-            if w['surface_transcription'] is None:
+
+            while len(phones):
+                if contained_by(w, phones[0]):
+                    cur_phone = phones.pop(0)
+                    found.append(cur_phone)
+                elif phones[0][0][0] == '{' or phones[0][1] < beg:
+                    phones.pop(0)
+                else:
+                    break
+            if not found:
                 ba = ('?', w['begin'], w['end'])
                 found.append(ba)
             else:
-                expected = w['surface_transcription']
-                while len(found) < len(expected):
-                    cur_phone = phones.pop(0)
-                    if phone_match(cur_phone[0], expected[len(found)]) \
-                        and cur_phone[2] >= beg and cur_phone[1] <= end:
-                            found.append(cur_phone)
-
-                    if not len(phones) and i < len(words)-1:
-                        print(found)
-                        print(BuckeyeParseError(word_path, [w]))
-                        return
+                beg = found[0][1]
+                if end != found[-1][2]:
+                    end = found[-1][2]
+                    if i != len(words) - 1:
+                        words[i+1]['begin'] = end
             self.annotation_types[0].add([(word, beg, end)])
             if w['transcription'] is None:
                 w['transcription'] = '?'
@@ -164,7 +176,7 @@ def read_phones(path):
             except ValueError: # Missing phone label
                 print('Warning: no label found in line: \'{}\''.format(l))
                 continue
-            label = sys.intern(label_pattern.split(line[1])[0])
+            label = label_pattern.split(line[1])[0]
             output.append((label, begin, end))
             begin = end
     return output
@@ -195,7 +207,7 @@ def read_words(path):
             line = line_pattern.split(l.strip())
             try:
                 end = float(line[0])
-                word = sys.intern(line[1])
+                word = line[1].replace( ' ', '_')
                 if word[0] != "<" and word[0] != "{":
                     citation = line[2]
                     phonetic = line[3].split(' ')

@@ -117,6 +117,7 @@ class PathAnnotation(AnnotationAttribute):
                 raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
         return PathAttribute(self, key, type)
 
+
 class SubPathAnnotation(PathAnnotation):
     subquery_template = '''MATCH ({def_path_type_alias})<-[:is_a]-({def_path_alias})-[:contained_by*]->({alias})
         {where_string}

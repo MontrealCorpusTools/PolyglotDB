@@ -46,7 +46,10 @@ def save_results(results, path, header = None, mode = 'w'):
         if mode != 'a':
             writer.writeheader()
         for line in results:
-            line = {k: make_safe(line[k], '/') for k in header}
+            try:
+                line = {k: make_safe(line[k], '/') for k in header}
+            except KeyError:
+                continue
             writer.writerow(line)
 
 def export_corpus_csv(corpus, path,

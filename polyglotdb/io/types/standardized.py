@@ -8,6 +8,8 @@ class PGAnnotation(object):
     def __init__(self, label, begin, end):
         self.id = uuid1()
         self.label = label
+        if begin > end:
+            begin, end = end, begin
         self.begin = begin
         self.end = end
         try:
@@ -152,7 +154,7 @@ class PGAnnotationType(object):
                 t = type(v)
             self.type_properties.add((k, t))
         self.token_property_keys.update(annotation.token_keys())
-        self.token_properties.update((k, type(v)) for k,v in annotation.token_properties.items())
+        self.token_properties.update((k, type(v)) for k,v in annotation.token_properties.items() if v is not None)
 
     @property
     def speakers(self):
@@ -196,9 +198,6 @@ class PGAnnotationType(object):
                 if ind != 0:
                     ind -= 500
                 lookup_list = self._list[ind:]
-                #print('didn\'t break')
-            #print(sorted(self._lookup_dict.items()))
-            #print(prev, ind, time, timepoint, len(lookup_list), lookup_list[0].begin, lookup_list[-1].end)
         else:
             lookup_list = self._list
         if speaker is None:
