@@ -287,7 +287,6 @@ class AudioContext(object):
             if relative_time:
                 s = (s - begin) / (end - begin)
             listing.append(tuple([s] + [r[x] for x in formant_names]))
-        print(listing)
         return listing
 
     def get_pitch(self, discourse, begin, end, relative=False, relative_time=False, **kwargs):
@@ -504,7 +503,6 @@ class AudioContext(object):
             source = self.config.pitch_algorithm
         query = '''select "F0" from "pitch" WHERE "discourse" = '{}' AND "source" = '{}' LIMIT 1;'''.format(discourse,
                                                                                                             source)
-        print(query)
         result = client.query(query)
         if len(result) == 0:
             return False
