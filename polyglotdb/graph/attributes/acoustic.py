@@ -300,7 +300,7 @@ class FormantAttribute(AcousticAttribute):
             data = {}
             results = corpus.get_formants(discourse, begin, end, channel=channel, relative = self.relative, num_points=0)
             for line in results:
-                data[line[0]] = {self.output_columns[i]: line[i] for i in range(3)}
+                data[line[0]] = {self.output_columns[i]: line[i+1] for i in range(3)}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
             self.cached_data = data
         return data

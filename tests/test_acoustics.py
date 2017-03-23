@@ -48,12 +48,11 @@ def test_query_pitch(acoustic_utt_config):
         q = q.columns(g.phone.label, g.phone.pitch.track)
         print(q.cypher())
         results = q.all()
-
+        assert(len(results[0].track.items()) == len(expected_pitch.items()))
         print(sorted(expected_pitch.items()))
         print(sorted(results[0].track.items()))
         for k, v in results[0].track.items():
             assert(round(v['F0'],1) == expected_pitch[k]['F0'])
-
 
 def test_query_intensity(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:

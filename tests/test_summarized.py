@@ -43,7 +43,7 @@ def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as g:
         res = g.get_measure('duration','mean','phone')
         print(res)
-        assert(len(res)==16)
+        assert(len(res)==17)
         dx,eh= 0,0
         for i,r in enumerate(res):
             if r[0] == 'dx':
@@ -177,7 +177,7 @@ def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir)
         g.encode_syllables()
         res = g.get_measure('duration','mean','syllable', True)
         print(res)
-        assert(len(res) == 11)
+        assert(len(res) == 12)
         for i, r in enumerate(res):
             if r[1] == 'dh.ae.s':
                 break

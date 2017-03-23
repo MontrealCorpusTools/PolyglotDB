@@ -111,7 +111,7 @@ def generate_base_pitch_function(corpus_context, signal=False, gender=None):
             ASPitch = ASPitch_signal
         else:
             ASPitch = ASPitch_file
-        pitch_function = partial(ASPitch, window_shape = 'gaussian')
+        pitch_function = partial(ASPitch)
     pitch_function = partial(pitch_function, time_step = time_step, min_pitch = min_pitch, max_pitch = max_pitch)
     return pitch_function
 

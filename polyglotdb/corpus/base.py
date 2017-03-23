@@ -6,6 +6,7 @@ import pickle
 import logging
 import time
 from collections import defaultdict
+from decimal import Decimal
 
 import sqlalchemy
 import py2neo
@@ -134,6 +135,9 @@ class BaseContext(object):
         raises error
 
         """
+        for k, v in parameters.items():
+            if isinstance(v, Decimal):
+                parameters[k] = float(v)
         try:
             return self.graph.run(statement, **parameters)
         except (py2neo.packages.httpstream.http.SocketError,
