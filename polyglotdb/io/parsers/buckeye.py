@@ -1,4 +1,3 @@
-
 import os
 import re
 import sys
@@ -10,17 +9,20 @@ from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
 
 from .speaker import FilenameSpeakerParser
 
-FILLERS = set(['uh','um','okay','yes','yeah','oh','heh','yknow','um-huh',
-                'uh-uh','uh-huh','uh-hum','mm-hmm'])
+FILLERS = set(['uh', 'um', 'okay', 'yes', 'yeah', 'oh', 'heh', 'yknow', 'um-huh',
+               'uh-uh', 'uh-huh', 'uh-hum', 'mm-hmm'])
 
 from ..helper import find_wav_path
 
+
 def contained_by(word, phone):
     phone_midpoint = phone[1] + (phone[2] - phone[1]) / 2
-    word_midpoint = word['begin'] + (word['end'] - word['begin']) /2
-    if (phone_midpoint > word['begin'] and phone_midpoint < word['end']) or (word_midpoint > phone[1] and word_midpoint < phone[2]):
+    word_midpoint = word['begin'] + (word['end'] - word['begin']) / 2
+    if (phone_midpoint > word['begin'] and phone_midpoint < word['end']) or (
+            word_midpoint > phone[1] and word_midpoint < phone[2]):
         return True
     return False
+
 
 class BuckeyeParser(BaseParser):
     '''
@@ -43,13 +45,13 @@ class BuckeyeParser(BaseParser):
     _extensions = ['.words']
 
     def __init__(self, annotation_types, hierarchy,
-                    stop_check = None, call_back = None):
+                 stop_check=None, call_back=None):
         super(BuckeyeParser, self).__init__(annotation_types, hierarchy,
-                    make_transcription = False, make_label = False,
-                    stop_check = stop_check, call_back = call_back)
+                                            make_transcription=False, make_label=False,
+                                            stop_check=stop_check, call_back=call_back)
         self.speaker_parser = FilenameSpeakerParser(3)
 
-    def parse_discourse(self, word_path, types_only = False):
+    def parse_discourse(self, word_path, types_only=False):
         '''
         Parse a Buckeye file for later importing.
 
@@ -125,7 +127,7 @@ class BuckeyeParser(BaseParser):
                 if end != found[-1][2]:
                     end = found[-1][2]
                     if i != len(words) - 1:
-                        words[i+1]['begin'] = end
+                        words[i + 1]['begin'] = end
             self.annotation_types[0].add([(word, beg, end)])
             if w['transcription'] is None:
                 w['transcription'] = '?'
@@ -162,7 +164,7 @@ def read_phones(path):
 
     """
     output = []
-    with open(path,'r') as file_handle:
+    with open(path, 'r') as file_handle:
         header_pattern = re.compile("#\r{0,1}\n")
         line_pattern = re.compile("\s+\d{3}\s+")
         label_pattern = re.compile(" {0,1};| {0,1}\+")
@@ -173,13 +175,14 @@ def read_phones(path):
             line = line_pattern.split(l.strip())
             try:
                 end = float(line[0])
-            except ValueError: # Missing phone label
+            except ValueError:  # Missing phone label
                 print('Warning: no label found in line: \'{}\''.format(l))
                 continue
             label = label_pattern.split(line[1])[0]
             output.append((label, begin, end))
             begin = end
     return output
+
 
 def read_words(path):
     """
@@ -198,8 +201,8 @@ def read_words(path):
     """
     output = []
     misparsed_lines = []
-    with open(path,'r') as file_handle:
-        f = re.split(r"#\r{0,1}\n",file_handle.read())[1]
+    with open(path, 'r') as file_handle:
+        f = re.split(r"#\r{0,1}\n", file_handle.read())[1]
         line_pattern = re.compile("; | \d{3} ")
         begin = 0.0
         flist = f.splitlines()
@@ -207,7 +210,7 @@ def read_words(path):
             line = line_pattern.split(l.strip())
             try:
                 end = float(line[0])
-                word = line[1].replace( ' ', '_')
+                word = line[1].replace(' ', '_')
                 if word[0] != "<" and word[0] != "{":
                     citation = line[2]
                     phonetic = line[3].split(' ')
@@ -224,16 +227,17 @@ def read_words(path):
             except IndexError:
                 misparsed_lines.append(l)
                 continue
-            line = {'spelling':word,'begin':begin,'end':end,
-                    'transcription':citation,'surface_transcription':phonetic,
-                    'category':category}
+            line = {'spelling': word, 'begin': begin, 'end': end,
+                    'transcription': citation, 'surface_transcription': phonetic,
+                    'category': category}
             output.append(line)
             begin = end
     if misparsed_lines:
-        raise(BuckeyeParseError(path, misparsed_lines))
+        raise (BuckeyeParseError(path, misparsed_lines))
     return output
 
-def phone_match(one,two):
+
+def phone_match(one, two):
     """ matches phone one to phone two, returns true if phone one is phone two or is part of phone two"""
     if one != two and one not in two:
         return False

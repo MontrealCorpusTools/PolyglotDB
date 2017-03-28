@@ -8,6 +8,7 @@ from ..discoursedata import DiscourseData
 
 from ...exceptions import ParseError
 
+
 class BaseParser(object):
     '''
     Base parser, extend this class for new parsers.
@@ -27,9 +28,10 @@ class BaseParser(object):
         Function to output progress messages
     '''
     _extensions = ['.txt']
-    def __init__(self, annotation_types, hierarchy, make_transcription = True,
-                    make_label = False,
-                    stop_check = None, call_back = None):
+
+    def __init__(self, annotation_types, hierarchy, make_transcription=True,
+                 make_label=False,
+                 stop_check=None, call_back=None):
         self.speaker_parser = None
         self.annotation_types = annotation_types
         self.hierarchy = hierarchy
@@ -59,14 +61,14 @@ class BaseParser(object):
             return False
         return True
 
-    def _parse_annotations(self, types_only = False):
+    def _parse_annotations(self, types_only=False):
         annotation_types = {}
         segment_type = None
         for k, v in self.hierarchy.items():
             annotation_types[k] = PGAnnotationType(k)
             annotation_types[k].supertype = v
             if 'word' in k:
-                annotation_types[k].is_word = True # FIXME?
+                annotation_types[k].is_word = True  # FIXME?
                 self.hierarchy.type_properties['word'] = set()
                 self.hierarchy.token_properties['word'] = set()
             if k not in self.hierarchy.values() and not annotation_types[k].is_word:
@@ -91,7 +93,8 @@ class BaseParser(object):
                 if lengths[speaker] == 0:
                     lengths[speaker] = len(inputlevel)
                 elif lengths[speaker] != len(inputlevel):
-                    raise(ParseError('Annotations sharing a linguistic type and a speaker don\'t have a consistent length.'))
+                    raise (
+                    ParseError('Annotations sharing a linguistic type and a speaker don\'t have a consistent length.'))
             for speaker, speaker_levels in relevent_levels.items():
                 for i in range(lengths[speaker]):
                     type_properties = {}
@@ -147,7 +150,7 @@ class BaseParser(object):
                     if not rl.subannotation:
                         continue
                     for sub in rl:
-                        annotation = annotation_types[k].lookup(sub.midpoint, speaker = speaker)
+                        annotation = annotation_types[k].lookup(sub.midpoint, speaker=speaker)
                         if isinstance(sub, Tobi):
                             a = PGSubAnnotation(sub.label, 'tone', sub.begin, sub.end)
                         elif isinstance(sub, BreakIndex):
@@ -165,20 +168,20 @@ class BaseParser(object):
                 if st is not None:
                     annotation_types[st].optimize_lookups()
                     for a in annotation_types[k]:
-                        super_annotation = annotation_types[st].lookup(a.midpoint, speaker = a.speaker)
+                        super_annotation = annotation_types[st].lookup(a.midpoint, speaker=a.speaker)
                         try:
                             a.super_id = super_annotation.id
                         except AttributeError:
                             pass
-                            #raise 
+                            # raise
             if self.make_transcription and segment_type is not None and v.is_word:
                 v.type_property_keys.update(['transcription'])
                 annotation_types[segment_type].optimize_lookups()
                 for a in annotation_types[k]:
-                    transcription = annotation_types[segment_type].lookup_range(a.begin, a.end, speaker = a.speaker)
+                    transcription = annotation_types[segment_type].lookup_range(a.begin, a.end, speaker=a.speaker)
                     a.type_properties['transcription'] = [x.label for x in transcription]
-                v.type_properties |=  set([(tuple(['transcription',type("string")]))])
-                self.hierarchy.type_properties['word'] |=  set([(tuple(['transcription',type("string")]))])
+                v.type_properties |= set([(tuple(['transcription', type("string")]))])
+                self.hierarchy.type_properties['word'] |= set([(tuple(['transcription', type("string")]))])
             if self.make_label and 'transcription' in v.type_property_keys and v.is_word:
                 for a in annotation_types[k]:
                     if a.label is None:
@@ -203,7 +206,7 @@ class BaseParser(object):
         data.types : list
             a list of data types
         """
-        data = self.parse_discourse(path, types_only = True)
+        data = self.parse_discourse(path, types_only=True)
         return_dict = {}
         return_dict['types'], return_dict['type_headers'] = data.types(corpus_name)
         return_dict['token_headers'] = data.token_headers
@@ -211,7 +214,7 @@ class BaseParser(object):
         return_dict['speakers'] = data.speakers
         return return_dict
 
-    def parse_discourse(self, name, types_only = False):
+    def parse_discourse(self, name, types_only=False):
         '''
         Parse annotations for later importing.
 

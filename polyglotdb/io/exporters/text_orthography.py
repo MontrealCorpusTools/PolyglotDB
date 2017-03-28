@@ -1,7 +1,5 @@
-
-
 def export_discourse_spelling(corpus_context, discourse,
-                            path, words_per_line = 10):
+                              path, words_per_line=10):
     """
     Export an orthography discourse to a text file
 
@@ -23,7 +21,7 @@ def export_discourse_spelling(corpus_context, discourse,
         for i, wt in enumerate(discourse):
             count += 1
             f.write(wt.label)
-            if i != len(discourse) -1:
+            if i != len(discourse) - 1:
                 if words_per_line > 0 and count <= words_per_line:
                     f.write(' ')
                 else:

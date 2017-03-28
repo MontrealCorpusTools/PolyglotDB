@@ -1,4 +1,3 @@
-
 from polyglotdb.structure import Hierarchy
 
 from ..types.parsing import *
@@ -23,7 +22,7 @@ def inspect_labbcat(path):
     """
 
     annotation_types = [OrthographyTier('transcrip', 'word'),
-                            OrthographyTier('segment', 'phone')]
+                        OrthographyTier('segment', 'phone')]
 
     annotation_types[0].label = True
     annotation_types[1].label = True

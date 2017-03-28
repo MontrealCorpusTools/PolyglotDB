@@ -1,15 +1,14 @@
-
-
 from polyglotdb.io import save_results
 
 from polyglotdb.exceptions import GraphQueryError
 
 from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
-                            SubAnnotation as QuerySubAnnotation,
-                            SpeakerAnnotation, DiscourseAnnotation,
-                            Track)
+                         SubAnnotation as QuerySubAnnotation,
+                         SpeakerAnnotation, DiscourseAnnotation,
+                         Track)
 
 from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
+
 
 def hydrate_model(r, to_find, to_find_type, to_preload, corpus):
     a = LinguisticAnnotation(corpus)
@@ -46,7 +45,7 @@ def hydrate_model(r, to_find, to_find_type, to_preload, corpus):
             sub_types = r[pre.path_type_alias]
             subbed = []
             subannotations = r[pre.subannotation_alias]
-            for i,e in enumerate(subs):
+            for i, e in enumerate(subs):
                 pa = LinguisticAnnotation(corpus)
                 pa.node = e
                 pa.type_node = sub_types[i]
@@ -61,6 +60,7 @@ def hydrate_model(r, to_find, to_find_type, to_preload, corpus):
                 subbed.append(pa)
             a._subs[pre.sub.type] = subbed
     return a
+
 
 class QueryResults(object):
     def __init__(self, query):
@@ -80,7 +80,7 @@ class QueryResults(object):
             self._to_find = None
             self._to_find_type = None
             self._acoustic_columns = query._acoustic_columns
-            self.columns = [x.output_alias.replace('`','') for x in query._columns]
+            self.columns = [x.output_alias.replace('`', '') for x in query._columns]
             for x in query._acoustic_columns:
                 if isinstance(x, Track):
                     self.num_tracks += 1
@@ -93,20 +93,19 @@ class QueryResults(object):
             self._to_find_type = query.to_find.type_alias
             self.columns = None
 
-
     def __getitem__(self, key):
         if key < 0:
-            raise(IndexError('Results do not support negative indexing.'))
+            raise (IndexError('Results do not support negative indexing.'))
         cur_cache_len = len(self.cache)
         if key < cur_cache_len:
             return self.cache[key]
-        self._cache_cursor(up_to = key)
+        self._cache_cursor(up_to=key)
         cur_cache_len = len(self.cache)
         if key < cur_cache_len:
             return self.cache[key]
-        raise(IndexError(key))
+        raise (IndexError(key))
 
-    def _cache_cursor(self, up_to = None):
+    def _cache_cursor(self, up_to=None):
         for i, c in enumerate(self.cursors):
             if i in self.evaluated:
                 continue
@@ -133,7 +132,7 @@ class QueryResults(object):
     def next(self, number):
         next_ind = number + self.current_ind
         if next_ind > len(self.cache):
-            self._cache_cursor(up_to = next_ind)
+            self._cache_cursor(up_to=next_ind)
         to_return = self.cache[self.current_ind:next_ind]
         self.current_ind = next_ind
         return to_return
@@ -162,9 +161,9 @@ class QueryResults(object):
                 discourse = r[a.discourse_alias]
                 channel = self.corpus.census.lookup_channel(r[a.speaker_alias], discourse)
                 t = a.hydrate(self.corpus, discourse,
-                            r[a.begin_alias],
-                            r[a.end_alias],
-                            channel)
+                              r[a.begin_alias],
+                              r[a.end_alias],
+                              channel)
                 if a.attribute is not None and a.attribute.label not in cache:
                     cache[a.attribute.label] = a.attribute.cached_settings, a.attribute.cached_data
                 elif a.label in cache:
@@ -201,24 +200,24 @@ class QueryResults(object):
         for line in self:
             baseline = {k: line[k] for k in header if k not in self.track_columns}
             if line.track:
-                for k,v in sorted(line.track.items()):
+                for k, v in sorted(line.track.items()):
                     line = {}
                     line.update(baseline)
-                    line.update({'time':k})
+                    line.update({'time': k})
                     line.update(v)
                     yield line
             else:
                 yield baseline
 
-
     def to_csv(self, path):
         if self.num_tracks > 1:
-            raise(GraphQueryError('Only one track attribute can currently be exported to csv.'))
-        save_results(self.rows_for_csv(), path, header = self.columns)
+            raise (GraphQueryError('Only one track attribute can currently be exported to csv.'))
+        save_results(self.rows_for_csv(), path, header=self.columns)
 
     def __len__(self):
         self._cache_cursor()
         return len(self.cache)
+
 
 class Record(object):
     def __init__(self, result):

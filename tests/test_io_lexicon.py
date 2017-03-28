@@ -1,8 +1,8 @@
-
 import pytest
 import os
 
 from polyglotdb import CorpusContext
+
 
 def test_enrich_lexicon(timed_config, lexicon_test_data):
     with CorpusContext(timed_config) as c:
@@ -12,4 +12,4 @@ def test_enrich_lexicon(timed_config, lexicon_test_data):
 
         results = q.all()
 
-        assert(results[0].label == 'cute')
+        assert (results[0].label == 'cute')

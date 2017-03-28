@@ -1,5 +1,4 @@
-
-def export_discourse_transcription(discourse, path, trans_delim = '.', single_line = False):
+def export_discourse_transcription(discourse, path, trans_delim='.', single_line=False):
     """
     Export an transcribed discourse to a text file
 
@@ -20,10 +19,9 @@ def export_discourse_transcription(discourse, path, trans_delim = '.', single_li
         for i, wt in enumerate(discourse):
             count += 1
             f.write(trans_delim.join(wt.transcription))
-            if i != len(discourse) -1:
+            if i != len(discourse) - 1:
                 if not single_line and count <= 10:
                     f.write(' ')
                 else:
                     count = 0
                     f.write('\n')
-

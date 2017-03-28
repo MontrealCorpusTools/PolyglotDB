@@ -1,8 +1,8 @@
-
 from .elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
-                        LtClauseElement, LteClauseElement, NotEqualClauseElement)
+                       LtClauseElement, LteClauseElement, NotEqualClauseElement)
 
 from .attributes import AggregateAttribute, PathAttribute
+
 
 class AggregateFunction(object):
     function = ''
@@ -10,7 +10,8 @@ class AggregateFunction(object):
     collection_templates = {'sum': 'reduce(count = 0, n in {property} | count + n)',
                             'avg': 'reduce(count = 0, n in {property} | count + n) / toFloat(size({property}))',
                             'count': 'size({property})'}
-    def __init__(self, attribute = None):
+
+    def __init__(self, attribute=None):
         self.attribute = attribute
         self.output_label = None
 
@@ -84,7 +85,6 @@ class AggregateFunction(object):
         else:
             return self.output_label
 
-
     def aliased_for_output(self):
         """
         Returns
@@ -129,13 +129,13 @@ class AggregateFunction(object):
         """
         if not self.collapsing:
             return self.collection_templates[self.function].format(
-                                property = self.attribute.for_cypher())
+                property=self.attribute.for_cypher())
         elif self.attribute is not None:
             element = self.attribute.for_cypher()
         else:
             element = '*'
-        return self.template.format(function = self.function,
-                                property = element)
+        return self.template.format(function=self.function,
+                                    property=element)
 
     def __eq__(self, other):
         return EqualClauseElement(AggregateAttribute(self), other)
@@ -155,28 +155,36 @@ class AggregateFunction(object):
     def __le__(self, other):
         return LteClauseElement(AggregateAttribute(self), other)
 
+
 class Average(AggregateFunction):
     function = 'avg'
+
 
 class Count(AggregateFunction):
     function = 'count'
 
+
 class Sum(AggregateFunction):
     function = 'sum'
+
 
 class Stdev(AggregateFunction):
     function = 'stdev'
 
+
 class Max(AggregateFunction):
     function = 'max'
+
 
 class Min(AggregateFunction):
     function = 'min'
 
+
 class Quantile(AggregateFunction):
     function = 'percentileDisc'
     template = '{function}({property}, {percentile})'
-    def __init__(self, attribute, percentile = 0.5):
+
+    def __init__(self, attribute, percentile=0.5):
         self.attribute = attribute
         self.percentile = percentile
         self.output_label = None
@@ -188,14 +196,16 @@ class Quantile(AggregateFunction):
         if self.attribute is not None:
             element = self.attribute.for_cypher()
         else:
-            raise(AttributeError)
-        return self.template.format(function = self.function,
-                                percentile = self.percentile,
-                                property = element)
+            raise (AttributeError)
+        return self.template.format(function=self.function,
+                                    percentile=self.percentile,
+                                    property=element)
+
 
 class Median(Quantile):
     def __init__(self, attribute):
         Quantile.__init__(self, attribute, 0.5)
+
 
 class InterquartileRange(AggregateFunction):
     template = 'percentileDisc({property}, 0.75) - percentileDisc({property}, 0.25)'
@@ -207,5 +217,5 @@ class InterquartileRange(AggregateFunction):
         if self.attribute is not None:
             element = self.attribute.for_cypher()
         else:
-            raise(AttributeError)
-        return self.template.format(property = element)
+            raise (AttributeError)
+        return self.template.format(property=element)

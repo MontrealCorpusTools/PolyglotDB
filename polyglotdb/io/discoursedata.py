@@ -1,4 +1,3 @@
-
 class DiscourseData(object):
     """
     Class for collecting information about a discourse to be loaded
@@ -25,13 +24,14 @@ class DiscourseData(object):
         Path to sound file if it exists
 
     """
+
     def __init__(self, name, annotation_types, hierarchy):
         self.name = name
         self.data = annotation_types
         self.speaker_channel_mapping = {}
 
         self.segment_type = None
-        for k,v in self.data.items():
+        for k, v in self.data.items():
             if k not in hierarchy.values() and not v.is_word:
                 self.segment_type = k
         self.hierarchy = hierarchy
@@ -59,12 +59,12 @@ class DiscourseData(object):
             the ordered hierarchy
         """
         ats = []
-        for k,v in self.hierarchy.items():
+        for k, v in self.hierarchy.items():
             if v is None:
                 ats.append(k)
                 break
         while len(ats) < len(self.hierarchy.keys()):
-            for k,v in self.hierarchy.items():
+            for k, v in self.hierarchy.items():
                 if v == ats[-1]:
                     ats.append(k)
                     break

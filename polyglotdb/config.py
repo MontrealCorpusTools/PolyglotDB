@@ -1,10 +1,10 @@
-
 import os
 import sys
 import logging
 import socket
 
 BASE_DIR = os.path.expanduser('~/Documents/SCT')
+
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
     l = logging.getLogger(logger_name)
@@ -19,6 +19,7 @@ def setup_logger(logger_name, log_file, level=logging.INFO):
     l.addHandler(fileHandler)
     l.addHandler(streamHandler)
     l.info('---------INIT-----------')
+
 
 class CorpusConfig(object):
     """
@@ -49,6 +50,7 @@ class CorpusConfig(object):
         Base directory to store information and temporary files for the corpus
         defaults to "Documents/SCT" under the current user's home directory
     """
+
     def __init__(self, corpus_name, **kwargs):
         self.corpus_name = corpus_name
         self.acoustic_user = None
@@ -78,7 +80,7 @@ class CorpusConfig(object):
         self.formant_algorithm = 'acousticsim'
         self.time_sampling = 0.01
 
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             setattr(self, k, v)
 
     def temporary_directory(self, name):
@@ -95,19 +97,22 @@ class CorpusConfig(object):
             Full path to temporary directory
         """
         temp = os.path.join(self.temp_dir, name)
-        os.makedirs(temp, exist_ok = True)
+        os.makedirs(temp, exist_ok=True)
         return temp
 
     def init(self):
 
         if self.corpus_name:
-            os.makedirs(self.log_dir, exist_ok = True)
-            os.makedirs(self.temp_dir, exist_ok = True)
-            os.makedirs(self.audio_dir, exist_ok = True)
+            os.makedirs(self.log_dir, exist_ok=True)
+            os.makedirs(self.temp_dir, exist_ok=True)
+            os.makedirs(self.audio_dir, exist_ok=True)
         return
-        setup_logger('{}_loading'.format(self.corpus_name), os.path.join(self.log_dir, 'load.log'), level = self.log_level)
-        setup_logger('{}_querying'.format(self.corpus_name), os.path.join(self.log_dir, 'query.log'), level = self.log_level)
-        setup_logger('{}_acoustics'.format(self.corpus_name), os.path.join(self.log_dir, 'acoustics.log'), level = self.log_level)
+        setup_logger('{}_loading'.format(self.corpus_name), os.path.join(self.log_dir, 'load.log'),
+                     level=self.log_level)
+        setup_logger('{}_querying'.format(self.corpus_name), os.path.join(self.log_dir, 'query.log'),
+                     level=self.log_level)
+        setup_logger('{}_acoustics'.format(self.corpus_name), os.path.join(self.log_dir, 'acoustics.log'),
+                     level=self.log_level)
 
     @property
     def graph_hostname(self):
@@ -116,8 +121,8 @@ class CorpusConfig(object):
     @property
     def acoustic_conncetion_kwargs(self):
         kwargs = {'host': self.acoustic_host,
-                'port': self.acoustic_port,
-                'database': self.corpus_name}
+                  'port': self.acoustic_port,
+                  'database': self.corpus_name}
         if self.acoustic_user is not None:
             kwargs['username'] = self.acoustic_user
         if self.acoustic_password is not None:
@@ -127,9 +132,9 @@ class CorpusConfig(object):
     @property
     def graph_connection_kwargs(self):
         kwargs = {'host': self.graph_host,
-                    'http_port':int(self.graph_port),
-                    'bolt_port': self.bolt_port,
-                    'bolt': True}
+                  'http_port': int(self.graph_port),
+                  'bolt_port': self.bolt_port,
+                  'bolt': True}
 
         if self.graph_user is not None:
             kwargs['user'] = self.graph_user
@@ -147,6 +152,7 @@ class CorpusConfig(object):
     @property
     def sql_connection_string(self):
         return '{}:///{}.db'.format(self.engine, self.db_path)
+
 
 def is_valid_ipv4_address(address):
     try:

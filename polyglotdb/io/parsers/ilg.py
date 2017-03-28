@@ -1,10 +1,9 @@
-
 import os
 import re
 from collections import Counter
 
 from polyglotdb.exceptions import (DelimiterError, ILGError, ILGLinesMismatchError,
-                                ILGWordMismatchError)
+                                   ILGWordMismatchError)
 from polyglotdb.structure import Hierarchy
 
 from ..helper import guess_type, ilg_text_to_lines
@@ -12,6 +11,7 @@ from ..helper import guess_type, ilg_text_to_lines
 from ..discoursedata import DiscourseData
 
 from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
+
 
 class IlgParser(BaseParser):
     '''
@@ -26,14 +26,15 @@ class IlgParser(BaseParser):
     call_back : callable, optional
         Function to output progress messages
     '''
-    def __init__(self, annotation_types,
-                    stop_check = None, call_back = None):
-        super(IlgParser, self).__init__(annotation_types,
-                    Hierarchy({'word': None}), make_transcription = False,
-                    make_label = True,
-                    stop_check = stop_check, call_back = call_back)
 
-    def parse_discourse(self, path, types_only = False):
+    def __init__(self, annotation_types,
+                 stop_check=None, call_back=None):
+        super(IlgParser, self).__init__(annotation_types,
+                                        Hierarchy({'word': None}), make_transcription=False,
+                                        make_label=True,
+                                        stop_check=stop_check, call_back=call_back)
+
+    def parse_discourse(self, path, types_only=False):
         '''
         Parse an ILG file for later importing.
 
@@ -50,11 +51,11 @@ class IlgParser(BaseParser):
         lines = ilg_text_to_lines(path)
 
         if len(lines) % len(self.annotation_types) != 0:
-            raise(ILGLinesMismatchError(lines))
+            raise (ILGLinesMismatchError(lines))
 
         if self.call_back is not None:
             self.call_back('Processing file...')
-            self.call_back(0,len(lines))
+            self.call_back(0, len(lines))
         index = 0
         name = os.path.splitext(os.path.split(path)[1])[0]
 
@@ -81,12 +82,12 @@ class IlgParser(BaseParser):
             for line_ind, annotation_type in enumerate(self.annotation_types):
                 if annotation_type.ignored:
                     continue
-                actual_line_ind, line = lines[index+line_ind]
+                actual_line_ind, line = lines[index + line_ind]
                 if len(cur_line.values()) != 0 and len(line) not in [len(x) for x in cur_line.values()]:
                     mismatch = True
 
                 cur_line[line_ind] = line
-                self.annotation_types[line_ind].add(((x, num_annotations + j)  for j, x in enumerate(line)))
+                self.annotation_types[line_ind].add(((x, num_annotations + j) for j, x in enumerate(line)))
             if mismatch:
                 start_line = lines[index][0]
                 end_line = start_line + len(self.annotation_types)
@@ -96,7 +97,7 @@ class IlgParser(BaseParser):
             num_annotations += len(line)
 
         if len(mismatching_lines) > 0:
-            raise(ILGWordMismatchError(mismatching_lines))
+            raise (ILGWordMismatchError(mismatching_lines))
 
         pg_annotations = self._parse_annotations(types_only)
 
@@ -104,4 +105,3 @@ class IlgParser(BaseParser):
         for a in self.annotation_types:
             a.reset()
         return data
-

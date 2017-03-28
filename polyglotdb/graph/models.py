@@ -6,11 +6,11 @@ from polyglotdb.exceptions import GraphModelError
 
 from .helper import key_for_cypher, value_for_cypher
 
-class BaseAnnotation(object):
 
+class BaseAnnotation(object):
     def load(self, id):
         """ raise NotImplementedError"""
-        raise(NotImplementedError)
+        raise (NotImplementedError)
 
     @property
     def node(self):
@@ -61,7 +61,7 @@ class BaseAnnotation(object):
 
 
 class LinguisticAnnotation(BaseAnnotation):
-    def __init__(self, corpus_context = None):
+    def __init__(self, corpus_context=None):
         self._corpus_context = corpus_context
         self._unsaved = False
         self._type = None
@@ -108,12 +108,12 @@ class LinguisticAnnotation(BaseAnnotation):
         f = self._discourse
         if f is not None:
             f.corpus_context = context
-        for k,v in self._supers.items():
+        for k, v in self._supers.items():
             v.corpus_context = context
-        for k,v in self._subs.items():
+        for k, v in self._subs.items():
             for t in v:
                 t.corpus_context = context
-        for k,v in self._subannotations.items():
+        for k, v in self._subannotations.items():
             for t in v:
                 t.corpus_context = context
 
@@ -122,21 +122,21 @@ class LinguisticAnnotation(BaseAnnotation):
 
     @property
     def properties(self):
-        """ Returns sorted untion of node property keys and type_node property keys """ 
+        """ Returns sorted untion of node property keys and type_node property keys """
         return sorted(set(self._node.properties.keys()) | set(self._type_node.properties.keys()))
 
     def __getattr__(self, key):
         if self.corpus_context is None:
-            raise(GraphModelError('This object is not bound to a corpus context.'))
+            raise (GraphModelError('This object is not bound to a corpus context.'))
         if self._id is None:
-            raise(GraphModelError('This object has not been loaded with an id yet.'))
+            raise (GraphModelError('This object has not been loaded with an id yet.'))
         if key == 'previous':
             if self._previous == 'empty':
                 return None
             if self._previous is None:
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (previous_type)<-[:is_a]-(previous_token)-[:precedes]->(token {id: {id}})
-                        RETURN previous_token, previous_type''', id = self._id))
+                        RETURN previous_token, previous_type''', id=self._id))
                 if len(res) == 0:
                     self._previous = 'empty'
                     return None
@@ -150,7 +150,7 @@ class LinguisticAnnotation(BaseAnnotation):
             if self._following is None:
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (following_type)<-[:is_a]-(following_token)<-[:precedes]-(token {id: {id}})
-                            RETURN following_token, following_type''', id = self._id))
+                            RETURN following_token, following_type''', id=self._id))
                 if len(res) == 0:
                     self._following = 'empty'
                     return None
@@ -164,7 +164,7 @@ class LinguisticAnnotation(BaseAnnotation):
             if self._speaker is None:
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (speaker:Speaker)<-[:spoken_by]-(token {id: {id}})
-                        RETURN speaker''', id = self._id))
+                        RETURN speaker''', id=self._id))
                 if len(res) == 0:
                     self._speaker = 'empty'
                     return None
@@ -177,7 +177,7 @@ class LinguisticAnnotation(BaseAnnotation):
             if self._discourse is None:
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (discourse:Discourse)<-[:spoken_in]-(token {id: {id}})
-                        RETURN discourse''', id = self._id))
+                        RETURN discourse''', id=self._id))
                 if len(res) == 0:
                     self._discourse = 'empty'
                     return None
@@ -188,7 +188,7 @@ class LinguisticAnnotation(BaseAnnotation):
             if key not in self._subs:
                 res = self.corpus_context.execute_cypher(
                     '''MATCH (lower_type)<-[:is_a]-(lower_token:{a_type})-[:contained_by*1..]->(token {{id: {{id}}}})
-                        RETURN lower_token, lower_type ORDER BY lower_token.begin'''.format(a_type = key), id = self._id)
+                        RETURN lower_token, lower_type ORDER BY lower_token.begin'''.format(a_type=key), id=self._id)
                 self._subs[key] = []
                 for r in res:
                     a = LinguisticAnnotation(self.corpus_context)
@@ -200,10 +200,10 @@ class LinguisticAnnotation(BaseAnnotation):
             if key not in self._supers:
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (higher_type)<-[:is_a]-(higher_token:{a_type})<-[:contained_by*1..]-(token {{id: {{id}}}})
-                        RETURN higher_token, higher_type'''.format(a_type = key), id = self._id))
+                        RETURN higher_token, higher_type'''.format(a_type=key), id=self._id))
                 if len(res) == 0:
                     return None
-                a =  LinguisticAnnotation(self.corpus_context)
+                a = LinguisticAnnotation(self.corpus_context)
                 a.node = res[0]['higher_token']
                 a.type_node = res[0]['higher_type']
                 self._supers[key] = a
@@ -215,7 +215,7 @@ class LinguisticAnnotation(BaseAnnotation):
                 elif key not in self._subannotations:
                     res = self.corpus_context.execute_cypher(
                         '''MATCH (sub:{a_type})-[:annotates]->(token {{id: {{id}}}})
-                            RETURN sub'''.format(a_type = key), id = self._id)
+                            RETURN sub'''.format(a_type=key), id=self._id)
 
                     self._subannotations[key] = []
                     for r in res:
@@ -231,7 +231,7 @@ class LinguisticAnnotation(BaseAnnotation):
         if key in self._type_node.properties:
             return self._type_node.properties[key]
 
-    def update_properties(self,**kwargs):
+    def update_properties(self, **kwargs):
         """ 
         updates node properties with kwargs
 
@@ -240,17 +240,17 @@ class LinguisticAnnotation(BaseAnnotation):
         kwards : dict
             keyword arguments to update properties
         """
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             if k in self._type_node.properties:
-                 self._type_node.update(**{k: v})
+                self._type_node.update(**{k: v})
             self._node.update(**{k: v})
         if self._node['begin'] > self._node['end']:
-            self._node.update(begin = self._node['end'], end = self._node['begin'])
+            self._node.update(begin=self._node['end'], end=self._node['begin'])
 
     def save(self):
         """ saves the node to the graph"""
         self.corpus_context.graph.push(self.node)
-        for k,v in self._subannotations.items():
+        for k, v in self._subannotations.items():
             for s in v:
                 s.save()
 
@@ -265,7 +265,7 @@ class LinguisticAnnotation(BaseAnnotation):
         """
         res = list(self.corpus_context.execute_cypher(
             '''MATCH (token {id: {id}})-[:is_a]->(type)
-                RETURN token, type''', id = id))
+                RETURN token, type''', id=id))
         self.node = res[0]['token']
         self.type_node = res[0]['type']
 
@@ -300,14 +300,14 @@ class LinguisticAnnotation(BaseAnnotation):
             if sa.id == subannotation.id:
                 break
         else:
-            raise(GraphModelError('Can\'t delete a subannotation that doesn\'t belong to this annotation.'))
+            raise (GraphModelError('Can\'t delete a subannotation that doesn\'t belong to this annotation.'))
         subannotation = self._subannotations[subannotation._type].pop(i)
 
-        statement = '''MATCH (n:{type} {{id: {{id}}}}) DETACH DELETE n'''.format(type = subannotation._type)
+        statement = '''MATCH (n:{type} {{id: {{id}}}}) DETACH DELETE n'''.format(type=subannotation._type)
 
-        self.corpus_context.execute_cypher(statement, id = subannotation.id)
+        self.corpus_context.execute_cypher(statement, id=subannotation.id)
 
-    def add_subannotation(self, type, commit = True, transaction = None, **properties):
+    def add_subannotation(self, type, commit=True, transaction=None, **properties):
         """
         Adds a subannotation to the graph
 
@@ -335,12 +335,12 @@ class LinguisticAnnotation(BaseAnnotation):
         if transaction is not None:
             statement = '''MATCH (n:{type}:{corpus}:{discourse} {{id:{{id}}}})
             CREATE (n)<-[:annotates]-(sub:{sub_type}:{corpus}:{discourse} {{{props}}})'''
-            props = ['{}: {}'.format(key_for_cypher(k),value_for_cypher(v))
-                            for k,v in properties.items()]
-            statement = statement.format(type = self.type, sub_type = type,
-                            corpus=self.corpus_context.corpus_name,
-                            discourse = discourse,props = ', '.join(props))
-            transaction.append(statement, id = self._id)
+            props = ['{}: {}'.format(key_for_cypher(k), value_for_cypher(v))
+                     for k, v in properties.items()]
+            statement = statement.format(type=self.type, sub_type=type,
+                                         corpus=self.corpus_context.corpus_name,
+                                         discourse=discourse, props=', '.join(props))
+            transaction.append(statement, id=self._id)
         else:
             to_return = []
             sa = SubAnnotation(self.corpus_context)
@@ -348,7 +348,7 @@ class LinguisticAnnotation(BaseAnnotation):
             sa._unsaved = True
             sa._type = type
             sa.node = Node(type, self.corpus_context.corpus_name,
-                                discourse, **properties)
+                           discourse, **properties)
             rel = Relationship(sa.node, 'annotates', self.node)
 
             if commit:
@@ -361,12 +361,13 @@ class LinguisticAnnotation(BaseAnnotation):
             if type not in self._subannotations:
                 self._subannotations[type] = []
             self._subannotations[type].append(sa)
-            self._subannotations[type].sort(key = lambda x: x.begin)
+            self._subannotations[type].sort(key=lambda x: x.begin)
             if not commit:
                 return to_return
 
+
 class SubAnnotation(BaseAnnotation):
-    def __init__(self, corpus_context = None):
+    def __init__(self, corpus_context=None):
         self._corpus_context = corpus_context
         self._type = None
         self._id = None
@@ -375,18 +376,18 @@ class SubAnnotation(BaseAnnotation):
 
     def __getattr__(self, key):
         if self.corpus_context is None:
-            raise(GraphModelError('This object is not bound to a corpus context.'))
+            raise (GraphModelError('This object is not bound to a corpus context.'))
         if self._id is None:
-            raise(GraphModelError('This object has not been loaded with an id yet.'))
+            raise (GraphModelError('This object has not been loaded with an id yet.'))
         if key == self._annotation._type:
             return self._annotation
         if key in self._node.properties:
             return self._node.properties[key]
         if key == 'label':
             return None
-        raise(AttributeError)
+        raise (AttributeError)
 
-    def update_properties(self,**kwargs):
+    def update_properties(self, **kwargs):
         """ 
         updates node properties with kwargs
 
@@ -397,7 +398,7 @@ class SubAnnotation(BaseAnnotation):
         """
         self._node.update(**kwargs)
         if self._node['begin'] > self._node['end']:
-            self._node.update(begin = self._node['end'], end = self._node['begin'])
+            self._node.update(begin=self._node['end'], end=self._node['begin'])
 
     @property
     def node(self):
@@ -425,7 +426,7 @@ class SubAnnotation(BaseAnnotation):
         """
         res = list(self.corpus_context.execute_cypher(
             '''MATCH (sub {id: {id}})-[:annotates]->(token)-[:is_a]->(type)
-                RETURN sub, token, type''', id = id))
+                RETURN sub, token, type''', id=id))
         self._annotation = LinguisticAnnotation(self.corpus_context)
         self._annotation.node = res[0]['token']
         self._annotation.type_node = res[0]['type']
@@ -435,8 +436,9 @@ class SubAnnotation(BaseAnnotation):
         """ saves the current node to the graph"""
         self.corpus_context.graph.push(self._node)
 
+
 class Speaker(SubAnnotation):
-    def __init__(self, corpus_context = None):
+    def __init__(self, corpus_context=None):
         self._corpus_context = corpus_context
         self._type = 'Speaker'
         self._id = None
@@ -444,7 +446,7 @@ class Speaker(SubAnnotation):
 
     def __getattr__(self, key):
         if self.corpus_context is None:
-            raise(GraphModelError('This object is not bound to a corpus context.'))
+            raise (GraphModelError('This object is not bound to a corpus context.'))
         if key in self._node.properties:
             return self._node.properties[key]
         return None
@@ -477,11 +479,12 @@ class Speaker(SubAnnotation):
             the ID of the desired node"""
         res = list(self.corpus_context.execute_cypher(
             '''MATCH (speaker:{a_type} {{id: {{id}}}})
-                RETURN speaker'''.format(a_type = self._type), id = id))
+                RETURN speaker'''.format(a_type=self._type), id=id))
         self.node = res[0]['speaker']
 
+
 class Discourse(Speaker):
-    def __init__(self, corpus_context = None):
+    def __init__(self, corpus_context=None):
         self._corpus_context = corpus_context
         self._type = 'Discourse'
         self._id = None

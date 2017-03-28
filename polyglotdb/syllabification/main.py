@@ -1,9 +1,9 @@
-
 from .maxonset import split_nonsyllabic_maxonset, split_ons_coda_maxonset
 
 from .probabilistic import split_nonsyllabic_prob, split_ons_coda_prob
 
-def syllabify(phones, syllabics, onsets, codas, algorithm = 'probabilistic'):
+
+def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
     """
     Given a list of phones, groups them into syllables
 
@@ -28,7 +28,7 @@ def syllabify(phones, syllabics, onsets, codas, algorithm = 'probabilistic'):
 
     """
 
-    vow_inds = [i for i,x in enumerate(phones) if x in syllabics]
+    vow_inds = [i for i, x in enumerate(phones) if x in syllabics]
     if len(vow_inds) == 0:
         if algorithm == 'probabilistic':
             split = split_nonsyllabic_prob(phones, onsets, codas)
@@ -37,10 +37,10 @@ def syllabify(phones, syllabics, onsets, codas, algorithm = 'probabilistic'):
 
         label = '.'.join(phones)
         row = {'id': cur_id, 'prev_id': prev_id,
-            'onset_id': phones[0],
-                'break': split,
-                'coda':phones[-1],
-                'label': label}
+               'onset_id': phones[0],
+               'break': split,
+               'coda': phones[-1],
+               'label': label}
         return [row]
     syllables = []
     for j, i in enumerate(vow_inds):
@@ -88,6 +88,6 @@ def syllabify(phones, syllabics, onsets, codas, algorithm = 'probabilistic'):
         row = {
             'vowel': cur_vow_id, 'onset': cur_ons_id,
             'label': label,
-                'coda':cur_coda_id}
+            'coda': cur_coda_id}
         syllables.append(row)
     return syllables

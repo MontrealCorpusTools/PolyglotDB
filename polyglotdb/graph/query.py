@@ -1,15 +1,14 @@
-
 from collections import defaultdict
 import copy
 
 from .elements import (ContainsClauseElement,
-                    AlignmentClauseElement,
-                    RightAlignedClauseElement, LeftAlignedClauseElement,
-                    NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
+                       AlignmentClauseElement,
+                       RightAlignedClauseElement, LeftAlignedClauseElement,
+                       NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
 from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
-                            SubAnnotation as QuerySubAnnotation,
-                            SpeakerAnnotation, DiscourseAnnotation)
+                         SubAnnotation as QuerySubAnnotation,
+                         SpeakerAnnotation, DiscourseAnnotation)
 
 from .results import QueryResults
 
@@ -20,6 +19,7 @@ from .cypher import query_to_cypher, query_to_params
 from polyglotdb.io import save_results
 
 from polyglotdb.exceptions import SubannotationError
+
 
 class GraphQuery(object):
     """
@@ -34,11 +34,12 @@ class GraphQuery(object):
     to_find : str
         Name of the annotation type to search for
     """
-    _parameters = ['_criterion','_columns','_order_by','_aggregate',
-                    '_preload', '_set_type_labels', '_set_token_labels',
-                    '_remove_type_labels', '_remove_token_labels',
-                    '_set_type', '_set_token', '_delete', '_limit',
-                    '_cache', '_acoustic_columns']
+    _parameters = ['_criterion', '_columns', '_order_by', '_aggregate',
+                   '_preload', '_set_type_labels', '_set_token_labels',
+                   '_remove_type_labels', '_remove_token_labels',
+                   '_set_type', '_set_token', '_delete', '_limit',
+                   '_cache', '_acoustic_columns']
+
     def __init__(self, corpus, to_find):
         self.corpus = corpus
         self.to_find = to_find
@@ -110,7 +111,7 @@ class GraphQuery(object):
                 self._acoustic_columns.append(c)
             else:
                 self._columns.append(c)
-            #column_set.add(c) #FIXME failing tests
+                # column_set.add(c) #FIXME failing tests
         return self
 
     def filter_left_aligned(self, annotation_type):
@@ -180,7 +181,7 @@ class GraphQuery(object):
         self._group_by.extend(args)
         return self
 
-    def order_by(self, field, descending = False):
+    def order_by(self, field, descending=False):
         """
         Specify how the results of the query should be ordered.
 
@@ -194,7 +195,7 @@ class GraphQuery(object):
         self._order_by.append((field, descending))
         return self
 
-    def discourses(self, output_name = None):
+    def discourses(self, output_name=None):
         """
         Add a column to the output for the name of the discourse that
         the annotations are in.
@@ -231,7 +232,7 @@ class GraphQuery(object):
         annotation_levels = defaultdict(set)
         annotation_levels[self.to_find].add(self.to_find)
 
-        #Fix up bug for paths containing multiple routes (i.e. phone.utterance and phone.word)
+        # Fix up bug for paths containing multiple routes (i.e. phone.utterance and phone.word)
         hierarchical_depths = set()
         annotations = [a for c in self._criterion for a in c.annotations]
         annotations += [a.base_annotation for a in self._columns]
@@ -242,12 +243,12 @@ class GraphQuery(object):
         annotations += [a for a in self._preload]
 
         for a in annotations:
-            if isinstance (a, (SpeakerAnnotation, DiscourseAnnotation)):
+            if isinstance(a, (SpeakerAnnotation, DiscourseAnnotation)):
                 continue
             if not isinstance(a, HierarchicalAnnotation):
                 continue
             hierarchical_depths.add(a.depth)
-        #Fix up hierarchical annotations
+        # Fix up hierarchical annotations
         if any(x > 1 for x in hierarchical_depths):
             def create_new_hierarchical(base):
                 cur = base.hierarchy[self.to_find.type]
@@ -259,44 +260,45 @@ class GraphQuery(object):
                     a = getattr(a, cur)
                 a.pos = base.pos
                 return a
+
             for c in self._criterion:
                 try:
                     k = c.attribute.base_annotation
                     if isinstance(k, HierarchicalAnnotation) and \
-                        not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                            not isinstance(k, (SpeakerAnnotation, DiscourseAnnotation)):
                         c.attribute.base_annotation = create_new_hierarchical(k)
                     try:
                         k = c.value.base_annotation
                         if isinstance(k, HierarchicalAnnotation) and \
-                            not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                                not isinstance(k, (SpeakerAnnotation, DiscourseAnnotation)):
                             c.attribute.base_annotation = create_new_hierarchical(k)
                     except AttributeError:
                         pass
                 except AttributeError:
                     k = c.first
                     if isinstance(k, HierarchicalAnnotation) and \
-                        not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                            not isinstance(k, (SpeakerAnnotation, DiscourseAnnotation)):
                         c.first = create_new_hierarchical(k)
                     k = c.second
                     if isinstance(k, HierarchicalAnnotation) and \
-                        not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                            not isinstance(k, (SpeakerAnnotation, DiscourseAnnotation)):
                         c.second = create_new_hierarchical(k)
 
             for a in self._columns + self._hidden_columns + self._cache + self._group_by:
                 k = a.base_annotation
                 if isinstance(k, HierarchicalAnnotation) and \
-                    not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                        not isinstance(k, (SpeakerAnnotation, DiscourseAnnotation)):
                     a.base_annotation = create_new_hierarchical(k)
 
             for i, k in enumerate(self._preload):
                 if isinstance(k, HierarchicalAnnotation) and \
-                    not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                        not isinstance(k, (SpeakerAnnotation, DiscourseAnnotation)):
                     self._preload[i] = create_new_hierarchical(k)
 
             for i, a in enumerate(self._order_by):
                 k = a[0].base_annotation
                 if isinstance(k, HierarchicalAnnotation) and \
-                    not isinstance (k, (SpeakerAnnotation, DiscourseAnnotation)):
+                        not isinstance(k, (SpeakerAnnotation, DiscourseAnnotation)):
                     self._order_by[i] = (getattr(create_new_hierarchical(k), a[0].label), a[1])
 
         for c in self._criterion:
@@ -433,7 +435,7 @@ class GraphQuery(object):
                     annotation_levels[key].add(a)
         return annotation_levels
 
-    def times(self, begin_name = None, end_name = None):
+    def times(self, begin_name=None, end_name=None):
         """
         Add columns for the beginnings and ends of the searched for annotations to
         the output.
@@ -480,19 +482,19 @@ class GraphQuery(object):
                 end_found = False
                 for c in self._columns + self._hidden_columns:
                     if a.annotation.discourse == c.base_annotation and \
-                        c.label == 'name':
+                                    c.label == 'name':
                         a.discourse_alias = c.output_label
                         discourse_found = True
                     if a.annotation.speaker == c.base_annotation and \
-                        c.label == 'name':
+                                    c.label == 'name':
                         a.speaker_alias = c.output_label
                         speaker_found = True
                     elif a.annotation == c.base_annotation and \
-                        c.label == 'begin':
+                                    c.label == 'begin':
                         a.begin_alias = c.output_label
                         begin_found = True
                     elif a.annotation == c.base_annotation and \
-                        c.label == 'end':
+                                    c.label == 'end':
                         a.end_alias = c.output_label
                         end_found = True
                 if not discourse_found:
@@ -546,7 +548,7 @@ class GraphQuery(object):
         """
         Set properties of the returned types.
         """
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             self._set_type[k] = v
         self._set_type_labels.extend(args)
 
@@ -557,7 +559,7 @@ class GraphQuery(object):
         labels_to_add = []
         for l in args:
             if self.to_find.type not in self.corpus.hierarchy.subset_types or \
-                l not in self.corpus.hierarchy.subset_types:
+                            l not in self.corpus.hierarchy.subset_types:
                 labels_to_add.append(l)
 
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
@@ -573,7 +575,7 @@ class GraphQuery(object):
         """
         Set properties of the returned tokens.
         """
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             self._set_token[k] = v
         self._set_token_labels.extend(args)
 
@@ -585,7 +587,7 @@ class GraphQuery(object):
         labels_to_add = []
         for l in args:
             if self.to_find.type not in self.corpus.hierarchy.subset_tokens or \
-                l not in self.corpus.hierarchy.subset_tokens:
+                            l not in self.corpus.hierarchy.subset_tokens:
                 labels_to_add.append(l)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
         if labels_to_add:
@@ -644,6 +646,7 @@ class GraphQuery(object):
         if props_to_add:
             self.corpus.hierarchy.add_token_properties(self.corpus, self.to_find.type, props_to_add)
 
+
 class SplitQuery(GraphQuery):
     splitter = ''
 
@@ -661,17 +664,17 @@ class SplitQuery(GraphQuery):
                 for x in getattr(self, p):
                     getattr(q, p).append(x)
             else:
-                setattr(q, p, copy.deepcopy(getattr(self,p)))
+                setattr(q, p, copy.deepcopy(getattr(self, p)))
         return q
 
     def split_queries(self):
         """ splits a query into multiple queries """
-        attribute_name = self.splitter[:-1] #remove 's', fixme maybe?
+        attribute_name = self.splitter[:-1]  # remove 's', fixme maybe?
         splitter_annotation = getattr(self.to_find, attribute_name)
         splitter_attribute = getattr(splitter_annotation, 'name')
         splitter_names = sorted(getattr(self.corpus, self.splitter))
         if self.call_back is not None:
-            self.call_back(0,len(splitter_names))
+            self.call_back(0, len(splitter_names))
         for i, x in enumerate(splitter_names):
             if self.call_back is not None:
                 self.call_back(i)
@@ -684,7 +687,7 @@ class SplitQuery(GraphQuery):
                 for c in base._criterion:
                     try:
                         if c.attribute.annotation == splitter_annotation and \
-                            c.attribute.label == 'name':
+                                        c.attribute.label == 'name':
                             add_filter = False
                             if c.value != x:
                                 skip = True
@@ -744,8 +747,10 @@ class SplitQuery(GraphQuery):
                 return
             q.set_token(*args, **kwargs)
 
+
 class SpeakerGraphQuery(SplitQuery):
     splitter = 'speakers'
+
 
 class DiscourseGraphQuery(SplitQuery):
     splitter = 'discourses'

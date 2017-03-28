@@ -1,11 +1,11 @@
-
 import os
 
 from polyglotdb.structure import Hierarchy
 
-from .base import BaseParser,  DiscourseData
+from .base import BaseParser, DiscourseData
 
 from ..helper import text_to_lines
+
 
 class OrthographyTextParser(BaseParser):
     '''
@@ -20,13 +20,14 @@ class OrthographyTextParser(BaseParser):
     call_back : callable, optional
         Function to output progress messages
     '''
-    def __init__(self, annotation_types,
-                    stop_check = None, call_back = None):
-        super(OrthographyTextParser, self).__init__(annotation_types,
-                    Hierarchy({'word': None}), make_transcription = False,
-                    stop_check = stop_check, call_back = call_back)
 
-    def parse_discourse(self, path, types_only = False):
+    def __init__(self, annotation_types,
+                 stop_check=None, call_back=None):
+        super(OrthographyTextParser, self).__init__(annotation_types,
+                                                    Hierarchy({'word': None}), make_transcription=False,
+                                                    stop_check=stop_check, call_back=call_back)
+
+    def parse_discourse(self, path, types_only=False):
         '''
         Parse a text file for later importing.
 

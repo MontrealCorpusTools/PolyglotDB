@@ -1,10 +1,10 @@
-
-
 class BaseAnnotation(object):
     pass
 
+
 class BaseAnnotationType(object):
     annotation_class = BaseAnnotation
+
     def __init__(self, name, linguistic_type):
         self._list = []
         self.name = name
@@ -22,7 +22,7 @@ class BaseAnnotationType(object):
         self._list = []
         self.speaker = None
 
-    def add(self, annotations, save = True):
+    def add(self, annotations, save=True):
         """
         save annotations  to _list
 
@@ -36,9 +36,10 @@ class BaseAnnotationType(object):
         """
         for a in annotations:
             if save or len(self._list) < 10:
-                #If save is False, only the first 10 annotations are saved
+                # If save is False, only the first 10 annotations are saved
                 self._list.append(self.annotation_class(*a))
                 pass
+
     def __iter__(self):
         for x in self._list:
             yield x

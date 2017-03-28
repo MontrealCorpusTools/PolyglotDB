@@ -1,4 +1,3 @@
-
 import os
 
 from textgrid import TextGrid, IntervalTier
@@ -11,6 +10,7 @@ from polyglotdb.exceptions import TextGridError
 from ..helper import find_wav_path, get_n_channels
 
 from .base import DiscourseData
+
 
 class FaveParser(TextgridParser):
     def _is_valid(self, tg):
@@ -35,7 +35,7 @@ class FaveParser(TextgridParser):
         found_phone = all(found_phones.values())
         return found_word and found_phone
 
-    def parse_discourse(self, path, types_only = False):
+    def parse_discourse(self, path, types_only=False):
         '''
         Parse a TextGrid file for later importing.
 
@@ -52,7 +52,7 @@ class FaveParser(TextgridParser):
         tg = TextGrid()
         tg.read(path)
         if not self._is_valid(tg):
-            raise(TextGridError('The file "{}" cannot be parsed by the FAVE parser.'.format(path)))
+            raise (TextGridError('The file "{}" cannot be parsed by the FAVE parser.'.format(path)))
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         dummy = self.annotation_types
@@ -62,7 +62,7 @@ class FaveParser(TextgridParser):
         if wav_path is not None:
             n_channels = get_n_channels(wav_path)
             if n_channels > 1:
-                #Figure speaker-channel mapping
+                # Figure speaker-channel mapping
                 n_tiers = 0
                 for ti in tg.tiers:
                     try:
@@ -71,7 +71,7 @@ class FaveParser(TextgridParser):
                         continue
                     n_tiers += 1
                 ind = 0
-                cutoffs = [x/n_channels for x in range(1, n_channels)]
+                cutoffs = [x / n_channels for x in range(1, n_channels)]
                 print(cutoffs)
                 for ti in tg.tiers:
                     try:
@@ -80,7 +80,7 @@ class FaveParser(TextgridParser):
                         continue
                     if speaker in speaker_channel_mapping:
                         continue
-                    print(ind/n_channels)
+                    print(ind / n_channels)
                     for i, c in enumerate(cutoffs):
                         print(c)
                         if ind / n_channels < c:
@@ -90,7 +90,7 @@ class FaveParser(TextgridParser):
                         speaker_channel_mapping[speaker] = i + 1
                     ind += 1
 
-        #Parse the tiers
+        # Parse the tiers
         for ti in tg.tiers:
             try:
                 speaker, type = ti.name.split(' - ')

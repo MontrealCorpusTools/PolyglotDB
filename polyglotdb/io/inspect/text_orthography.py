@@ -1,9 +1,9 @@
-
 import os
 
 from ..types.parsing import TextOrthographyTier
 
 from ..parsers import OrthographyTextParser
+
 
 def inspect_orthography(path):
     """
@@ -29,13 +29,13 @@ def inspect_orthography(path):
             for filename in files:
                 if not filename.lower().endswith('.txt'):
                     continue
-                with open(os.path.join(root,filename),
-                            encoding='utf-8-sig', mode='r') as f:
+                with open(os.path.join(root, filename),
+                          encoding='utf-8-sig', mode='r') as f:
                     index = 0
                     for line in f.readlines():
                         trial = line.strip().split()
 
-                        a.add(((x, index + i) for i, x in enumerate(trial)), save = False)
+                        a.add(((x, index + i) for i, x in enumerate(trial)), save=False)
                         index += len(trial)
     else:
         index = 0
@@ -43,7 +43,7 @@ def inspect_orthography(path):
             for line in f.readlines():
                 trial = line.strip().split()
 
-                a.add(((x, index + i) for i, x in enumerate(trial)), save = False)
+                a.add(((x, index + i) for i, x in enumerate(trial)), save=False)
                 index += len(trial)
     annotation_types = [a]
     return OrthographyTextParser(annotation_types)

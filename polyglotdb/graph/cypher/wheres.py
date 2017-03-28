@@ -1,5 +1,4 @@
-
-def generate_wheres(criterion, wheres = None):
+def generate_wheres(criterion, wheres=None):
     """
     Generates where statements
 

@@ -1,4 +1,3 @@
-
 from statistics import mean
 from sqlalchemy import text
 
@@ -6,8 +5,10 @@ from ...sql.models import SoundFile, Discourse
 
 from .base import AnnotationAttribute, Attribute
 
+
 class AcousticAttribute(Attribute):
     acoustic = True
+
     def __init__(self, annotation):
         self.annotation = annotation
         self.output_label = None
@@ -36,6 +37,7 @@ class AcousticAttribute(Attribute):
 
     def hydrate(self, corpus, discourse, begin, end):
         pass
+
 
 class AggregationAttribute(AcousticAttribute):
     def __init__(self, acoustic_attribute):
@@ -85,7 +87,7 @@ class AggregationAttribute(AcousticAttribute):
     def output_columns(self):
         return ['{}_{}'.format(self.agg_prefix, x) for x in self.attribute.output_columns]
 
-    def hydrate(self, corpus, discourse, begin, end, channel = 0):
+    def hydrate(self, corpus, discourse, begin, end, channel=0):
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel)
         agg_data = {}
         for i, c in enumerate(self.output_columns):
@@ -102,11 +104,13 @@ class AggregationAttribute(AcousticAttribute):
                     agg_data[c] = None
         return agg_data
 
+
 class Min(AggregationAttribute):
     agg_prefix = 'Min'
 
     def function(self, data):
         return min(data)
+
 
 class Max(AggregationAttribute):
     agg_prefix = 'Max'
@@ -114,20 +118,23 @@ class Max(AggregationAttribute):
     def function(self, data):
         return max(data)
 
+
 class Mean(AggregationAttribute):
     agg_prefix = 'Mean'
 
     def function(self, data):
         return mean(data)
 
+
 class Track(AggregationAttribute):
     @property
     def output_columns(self):
         return ['time'] + [x for x in self.attribute.output_columns]
 
-    def hydrate(self, corpus, discourse, begin, end, channel = 0):
+    def hydrate(self, corpus, discourse, begin, end, channel=0):
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel)
         return data
+
 
 class SampledTrack(Track):
     def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=10):
@@ -138,21 +145,21 @@ class SampledTrack(Track):
 class InterpolatedTrack(Track):
     def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=10):
         from scipy import interpolate
-        data = self.attribute.hydrate(corpus, discourse, begin, end, channel, padding = 0.01)
+        data = self.attribute.hydrate(corpus, discourse, begin, end, channel, padding=0.01)
         duration = end - begin
-        time_step = duration / (num_points-1)
+        time_step = duration / (num_points - 1)
 
-        new_data = {begin + x*time_step:dict() for x in range(0,num_points)}
+        new_data = {begin + x * time_step: dict() for x in range(0, num_points)}
         x = sorted(data.keys())
         undef_regions = []
         for i, x1 in enumerate(x):
             if i != len(x) - 1:
-                if x[i+1] - x1 > 0.015:
-                    undef_regions.append((x1, x[i+1]))
+                if x[i + 1] - x1 > 0.015:
+                    undef_regions.append((x1, x[i + 1]))
         for o in self.attribute.output_columns:
             y = [data[x1][o] for x1 in x]
             if len(y) > 1:
-                f = interpolate.interp1d([float(x1) for x1 in x],y)
+                f = interpolate.interp1d([float(x1) for x1 in x], y)
             for k in new_data.keys():
                 if len(y) < 2:
                     new_data[k][o] = None
@@ -168,9 +175,9 @@ class InterpolatedTrack(Track):
                         new_data[k][o] = None
         return new_data
 
-class PitchAttribute(AcousticAttribute):
 
-    def __init__(self, annotation, relative = False):
+class PitchAttribute(AcousticAttribute):
+    def __init__(self, annotation, relative=False):
         super(PitchAttribute, self).__init__(annotation)
         self.label = 'pitch'
         self.relative = relative
@@ -179,7 +186,7 @@ class PitchAttribute(AcousticAttribute):
             self.label += '_relative'
             self.output_columns[0] += '_relative'
 
-    def hydrate(self, corpus, discourse, begin, end, channel = 0, num_points=0, padding=0):
+    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0, padding=0):
         """
         Gets all F0 from a discourse
 
@@ -201,23 +208,23 @@ class PitchAttribute(AcousticAttribute):
             A dictionary with 'F0' as the keys and a dictionary of times and F0 values as the value
          """
 
-        #if self.cached_settings == (discourse, begin, end, channel, self.relative, num_points):
+        # if self.cached_settings == (discourse, begin, end, channel, self.relative, num_points):
         #    data = self.cached_data
-        #else:
+        # else:
         data = {}
         begin -= padding
         end += padding
-        results = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative, num_points=num_points)
+        results = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative,
+                                   num_points=num_points)
         for line in results:
-            data[line[0]] = {self.output_columns[0]:line[1]}
-         #   self.cached_settings = (discourse, begin, end, channel, self.relative, num_points)
-         #   self.cached_data = data
+            data[line[0]] = {self.output_columns[0]: line[1]}
+            #   self.cached_settings = (discourse, begin, end, channel, self.relative, num_points)
+            #   self.cached_data = data
         return data
 
 
 class IntensityAttribute(AcousticAttribute):
-
-    def __init__(self, annotation, relative = False):
+    def __init__(self, annotation, relative=False):
         super(IntensityAttribute, self).__init__(annotation)
         self.label = 'intensity'
         self.relative = relative
@@ -226,7 +233,7 @@ class IntensityAttribute(AcousticAttribute):
             self.label += '_relative'
             self.output_columns[0] += '_relative'
 
-    def hydrate(self, corpus, discourse, begin, end, channel = 0, num_points=0):
+    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0):
         """
         Gets all Intensity from a discourse
 
@@ -254,15 +261,14 @@ class IntensityAttribute(AcousticAttribute):
             data = {}
             results = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative, num_points=0)
             for line in results:
-                data[line[0]] = {self.output_columns[0]:line[1]}
+                data[line[0]] = {self.output_columns[0]: line[1]}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
             self.cached_data = data
         return data
 
 
 class FormantAttribute(AcousticAttribute):
-
-    def __init__(self, annotation, relative = False):
+    def __init__(self, annotation, relative=False):
         super(FormantAttribute, self).__init__(annotation)
         self.label = 'formants'
         self.output_columns = ['F1', 'F2', 'F3']
@@ -272,8 +278,7 @@ class FormantAttribute(AcousticAttribute):
             for i in range(3):
                 self.output_columns[i] += '_relative'
 
-
-    def hydrate(self, corpus, discourse, begin, end, channel = 0, num_points=0):
+    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0):
         """
         Gets all formants from a discourse
 
@@ -298,9 +303,9 @@ class FormantAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {}
-            results = corpus.get_formants(discourse, begin, end, channel=channel, relative = self.relative, num_points=0)
+            results = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative, num_points=0)
             for line in results:
-                data[line[0]] = {self.output_columns[i]: line[i+1] for i in range(3)}
+                data[line[0]] = {self.output_columns[i]: line[i + 1] for i in range(3)}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
             self.cached_data = data
         return data

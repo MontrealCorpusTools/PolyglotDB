@@ -3,6 +3,7 @@ import re
 
 non_letter_finder = re.compile('\W')
 
+
 def value_for_cypher(value):
     """
     returns the value in cypher form
@@ -25,6 +26,7 @@ def value_for_cypher(value):
         if isinstance(value, bool):
             v = v.lower()
         return v
+
 
 def key_for_cypher(key):
     """

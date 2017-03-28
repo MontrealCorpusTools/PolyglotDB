@@ -1,4 +1,3 @@
-
 import os
 
 from textgrid import TextGrid, IntervalTier
@@ -12,12 +11,13 @@ from .base import DiscourseData
 
 from .speaker import DirectorySpeakerParser
 
+
 class MfaParser(TextgridParser):
-    def __init__(self, annotation_types, hierarchy, make_transcription = True,
-                    make_label = False,
-                    stop_check = None, call_back = None):
+    def __init__(self, annotation_types, hierarchy, make_transcription=True,
+                 make_label=False,
+                 stop_check=None, call_back=None):
         super(MfaParser, self).__init__(annotation_types, hierarchy, make_transcription,
-                    make_label, stop_check, call_back)
+                                        make_label, stop_check, call_back)
         self.speaker_parser = DirectorySpeakerParser()
 
     def _is_valid(self, tg):
@@ -30,7 +30,7 @@ class MfaParser(TextgridParser):
                 found_phone = True
         return found_word and found_phone
 
-    def parse_discourse(self, path, types_only = False):
+    def parse_discourse(self, path, types_only=False):
         '''
         Parse a TextGrid file for later importing.
 
@@ -47,7 +47,7 @@ class MfaParser(TextgridParser):
         tg = TextGrid()
         tg.read(path)
         if not self._is_valid(tg):
-            raise(TextGridError('This file cannot be parsed by the MFA parser.'))
+            raise (TextGridError('This file cannot be parsed by the MFA parser.'))
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         if self.speaker_parser is not None:
@@ -59,7 +59,7 @@ class MfaParser(TextgridParser):
             a.reset()
             a.speaker = speaker
 
-        #Parse the tiers
+        # Parse the tiers
         for i, ti in enumerate(tg.tiers):
             if ti.name == 'words':
                 self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))

@@ -1,6 +1,7 @@
 import math
 
-def norm_count_dict(counts, onset = True):
+
+def norm_count_dict(counts, onset=True):
     """
     Updates a dictionary of onset or coda counts
 
@@ -26,8 +27,9 @@ def norm_count_dict(counts, onset = True):
     tot_count = sum(counts.values())
     counts[None] = sum(counts.values()) * notfound_factor
     counts[tuple()] = sum(counts.values()) * notfound_factor * empty_factor
-    counts = {k: math.log(v / sum(counts.values())) for k,v in counts.items()}
+    counts = {k: math.log(v / sum(counts.values())) for k, v in counts.items()}
     return counts
+
 
 def split_ons_coda_prob(string, onsets, codas):
     """
@@ -67,6 +69,7 @@ def split_ons_coda_prob(string, onsets, codas):
             max_prob = prob
             best = i
     return best
+
 
 def split_nonsyllabic_prob(string, onsets, codas):
     """

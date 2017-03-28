@@ -1,5 +1,5 @@
-
 from ..attributes import SubAnnotation
+
 
 def generate_withs(query, all_withs):
     """
@@ -66,6 +66,7 @@ def generate_withs(query, all_withs):
 
                 all_withs.update(a.withs)
     return '\n'.join(statements)
+
 
 def withs_to_string(withs):
     """Translates with lists into 'with' statements"""

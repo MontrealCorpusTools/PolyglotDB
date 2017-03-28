@@ -12,15 +12,17 @@ from textgrid import TextGrid
 from polyglotdb.exceptions import DelimiterError, TextGridError
 
 ATT_TYPES = ['orthography', 'transcription', 'numeric',
-            'morpheme', 'tobi', 'grouping']
+             'morpheme', 'tobi', 'grouping']
 
 tobi_characters = set('LH%-+!*')
 morph_delimiters = set('-=')
 
+
 def get_n_channels(file_path):
-    with wave.open(file_path,'rb') as soundf:
+    with wave.open(file_path, 'rb') as soundf:
         n_channels = soundf.getnchannels()
     return n_channels
+
 
 def normalize_values_for_neo4j(dictionary):
     """
@@ -37,15 +39,16 @@ def normalize_values_for_neo4j(dictionary):
         sanitized dictionary
     """
     out = {}
-    for k,v in dictionary.items():
+    for k, v in dictionary.items():
         if isinstance(v, list):
-            v = '.'.join(map(str,v))
+            v = '.'.join(map(str, v))
         if not v:
             v = 'NULL'
         out[k] = v
     return out
 
-def guess_type(values, trans_delimiters = None):
+
+def guess_type(values, trans_delimiters=None):
     """
     Given a set of values, guesses the value type (numeric, transcription, grouping, tobi, morpheme, orthography)
 
@@ -60,9 +63,9 @@ def guess_type(values, trans_delimiters = None):
         most probable type (highest count)
     """
     if trans_delimiters is None:
-        trans_delimiters = ['.',' ', ';', ',']
+        trans_delimiters = ['.', ' ', ';', ',']
     probable_values = {x: 0 for x in ATT_TYPES}
-    for i,v in enumerate(values):
+    for i, v in enumerate(values):
         try:
             t = float(v)
             probable_values['numeric'] += 1
@@ -85,6 +88,7 @@ def guess_type(values, trans_delimiters = None):
         del probable_values['grouping']
     return max(probable_values.items(), key=operator.itemgetter(1))[0]
 
+
 def guess_trans_delimiter(values):
     """" Given a set of values, guess the transition delimiter
     
@@ -99,7 +103,7 @@ def guess_trans_delimiter(values):
         the most probable delimiter (highest count)
 
     """
-    trans_delimiters = ['.',' ', ';', ',']
+    trans_delimiters = ['.', ' ', ';', ',']
     probable_values = {x: 0 for x in trans_delimiters}
     for l in values:
         for delim in trans_delimiters:
@@ -156,6 +160,7 @@ def inspect_directory(directory):
 
     return likely_type, relevant_files
 
+
 def text_to_lines(path):
     """
     Parse a text file into lines.
@@ -174,10 +179,12 @@ def text_to_lines(path):
     with open(path, encoding='utf-8-sig', mode='r') as f:
         text = f.read()
         if delimiter is not None and delimiter not in text:
-            e = DelimiterError('The delimiter specified does not create multiple words. Please specify another delimiter.')
-            raise(e)
+            e = DelimiterError(
+                'The delimiter specified does not create multiple words. Please specify another delimiter.')
+            raise (e)
     lines = [x.strip().split(delimiter) for x in text.splitlines() if x.strip() != '']
     return lines
+
 
 def most_frequent_value(dictionary):
     """ 
@@ -194,7 +201,8 @@ def most_frequent_value(dictionary):
         the most frequent value
     """
     c = Counter(dictionary.values())
-    return max(c.keys(), key = lambda x: c[x])
+    return max(c.keys(), key=lambda x: c[x])
+
 
 def calculate_lines_per_gloss(lines):
     """ 
@@ -213,28 +221,28 @@ def calculate_lines_per_gloss(lines):
     line_counts = [len(x[1]) for x in lines]
     equaled = list()
     number = 1
-    for i,line in enumerate(line_counts):
+    for i, line in enumerate(line_counts):
         if i == 0:
             equaled.append(False)
         else:
-            equaled.append(line == line_counts[i-1])
+            equaled.append(line == line_counts[i - 1])
     if False not in equaled[1:]:
-        #All lines happen to have the same length
-        for i in range(2,6):
+        # All lines happen to have the same length
+        for i in range(2, 6):
             if len(lines) % i == 0:
                 number = i
     else:
         false_intervals = list()
         ind = 0
-        for i,e in enumerate(equaled):
+        for i, e in enumerate(equaled):
             if i == 0:
                 continue
             if not e:
                 false_intervals.append(i - ind)
                 ind = i
-        false_intervals.append(i+1 - ind)
+        false_intervals.append(i + 1 - ind)
         counter = Counter(false_intervals)
-        number = max(counter.keys(), key = lambda x: (counter[x],x))
+        number = max(counter.keys(), key=lambda x: (counter[x], x))
         if number > 10:
             prev_maxes = set([number])
             while number > 10:
@@ -261,11 +269,13 @@ def ilg_text_to_lines(path):
     with open(path, encoding='utf-8-sig', mode='r') as f:
         text = f.read()
         if delimiter is not None and delimiter not in text:
-            e = DelimiterError('The delimiter specified does not create multiple words. Please specify another delimiter.')
-            raise(e)
+            e = DelimiterError(
+                'The delimiter specified does not create multiple words. Please specify another delimiter.')
+            raise (e)
     lines = enumerate(text.splitlines())
-    lines = [(x[0],x[1].strip().split(delimiter)) for x in lines if x[1].strip() != '']
+    lines = [(x[0], x[1].strip().split(delimiter)) for x in lines if x[1].strip() != '']
     return lines
+
 
 def find_wav_path(path):
     """
@@ -288,6 +298,7 @@ def find_wav_path(path):
         return wav_path
     return None
 
+
 def log_annotation_types(annotation_types):
     """
     Writes annotation types to log
@@ -302,6 +313,7 @@ def log_annotation_types(annotation_types):
     logging.info('')
     for a in annotation_types:
         logging.info(a.pretty_print())
+
 
 def make_type_id(type_values, corpus):
     """
@@ -324,6 +336,7 @@ def make_type_id(type_values, corpus):
     value += ' ' + corpus
     m.update(value.encode())
     return m.hexdigest()
+
 
 def guess_textgrid_format(path):
     """
@@ -351,7 +364,7 @@ def guess_textgrid_format(path):
                 try:
                     tg.read(tg_path)
                 except ValueError as e:
-                    raise(TextGridError('The file {} could not be parsed: {}'.format(tg_path, str(e))))
+                    raise (TextGridError('The file {} could not be parsed: {}'.format(tg_path, str(e))))
 
                 labbcat_parser = inspect_labbcat(tg_path)
                 mfa_parser = inspect_mfa(tg_path)
@@ -364,7 +377,7 @@ def guess_textgrid_format(path):
                     counts['fave'] += 1
                 else:
                     counts[None] += 1
-        return max(counts.keys(), key = lambda x: counts[x])
+        return max(counts.keys(), key=lambda x: counts[x])
     elif path.lower().endswith('.textgrid'):
         tg = TextGrid()
         tg.read(path)

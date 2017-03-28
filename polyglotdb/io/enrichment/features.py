@@ -1,5 +1,5 @@
-
 from .helper import parse_file
+
 
 def enrich_features_from_csv(corpus_context, path):
     """

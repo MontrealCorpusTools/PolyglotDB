@@ -6,9 +6,9 @@ from polyglotdb.structure import Hierarchy
 
 from .base import BaseParser, DiscourseData
 
-
 from ..types.content import (OrthographyAnnotationType, TranscriptionAnnotationType,
-                            NumericAnnotationType)
+                             NumericAnnotationType)
+
 
 class CsvParser(BaseParser):
     '''
@@ -28,7 +28,7 @@ class CsvParser(BaseParser):
     _extensions = ['.txt', '.csv']
 
     def __init__(self, annotation_types, column_delimiter,
-                    stop_check = None, call_back = None):
+                 stop_check=None, call_back=None):
         self.annotation_types = annotation_types
         self.column_delimiter = column_delimiter
         self.hierarchy = Hierarchy({'word': None})
@@ -54,29 +54,29 @@ class CsvParser(BaseParser):
         name = os.path.splitext(os.path.split(path)[1])[0]
         for a in self.annotation_types:
             if a.name == 'transcription' and not isinstance(a, TranscriptionAnnotationType):
-                raise(CorpusIntegrityError(('The column \'{}\' is currently '
-                                            'not being parsed as transcriptions '
-                                            'despite its name.  Please ensure correct '
-                                            'parsing for this column by changing its '
-                                            '\'Annotation type\' in the parsing '
-                                            'preview to the right.').format(a.name)))
+                raise (CorpusIntegrityError(('The column \'{}\' is currently '
+                                             'not being parsed as transcriptions '
+                                             'despite its name.  Please ensure correct '
+                                             'parsing for this column by changing its '
+                                             '\'Annotation type\' in the parsing '
+                                             'preview to the right.').format(a.name)))
         for a in self.annotation_types:
             a.reset()
         with open(path, encoding='utf-8') as f:
             headers = f.readline()
             headers = headers.split(self.column_delimiter)
-            if len(headers)==1:
+            if len(headers) == 1:
                 e = DelimiterError(('Could not parse the corpus.\n\Check '
                                     'that the delimiter you typed in matches '
                                     'the one used in the file.'))
-                raise(e)
+                raise (e)
 
             for line in f.readlines():
                 line = line.strip()
-                if not line: #blank or just a newline
+                if not line:  # blank or just a newline
                     continue
                 d = {}
-                for i, (k,v) in enumerate(zip(headers,line.split(self.column_delimiter))):
+                for i, (k, v) in enumerate(zip(headers, line.split(self.column_delimiter))):
                     v = v.strip()
                     self.annotation_types[i].add([(v,)])
 
@@ -87,4 +87,3 @@ class CsvParser(BaseParser):
             a.reset()
 
         return data
-

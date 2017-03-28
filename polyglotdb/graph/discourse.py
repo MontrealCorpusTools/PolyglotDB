@@ -7,9 +7,11 @@ import librosa
 
 from resampy import resample
 
+
 class LongSoundFile(object):
     cache_amount = 60
-    def __init__(self, sound_file, initial_begin = None, initial_end = None):
+
+    def __init__(self, sound_file, initial_begin=None, initial_end=None):
         self.path = os.path.expanduser(sound_file.consonant_filepath)
         if not os.path.exists(self.path):
             self.path = os.path.expanduser(sound_file.vowel_filepath)
@@ -18,19 +20,18 @@ class LongSoundFile(object):
 
         self.mode = None
 
-
         self.duration = sound_file.duration
         self.num_channels = sound_file.n_channels
         if self.duration < self.cache_amount:
             self.mode = 'short'
-            self.signal, self.sr = librosa.load(self.path, sr = None)
+            self.signal, self.sr = librosa.load(self.path, sr=None)
             if len(self.signal.shape) == 1:
-                self.signal = self.signal.reshape((self.signal.shape[0],1))
+                self.signal = self.signal.reshape((self.signal.shape[0], 1))
             else:
                 self.signal = self.signal.T
-            self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis = 0)
-            self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter = 'kaiser_fast', axis = 0)
-            self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter = 'kaiser_fast', axis = 0)
+            self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis=0)
+            self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter='kaiser_fast', axis=0)
+            self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter='kaiser_fast', axis=0)
             self.cached_begin = 0
             self.cached_end = self.duration
         else:
@@ -66,17 +67,17 @@ class LongSoundFile(object):
     def refresh_cache(self):
         if self.mode == 'long':
             dur = self.cached_end - self.cached_begin
-            self.signal, self.sr = librosa.load(self.path, sr = None,
-                        offset = self.cached_begin, duration = dur, mono = False)
+            self.signal, self.sr = librosa.load(self.path, sr=None,
+                                                offset=self.cached_begin, duration=dur, mono=False)
             if len(self.signal.shape) == 1:
-                self.signal = self.signal.reshape((self.signal.shape[0],1))
+                self.signal = self.signal.reshape((self.signal.shape[0], 1))
             else:
                 self.signal = self.signal.T
-            self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis = 0)
-            self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter = 'kaiser_fast', axis = 0)
-            self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter = 'kaiser_fast', axis = 0)
+            self.preemph_signal = lfilter([1., -0.95], 1, self.signal, axis=0)
+            self.downsampled_1000 = resample(self.signal, self.sr, 1000, filter='kaiser_fast', axis=0)
+            self.downsampled_100 = resample(self.downsampled_1000, 1000, 100, filter='kaiser_fast', axis=0)
 
-    def visible_downsampled_1000(self, begin, end, channel = 0):
+    def visible_downsampled_1000(self, begin, end, channel=0):
         if self.downsampled_1000 is None:
             return None
         begin -= self.cached_begin
@@ -85,7 +86,7 @@ class LongSoundFile(object):
         max_samp = int(np.ceil(end * 1000))
         return self.downsampled_1000[min_samp:max_samp, channel]
 
-    def visible_downsampled_100(self, begin, end, channel = 0):
+    def visible_downsampled_100(self, begin, end, channel=0):
         if self.downsampled_100 is None:
             return None
         begin -= self.cached_begin
@@ -94,7 +95,7 @@ class LongSoundFile(object):
         max_samp = int(np.ceil(end * 100))
         return self.downsampled_100[min_samp:max_samp, channel]
 
-    def visible_signal(self, begin, end, channel = 0):
+    def visible_signal(self, begin, end, channel=0):
         if self.signal is None:
             return None
         begin -= self.cached_begin
@@ -103,7 +104,7 @@ class LongSoundFile(object):
         max_samp = int(np.ceil(end * self.sr))
         return self.signal[min_samp:max_samp, channel]
 
-    def visible_preemph_signal(self, begin, end, channel = 0):
+    def visible_preemph_signal(self, begin, end, channel=0):
         if self.preemph_signal is None:
             return None
         begin -= self.cached_begin
@@ -112,8 +113,9 @@ class LongSoundFile(object):
         max_samp = int(np.ceil(end * self.sr))
         return self.preemph_signal[min_samp:max_samp, channel]
 
+
 class DiscourseInspecter(object):
-    def __init__(self, corpus_context, discourse_name, initial_begin = None, initial_end = None):
+    def __init__(self, corpus_context, discourse_name, initial_begin=None, initial_end=None):
         self.corpus = corpus_context
         self.name = discourse_name
         self.sound_file = self.corpus.discourse_sound_file(self.name)
@@ -128,7 +130,7 @@ class DiscourseInspecter(object):
             highest = getattr(self.corpus, h_type)
             q = self.corpus.query_graph(highest)
             q = q.filter(highest.discourse.name == self.name)
-            q = q.order_by(highest.end, descending = True)
+            q = q.order_by(highest.end, descending=True)
             q = q.limit(1)
             self.max_time = q.all()[0].end
         self.speech_begin = None
@@ -202,25 +204,25 @@ class DiscourseInspecter(object):
             q = self.following_cache_query(end)
             self.add_following([x for x in q.all()])
 
-    def preceding_cache_query(self, begin = None):
+    def preceding_cache_query(self, begin=None):
         h_type = self.corpus.hierarchy.highest
         highest = getattr(self.corpus, h_type)
         if self.cache:
-            q = self._base_discourse_query(begin = begin, end = self.cache[0].begin)
+            q = self._base_discourse_query(begin=begin, end=self.cache[0].begin)
         else:
-            q = self._base_discourse_query(begin = begin)
+            q = self._base_discourse_query(begin=begin)
         return q
 
-    def following_cache_query(self, end = None):
+    def following_cache_query(self, end=None):
         h_type = self.corpus.hierarchy.highest
         highest = getattr(self.corpus, h_type)
         if self.cache:
-            q = self._base_discourse_query(end = end, begin = self.cache[-1].end)
+            q = self._base_discourse_query(end=end, begin=self.cache[-1].end)
         else:
-            q = self._base_discourse_query(end = end)
+            q = self._base_discourse_query(end=end)
         return q
 
-    def _base_discourse_query(self, begin = None, end = None):
+    def _base_discourse_query(self, begin=None, end=None):
         h_type = self.corpus.hierarchy.highest
         highest = getattr(self.corpus, h_type)
         q = self.corpus.query_graph(highest)
@@ -267,7 +269,7 @@ class DiscourseInspecter(object):
     def __len__(self):
         return len([x for x in self])
 
-    def annotations(self, begin = None, end = None, channel = 0):
+    def annotations(self, begin=None, end=None, channel=0):
         for a in self.cache:
             if a.channel != channel:
                 continue
@@ -277,7 +279,7 @@ class DiscourseInspecter(object):
                 continue
             yield a
 
-    def formants(self, begin = None, end = None, channel = 0):
+    def formants(self, begin=None, end=None, channel=0):
         formant_list = self.corpus.get_formants(self.name, begin, end, channel)
         if len(formant_list) == 0:
             return None
@@ -286,7 +288,7 @@ class DiscourseInspecter(object):
                         'F3': np.array([[x.time, x.F3] for x in formant_list])}
         return formant_dict
 
-    def formants_from_begin(self, begin, end, channel = 0):
+    def formants_from_begin(self, begin, end, channel=0):
         formant_list = self.corpus.get_formants(self.name, begin, end, channel)
         if len(formant_list) == 0:
             return None
@@ -295,31 +297,31 @@ class DiscourseInspecter(object):
                         'F3': np.array([[x.time - begin, x.F3] for x in formant_list])}
         return formant_dict
 
-    def pitch(self, begin = None, end = None, channel = 0):
+    def pitch(self, begin=None, end=None, channel=0):
         pitch_list = self.corpus.get_pitch(self.name, begin, end, channel)
         if len(pitch_list) == 0:
             return None
         pitch_list = np.array([[x.time, x.F0] for x in pitch_list])
         return pitch_list
 
-    def pitch_from_begin(self, begin, end, channel = 0):
+    def pitch_from_begin(self, begin, end, channel=0):
         pitch_list = self.corpus.get_pitch(self.name, begin, end, channel)
         if len(pitch_list) == 0:
             return None
         pitch_list = np.array([[x.time - begin, x.F0] for x in pitch_list])
         return pitch_list
 
-    def get_acoustics(self, time, channel = 0):
+    def get_acoustics(self, time, channel=0):
         acoustics = {}
-        pitch = self.pitch(time - 0.5, time + 0.5, channel = channel)
+        pitch = self.pitch(time - 0.5, time + 0.5, channel=channel)
         if pitch is None:
             acoustics['F0'] = None
         else:
-            for i,p in enumerate(pitch):
+            for i, p in enumerate(pitch):
                 if p[0] > time:
                     if i != 0:
-                        prev_time = pitch[i-1][0]
-                        prev_pitch = pitch[i-1][1]
+                        prev_time = pitch[i - 1][0]
+                        prev_pitch = pitch[i - 1][1]
                         dur = p[0] - prev_time
                         cur_time = time - prev_time
                         percent = cur_time / dur
@@ -329,18 +331,18 @@ class DiscourseInspecter(object):
                     break
             else:
                 acoustics['F0'] = None
-        formants = self.formants(time - 0.5, time + 0.5, channel = channel)
+        formants = self.formants(time - 0.5, time + 0.5, channel=channel)
         if formants is None:
             acoustics['F1'] = None
             acoustics['F2'] = None
             acoustics['F3'] = None
         else:
-            for k,v in formants.items():
-                for i,f in enumerate(v):
+            for k, v in formants.items():
+                for i, f in enumerate(v):
                     if f[0] > time:
                         if i != 0:
-                            prev_time = v[i-1][0]
-                            prev_formant = v[i-1][1]
+                            prev_time = v[i - 1][0]
+                            prev_formant = v[i - 1][1]
                             dur = f[0] - prev_time
                             cur_time = time - prev_time
                             percent = cur_time / dur
@@ -350,7 +352,7 @@ class DiscourseInspecter(object):
                         break
         return acoustics
 
-    def find_annotation(self, key, time, channel = 0):
+    def find_annotation(self, key, time, channel=0):
         annotation = None
         for a in self:
             if a.channel != channel:

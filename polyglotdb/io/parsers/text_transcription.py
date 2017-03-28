@@ -6,6 +6,7 @@ from ..helper import text_to_lines
 
 from .base import BaseParser, DiscourseData
 
+
 class TranscriptionTextParser(BaseParser):
     '''
     Parser for transcribed text files.
@@ -19,14 +20,15 @@ class TranscriptionTextParser(BaseParser):
     call_back : callable, optional
         Function to output progress messages
     '''
-    def __init__(self, annotation_types,
-                    stop_check = None, call_back = None):
-        super(TranscriptionTextParser, self).__init__(annotation_types,
-                    Hierarchy({'word': None}), make_transcription = False,
-                    make_label = True,
-                    stop_check = stop_check, call_back = call_back)
 
-    def parse_discourse(self, path, types_only = False):
+    def __init__(self, annotation_types,
+                 stop_check=None, call_back=None):
+        super(TranscriptionTextParser, self).__init__(annotation_types,
+                                                      Hierarchy({'word': None}), make_transcription=False,
+                                                      make_label=True,
+                                                      stop_check=stop_check, call_back=call_back)
+
+    def parse_discourse(self, path, types_only=False):
         '''
         Parse a text file for later importing.
 
