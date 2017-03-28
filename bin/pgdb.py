@@ -250,6 +250,7 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(help='Command to use')
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument('directory', nargs='?', help='Path to install data', default='')
+    install_parser.add_argument('-q', '--quiet', help="Suppress user input", action='store_true')
     install_parser.set_defaults(which='install')
 
     start_parser = subparsers.add_parser("start")
@@ -278,11 +279,12 @@ if __name__ == '__main__':
         directory = os.path.expanduser(args.directory)
         if not directory:
             directory = DEFAULT_DATA_DIR
-            user_input = input(
-                'No install directory was specified, so required files will be installed to {}. Is that okay? (Y/N)'.format(
-                    directory))
-            if user_input.lower() != 'y':
-                sys.exit(1)
+            if not args.quiet:
+                user_input = input(
+                    'No install directory was specified, so required files will be installed to {}. Is that okay? (Y/N)'.format(
+                        directory))
+                if user_input.lower() != 'y':
+                    sys.exit(1)
         else:
             CONFIG['Data']['directory'] = directory
             CONFIG['InfluxDB']['data_directory'] = os.path.join(directory, 'influxdb', 'data')
@@ -290,12 +292,15 @@ if __name__ == '__main__':
             CONFIG['InfluxDB']['meta_directory'] = os.path.join(directory, 'influxdb', 'meta')
             CONFIG_CHANGED = True
         if os.path.exists(directory):
-            check = input('The current directory already exists, would you like to overwrite it? (Y/N)').lower()
-            if check == 'y':
+            if args.quiet:
                 uninstall()
             else:
-                print('Aborting installation.')
-                sys.exit()
+                check = input('The current directory already exists, would you like to overwrite it? (Y/N)').lower()
+                if check == 'y':
+                    uninstall()
+                else:
+                    print('Aborting installation.')
+                    sys.exit()
         download_neo4j(directory)
         configure_neo4j(directory)
         download_influxdb(directory)
