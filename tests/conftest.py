@@ -395,7 +395,7 @@ def acoustic_config(graph_db, textgrid_test_dir):
         parser = inspect_textgrid(acoustic_path)
         c.load(parser, acoustic_path)
     config.pitch_algorithm = 'acousticsim'
-    config.formant_algorithm = 'acousticsim'
+    config.formant_source = 'acousticsim'
     return config
 
 
@@ -413,7 +413,7 @@ def acoustic_utt_config(graph_db, textgrid_test_dir):
         c.encode_utterances(min_pause_length=0)
 
     config.pitch_algorithm = 'acousticsim'
-    config.formant_algorithm = 'acousticsim'
+    config.formant_source = 'acousticsim'
     return config
 
 
@@ -489,3 +489,10 @@ def praat_path():
         return os.path.expanduser('~/tools/mfa_test_data')
     else:
         return 'praat'
+
+@pytest.fixture(scope='session')
+def reaper_path():
+    if os.environ.get('TRAVIS', False):
+        return os.path.expanduser('~/tools/mfa_test_data')
+    else:
+        return 'reaper'

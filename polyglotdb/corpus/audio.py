@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from influxdb import InfluxDBClient
 
-from ..acoustics import acoustic_analysis
+from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_intensity
 
 from ..sql.models import SoundFile, Discourse
 
@@ -75,16 +75,15 @@ class AudioContext(object):
     Class that contains methods for dealing with audio files for corpora
     """
 
-    def analyze_acoustics(self,
-                          pitch=True,
-                          formants=False,
-                          intensity=False, stop_check=None, call_back=None):
-        """
-        Runs all acoustic analyses for the corpus.
-        """
-        if not self.has_sound_files:
-            raise (NoSoundFileError)
-        acoustic_analysis(self, pitch, formants, intensity, stop_check=stop_check, call_back=call_back)
+    def analyze_pitch(self, stop_check=None, call_back=None):
+        analyze_pitch(self, stop_check, call_back)
+
+    def analyze_formants(self, stop_check=None, call_back=None):
+        analyze_formants(self, stop_check, call_back)
+
+    def analyze_intensity(self, stop_check=None, call_back=None):
+        analyze_intensity(self, stop_check, call_back)
+
 
     def genders(self):
 
@@ -218,7 +217,7 @@ class AudioContext(object):
         begin = Decimal(begin).quantize(Decimal('0.001'))
         end = Decimal(end).quantize(Decimal('0.001'))
         if kwargs.get('source', None) is None:
-            kwargs['source'] = self.config.intensity_algorithm
+            kwargs['source'] = self.config.intensity_source
         num_points = kwargs.pop('num_points', 0)
         filter_string = generate_filter_string(discourse, begin, end, num_points, kwargs)
         client = self.acoustic_client()
@@ -267,7 +266,7 @@ class AudioContext(object):
         begin = Decimal(begin).quantize(Decimal('0.001'))
         end = Decimal(end).quantize(Decimal('0.001'))
         if kwargs.get('source', None) is None:
-            kwargs['source'] = self.config.formant_algorithm
+            kwargs['source'] = self.config.formant_source
         num_points = kwargs.pop('num_points', 0)
         filter_string = generate_filter_string(discourse, begin, end, num_points, kwargs)
         client = self.acoustic_client()
@@ -316,7 +315,7 @@ class AudioContext(object):
         begin = Decimal(begin).quantize(Decimal('0.001'))
         end = Decimal(end).quantize(Decimal('0.001'))
         if kwargs.get('source', None) is None:
-            kwargs['source'] = self.config.pitch_algorithm
+            kwargs['source'] = self.config.pitch_source
         num_points = kwargs.pop('num_points', 0)
         filter_string = generate_filter_string(discourse, begin, end, num_points, kwargs)
         client = self.acoustic_client()
@@ -347,13 +346,13 @@ class AudioContext(object):
 
         if measurement == 'formants':
             if kwargs.get('source', None) is None:
-                kwargs['source'] = self.config.formant_algorithm
+                kwargs['source'] = self.config.formant_source
         elif measurement == 'pitch':
             if kwargs.get('source', None) is None:
-                kwargs['source'] = self.config.pitch_algorithm
+                kwargs['source'] = self.config.pitch_source
         elif measurement == 'intensity':
             if kwargs.get('source', None) is None:
-                kwargs['source'] = self.config.intensity_algorithm
+                kwargs['source'] = self.config.intensity_source
         else:
             raise (NotImplementedError('Only pitch, formants, and intensity can be currently saved.'))
         if kwargs.get('channel', None) is None:
@@ -486,7 +485,7 @@ class AudioContext(object):
         """
         client = self.acoustic_client()
         if source is None:
-            source = self.config.formant_algorithm
+            source = self.config.formant_source
         query = '''select "F1" from "formants" WHERE "discourse" = '{}' AND "source" = '{}' LIMIT 1;'''.format(
             discourse, source)
         result = client.query(query)
@@ -500,7 +499,7 @@ class AudioContext(object):
         """
         client = self.acoustic_client()
         if source is None:
-            source = self.config.pitch_algorithm
+            source = self.config.pitch_source
         query = '''select "F0" from "pitch" WHERE "discourse" = '{}' AND "source" = '{}' LIMIT 1;'''.format(discourse,
                                                                                                             source)
         result = client.query(query)
@@ -511,7 +510,7 @@ class AudioContext(object):
     def has_intensity(self, discourse, source=None):
         client = self.acoustic_client()
         if source is None:
-            source = self.config.intensity_algorithm
+            source = self.config.intensity_source
         query = '''select "Intensity" from "intensity" WHERE "discourse" = '{}' AND "source" = '{}' LIMIT 1;'''.format(
             discourse, source)
         result = client.query(query)
@@ -527,17 +526,17 @@ class AudioContext(object):
         if acoustic_measure == 'pitch':
             measures.append(template.format('F0'))
             if source is None:
-                source = self.config.pitch_algorithm
+                source = self.config.pitch_source
         elif acoustic_measure == 'formants':
             measures.append(template.format('F1'))
             measures.append(template.format('F2'))
             measures.append(template.format('F3'))
             if source is None:
-                source = self.config.formant_algorithm
+                source = self.config.formant_source
         elif acoustic_measure == 'intensity':
             measures.append(template.format('Intensity'))
             if source is None:
-                source = self.config.intensity_algorithm
+                source = self.config.intensity_source
         else:
             raise (ValueError('Acoustic measure must be one of: pitch, formants, or intensity.'))
         group_by = ['"phone"']
@@ -564,7 +563,7 @@ class AudioContext(object):
 
     def relativize_pitch(self, by_speaker=True, source=None):
         if source is None:
-            source = self.config.pitch_algorithm
+            source = self.config.pitch_source
         client = self.acoustic_client()
         phone_type = getattr(self, self.phone_name)
 
@@ -614,7 +613,7 @@ class AudioContext(object):
 
     def relativize_intensity(self, by_speaker=True, source=None):
         if source is None:
-            source = self.config.intensity_algorithm
+            source = self.config.intensity_source
         client = self.acoustic_client()
         phone_type = getattr(self, self.phone_name)
 
@@ -664,7 +663,7 @@ class AudioContext(object):
 
     def relativize_formants(self, by_speaker=True, source=None):
         if source is None:
-            source = self.config.formant_algorithm
+            source = self.config.formant_source
         client = self.acoustic_client()
         phone_type = getattr(self, self.phone_name)
 

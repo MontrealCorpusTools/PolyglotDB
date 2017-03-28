@@ -20,24 +20,46 @@ def test_wav_info(acoustic_utt_config):
 
 
 @acoustic
-def test_analyze_acoustics(acoustic_utt_config):
+def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
-        g.analyze_acoustics()
+        g.config.pitch_source = 'praat'
+        g.config.praat_path = praat_path
+        g.config.pitch_algorithm = 'basic'
+        g.analyze_pitch()
+
+@acoustic
+def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_source = 'reaper'
+        g.config.reaper_path = reaper_path
+        g.config.pitch_algorithm = 'basic'
+        g.analyze_pitch()
 
 
 @acoustic
-def test_analyze_acoustics_praat(acoustic_utt_config, praat_path):
-    acoustic_utt_config.pitch_algorithm = 'praat'
-    acoustic_utt_config.praat_path = praat_path
+def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
-        g.analyze_acoustics()
+        g.config.pitch_source = 'praat'
+        g.config.praat_path = praat_path
+        g.config.pitch_algorithm = 'gendered'
+        g.analyze_pitch()
 
+@acoustic
+def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.pitch_source = 'praat'
+        g.config.praat_path = praat_path
+        g.config.pitch_algorithm = 'speaker_adjusted'
+        g.analyze_pitch()
         assert (g.has_pitch('acoustic_corpus'))
+
+
 
 
 def test_query_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_algorithm = 'dummy'
+        g.config.pitch_source = 'dummy'
         expected_pitch = {Decimal('4.23'): {'F0': 98},
                           Decimal('4.24'): {'F0': 100},
                           Decimal('4.25'): {'F0': 99},
@@ -60,7 +82,7 @@ def test_query_pitch(acoustic_utt_config):
 
 def test_query_intensity(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.intensity_algorithm = 'dummy'
+        g.config.intensity_source = 'dummy'
         expected_intensity = {Decimal('4.23'): {'Intensity': 98},
                               Decimal('4.24'): {'Intensity': 100},
                               Decimal('4.25'): {'Intensity': 99},
@@ -83,7 +105,7 @@ def test_query_intensity(acoustic_utt_config):
 
 def test_query_aggregate_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_algorithm = 'dummy'
+        g.config.pitch_source = 'dummy'
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
@@ -99,7 +121,7 @@ def test_query_aggregate_pitch(acoustic_utt_config):
 
 def test_query_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_algorithm = 'dummy'
+        g.config.formant_source = 'dummy'
         expected_formants = {Decimal('4.23'): {'F1': 501, 'F2': 1500, 'F3': 2500},
                              Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2500},
                              Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
@@ -124,7 +146,7 @@ def test_query_formants(acoustic_utt_config):
 
 def test_query_aggregate_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_algorithm = 'dummy'
+        g.config.formant_source = 'dummy'
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -149,7 +171,7 @@ def test_query_aggregate_formants(acoustic_utt_config):
 
 def test_export_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_algorithm = 'dummy'
+        g.config.pitch_source = 'dummy'
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')

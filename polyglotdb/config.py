@@ -2,8 +2,18 @@ import os
 import sys
 import logging
 import socket
+import configparser
 
-BASE_DIR = os.path.expanduser('~/Documents/SCT')
+CONFIG_DIR = os.path.expanduser('~/.pgdb')
+
+BASE_DIR = os.path.join(CONFIG_DIR, 'data')
+
+CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.ini')
+
+CONFIG = configparser.ConfigParser()
+if os.path.exists(CONFIG_PATH):
+    CONFIG.read(CONFIG_PATH)
+    BASE_DIR = os.path.join(CONFIG['Data']['directory'], 'data')
 
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
@@ -76,8 +86,11 @@ class CorpusConfig(object):
         self.engine = 'sqlite'
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
 
-        self.pitch_algorithm = 'reaper'
-        self.formant_algorithm = 'acousticsim'
+        self.pitch_source = 'reaper'
+        self.pitch_algorithm = 'speaker_adjusted'
+        self.formant_source = 'praat'
+        self.formant_algorithm = 'fave'
+        self.intensity_source = 'praat'
         self.time_sampling = 0.01
 
         for k, v in kwargs.items():
@@ -101,7 +114,6 @@ class CorpusConfig(object):
         return temp
 
     def init(self):
-
         if self.corpus_name:
             os.makedirs(self.log_dir, exist_ok=True)
             os.makedirs(self.temp_dir, exist_ok=True)
