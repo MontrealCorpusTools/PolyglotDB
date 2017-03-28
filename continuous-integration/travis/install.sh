@@ -12,7 +12,8 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda create -q -n test-environment python=3.5 setuptools atlas numpy sqlalchemy pytest scipy scikit-learn networkx
   source activate test-environment
   which python
-  pip install -q coveralls coverage py2neo textgrid acousticsim librosa tqdm influxdb
+  pip install -q coveralls coverage py2neo textgrid librosa tqdm influxdb
+  pip install -q git+https://github.com/mmcauliffe/python-acoustic-similarity.git
 else
   echo "Miniconda already installed."
 fi
