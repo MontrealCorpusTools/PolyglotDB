@@ -1,4 +1,3 @@
-
 from .base import BaseContext
 from .audio import AudioContext
 from .importable import ImportContext
@@ -33,6 +32,3 @@ class CorpusContext(StructuredContext, ImportContext,
     """
 
     pass
-
-
-

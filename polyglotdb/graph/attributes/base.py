@@ -1,4 +1,3 @@
-
 from ..helper import key_for_cypher
 
 from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
@@ -13,7 +12,8 @@ from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
 from ...exceptions import SubsetError
 
 special_attributes = ['duration', 'count', 'rate', 'position', 'type_subset',
-                    'token_subset']
+                      'token_subset']
+
 
 class Attribute(object):
     """
@@ -36,6 +36,7 @@ class Attribute(object):
     output_label : str or None
         User-specified label to use in query results
     """
+
     def __init__(self, annotation, label, type):
         self.annotation = annotation
         self.label = label
@@ -55,7 +56,7 @@ class Attribute(object):
     def for_cypher(self):
         """Returns annotation duration or annotation type if applicable, otherwise annotation name and label """
         if self.label == 'duration':
-            return '{a}.end - {a}.begin'.format(a = self.annotation.alias)
+            return '{a}.end - {a}.begin'.format(a=self.annotation.alias)
         if self.type:
             return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
@@ -79,7 +80,7 @@ class Attribute(object):
     @property
     def alias(self):
         """ Removes '`' from annotation, concatenates annotation alias and label"""
-        return '`{}_{}`'.format(self.annotation.alias.replace('`',''), self.label)
+        return '`{}_{}`'.format(self.annotation.alias.replace('`', ''), self.label)
 
     def aliased_for_cypher(self):
         """
@@ -225,6 +226,7 @@ class Attribute(object):
         """ Returns a clause for filtering based on regular expressions."""
         return RegexClauseElement(self, pattern)
 
+
 class AnnotationAttribute(Attribute):
     """
     Class for annotations referenced in graph queries
@@ -250,13 +252,13 @@ class AnnotationAttribute(Attribute):
     has_subquery = False
     alias_prefix = ''
     template = '''({token_alias})-[:is_a]->({type_alias})'''
-    #template = '''({token_alias})'''
+    # template = '''({token_alias})'''
     begin_template = '{}_{}_begin'
     end_template = '{}_{}_end'
     alias_template = '{prefix}node_{t}'
     rel_type_template = 'r_{t}'
 
-    def __init__(self, type, pos = 0, corpus = None, hierarchy = None):
+    def __init__(self, type, pos=0, corpus=None, hierarchy=None):
         self.type = type
         self.pos = pos
         self.corpus = corpus
@@ -294,7 +296,7 @@ class AnnotationAttribute(Attribute):
         if self.hierarchy is not None:
             for a in args:
                 if not self.hierarchy.has_type_subset(self.type, a):
-                    raise(SubsetError('{} is not a subset of {} types.'.format(a, self.type)))
+                    raise (SubsetError('{} is not a subset of {} types.'.format(a, self.type)))
         self.subset_type_labels.extend(args)
         return self
 
@@ -304,7 +306,7 @@ class AnnotationAttribute(Attribute):
         if self.hierarchy is not None:
             for a in args:
                 if not self.hierarchy.has_token_subset(self.type, a):
-                    raise(SubsetError('{} is not a subset of {} tokens.'.format(a, self.type)))
+                    raise (SubsetError('{} is not a subset of {} tokens.'.format(a, self.type)))
         self.subset_token_labels.extend(args)
         return self
 
@@ -331,7 +333,7 @@ class AnnotationAttribute(Attribute):
     @property
     def type_alias(self):
         """ Returns a cypher formatted string of type alias"""
-        return key_for_cypher('type_'+self.alias.replace('`', ''))
+        return key_for_cypher('type_' + self.alias.replace('`', ''))
 
     @property
     def alias(self):
@@ -341,7 +343,7 @@ class AnnotationAttribute(Attribute):
             pre += 'prev_{}_'.format(-1 * self.pos)
         elif self.pos > 0:
             pre += 'foll_{}_'.format(self.pos)
-        return key_for_cypher(self.alias_template.format(t=self.key, prefix = pre))
+        return key_for_cypher(self.alias_template.format(t=self.key, prefix=pre))
 
     @property
     def with_alias(self):
@@ -361,13 +363,13 @@ class AnnotationAttribute(Attribute):
 
     def __getattr__(self, key):
         if key == 'annotation':
-            raise(AttributeError('Annotations do not have annotation attributes.'))
+            raise (AttributeError('Annotations do not have annotation attributes.'))
         if key in ['previous', 'following']:
             if key == 'previous':
                 pos = self.pos - 1
             else:
                 pos = self.pos + 1
-            return AnnotationAttribute(self.type, pos, corpus = self.corpus, hierarchy = self.hierarchy)
+            return AnnotationAttribute(self.type, pos, corpus=self.corpus, hierarchy=self.hierarchy)
         elif key == 'follows_pause':
             from .pause import FollowsPauseAttribute
             return FollowsPauseAttribute(self)
@@ -376,13 +378,13 @@ class AnnotationAttribute(Attribute):
             return PrecedesPauseAttribute(self)
         elif key == 'speaker':
             from .speaker import SpeakerAnnotation
-            return SpeakerAnnotation(self, corpus = self.corpus)
+            return SpeakerAnnotation(self, corpus=self.corpus)
         elif key == 'discourse':
             from .discourse import DiscourseAnnotation
-            return DiscourseAnnotation(self, corpus = self.corpus)
+            return DiscourseAnnotation(self, corpus=self.corpus)
         elif key == 'pause':
             from .pause import PauseAnnotation
-            return PauseAnnotation(self.pos, corpus = self.corpus, hierarchy = self.hierarchy)
+            return PauseAnnotation(self.pos, corpus=self.corpus, hierarchy=self.hierarchy)
         elif key.startswith('pitch'):
             from .acoustic import PitchAttribute
             return PitchAttribute(self, relative=('relative' in key))
@@ -394,15 +396,15 @@ class AnnotationAttribute(Attribute):
             return FormantAttribute(self, relative=('relative' in key))
         elif self.hierarchy is not None and key in self.hierarchy.contained_by(self.type):
             from .hierarchical import HierarchicalAnnotation
-            return HierarchicalAnnotation(key, self, corpus = self.corpus, hierarchy = self.hierarchy)
+            return HierarchicalAnnotation(key, self, corpus=self.corpus, hierarchy=self.hierarchy)
         elif self.hierarchy is not None and key in self.hierarchy.contains(self.type):
             from .path import SubPathAnnotation
-            return SubPathAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
+            return SubPathAnnotation(self, AnnotationAttribute(key, self.pos, corpus=self.corpus))
         elif self.hierarchy is not None \
                 and self.type in self.hierarchy.subannotations \
                 and key in self.hierarchy.subannotations[self.type]:
             from .subannotation import SubAnnotation
-            return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
+            return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus=self.corpus))
         else:
             if self.hierarchy is None or key in special_attributes:
                 type = False
@@ -412,7 +414,8 @@ class AnnotationAttribute(Attribute):
                 elif self.hierarchy.has_token_property(self.type, key):
                     type = False
                 else:
-                    raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
+                    raise (
+                    AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
 
             return Attribute(self, key, type)
 

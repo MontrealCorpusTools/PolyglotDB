@@ -1,4 +1,3 @@
-
 from collections import defaultdict
 
 from ..helper import key_for_cypher, value_for_cypher
@@ -21,6 +20,7 @@ template = '''{match}
 {with}
 {return}'''
 
+
 def query_to_cypher(query):
     """
     translates a query object into a cypher formatted string
@@ -36,10 +36,10 @@ def query_to_cypher(query):
         the cypher-formatted string
     """
     kwargs = {'match': '',
-            'optional_match':'',
-            'where': '',
-            'with': '',
-            'return':''}
+              'optional_match': '',
+              'where': '',
+              'with': '',
+              'return': ''}
     annotation_levels = query.annotation_levels()
 
     match_strings = []
@@ -54,10 +54,11 @@ def query_to_cypher(query):
         for a in c.annotations:
             filter_annotations.add(a)
 
-    for k,v in annotation_levels.items():
+    for k, v in annotation_levels.items():
         if k.has_subquery:
             continue
-        statements,optional_statements, withs, wheres, optional_wheres = generate_match(query, k,v, filter_annotations)
+        statements, optional_statements, withs, wheres, optional_wheres = generate_match(query, k, v,
+                                                                                         filter_annotations)
         all_withs.update(withs)
         match_strings.extend(statements)
         optional_match_strings.extend(optional_statements)
@@ -78,6 +79,7 @@ def query_to_cypher(query):
     kwargs['return'] = generate_return(query)
     cypher = template.format(**kwargs)
     return cypher
+
 
 def query_to_params(query):
     """
@@ -100,7 +102,7 @@ def query_to_params(query):
         else:
             try:
                 if not isinstance(c.value, Attribute):
-                    params[c.cypher_value_string()[1:-1].replace('`','')] = c.value
+                    params[c.cypher_value_string()[1:-1].replace('`', '')] = c.value
             except AttributeError:
                 pass
     return params

@@ -5,16 +5,17 @@ import csv
 from collections import defaultdict
 
 from ..sql.models import (Base, Annotation, Property, NumericProperty, SpeaksIn,
-                    AnnotationType, PropertyType, Discourse, Speaker, SoundFile)
+                          AnnotationType, PropertyType, Discourse, Speaker, SoundFile)
 
 from ..sql.helper import get_or_create
 
 from ..acoustics.io import setup_audio
 
 from ..io.importer import (data_to_graph_csvs, import_csvs,
-                    data_to_type_csvs, import_type_csvs)
+                           data_to_type_csvs, import_type_csvs)
 
 from ..exceptions import ParseError
+
 
 class ImportContext(object):
     def add_types(self, types, type_headers):
@@ -30,22 +31,22 @@ class ImportContext(object):
         data_to_type_csvs(self, types, type_headers)
         import_type_csvs(self, type_headers)
 
-    def initialize_import(self, speakers, token_headers, subannotations = None):
+    def initialize_import(self, speakers, token_headers, subannotations=None):
         """ prepares corpus for import of types of annotations """
         directory = self.config.temporary_directory('csv')
         for s in speakers:
             for k, v in token_headers.items():
                 path = os.path.join(directory, '{}_{}.csv'.format(s, k))
-                with open(path, 'w', newline = '', encoding = 'utf8') as f:
-                    w = csv.DictWriter(f, v, delimiter = ',')
+                with open(path, 'w', newline='', encoding='utf8') as f:
+                    w = csv.DictWriter(f, v, delimiter=',')
                     w.writeheader()
             if subannotations is not None:
-                for k,v in subannotations.items():
+                for k, v in subannotations.items():
                     for sub in v:
-                        path = os.path.join(directory,'{}_{}_{}.csv'.format(s, k, sub))
-                        with open(path, 'w', newline = '', encoding = 'utf8') as f:
+                        path = os.path.join(directory, '{}_{}_{}.csv'.format(s, k, sub))
+                        with open(path, 'w', newline='', encoding='utf8') as f:
                             header = ['id', 'begin', 'end', 'annotation_id', 'label']
-                            w = csv.DictWriter(f, header, delimiter = ',')
+                            w = csv.DictWriter(f, header, delimiter=',')
                             w.writeheader()
         self.execute_cypher('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
         self.execute_cypher('CREATE INDEX ON :Discourse(name)')
@@ -53,7 +54,7 @@ class ImportContext(object):
 
         self.execute_cypher('''MERGE (n:Corpus {{name: '{}'}}) return n'''.format(self.corpus_name))
 
-    def finalize_import(self, data, call_back = None, stop_check = None):
+    def finalize_import(self, data, call_back=None, stop_check=None):
         """ generates hierarchy and saves variables"""
         import_csvs(self, data, call_back, stop_check)
         self.encode_hierarchy()
@@ -70,24 +71,25 @@ class ImportContext(object):
             Data for the discourse to be added
         '''
         if data.name in self.discourses:
-            raise(ParseError('The discourse \'{}\' already exists in this corpus.'.format(data.name)))
+            raise (ParseError('The discourse \'{}\' already exists in this corpus.'.format(data.name)))
         log = logging.getLogger('{}_loading'.format(self.corpus_name))
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
 
         self.execute_cypher(
-            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(corpus_name = self.cypher_safe_name),
-                    discourse_name = data.name)
+            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(
+                corpus_name=self.cypher_safe_name),
+            discourse_name=data.name)
         for s in data.speakers:
             self.execute_cypher(
-                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(corpus_name = self.cypher_safe_name),
-                        speaker_name = s)
+                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(
+                    corpus_name=self.cypher_safe_name),
+                speaker_name=s)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(self, data)
         self.update_sql_database(data)
         self.hierarchy.update(data.hierarchy)
         setup_audio(self, data)
-
 
         log.info('Finished adding discourse {}!'.format(data.name))
         log.debug('Total time taken: {} seconds'.format(time.time() - begin))
@@ -164,7 +166,7 @@ class ImportContext(object):
             call_back('Finding  files...')
             call_back(0, 0)
         file_tuples = []
-        for root, subdirs, files in os.walk(path, followlinks = True):
+        for root, subdirs, files in os.walk(path, followlinks=True):
             for filename in files:
                 if parser.stop_check is not None and parser.stop_check():
                     return
@@ -172,10 +174,11 @@ class ImportContext(object):
                     continue
                 file_tuples.append((root, filename))
         if len(file_tuples) == 0:
-            raise(ParseError('No files in the specified directory matched the parser. Please check to make sure you have the correct parser.'))
+            raise (ParseError(
+                'No files in the specified directory matched the parser. Please check to make sure you have the correct parser.'))
         if call_back is not None:
             call_back('Parsing types...')
-            call_back(0,len(file_tuples))
+            call_back(0, len(file_tuples))
             cur = 0
         speakers = set()
         types = defaultdict(set)
@@ -185,10 +188,10 @@ class ImportContext(object):
             if parser.stop_check is not None and parser.stop_check():
                 return
             if call_back is not None:
-                call_back('Parsing types from file {} of {}...'.format(i+1, len(file_tuples)))
+                call_back('Parsing types from file {} of {}...'.format(i + 1, len(file_tuples)))
                 call_back(i)
             root, filename = t
-            path = os.path.join(root,filename)
+            path = os.path.join(root, filename)
             try:
                 information = parser.parse_information(path, self.corpus_name)
                 speakers.update(information['speakers'])
@@ -206,7 +209,7 @@ class ImportContext(object):
 
         if call_back is not None:
             call_back('Parsing files...')
-            call_back(0,len(file_tuples))
+            call_back(0, len(file_tuples))
             cur = 0
         could_not_parse = []
         for i, t in enumerate(file_tuples):
@@ -215,9 +218,9 @@ class ImportContext(object):
             root, filename = t
             name = os.path.splitext(filename)[0]
             if call_back is not None:
-                call_back('Parsing file {} of {} ({})...'.format(i+1, len(file_tuples), name))
+                call_back('Parsing file {} of {} ({})...'.format(i + 1, len(file_tuples), name))
                 call_back(i)
-            path = os.path.join(root,filename)
+            path = os.path.join(root, filename)
             try:
                 data = parser.parse_discourse(path)
             except ParseError:
@@ -243,10 +246,10 @@ class ImportContext(object):
         log.info('Beginning to import {} into the SQL database...'.format(data.name))
         initial_begin = time.time()
 
-        discourse, _ =  get_or_create(self.sql_session, Discourse, name = data.name)
+        discourse, _ = get_or_create(self.sql_session, Discourse, name=data.name)
         for s in data.speakers:
-            speaker, _ = get_or_create(self.sql_session, Speaker, name = s)
-            sin = SpeaksIn(speaker = speaker, discourse = discourse)
+            speaker, _ = get_or_create(self.sql_session, Speaker, name=s)
+            sin = SpeaksIn(speaker=speaker, discourse=discourse)
             if s in data.speaker_channel_mapping:
                 sin.channel = data.speaker_channel_mapping[s]
             self.sql_session.add(sin)
@@ -261,23 +264,26 @@ class ImportContext(object):
             for d in data[level]:
                 trans = None
                 if segment_type is not None:
-                    base_sequence = data[segment_type].lookup_range(d.begin, d.end, speaker = d.speaker)
+                    base_sequence = data[segment_type].lookup_range(d.begin, d.end, speaker=d.speaker)
                     phone_cache[segment_type].update(x.label for x in base_sequence)
                 annotation, created = self.lexicon.get_or_create_annotation(d.label, self.word_name)
                 if created:
-                    for k,v in d.type_properties.items():
+                    for k, v in d.type_properties.items():
                         if v is None:
                             continue
                         prop_type = self.lexicon.get_or_create_property_type(k)
-                        if isinstance(v, (int,float)):
-                            prop, _ = get_or_create(self.sql_session, NumericProperty, annotation = annotation, property_type = prop_type, value = v)
+                        if isinstance(v, (int, float)):
+                            prop, _ = get_or_create(self.sql_session, NumericProperty, annotation=annotation,
+                                                    property_type=prop_type, value=v)
                         elif isinstance(v, (list, tuple)):
-                            prop, _ = get_or_create(self.sql_session, Property, annotation = annotation, property_type = prop_type, value = '.'.join(map(str,v)))
+                            prop, _ = get_or_create(self.sql_session, Property, annotation=annotation,
+                                                    property_type=prop_type, value='.'.join(map(str, v)))
                         else:
-                            prop, _ = get_or_create(self.sql_session, Property, annotation = annotation, property_type = prop_type, value = v)
+                            prop, _ = get_or_create(self.sql_session, Property, annotation=annotation,
+                                                    property_type=prop_type, value=v)
 
             log.info('Finished importing {} annotations!'.format(level))
-            log.debug('Importing {} annotations took: {} seconds.'.format(level, time.time()-begin))
+            log.debug('Importing {} annotations took: {} seconds.'.format(level, time.time() - begin))
 
         for level, phones in phone_cache.items():
             for seg in phones:

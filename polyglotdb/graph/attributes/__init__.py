@@ -1,4 +1,3 @@
-
 from .base import AnnotationAttribute, Attribute
 
 from .acoustic import Track
@@ -6,7 +5,7 @@ from .acoustic import Track
 from .aggregate import AggregateAttribute
 
 from .path import (PathAnnotation, PathAttribute, SubPathAnnotation,
-                PositionalAnnotation, PositionalAttribute)
+                   PositionalAnnotation, PositionalAttribute)
 
 from .pause import PauseAnnotation, PausePathAnnotation
 

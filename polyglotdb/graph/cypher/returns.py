@@ -1,4 +1,3 @@
-
 from ..helper import key_for_cypher, value_for_cypher
 
 from ..attributes import SubPathAnnotation, SubAnnotation
@@ -35,6 +34,7 @@ remove_property_template = '''{alias}.{attribute}'''
 
 delete_template = '''DETACH DELETE {alias}'''
 
+
 def generate_order_by(query):
     """ 
     Generates cypher string to order columns, groups, and elements of query
@@ -64,7 +64,7 @@ def generate_order_by(query):
                     break
             else:
                 element = c[0].for_cypher()
-                #query.columns(c[0])
+                # query.columns(c[0])
         if c[1]:
             element += ' DESC'
         properties.append(element)
@@ -72,6 +72,7 @@ def generate_order_by(query):
     if properties:
         return '\nORDER BY ' + ', '.join(properties)
     return ''
+
 
 def generate_delete(query):
     """ 
@@ -91,6 +92,7 @@ def generate_delete(query):
     kwargs['alias'] = query.to_find.alias
     return_statement = delete_template.format(**kwargs)
     return return_statement
+
 
 def generate_aggregate(query):
     """
@@ -117,6 +119,7 @@ def generate_aggregate(query):
     for a in query._aggregate:
         properties.append(a.aliased_for_output())
     return ', '.join(properties)
+
 
 def generate_distinct(query):
     """ 
@@ -146,6 +149,7 @@ def generate_distinct(query):
                 pass
         return ', '.join(properties)
 
+
 def generate_cache(query):
     """
     Generates cache from query object
@@ -163,9 +167,9 @@ def generate_cache(query):
     properties = []
     for c in query._cache:
         kwargs = {'alias': c.base_annotation.alias,
-                'attribute': c.output_alias,
-                'value': c.for_cypher()
-                }
+                  'attribute': c.output_alias,
+                  'value': c.for_cypher()
+                  }
         if c.label == 'position':
             kwargs['alias'] = query.to_find.alias
         set_string = set_property_template.format(**kwargs)
@@ -174,6 +178,7 @@ def generate_cache(query):
         return 'SET {}'.format(', '.join(properties))
     else:
         return ''
+
 
 def generate_return(query):
     """
@@ -189,7 +194,7 @@ def generate_return(query):
     str
         cypher formatted string
     """
-    kwargs = {'order_by': '', 'columns':''}
+    kwargs = {'order_by': '', 'columns': ''}
     return_statement = ''
     if query._delete:
         return generate_delete(query)
@@ -205,18 +210,18 @@ def generate_return(query):
 
         return_statement = set_pause_template.format(**kwargs)
         return return_statement
-    for k,v in query._set_token.items():
+    for k, v in query._set_token.items():
         if v is None:
             v = 'NULL'
         else:
             v = value_for_cypher(v)
-        set_strings.append(set_property_template.format(alias = query.to_find.alias, attribute = k, value = v))
-    for k,v in query._set_type.items():
+        set_strings.append(set_property_template.format(alias=query.to_find.alias, attribute=k, value=v))
+    for k, v in query._set_type.items():
         if v is None:
             v = 'NULL'
         else:
             v = value_for_cypher(v)
-        set_strings.append(set_property_template.format(alias = query.to_find.type_alias, attribute = k, value = v))
+        set_strings.append(set_property_template.format(alias=query.to_find.type_alias, attribute=k, value=v))
     if query._set_token_labels:
         kwargs = {}
         kwargs['alias'] = query.to_find.alias
@@ -241,7 +246,8 @@ def generate_return(query):
         remove_label_strings.append(remove_label_template.format(**kwargs))
     if remove_label_strings:
         if return_statement:
-            return_statement += '\nWITH {alias}, {type_alias}\n'.format(alias = query.to_find.alias, type_alias = query.to_find.type_alias)
+            return_statement += '\nWITH {alias}, {type_alias}\n'.format(alias=query.to_find.alias,
+                                                                        type_alias=query.to_find.type_alias)
         return_statement += '\nREMOVE ' + ', '.join(remove_label_strings)
     if return_statement:
         return return_statement

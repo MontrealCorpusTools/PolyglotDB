@@ -1,6 +1,4 @@
-
 from ..attributes import AnnotationAttribute, PauseAnnotation, PausePathAnnotation
-
 
 anchor_template = '''({token_alias})-[:is_a]->({type_alias})'''
 prec_template = '''({prev_type_alias})<-[:is_a]-({prev_alias})-[:precedes{dist}]->({node_alias})'''
@@ -8,6 +6,7 @@ foll_template = '''({node_alias})-[:precedes{dist}]->({foll_alias})-[:is_a]->({f
 
 prec_pause_template = '''{path_alias} = (:speech:word)-[:precedes_pause*0..]->({node_alias})'''
 foll_pause_template = '''{path_alias} = ({node_alias})-[:precedes_pause*0..]->(:speech:word)'''
+
 
 def generate_match(query, annotation_type, annotation_list, filter_annotations):
     """ 
@@ -38,7 +37,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
         only if annotations aren't filters
 
     """
-    annotation_list = sorted(annotation_list, key = lambda x: x.pos)
+    annotation_list = sorted(annotation_list, key=lambda x: x.pos)
     positions = set(x.pos for x in annotation_list)
     prec_condition = ''
     foll_condition = ''
@@ -71,7 +70,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
             kwargs = {}
             if isinstance(annotation_type, PauseAnnotation):
                 if query.to_find.type == query.corpus.word_name:
-                    kwargs['node_alias'] = AnnotationAttribute(query.corpus.word_name,0,a.corpus).alias #FIXME?
+                    kwargs['node_alias'] = AnnotationAttribute(query.corpus.word_name, 0, a.corpus).alias  # FIXME?
                 else:
                     anno = query.to_find
                     while True:
@@ -91,10 +90,10 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
                             anno = getattr(anno, t)
                             if t == query.corpus.word_name:
                                 break
-                        anno.pos = a.pos+1
+                        anno.pos = a.pos + 1
                         kwargs['node_alias'] = anno.alias
                     else:
-                        kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos+1,a.corpus).alias
+                        kwargs['node_alias'] = AnnotationAttribute(a.type, a.pos + 1, a.corpus).alias
 
                     kwargs['dist'] = ''
                 else:
@@ -107,7 +106,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
                                 break
 
                     else:
-                        kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                        kwargs['node_alias'] = AnnotationAttribute(a.type, 0, a.corpus).alias
                     if a.pos == -1:
                         kwargs['dist'] = ''
                     else:
@@ -120,7 +119,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
             kwargs = {}
             if isinstance(annotation_type, PauseAnnotation):
                 if query.to_find.type == query.corpus.word_name:
-                    kwargs['node_alias'] = AnnotationAttribute(query.corpus.word_name,0,a.corpus).alias #FIXME?
+                    kwargs['node_alias'] = AnnotationAttribute(query.corpus.word_name, 0, a.corpus).alias  # FIXME?
                 else:
                     anno = query.to_find
                     while True:
@@ -140,10 +139,10 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
                             anno = getattr(anno, t)
                             if t == query.corpus.word_name:
                                 break
-                        anno.pos = a.pos-1
+                        anno.pos = a.pos - 1
                         kwargs['node_alias'] = anno.alias
                     else:
-                        kwargs['node_alias'] = AnnotationAttribute(a.type,a.pos-1,a.corpus).alias
+                        kwargs['node_alias'] = AnnotationAttribute(a.type, a.pos - 1, a.corpus).alias
 
                     kwargs['dist'] = ''
                 else:
@@ -157,7 +156,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
                                 break
                         kwargs['node_alias'] = anno.alias
                     else:
-                        kwargs['node_alias'] = AnnotationAttribute(a.type,0,a.corpus).alias
+                        kwargs['node_alias'] = AnnotationAttribute(a.type, 0, a.corpus).alias
                     if a.pos == 1:
                         kwargs['dist'] = ''
                     else:

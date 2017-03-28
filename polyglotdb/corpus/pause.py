@@ -1,10 +1,9 @@
-
 from ..sql.models import Discourse, DiscourseProperty, PropertyType
 from ..sql.helper import get_or_create
 
 
 class PauseContext(object):
-    def encode_pauses(self, pause_words, call_back = None, stop_check = None):
+    def encode_pauses(self, pause_words, call_back=None, stop_check=None):
         """
         Set words to be pauses, as opposed to speech.
 
@@ -24,7 +23,7 @@ class PauseContext(object):
         elif isinstance(pause_words, str):
             q = q.filter(word.label.regex(pause_words))
         else:
-            raise(NotImplementedError)
+            raise (NotImplementedError)
         q.set_pause()
 
         if call_back is not None:
@@ -35,8 +34,8 @@ class PauseContext(object):
         MATCH p = (prec)-[:precedes_pause*]->(foll:{corpus}:{word_type}:speech)
         WITH prec, foll, p
         WHERE NONE (x in nodes(p)[1..-1] where x:speech)
-        MERGE (prec)-[:precedes]->(foll)'''.format(corpus = self.cypher_safe_name,
-                                                    word_type = self.word_name)
+        MERGE (prec)-[:precedes]->(foll)'''.format(corpus=self.cypher_safe_name,
+                                                   word_type=self.word_name)
 
         self.execute_cypher(statement)
         self.hierarchy.annotation_types.add('pause')
@@ -46,18 +45,20 @@ class PauseContext(object):
             with d, max(w.end) as speech_end, min(w.begin) as speech_begin
             set d.speech_begin = speech_begin,
                 d.speech_end = speech_end
-            return d'''.format(corpus = self.cypher_safe_name,
-                                                    word_type = self.word_name)
+            return d'''.format(corpus=self.cypher_safe_name,
+                               word_type=self.word_name)
 
         results = self.execute_cypher(statement)
         sbpt, _ = get_or_create(self.sql_session,
-                                PropertyType, label = 'speech_begin')
+                                PropertyType, label='speech_begin')
         sept, _ = get_or_create(self.sql_session,
-                                PropertyType, label = 'speech_end')
+                                PropertyType, label='speech_end')
         for d in results:
             discourse = self.sql_session.query(Discourse).filter(Discourse.name == d['d']['name']).first()
-            prop, _ = get_or_create(self.sql_session, DiscourseProperty, discourse = discourse, property_type = sbpt, value = str(d['d']['speech_begin']))
-            prop, _ = get_or_create(self.sql_session, DiscourseProperty, discourse = discourse, property_type = sept, value = str(d['d']['speech_end']))
+            prop, _ = get_or_create(self.sql_session, DiscourseProperty, discourse=discourse, property_type=sbpt,
+                                    value=str(d['d']['speech_begin']))
+            prop, _ = get_or_create(self.sql_session, DiscourseProperty, discourse=discourse, property_type=sept,
+                                    value=str(d['d']['speech_end']))
         self.hierarchy.add_discourse_properties(self, [('speech_begin', float), ('speech_end', float)])
         self.encode_hierarchy()
         self.refresh_hierarchy()
@@ -76,12 +77,12 @@ class PauseContext(object):
             self.sql_session.query(DiscourseProperty).filter(DiscourseProperty.property_type_id == ptid).delete()
         statement = '''MATCH (n:{corpus}:{word_type}:speech)-[r:precedes]->(m:{corpus}:{word_type}:speech)
         WHERE (n)-[:precedes_pause]->()
-        DELETE r'''.format(corpus=self.cypher_safe_name, word_type = self.word_name)
+        DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
         self.execute_cypher(statement)
 
         statement = '''MATCH (n:{corpus}:{word_type})-[r:precedes_pause]->(m:{corpus}:{word_type})
         MERGE (n)-[:precedes]->(m)
-        DELETE r'''.format(corpus=self.cypher_safe_name, word_type = self.word_name)
+        DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
         self.execute_cypher(statement)
 
         statement = '''MATCH (n:pause:{corpus})

@@ -1,12 +1,12 @@
-
 from ..helper import key_for_cypher
 
 from .speaker import SpeakerAnnotation
 
+
 class DiscourseAnnotation(SpeakerAnnotation):
     template = '''({token_alias})-[:spoken_in]->({discourse_alias})'''
 
-    def __init__(self, contained_annotation, corpus = None):
+    def __init__(self, contained_annotation, corpus=None):
         super(DiscourseAnnotation, self).__init__(contained_annotation, corpus)
         self.type = 'Discourse'
 

@@ -1,11 +1,10 @@
-
 from polyglotdb.graph.attributes.base import AnnotationAttribute, Attribute, key_for_cypher
 
 from polyglotdb.graph.attributes.path import PathAnnotation, PathAttribute
 
 
 class PauseAnnotation(AnnotationAttribute):
-    def __init__(self, pos = 0, corpus = None, hierarchy = None):
+    def __init__(self, pos=0, corpus=None, hierarchy=None):
         self.type = 'pause'
         self.pos = pos
         self.corpus = corpus
@@ -32,13 +31,13 @@ class PauseAnnotation(AnnotationAttribute):
                 pos = self.pos - 1
             else:
                 pos = self.pos + 1
-            return PausePathAnnotation(self.type, pos, corpus = self.corpus, hierarchy = self.hierarchy)
+            return PausePathAnnotation(self.type, pos, corpus=self.corpus, hierarchy=self.hierarchy)
         elif key == 'speaker':
             from .speaker import SpeakerAnnotation
-            return SpeakerAnnotation(self, corpus = self.corpus)
+            return SpeakerAnnotation(self, corpus=self.corpus)
         elif key == 'discourse':
             from .discourse import DiscourseAnnotation
-            return DiscourseAnnotation(self, corpus = self.corpus)
+            return DiscourseAnnotation(self, corpus=self.corpus)
         return PauseAttribute(self, key, False)
 
     @property
@@ -57,10 +56,9 @@ class NearPauseAttribute(PauseAttribute):
 
 
 class FollowsPauseAttribute(NearPauseAttribute):
-
     def __eq__(self, other):
         if not isinstance(other, bool):
-            raise(ValueError('Value must be a boolean for follows_pause.'))
+            raise (ValueError('Value must be a boolean for follows_pause.'))
         from ..elements import FollowsPauseClauseElement, NotFollowsPauseClauseElement
         if other:
             return FollowsPauseClauseElement(self.annotation)
@@ -69,10 +67,9 @@ class FollowsPauseAttribute(NearPauseAttribute):
 
 
 class PrecedesPauseAttribute(NearPauseAttribute):
-
     def __eq__(self, other):
         if not isinstance(other, bool):
-            raise(ValueError('Value must be a boolean for precedes_pause.'))
+            raise (ValueError('Value must be a boolean for precedes_pause.'))
         from ..elements import PrecedesPauseClauseElement, NotPrecedesPauseClauseElement
         if other:
             return PrecedesPauseClauseElement(self.annotation)
@@ -93,7 +90,7 @@ class PausePathAnnotation(PathAnnotation):
 
     def __getattr__(self, key):
         if key == 'annotation':
-            raise(AttributeError('Annotations cannot have annotations.'))
+            raise (AttributeError('Annotations cannot have annotations.'))
         return PausePathAttribute(self, key, False)
 
 
@@ -109,5 +106,5 @@ class PausePathAttribute(PathAttribute):
 
     def for_filter(self):
         if self.label == 'duration':
-            return self.duration_filter_template.format(alias = self.annotation.path_alias)
-        return self.filter_template.format(alias = self.annotation.path_alias, property = self.label)
+            return self.duration_filter_template.format(alias=self.annotation.path_alias)
+        return self.filter_template.format(alias=self.annotation.path_alias, property=self.label)

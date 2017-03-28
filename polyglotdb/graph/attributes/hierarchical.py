@@ -1,13 +1,14 @@
-
 from ..helper import key_for_cypher
 
 from .base import AnnotationAttribute, Attribute, special_attributes
 
+
 class HierarchicalAnnotation(AnnotationAttribute):
     template = '''({contained_alias})-[:contained_by{depth}]->({containing_alias})-[:is_a]->({containing_type_alias})'''
-    #template = '''({contained_alias})-[:contained_by*{depth}]->({containing_alias})'''
 
-    def __init__(self, type, contained_annotation, pos = 0, corpus = None, hierarchy = None):
+    # template = '''({contained_alias})-[:contained_by*{depth}]->({containing_alias})'''
+
+    def __init__(self, type, contained_annotation, pos=0, corpus=None, hierarchy=None):
         self.type = type
         self.contained_annotation = contained_annotation
         self.pos = pos
@@ -49,36 +50,38 @@ class HierarchicalAnnotation(AnnotationAttribute):
         return real_path
 
     def __repr__(self):
-        return '<HierarchicalAnnotation object of \'{}\' type from \'{}\'>'.format(self.type, self.contained_annotation.type)
+        return '<HierarchicalAnnotation object of \'{}\' type from \'{}\'>'.format(self.type,
+                                                                                   self.contained_annotation.type)
 
     def __getattr__(self, key):
         if key == 'annotation':
-            raise(AttributeError('Annotations do not have annotation attributes.'))
+            raise (AttributeError('Annotations do not have annotation attributes.'))
         if key in ['previous', 'following']:
             if key == 'previous':
                 pos = self.pos - 1
             else:
                 pos = self.pos + 1
-            return HierarchicalAnnotation(self.type, self.contained_annotation, pos = pos, corpus = self.corpus, hierarchy = self.hierarchy)
+            return HierarchicalAnnotation(self.type, self.contained_annotation, pos=pos, corpus=self.corpus,
+                                          hierarchy=self.hierarchy)
         elif key == 'speaker':
             from .speaker import SpeakerAnnotation
-            return SpeakerAnnotation(self, corpus = self.corpus)
+            return SpeakerAnnotation(self, corpus=self.corpus)
         elif key == 'discourse':
             from .discourse import DiscourseAnnotation
-            return DiscourseAnnotation(self, corpus = self.corpus)
+            return DiscourseAnnotation(self, corpus=self.corpus)
         elif key == 'pause':
             from .pause import PauseAnnotation
-            return PauseAnnotation(self.pos, corpus = self.corpus, hierarchy = self.hierarchy)
+            return PauseAnnotation(self.pos, corpus=self.corpus, hierarchy=self.hierarchy)
         elif self.hierarchy is not None and key in self.hierarchy.contained_by(self.type):
-            return HierarchicalAnnotation(key, self, corpus = self.corpus, hierarchy = self.hierarchy)
+            return HierarchicalAnnotation(key, self, corpus=self.corpus, hierarchy=self.hierarchy)
         elif self.hierarchy is not None and key in self.hierarchy.contains(self.type):
             from .path import SubPathAnnotation
-            return SubPathAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
+            return SubPathAnnotation(self, AnnotationAttribute(key, self.pos, corpus=self.corpus))
         elif self.hierarchy is not None \
                 and self.type in self.hierarchy.subannotations \
                 and key in self.hierarchy.subannotations[self.type]:
             from .subannotation import SubAnnotation
-            return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus = self.corpus))
+            return SubAnnotation(self, AnnotationAttribute(key, self.pos, corpus=self.corpus))
         else:
             if self.hierarchy is None or key in special_attributes:
                 type = False
@@ -88,20 +91,21 @@ class HierarchicalAnnotation(AnnotationAttribute):
                 elif self.hierarchy.has_token_property(self.type, key):
                     type = False
                 else:
-                    raise(AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
+                    raise (
+                    AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
             return Attribute(self, key, type)
 
     @property
     def alias(self):
-        
+
         """Returns a cypher formatted string of keys and prefixes"""
-     
+
         pre = ''
         if self.pos < 0:
             pre += 'prev_{}_'.format(-1 * self.pos)
         elif self.pos > 0:
             pre += 'foll_{}_'.format(self.pos)
-        return key_for_cypher(pre + self.contained_annotation.alias.replace('`','') + '_' + self.type)
+        return key_for_cypher(pre + self.contained_annotation.alias.replace('`', '') + '_' + self.type)
 
     def for_match(self):
         """ sets 'contained_alias' ,'containing_alias', and 'containing_type_alias'  keyword arguments for an annotation """
@@ -114,4 +118,3 @@ class HierarchicalAnnotation(AnnotationAttribute):
         else:
             kwargs['depth'] = ''
         return self.template.format(**kwargs)
-

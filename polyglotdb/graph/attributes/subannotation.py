@@ -1,7 +1,7 @@
-
 from ..helper import key_for_cypher
 
 from .path import SubPathAnnotation, PathAttribute
+
 
 class SubAnnotation(SubPathAnnotation):
     subquery_template = '''OPTIONAL MATCH ({def_path_alias})-[:annotates]->({alias})
@@ -10,7 +10,7 @@ class SubAnnotation(SubPathAnnotation):
         ORDER BY {path_alias}.begin
         WITH {output_with_string}'''
 
-    def generate_subquery(self, output_with_string, input_with_string, filters = None):
+    def generate_subquery(self, output_with_string, input_with_string, filters=None):
         """
         Generates a subquery 
         
@@ -28,10 +28,11 @@ class SubAnnotation(SubPathAnnotation):
                 if c.involves(self):
                     relevant.append(c.for_cypher())
             if relevant:
-                where_string = 'WHERE '+ '\nAND '.join(relevant)
-        return self.subquery_template.format(alias = self.annotation.alias,
-                        input_with_string = input_with_string, output_with_string = output_with_string,
-                        def_path_alias = self.def_path_alias, path_alias = self.path_alias, where_string = where_string)
+                where_string = 'WHERE ' + '\nAND '.join(relevant)
+        return self.subquery_template.format(alias=self.annotation.alias,
+                                             input_with_string=input_with_string, output_with_string=output_with_string,
+                                             def_path_alias=self.def_path_alias, path_alias=self.path_alias,
+                                             where_string=where_string)
 
     @property
     def withs(self):
@@ -55,7 +56,7 @@ class SubAnnotation(SubPathAnnotation):
 
     def __getattr__(self, key):
         if key == 'annotation':
-            raise(AttributeError('Annotations cannot have annotations.'))
+            raise (AttributeError('Annotations cannot have annotations.'))
         if key == 'initial':
             return PositionalAnnotation(self, 0)
         elif key == 'final':
@@ -68,7 +69,7 @@ class SubAnnotation(SubPathAnnotation):
                 and self.type in self.hierarchy.subannotations \
                 and key in self.hierarchy.subannotations[self.type]:
             from .subannotation import SubAnnotation
-            return SubAnnotation(self, AnnotationAttribute(key, self.annotation.pos, corpus = self.annotation.corpus))
+            return SubAnnotation(self, AnnotationAttribute(key, self.annotation.pos, corpus=self.annotation.corpus))
 
         type = False
         return PathAttribute(self, key, type)

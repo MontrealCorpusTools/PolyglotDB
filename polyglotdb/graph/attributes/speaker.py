@@ -1,12 +1,12 @@
-
 from ..helper import key_for_cypher
 
 from .hierarchical import HierarchicalAnnotation
 
+
 class SpeakerAnnotation(HierarchicalAnnotation):
     template = '''({token_alias})-[:spoken_by]->({speaker_alias})'''
 
-    def __init__(self, contained_annotation, corpus = None):
+    def __init__(self, contained_annotation, corpus=None):
         self.corpus = None
         self.type = 'Speaker'
         self.contained_annotation = contained_annotation
@@ -31,7 +31,6 @@ class SpeakerAnnotation(HierarchicalAnnotation):
         if self.corpus is not None:
             label_string += ':{}'.format(self.corpus)
         return '{}{}'.format(self.alias, label_string)
-
 
     def for_match(self):
         """

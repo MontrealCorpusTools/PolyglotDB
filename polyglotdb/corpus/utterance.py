@@ -1,15 +1,14 @@
-
 from uuid import uuid1
 
-
-
-from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs, utterance_enriched_data_to_csvs, import_utterance_enrichment_csvs
+from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs, \
+    utterance_enriched_data_to_csvs, import_utterance_enrichment_csvs
 from ..graph.func import Max, Min
 from ..graph.query import DiscourseGraphQuery
 
 from ..sql.models import Discourse, SpeaksIn
 
 from ..exceptions import GraphQueryError
+
 
 class UtteranceContext(object):
     def reset_utterances(self):
@@ -26,8 +25,8 @@ class UtteranceContext(object):
         except GraphQueryError:
             pass
 
-    def encode_utterances(self, min_pause_length = 0.5, min_utterance_length = 0,
-                            call_back = None, stop_check = None):
+    def encode_utterances(self, min_pause_length=0.5, min_utterance_length=0,
+                          call_back=None, stop_check=None):
         """
         Encode utterance annotations based on minimum pause length and minimum
         utterance length.  See `get_pauses` for more information about
@@ -72,8 +71,8 @@ class UtteranceContext(object):
                 for u in utterances:
                     cur_id = uuid1()
                     row = {'id': cur_id, 'prev_id': prev_id,
-                        'begin_word_id': u[0],
-                        'end_word_id':u[1]}
+                           'begin_word_id': u[0],
+                           'end_word_id': u[1]}
                     speaker_data[s].append(row)
                     prev_id = cur_id
             utterance_data_to_csvs(self, speaker_data)
@@ -85,7 +84,7 @@ class UtteranceContext(object):
             call_back('Finished!')
 
     def get_utterance_ids(self, discourse,
-                min_pause_length = 0.5, min_utterance_length = 0):
+                          min_pause_length=0.5, min_utterance_length=0):
         """
         Algorithm to find utterance boundaries in a discourse.
 
@@ -122,11 +121,11 @@ class UtteranceContext(object):
     AND NONE (x in ns where x:speech)
     WITH foll_node_word, prev_node_word
     RETURN prev_node_word.end AS begin, prev_node_word.id AS begin_id, foll_node_word.begin AS end, foll_node_word.id AS end_id, foll_node_word.begin - prev_node_word.end AS duration
-    ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
+    ORDER BY begin'''.format(corpus=self.cypher_safe_name, word_type=word_type)
             results = list(self.execute_cypher(statement,
-                node_pause_duration = min_pause_length,
-                    discourse = discourse,
-                    speaker = s))
+                                               node_pause_duration=min_pause_length,
+                                               discourse=discourse,
+                                               speaker=s))
 
             collapsed_results = []
             for i, r in enumerate(results):
@@ -143,9 +142,9 @@ class UtteranceContext(object):
             with filter(x in words where x.begin = min_begin or x.end = max_end) as c UNWIND c as w
             return w.id as id, w.begin as begin, w.end as end
             order by w.begin
-            '''.format(corpus = self.cypher_safe_name, word_type = word_type)
-            end_words = list(self.execute_cypher(statement, discourse = discourse,
-                    speaker = s))
+            '''.format(corpus=self.cypher_safe_name, word_type=word_type)
+            end_words = list(self.execute_cypher(statement, discourse=discourse,
+                                                 speaker=s))
 
             if len(end_words) == 0:
                 speaker_utts[s] = []
@@ -202,7 +201,7 @@ class UtteranceContext(object):
         return speaker_utts
 
     def get_utterances(self, discourse,
-                min_pause_length = 0.5, min_utterance_length = 0):
+                       min_pause_length=0.5, min_utterance_length=0):
         """
         Algorithm to find utterance boundaries in a discourse.
 
@@ -233,8 +232,8 @@ WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
 AND NONE (x in ns where x:speech)
 WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, foll_node_word.begin AS end, foll_node_word.begin - prev_node_word.end AS duration
-ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
-        results = list(self.execute_cypher(statement, node_pause_duration = min_pause_length, discourse = discourse))
+ORDER BY begin'''.format(corpus=self.cypher_safe_name, word_type=word_type)
+        results = list(self.execute_cypher(statement, node_pause_duration=min_pause_length, discourse=discourse))
 
         collapsed_results = []
         for i, r in enumerate(results):
@@ -286,7 +285,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
             utterances[0] = (times['min_begin'], utterances[0][1])
         return utterances
 
-    def encode_utterance_position(self, call_back = None, stop_check = None):
+    def encode_utterance_position(self, call_back=None, stop_check=None):
         """ Encodes position_in_utterance for a word """
         w_type = self.word_name
         if self.config.query_behavior == 'speaker':
@@ -301,7 +300,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            '''.format(w_type = w_type, corpus_name = self.cypher_safe_name)
+            '''.format(w_type=w_type, corpus_name=self.cypher_safe_name)
             split_names = self.speakers
         elif self.config.query_behavior == 'discourse':
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name})-[:spoken_in]->(discourse:Discourse:{corpus_name}),
@@ -315,7 +314,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            '''.format(w_type = w_type, corpus_name = self.cypher_safe_name)
+            '''.format(w_type=w_type, corpus_name=self.cypher_safe_name)
         else:
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name}),
             (node_word_in_node_utterance:{w_type}:{corpus_name})-[:contained_by]->(node_utterance)
@@ -327,25 +326,24 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            '''.format(w_type = w_type, corpus_name = self.cypher_safe_name)
-
+            '''.format(w_type=w_type, corpus_name=self.cypher_safe_name)
 
         if split_names is None:
             if call_back is not None:
                 call_back('Encoding utterance position...')
-                call_back(0,0)
+                call_back(0, 0)
             self.execute_cypher(statement)
         else:
             if call_back is not None:
-                call_back(0,len(split_names))
+                call_back(0, len(split_names))
             for i, s in enumerate(split_names):
                 if stop_check is not None and stop_check():
                     return
                 if call_back is not None:
                     call_back(i)
                     call_back('Encoding utterance positions for {} {} of {} ({})...'.format(self.config.query_behavior,
-                                                                i, len(split_names), s))
-                self.execute_cypher(statement, split_name = s)
+                                                                                            i, len(split_names), s))
+                self.execute_cypher(statement, split_name=s)
         self.hierarchy.add_token_properties(self, w_type, [('position_in_utterance', float)])
         self.save_variables()
 
@@ -353,7 +351,7 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
         """resets position_in_utterance"""
         self.reset_property(self.word_name, 'position_in_utterance')
 
-    def encode_speech_rate(self, subset_label, call_back = None, stop_check = None):
+    def encode_speech_rate(self, subset_label, call_back=None, stop_check=None):
         """
         Encodes speech rate
 
@@ -363,14 +361,13 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
             the name of the subset to encode
 
         """
-        self.encode_rate('utterance', self.phone_name, 'speech_rate', subset = subset_label)
+        self.encode_rate('utterance', self.phone_name, 'speech_rate', subset=subset_label)
 
     def reset_speech_rate(self):
         """ resets speech_rate """
         self.reset_property('utterance', 'speech_rate')
 
-
-    def enrich_utterances(self, utterance_data, type_data = None):
+    def enrich_utterances(self, utterance_data, type_data=None):
         """
         adds properties to lexicon, adds properties to hierarchy
 
@@ -382,11 +379,10 @@ ORDER BY begin'''.format(corpus = self.cypher_safe_name, word_type = word_type)
             default to None
         """
         if type_data is None:
-            type_data = {k: type(v) for k,v in next(iter(utterance_data.values())).items()}
-          
-        #self.add_type_properties('utterance', type_data)            
+            type_data = {k: type(v) for k, v in next(iter(utterance_data.values())).items()}
+
+        # self.add_type_properties('utterance', type_data)
         utterance_enriched_data_to_csvs(self, utterance_data)
         import_utterance_enrichment_csvs(self, type_data)
         self.hierarchy.add_type_properties(self, 'utterance', type_data.items())
         self.encode_hierarchy()
-

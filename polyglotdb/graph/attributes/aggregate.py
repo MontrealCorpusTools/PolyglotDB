@@ -1,7 +1,7 @@
-
 from ..helper import key_for_cypher
 
 from .base import Attribute
+
 
 class AggregateAttribute(Attribute):
     def __init__(self, aggregate):
@@ -19,12 +19,12 @@ class AggregateAttribute(Attribute):
 
     @property
     def label(self):
-        """ returns aggregate attribute label""" 
+        """ returns aggregate attribute label"""
         return self.aggregate.attribute.label
 
     @property
     def output_label(self):
-        """ returns aggregate attribute output label """ 
+        """ returns aggregate attribute output label """
         return self.aggregate.aliased_for_output()
 
     def for_with(self):
@@ -32,5 +32,5 @@ class AggregateAttribute(Attribute):
         return self.aggregate.for_cypher()
 
     def for_cypher(self):
-        """ returns attribute output label """ 
+        """ returns attribute output label """
         return self.output_label
