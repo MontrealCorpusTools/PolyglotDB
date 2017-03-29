@@ -226,3 +226,6 @@ class SoundFile(Base):
                 g = ''
             genders.append(g)
         return genders
+
+    def __str__(self):
+        return "<SoundFile object for {}>".format(self.filepath)

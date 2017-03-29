@@ -339,6 +339,9 @@ class AudioContext(object):
         return listing
 
     def _save_measurement(self, sound_file, track, measurement, **kwargs):
+        if not len(track.keys()):
+            print(sound_file)
+            return
         if isinstance(sound_file, str):
             sound_file = self.discourse_sound_file(sound_file)
         if sound_file is None:
