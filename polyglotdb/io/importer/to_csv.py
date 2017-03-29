@@ -247,7 +247,7 @@ def lexicon_data_to_csvs(corpus_context, data, case_sensitive=False):
         writer.writeheader()
         for k, v in sorted(data.items()):
             if not case_sensitive:
-                k = '(?i)' + k
+                k =  k.lower()
             v['label'] = k
             writer.writerow(v)
 

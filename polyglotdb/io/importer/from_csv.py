@@ -32,6 +32,12 @@ def import_type_csvs(corpus_context, type_headers):
         properties = []
         for x in h:
             properties.append(prop_temp.format(name=x))
+        if 'label' in h:
+            properties.append('label_insensitive: lower(csvLine.label)')
+            corpus_context.execute_cypher('CREATE INDEX ON :%s_type(label_insensitive)' % at)
+        for x in h:
+            if x != 'id':
+                corpus_context.execute_cypher('CREATE INDEX ON :%s_type(%s)' % (at, x))
         if properties:
             type_prop_string = ', '.join(properties)
         else:
@@ -48,10 +54,6 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         begin = time.time()
         try:
             corpus_context.execute_cypher(statement)
-            corpus_context.execute_cypher('CREATE INDEX ON :%s_type(label)' % (at,))
-            for x in h:
-                if x != 'id':
-                    corpus_context.execute_cypher('CREATE INDEX ON :%s_type(%s)' % (at, x))
         except:
             raise
             # finally:
@@ -107,6 +109,9 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
             for x in data[at].token_property_keys:
                 properties.append(prop_temp.format(name=x))
                 corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (at, x))
+            if 'label' in data[at].token_property_keys:
+                properties.append('label_insensitive: lower(csvLine.label)')
+                corpus_context.execute_cypher('CREATE INDEX ON :%s(label_insensitive)' % at)
             st = data[at].supertype
             if properties:
                 token_prop_string = ', ' + ', '.join(properties)
@@ -239,7 +244,7 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     else:
         import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 3000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:{word_type}_type:{corpus_name}) where n.label =~ csvLine.label
+    MATCH (n:{word_type}_type:{corpus_name}) where n.label_insensitive = csvLine.label
     SET {new_properties}'''
 
     statement = import_statement.format(path=lex_path,
