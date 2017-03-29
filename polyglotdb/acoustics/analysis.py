@@ -40,7 +40,6 @@ def generate_speaker_segments(corpus_context):
             q = corpus_context.sql_session.query(SoundFile).join(Discourse)
             q = q.filter(Discourse.name == d.discourse.name)
             sound_file = q.first()
-            print('soundfile', sound_file)
             channel = d.channel
             atype = corpus_context.hierarchy.highest
             prob_utt = getattr(corpus_context, atype)
