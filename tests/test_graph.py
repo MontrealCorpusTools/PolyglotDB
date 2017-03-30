@@ -1,11 +1,9 @@
-import os
 import pytest
 
 from polyglotdb import CorpusContext
+from polyglotdb.query.graph.func import Count
+from polyglotdb.query.graph.elements import or_, and_
 from polyglotdb.utils import get_corpora_list
-from polyglotdb.graph.func import Count
-
-from polyglotdb.graph.elements import or_, and_
 
 
 def test_basic_query(timed_config):

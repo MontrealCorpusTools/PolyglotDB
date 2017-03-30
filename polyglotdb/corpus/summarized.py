@@ -1,9 +1,8 @@
-import math
-from polyglotdb.graph.func import *
 from polyglotdb.exceptions import GraphQueryError
 
+from .featured import FeaturedContext
 
-class SummarizedContext(object):
+class SummarizedContext(FeaturedContext):
     def get_measure(self, data_name, statistic, annotation_type, by_speaker=False, speaker=None):
         """
         abstract function to get statistic for the data_name of an annotation_type

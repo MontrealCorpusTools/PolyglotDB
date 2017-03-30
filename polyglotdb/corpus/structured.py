@@ -1,6 +1,6 @@
+from ..query.graph.helper import value_for_cypher
 from ..structure import Hierarchy
-
-from ..graph.helper import value_for_cypher
+from .base import BaseContext
 
 
 def generate_cypher_property_list(property_set):
@@ -27,7 +27,7 @@ def generate_cypher_property_list(property_set):
     return ', '.join(props)
 
 
-class StructuredContext(object):
+class StructuredContext(BaseContext):
     def generate_hierarchy(self):
         """
         Creates the hierarchy, which is information on how the corpus is structured

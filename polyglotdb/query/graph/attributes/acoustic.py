@@ -1,7 +1,7 @@
 from statistics import mean
 from sqlalchemy import text
 
-from ...sql.models import SoundFile, Discourse
+from polyglotdb.sql.models import SoundFile, Discourse
 
 from .base import AnnotationAttribute, Attribute
 

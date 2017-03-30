@@ -1,6 +1,3 @@
-from .graph.helper import value_for_cypher
-
-
 class Hierarchy(object):
     '''
     Class containing information about how a corpus is structured.

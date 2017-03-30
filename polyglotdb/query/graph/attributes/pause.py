@@ -1,6 +1,6 @@
-from polyglotdb.graph.attributes.base import AnnotationAttribute, Attribute, key_for_cypher
+from .path import PathAnnotation, PathAttribute
 
-from polyglotdb.graph.attributes.path import PathAnnotation, PathAttribute
+from .base import AnnotationAttribute, Attribute, key_for_cypher
 
 
 class PauseAnnotation(AnnotationAttribute):

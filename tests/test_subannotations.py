@@ -1,10 +1,7 @@
-import os
 import pytest
 
 from polyglotdb import CorpusContext
-from polyglotdb.graph.func import Sum
-
-from polyglotdb.exceptions import SubannotationError
+from polyglotdb.query.graph.func import Sum
 
 
 def test_basic(subannotation_config):

@@ -4,13 +4,10 @@ from decimal import Decimal
 
 from influxdb import InfluxDBClient
 
+from polyglotdb.query.discourse import DiscourseInspector
 from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_intensity
-
 from ..sql.models import SoundFile, Discourse
-
-from ..graph.discourse import DiscourseInspecter
-
-from polyglotdb.exceptions import NoSoundFileError
+from .syllabic import SyllabicContext
 
 
 def sanitize_formants(value):
@@ -70,7 +67,7 @@ def to_seconds(time_string):
     return s
 
 
-class AudioContext(object):
+class AudioContext(SyllabicContext):
     """
     Class that contains methods for dealing with audio files for corpora
     """
@@ -84,9 +81,7 @@ class AudioContext(object):
     def analyze_intensity(self, stop_check=None, call_back=None):
         analyze_intensity(self, stop_check, call_back)
 
-
     def genders(self):
-
         res = self.execute_cypher(
             '''MATCH (s:Speaker:{corpus_name}) RETURN s.gender as gender'''.format(corpus_name=self.cypher_safe_name))
         genders = set()
@@ -122,10 +117,10 @@ class AudioContext(object):
 
         Returns
         -------
-        :class:`~polyglotdb.graph.discourse.DiscourseInspecter`
-            DiscourseInspecter for the specified discourse
+        :class:`~polyglotdb.graph.discourse.DiscourseInspector`
+            DiscourseInspector for the specified discourse
         """
-        return DiscourseInspecter(self, discourse, begin, end)
+        return DiscourseInspector(self, discourse, begin, end)
 
     def discourse_sound_file(self, discourse):
         """
@@ -521,7 +516,10 @@ class AudioContext(object):
             return False
         return True
 
-    def get_acoustic_statistic(self, acoustic_measure, statistic, by_speaker=False, source=None):
+    def encode_acoustic_statistic(self, acoustic_measure, statistic, by_phone=True, by_speaker=False, source=None):
+        print('hello')
+        if not by_speaker and not by_phone:
+            raise (Exception('Please specify either by_phone, by_speaker or both.'))
         client = self.acoustic_client()
         acoustic_measure = acoustic_measure.lower()
         measures = []
@@ -542,27 +540,169 @@ class AudioContext(object):
                 source = self.config.intensity_source
         else:
             raise (ValueError('Acoustic measure must be one of: pitch, formants, or intensity.'))
-        group_by = ['"phone"']
-        if by_speaker:
-            group_by.append('"speaker"')
-        group_by = ', '.join(group_by)
-        query = '''select {} from "{}"
-                        where "source" = '{}' group by {};'''.format(', '.join(measures), acoustic_measure, source,
-                                                                     group_by)
-        result = client.query(query)
-        if by_speaker:
+        if by_speaker and by_phone:
+            results = []
+            for p in self.lexicon.phones:
+                query = '''select {} from "{}"
+                                where "phone" = '{}' and "source" = '{}' group by "speaker";'''.format(', '.join(measures), acoustic_measure, p, source)
+
+                result = client.query(query)
+                if acoustic_measure == 'formants':
+                    for k, v in result.items():
+                        data = [x[1] for x in sorted(list(v)[0].items()) if x[0] != 'time']
+                        results.append({'speaker': k[1]['speaker'], 'phone': p, 'F1': data[0], 'F2': data[1],
+                                    'F3': data[2]})
+                else:
+                    results.extend([{'speaker': k[1]['speaker'], 'phone': p, acoustic_measure: list(v)[0][statistic]}
+                               for k, v in result.items()])
             if acoustic_measure == 'formants':
-                result = {(k[1]['speaker'], k[1]['phone']): [x[1] for x in sorted(list(v)[0].items()) if x[0] != 'time']
-                          for k, v in result.items()}
+                statement = '''WITH {{data}} as data
+                            UNWIND data as d
+                            MERGE (s:Speaker:{corpus_name})<-[r:spoken_by]-(p:phone_type:{corpus_name})
+                            WHERE p.label = d.phone AND s.name = d.speaker
+                            SET r.{statistic}_F1 = d.F1
+                            AND r.{statistic}_F2 = d.F2
+                            AND r.{statistic}_F3 = d.F3'''.format(corpus_name=self.cypher_safe_name,
+                                                                  statistic=statistic)
             else:
-                result = {(k[1]['speaker'], k[1]['phone']): list(v)[0][statistic] for k, v in result.items()}
+                statement = '''WITH {{data}} as data
+                            UNWIND data as d
+                            MATCH (s:Speaker:{corpus_name}), (p:phone_type:{corpus_name})
+                            WHERE p.label = d.phone AND s.name = d.speaker
+                            MERGE (s)<-[r:spoken_by]-(p)
+                            SET r.{statistic}_{measure} = d.{measure}'''.format(corpus_name=self.cypher_safe_name,
+                                                                                statistic=statistic,
+                                                                                measure=acoustic_measure)
+        elif by_phone:
+            results = []
+            for p in self.lexicon.phones:
+                query = '''select {} from "{}"
+                                where "phone" = '{}' and "source" = '{}';'''.format(', '.join(measures), acoustic_measure, p, source)
+
+                result = client.query(query)
+
+                if acoustic_measure == 'formants':
+                    results = []
+                    for k, v in result.items():
+                        data = [x[1] for x in sorted(list(v)[0].items()) if x[0] != 'time']
+                        results.append({'phone': p, 'F1': data[0], 'F2': data[1], 'F3': data[2]})
+                else:
+                    results.extend([{'phone': p, acoustic_measure: list(v)[0][statistic]} for k, v in result.items()])
+            if acoustic_measure == 'formants':
+                statement = '''WITH {{data}} as data
+                                UNWIND data as d
+                                MATCH (p:phone_type:{corpus_name})
+                                WHERE p.label = d.phone
+                                SET p.{statistic}_F1 = d.F1
+                                AND p.{statistic}_F2 = d.F2
+                                AND p.{statistic}_F3 = d.F3'''.format(corpus_name=self.cypher_safe_name,
+                                                                      statistic=statistic)
+                self.hierarchy.add_type_properties(self, 'phone', [('{}_F1'.format(statistic), float),
+                                                                   ('{}_F2'.format(statistic), float),
+                                                                   ('{}_F3'.format(statistic), float)])
+
+            else:
+                statement = '''WITH {{data}} as data
+                                UNWIND data as d
+                                MATCH (p:phone_type:{corpus_name})
+                                WHERE p.label = d.phone
+                                SET p.{statistic}_{measure} = d.{measure}'''.format(corpus_name=self.cypher_safe_name,
+                                                                                    statistic=statistic,
+                                                                                    measure=acoustic_measure)
+                self.hierarchy.add_type_properties(self, 'phone',
+                                               [('{}_{}'.format(statistic, acoustic_measure), float)])
+        elif by_speaker:
+            query = '''select {} from "{}"
+                            where "source" = '{}' group by "speaker";'''.format(', '.join(measures), acoustic_measure, source)
+            result = client.query(query)
+            if acoustic_measure == 'formants':
+                results = []
+                for k, v in result.items():
+                    data = [x[1] for x in sorted(list(v)[0].items()) if x[0] != 'time']
+                    results.append({'speaker': k[1]['speaker'], 'F1': data[0], 'F2': data[1], 'F3': data[2]})
+                statement = '''WITH {{data}} as data
+                                UNWIND data as d
+                                MATCH (s:Speaker:{corpus_name})
+                                WHERE s.name = d.speaker
+                                SET s.{statistic}_F1 = d.F1
+                                AND s.{statistic}_F2 = d.F2
+                                AND s.{statistic}_F3 = d.F3'''.format(corpus_name=self.cypher_safe_name,
+                                                                      statistic=statistic)
+                self.hierarchy.add_speaker_properties(self, [('{}_F1'.format(statistic), float),
+                                                             ('{}_F2'.format(statistic), float),
+                                                             ('{}_F3'.format(statistic), float)])
+            else:
+                results = [{'speaker': k[1]['speaker'], acoustic_measure: list(v)[0][statistic]} for k, v in
+                           result.items()]
+                statement = '''WITH {{data}} as data
+                                UNWIND data as d
+                                MATCH (s:Speaker:{corpus_name})
+                                WHERE s.name = d.speaker
+                                SET s.{statistic}_{measure} = d.{measure}'''.format(corpus_name=self.cypher_safe_name,
+                                                                                    statistic=statistic,
+                                                                                    measure=acoustic_measure)
+                self.hierarchy.add_speaker_properties(self, [('{}_{}'.format(statistic, acoustic_measure), float)])
+        print(results)
+        self.execute_cypher(statement, data=results)
+        self.encode_hierarchy()
+
+    def get_acoustic_statistic(self, acoustic_measure, statistic, by_phone=True, by_speaker=False, source=None):
+        if not by_speaker and not by_phone:
+            raise (Exception('Please specify either by_phone, by_speaker or both.'))
+        if acoustic_measure == 'formants':
+            name = '{}_F1'.format(statistic)
         else:
+            name = '{}_{}'.format(statistic, acoustic_measure)
+        if by_phone and by_speaker:
+            statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0}) return r.{1} as {1} LIMIT 1'''.format(
+                self.cypher_safe_name, name)
+            results = self.execute_cypher(statement)
+            try:
+                first = next(results)
+            except StopIteration:
+                first = None
+            if first is None or first[name] is None:
+                self.encode_acoustic_statistic(acoustic_measure, statistic, by_phone, by_speaker, source)
             if acoustic_measure == 'formants':
-                result = {k[1]['phone']: [x[1] for x in sorted(list(v)[0].items()) if x[0] != 'time'] for k, v in
-                          result.items()}
+                statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0})
+                return p.label as phone, s.name as speaker, r.{1}_F1 as F1, r.{1}_F2 as F2, r.{1}_F3 as F3'''.format(
+                    self.cypher_safe_name, statistic)
+                results = self.execute_cypher(statement)
+                results = {(x['speaker'], x['phone']): [x['F1'], x['F2'], x['F3']] for x in results}
             else:
-                result = {k[1]['phone']: list(v)[0][statistic] for k, v in result.items()}
-        return result
+                statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0})
+                return p.label as phone, s.name as speaker, r.{1} as {1}'''.format(self.cypher_safe_name, name)
+                results = self.execute_cypher(statement)
+                results = {(x['speaker'], x['phone']): [x[name]] for x in results}
+        elif by_phone:
+            if not self.hierarchy.has_type_property('phone', name):
+                self.encode_acoustic_statistic(acoustic_measure, statistic, by_phone, by_speaker, source)
+            if acoustic_measure == 'formants':
+                statement = '''MATCH (p:phone_type:{0})
+                return p.label as phone, p.{1}_F1 as F1, p.{1}_F2 as F2, p.{1}_F3 as F3'''.format(
+                    self.cypher_safe_name, statistic)
+                results = self.execute_cypher(statement)
+                results = {x['phone']: [x['F1'], x['F2'], x['F3']] for x in results}
+            else:
+                statement = '''MATCH (p:phone_type:{0})
+                return p.label as phone, p.{1} as {1}'''.format(self.cypher_safe_name, name)
+                results = self.execute_cypher(statement)
+                results = {x['phone']: [x[name]] for x in results}
+        elif by_speaker:
+            if not self.hierarchy.has_speaker_property(name):
+                self.encode_acoustic_statistic(acoustic_measure, statistic, by_phone, by_speaker, source)
+            if acoustic_measure == 'formants':
+                statement = '''MATCH (s:Speaker:{0})
+                return s.name as speaker, s.{1}_F1 as F1, s.{1}_F2 as F2, s.{1}_F3 as F3'''.format(
+                    self.cypher_safe_name, statistic)
+                results = self.execute_cypher(statement)
+                results = {x['speaker']: [x['F1'], x['F2'], x['F3']] for x in results}
+            else:
+                statement = '''MATCH (s:Speaker:{0})
+                return s.name as speaker, s.{1} as {1}'''.format(self.cypher_safe_name, name)
+                results = self.execute_cypher(statement)
+                results = {x['speaker']: [x[name]] for x in results}
+        return results
 
     def relativize_pitch(self, by_speaker=True, source=None):
         if source is None:

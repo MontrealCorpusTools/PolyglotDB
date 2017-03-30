@@ -1,16 +1,15 @@
 from uuid import uuid1
 
+from ..query.graph import DiscourseGraphQuery
+from ..query.graph.func import Max, Min
+from ..exceptions import GraphQueryError
 from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs, \
     utterance_enriched_data_to_csvs, import_utterance_enrichment_csvs
-from ..graph.func import Max, Min
-from ..graph.query import DiscourseGraphQuery
-
 from ..sql.models import Discourse, SpeaksIn
+from .pause import PauseContext
 
-from ..exceptions import GraphQueryError
 
-
-class UtteranceContext(object):
+class UtteranceContext(PauseContext):
     def reset_utterances(self):
         """
         Remove all utterance annotations.

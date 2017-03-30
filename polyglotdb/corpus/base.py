@@ -1,37 +1,26 @@
 import os
-import re
-import sys
-import shutil
 import pickle
-import logging
-import time
-from collections import defaultdict
+import shutil
+import sys
 from decimal import Decimal
 
-import sqlalchemy
 import py2neo
-
+import sqlalchemy
 from py2neo import Graph
-
-from py2neo.database.status import (ClientError, DatabaseError, Forbidden,
+from py2neo.database.status import (ClientError, Forbidden,
                                     TransientError, Unauthorized, ConstraintError)
-
 from sqlalchemy import create_engine
-from ..sql.models import Base, Discourse, Speaker
-from ..sql.config import Session
-from ..sql.query import Lexicon, Census
 
+from ..query.graph.attributes import AnnotationAttribute, PauseAnnotation
+from ..query.graph import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
 from ..config import CorpusConfig
-
-from ..structure import Hierarchy
-
-from ..graph.attributes import AnnotationAttribute, PauseAnnotation
-
-from ..graph.query import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
-
 from ..exceptions import (CorpusConfigError, GraphQueryError,
                           ConnectionError, AuthorizationError, TemporaryConnectionError,
-                          NetworkAddressError, NoSoundFileError)
+                          NetworkAddressError)
+from ..sql.config import Session
+from ..sql.models import Base, Discourse, Speaker
+from ..sql.query import Lexicon, Census
+from ..structure import Hierarchy
 
 
 class BaseContext(object):

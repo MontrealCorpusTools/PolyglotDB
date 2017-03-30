@@ -1,10 +1,8 @@
-import os
 from decimal import Decimal
+
 import pytest
 
 from polyglotdb import CorpusContext
-
-from polyglotdb.graph.func import Average
 
 acoustic = pytest.mark.skipif(
     pytest.config.getoption("--skipacoustics"),

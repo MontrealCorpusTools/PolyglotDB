@@ -9,7 +9,7 @@ from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         NullClauseElement, NotNullClauseElement,
                         FollowsClauseElement, PrecedesClauseElement)
 
-from ...exceptions import SubsetError
+from polyglotdb.exceptions import SubsetError
 
 special_attributes = ['duration', 'count', 'rate', 'position', 'type_subset',
                       'token_subset']

@@ -1,10 +1,6 @@
-import pytest
-
 from polyglotdb import CorpusContext
 
-from polyglotdb.graph.models import LinguisticAnnotation, SubAnnotation
-
-from polyglotdb.exceptions import SubannotationError
+from polyglotdb.query.graph.models import LinguisticAnnotation, SubAnnotation
 
 
 def test_models(acoustic_config):

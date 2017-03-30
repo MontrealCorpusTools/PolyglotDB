@@ -1,9 +1,4 @@
-import os
-import pytest
-
 from polyglotdb import CorpusContext
-
-from polyglotdb.graph.func import Sum
 
 
 def test_encode_pause(acoustic_config):

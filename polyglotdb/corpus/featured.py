@@ -1,8 +1,9 @@
 import re
 from ..io.importer import feature_data_to_csvs, import_feature_csvs
+from .lexical import LexicalContext
 
 
-class FeaturedContext(object):
+class FeaturedContext(LexicalContext):
     def encode_class(self, phones, label):
         """
         encodes phone classes

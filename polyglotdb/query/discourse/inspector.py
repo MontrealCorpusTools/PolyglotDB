@@ -114,7 +114,7 @@ class LongSoundFile(object):
         return self.preemph_signal[min_samp:max_samp, channel]
 
 
-class DiscourseInspecter(object):
+class DiscourseInspector(object):
     def __init__(self, corpus_context, discourse_name, initial_begin=None, initial_end=None):
         self.corpus = corpus_context
         self.name = discourse_name

@@ -1,8 +1,9 @@
 from ..io.importer import (speaker_data_to_csvs, import_speaker_csvs,
                            discourse_data_to_csvs, import_discourse_csvs)
+from .audio import AudioContext
 
 
-class SpokenContext(object):
+class SpokenContext(AudioContext):
     def enrich_speakers(self, speaker_data, type_data=None):
         """
         Add properties about speakers to the corpus, allowing them to

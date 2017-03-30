@@ -16,8 +16,6 @@ from .func import Count
 
 from .cypher import query_to_cypher, query_to_params
 
-from polyglotdb.io import save_results
-
 from polyglotdb.exceptions import SubannotationError
 
 

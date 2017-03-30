@@ -1,9 +1,5 @@
-import os
-import pytest
-
 from polyglotdb import CorpusContext
-from polyglotdb.graph.func import *
-
+from polyglotdb.query.graph.func import Average, Count, Min, Max, InterquartileRange, Stdev, Sum, Median, Quantile
 
 def test_query_aggregate_count(timed_config):
     with CorpusContext(timed_config) as g:

@@ -11,9 +11,10 @@ from ..io.helper import make_type_id
 
 from ..syllabification.probabilistic import norm_count_dict, split_nonsyllabic_prob, split_ons_coda_prob
 from ..syllabification.maxonset import split_nonsyllabic_maxonset, split_ons_coda_maxonset
+from .utterance import UtteranceContext
 
 
-class SyllabicContext(object):
+class SyllabicContext(UtteranceContext):
     def find_onsets(self):
         """
         Gets syllable onsets

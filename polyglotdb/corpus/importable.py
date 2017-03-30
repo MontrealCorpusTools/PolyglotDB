@@ -15,9 +15,10 @@ from ..io.importer import (data_to_graph_csvs, import_csvs,
                            data_to_type_csvs, import_type_csvs)
 
 from ..exceptions import ParseError
+from .structured import StructuredContext
 
 
-class ImportContext(object):
+class ImportContext(StructuredContext):
     def add_types(self, types, type_headers):
         '''
         This function imports types of annotations into the corpus.

@@ -1,7 +1,8 @@
 from ..io.importer import lexicon_data_to_csvs, import_lexicon_csvs
+from .spoken import SpokenContext
 
 
-class LexicalContext(object):
+class LexicalContext(SpokenContext):
     def enrich_lexicon(self, lexicon_data, type_data=None, case_sensitive=False):
         """
         adds properties to lexicon, adds properties to hierarchy
