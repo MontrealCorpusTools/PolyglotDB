@@ -51,6 +51,7 @@ if __name__ == '__main__':
                     'polyglotdb.io.exporters',
                     'polyglotdb.io.importer',
                     'polyglotdb.io.enrichment',
+                    'polyglotdb.query',
                     'polyglotdb.query.graph',
                     'polyglotdb.query.graph.attributes',
                     'polyglotdb.query.graph.cypher',
