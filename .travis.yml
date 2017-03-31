@@ -35,8 +35,6 @@ install:
 script:
   - python bin/pgdb.py start
   - sleep 45
-  - cat $HOME/pgdb/neo4j/logs/neo4j.log
-  - cat $HOME/pgdb/neo4j/logs/debug.log
   - "coverage run --source=polyglotdb setup.py test"
 
 # Calculate coverage
