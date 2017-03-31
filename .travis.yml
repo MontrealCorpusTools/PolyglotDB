@@ -34,12 +34,15 @@ install:
 # Run test
 script:
   - python bin/pgdb.py start
-  - sleep 25
+  - sleep 10
   - "coverage run --source=polyglotdb setup.py test"
 
 # Calculate coverage
 after_success:
   - coveralls
+
+after_script:
+  - python bin/pgdb.py stop
 
 cache:
   pip: true
