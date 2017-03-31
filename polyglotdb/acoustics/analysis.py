@@ -119,10 +119,7 @@ def analyze_pitch(corpus_context,
             pitch_function = generate_pitch_function(corpus_context.config.pitch_source, min_pitch, max_pitch,
                                                      signal=True, path=path)
         output = analyze_file_segments(v, pitch_function, padding=PADDING, stop_check=stop_check)
-        for seg, track in output.items():
-            discourse = discourse_mapping[seg[0]]
-            corpus_context.save_pitch(discourse, track, channel=seg[-1],
-                                      source=corpus_context.config.pitch_source)
+        corpus_context.save_pitch_tracks(output, speaker)
 
 
 def analyze_formants(corpus_context,
