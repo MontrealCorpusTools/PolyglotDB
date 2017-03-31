@@ -131,8 +131,8 @@ class BaseContext(object):
         try:
             return self.graph.run(statement, **parameters)
         except (py2neo.packages.httpstream.http.SocketError,
-                py2neo.packages.neo4j.v1.exceptions.ProtocolError):
-            raise (ConnectionError('PolyglotDB could not connect to the server specified.'))
+                py2neo.packages.neo4j.v1.exceptions.ProtocolError) as e:
+            raise (ConnectionError('PolyglotDB could not connect to the server specified: {}'.format(str(e))))
         except ClientError:
             raise
         except (Unauthorized):
