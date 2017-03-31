@@ -47,3 +47,4 @@ cache:
   directories:
     - $HOME/miniconda
     - $HOME/pgdb
+    - $HOME/.pgdb
