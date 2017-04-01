@@ -68,7 +68,7 @@ def query_to_cypher(query):
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
 
     if optional_match_strings:
-        kwargs['optional_match'] = 'OPTIONAL MATCH ' + ',\n'.join(optional_match_strings)
+        kwargs['optional_match'] = 'OPTIONAL MATCH ' + '\nOPTIONAL MATCH '.join(optional_match_strings)
         if optional_where_strings:
             kwargs['optional_match'] += '\nWHERE ' + 'AND\n'.join(optional_where_strings)
 
