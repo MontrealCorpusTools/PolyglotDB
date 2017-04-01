@@ -408,6 +408,8 @@ def acoustic_config(graph_db, textgrid_test_dir):
 
 @pytest.fixture(scope='session')
 def acoustic_utt_config(graph_db, textgrid_test_dir):
+    syllabics = ['ae', 'aa', 'uw', 'ay', 'eh', 'ih', 'aw', 'ey', 'iy',
+                 'uh', 'ah', 'ao', 'er', 'ow']
     config = CorpusConfig('acoustic utt', **graph_db)
 
     acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
@@ -418,6 +420,8 @@ def acoustic_utt_config(graph_db, textgrid_test_dir):
 
         c.encode_pauses(['sil'])
         c.encode_utterances(min_pause_length=0)
+        c.encode_syllabic_segments(syllabics)
+        c.encode_syllables()
 
     config.pitch_algorithm = 'acousticsim'
     config.formant_source = 'acousticsim'

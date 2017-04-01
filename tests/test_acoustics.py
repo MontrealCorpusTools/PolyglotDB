@@ -102,10 +102,11 @@ def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_te
         g.config.pitch_source = 'praat'
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.label, g.phone.pitch.track,
-                      g.phone.word.following.pitch.mean.column_name('following_word_pitch_mean'),
-                      g.phone.word.utterance.pitch.mean.column_name('utterance_pitch_mean'),
-                      g.phone.word.utterance.pitch.min.column_name('utterance_pitch_min'),
-                      g.phone.word.utterance.pitch.max.column_name('utterance_pitch_max'),
+                      g.phone.syllable.following.pitch.mean.column_name('following_syllable_pitch_mean'),
+                      g.phone.syllable.following.following.pitch.mean.column_name('following_following_syllable_pitch_mean'),
+                      g.phone.syllable.word.utterance.pitch.mean.column_name('utterance_pitch_mean'),
+                      g.phone.syllable.word.utterance.pitch.min.column_name('utterance_pitch_min'),
+                      g.phone.syllable.word.utterance.pitch.max.column_name('utterance_pitch_max'),
                       )
         results = q.all()
         assert(len(results) > 0)
@@ -114,8 +115,11 @@ def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_te
             assert(r['utterance_pitch_mean'])
             assert(r['utterance_pitch_min'])
             assert(r['utterance_pitch_max'])
-            print(r['utterance_pitch_mean'],r['following_word_pitch_mean'])
-            assert(r['utterance_pitch_mean'] != r['following_word_pitch_mean'])
+            print(r['utterance_pitch_mean'],r['following_syllable_pitch_mean'])
+            with pytest.raises(KeyError):
+                assert(r['utterance_pitch_mean'] != r['following_word_pitch_mean'])
+            assert(r['utterance_pitch_mean'] != r['following_syllable_pitch_mean'])
+            assert(r['following_following_syllable_pitch_mean'] != r['following_syllable_pitch_mean'])
         q.to_csv(os.path.join(results_test_dir, 'test_track_hierarchical_utterance_mean_query.txt'))
 
 @acoustic

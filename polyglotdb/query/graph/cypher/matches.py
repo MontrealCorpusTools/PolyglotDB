@@ -88,7 +88,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
                         while True:
                             t = query.corpus.hierarchy[anno.type]
                             anno = getattr(anno, t)
-                            if t == query.corpus.word_name:
+                            if t == a.type:
                                 break
                         anno.pos = a.pos + 1
                         kwargs['node_alias'] = anno.alias
@@ -102,7 +102,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
                         while True:
                             t = query.corpus.hierarchy[anno.type]
                             anno = getattr(anno, t)
-                            if t == query.corpus.word_name:
+                            if t == a.type:
                                 break
 
                     else:
@@ -137,7 +137,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
                         while True:
                             t = query.corpus.hierarchy[anno.type]
                             anno = getattr(anno, t)
-                            if t == query.corpus.word_name:
+                            if t == a.type:
                                 break
                         anno.pos = a.pos - 1
                         kwargs['node_alias'] = anno.alias
@@ -152,7 +152,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
                         while True:
                             t = query.corpus.hierarchy[anno.type]
                             anno = getattr(anno, t)
-                            if t == query.corpus.word_name:
+                            if t == a.type:
                                 break
                         kwargs['node_alias'] = anno.alias
                     else:
