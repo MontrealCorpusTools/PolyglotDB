@@ -158,23 +158,27 @@ class QueryResults(object):
                     a.attribute.cached_settings, a.attribute.cached_data = cache[a.attribute.label]
                 elif a.label in cache:
                     a.cached_settings, a.cached_data = cache[a.label]
-                discourse = r[a.discourse_alias]
-                channel = self.corpus.census.lookup_channel(r[a.speaker_alias], discourse)
-                t = a.hydrate(self.corpus, discourse,
-                              r[a.begin_alias],
-                              r[a.end_alias],
-                              channel)
-                if a.attribute is not None and a.attribute.label not in cache:
-                    cache[a.attribute.label] = a.attribute.cached_settings, a.attribute.cached_data
-                elif a.label in cache:
-                    cache[a.label] = a.cached_settings, a.cached_data
-                for k in a.output_columns:
-                    if k == 'time':
-                        continue
-                    if k in self.track_columns:
-                        r.add_track(t)
-                    else:
-                        r.add_acoustic(k, t[k])
+                if r[a.begin_alias] is None:
+                    for k in a.output_columns:
+                        r.add_acoustic(k, None)
+                else:
+                    discourse = r[a.discourse_alias]
+                    channel = self.corpus.census.lookup_channel(r[a.speaker_alias], discourse)
+                    t = a.hydrate(self.corpus, discourse,
+                                  r[a.begin_alias],
+                                  r[a.end_alias],
+                                  channel)
+                    if a.attribute is not None and a.attribute.label not in cache:
+                        cache[a.attribute.label] = a.attribute.cached_settings, a.attribute.cached_data
+                    elif a.label in cache:
+                        cache[a.label] = a.cached_settings, a.cached_data
+                    for k in a.output_columns:
+                        if k == 'time':
+                            continue
+                        if k in self.track_columns:
+                            r.add_track(t)
+                        else:
+                            r.add_acoustic(k, t[k])
         return r
 
     def __iter__(self):
