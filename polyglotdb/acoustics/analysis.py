@@ -49,6 +49,9 @@ def generate_speaker_segments(corpus_context):
             utterances = q.all()
             for u in utterances:
                 segments.append((sound_file.vowel_filepath, u.begin, u.end, channel))
+                if '~' in sound_file.vowel_filepath:
+                    print(sound_file.vowel_filepath)
+                    error
             discourse_mapping[sound_file.vowel_filepath] = d.discourse.name
         segment_mapping[s] = segments
     return segment_mapping, discourse_mapping
