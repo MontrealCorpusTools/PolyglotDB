@@ -96,6 +96,27 @@ def test_track_hierarchical_following_mean_query(acoustic_utt_config):
             assert(r['word_pitch_mean'] != r['following_word_pitch_mean'])
 
 @acoustic
+def test_track_hierarchical_utterance_mean_query(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_source = 'praat'
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.label, g.phone.pitch.track,
+                      g.phone.word.following.pitch.mean.column_name('following_word_pitch_mean'),
+                      g.phone.word.utterance.pitch.mean.column_name('utterance_pitch_mean'),
+                      g.phone.word.utterance.pitch.min.column_name('utterance_pitch_min'),
+                      g.phone.word.utterance.pitch.max.column_name('utterance_pitch_max'),
+                      )
+        results = q.all()
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.track)
+            assert(r['utterance_pitch_mean'])
+            assert(r['utterance_pitch_min'])
+            assert(r['utterance_pitch_max'])
+            print(r['utterance_pitch_mean'],r['following_word_pitch_mean'])
+            assert(r['utterance_pitch_mean'] != r['following_word_pitch_mean'])
+
+@acoustic
 def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.pitch_source = 'reaper'

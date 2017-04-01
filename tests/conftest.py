@@ -486,13 +486,14 @@ def praat_path():
     if sys.platform == 'win32':
         return 'praatcon.exe'
     elif os.environ.get('TRAVIS', False):
-        return os.path.expanduser('~/tools/mfa_test_data')
+        return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
     else:
         return 'praat'
+
 
 @pytest.fixture(scope='session')
 def reaper_path():
     if os.environ.get('TRAVIS', False):
-        return os.path.expanduser('~/tools/mfa_test_data')
+        return os.path.join(os.environ.get('HOME'), 'tools', 'reaper')
     else:
         return 'reaper'

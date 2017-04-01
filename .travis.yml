@@ -51,3 +51,4 @@ cache:
     - $HOME/miniconda
     - $HOME/pgdb
     - $HOME/.pgdb
+    - $HOME/tools
