@@ -47,10 +47,9 @@ def generate_speaker_segments(corpus_context):
             q = q.filter(prob_utt.discourse.name == sound_file.discourse.name)
             q = q.preload(prob_utt.discourse, prob_utt.speaker)
             utterances = q.all()
-            path = os.path.expanduser(sound_file.vowel_filepath)
             for u in utterances:
-                segments.append((path, u.begin, u.end, channel))
-            discourse_mapping[path] = d.discourse.name
+                segments.append((sound_file.vowel_filepath, u.begin, u.end, channel))
+            discourse_mapping[sound_file.vowel_filepath] = d.discourse.name
         segment_mapping[s] = segments
     return segment_mapping, discourse_mapping
 
