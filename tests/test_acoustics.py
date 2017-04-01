@@ -24,6 +24,76 @@ def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
         g.config.praat_path = praat_path
         g.config.pitch_algorithm = 'basic'
         g.analyze_pitch()
+        assert(g.has_pitch(g.discourses[0], 'praat'))
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin, g.phone.end, g.phone.pitch.track)
+        results = q.all()
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.track)
+
+@acoustic
+def test_track_mean_query(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_source = 'praat'
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track, g.phone.pitch.mean)
+        results = q.all()
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.track)
+            assert(r['Mean_F0'])
+            print(r.track, r['Mean_F0'])
+            calc_mean =  sum(x['F0'] for x in r.track.values())/len(r.track)
+            assert(abs(r['Mean_F0'] - calc_mean) < 0.001)
+
+@acoustic
+def test_track_following_mean_query(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_source = 'praat'
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track, g.phone.following.pitch.mean.column_name('following_phone_pitch_mean'))
+        results = q.all()
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.track)
+            assert(r['following_phone_pitch_mean'])
+            print(r.track, r['following_phone_pitch_mean'])
+            calc_mean =  sum(x['F0'] for x in r.track.values())/len(r.track)
+            assert(abs(r['following_phone_pitch_mean'] - calc_mean) > 0.001)
+
+@acoustic
+def test_track_hierarchical_mean_query(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_source = 'praat'
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track, g.phone.word.pitch.mean.column_name('word_pitch_mean'))
+        results = q.all()
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.track)
+            assert(r['word_pitch_mean'])
+            print(r.track, r['word_pitch_mean'])
+            calc_mean =  sum(x['F0'] for x in r.track.values())/len(r.track)
+            assert(abs(r['word_pitch_mean'] - calc_mean) > 0.001)
+
+@acoustic
+def test_track_hierarchical_following_mean_query(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_source = 'praat'
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track,
+                      g.phone.word.pitch.mean.column_name('word_pitch_mean'),
+                      g.phone.word.following.pitch.mean.column_name('following_word_pitch_mean')
+                      )
+        results = q.all()
+        assert(len(results) > 0)
+        for r in results:
+            print(r['begin'])
+            assert(r.track)
+            assert(r['word_pitch_mean'])
+            print(r['word_pitch_mean'],r['following_word_pitch_mean'])
+            assert(r['word_pitch_mean'] != r['following_word_pitch_mean'])
 
 @acoustic
 def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):

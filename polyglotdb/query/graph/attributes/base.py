@@ -80,6 +80,11 @@ class Attribute(object):
     @property
     def alias(self):
         """ Removes '`' from annotation, concatenates annotation alias and label"""
+        return '{}_{}'.format(self.annotation.alias.replace('`', ''), self.label)
+
+    @property
+    def alias_for_cypher(self):
+        """ Removes '`' from annotation, concatenates annotation alias and label"""
         return '`{}_{}`'.format(self.annotation.alias.replace('`', ''), self.label)
 
     def aliased_for_cypher(self):
@@ -91,7 +96,7 @@ class Attribute(object):
         string
             string for db
         """
-        return '{} AS {}'.format(self.for_cypher(), self.alias)
+        return '{} AS {}'.format(self.for_cypher(), self.alias_for_cypher)
 
     def aliased_for_output(self):
         """
@@ -102,7 +107,7 @@ class Attribute(object):
         string
             string for output
         """
-        return '{} AS {}'.format(self.for_cypher(), self.output_alias)
+        return '{} AS {}'.format(self.for_cypher(), self.output_alias_for_cypher)
 
     @property
     def output_alias(self):
@@ -113,6 +118,16 @@ class Attribute(object):
         if self.output_label is not None:
             return self.output_label
         return self.alias
+
+    @property
+    def output_alias_for_cypher(self):
+        """
+        returns output_label if there is one
+        return alias otherwise
+        """
+        if self.output_label is not None:
+            return self.output_label
+        return self.alias_for_cypher
 
     @property
     def with_alias(self):
@@ -135,7 +150,6 @@ class Attribute(object):
     def __eq__(self, other):
         try:
             if self.label == 'begin' and other.label == 'begin':
-                print(other.annotation.depth)
                 return LeftAlignedClauseElement(self.annotation, other.annotation)
             elif self.label == 'end' and other.label == 'end':
                 return RightAlignedClauseElement(self.annotation, other.annotation)

@@ -43,9 +43,6 @@ class AggregationAttribute(AcousticAttribute):
     def __init__(self, acoustic_attribute):
         self.attribute = acoustic_attribute
         self.output_label = None
-        self.ignore_negative = False
-        if isinstance(self.attribute, PitchAttribute) and not self.attribute.relative:
-            self.ignore_negative = True
 
     @property
     def annotation(self):
@@ -85,6 +82,8 @@ class AggregationAttribute(AcousticAttribute):
 
     @property
     def output_columns(self):
+        if self.output_label is not None and len(self.attribute.output_columns) == 1:
+            return [self.output_label]
         return ['{}_{}'.format(self.agg_prefix, x) for x in self.attribute.output_columns]
 
     def hydrate(self, corpus, discourse, begin, end, channel=0):
@@ -96,8 +95,6 @@ class AggregationAttribute(AcousticAttribute):
             if not gen:
                 agg_data[c] = None
             else:
-                if self.ignore_negative:
-                    gen = [x for x in gen if x > 0]
                 if gen:
                     agg_data[c] = self.function(gen)
                 else:

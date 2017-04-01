@@ -481,19 +481,19 @@ class GraphQuery(object):
                 for c in self._columns + self._hidden_columns:
                     if a.annotation.discourse == c.base_annotation and \
                                     c.label == 'name':
-                        a.discourse_alias = c.output_label
+                        a.discourse_alias = c.output_alias
                         discourse_found = True
                     if a.annotation.speaker == c.base_annotation and \
                                     c.label == 'name':
-                        a.speaker_alias = c.output_label
+                        a.speaker_alias = c.output_alias
                         speaker_found = True
                     elif a.annotation == c.base_annotation and \
                                     c.label == 'begin':
-                        a.begin_alias = c.output_label
+                        a.begin_alias = c.output_alias
                         begin_found = True
                     elif a.annotation == c.base_annotation and \
                                     c.label == 'end':
-                        a.end_alias = c.output_label
+                        a.end_alias = c.output_alias
                         end_found = True
                 if not discourse_found:
                     self._hidden_columns.append(a.annotation.discourse.name.column_name(a.discourse_alias))
