@@ -1,5 +1,6 @@
 # Results files
 *.csv
+tests/data/generated/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

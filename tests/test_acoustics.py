@@ -1,3 +1,4 @@
+import os
 from decimal import Decimal
 
 import pytest
@@ -96,7 +97,7 @@ def test_track_hierarchical_following_mean_query(acoustic_utt_config):
             assert(r['word_pitch_mean'] != r['following_word_pitch_mean'])
 
 @acoustic
-def test_track_hierarchical_utterance_mean_query(acoustic_utt_config):
+def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.pitch_source = 'praat'
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
@@ -115,6 +116,7 @@ def test_track_hierarchical_utterance_mean_query(acoustic_utt_config):
             assert(r['utterance_pitch_max'])
             print(r['utterance_pitch_mean'],r['following_word_pitch_mean'])
             assert(r['utterance_pitch_mean'] != r['following_word_pitch_mean'])
+        q.to_csv(os.path.join(results_test_dir, 'test_track_hierarchical_utterance_mean_query.txt'))
 
 @acoustic
 def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):

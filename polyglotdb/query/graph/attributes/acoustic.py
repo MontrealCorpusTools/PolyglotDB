@@ -209,6 +209,7 @@ class PitchAttribute(AcousticAttribute):
         #    data = self.cached_data
         # else:
         data = {}
+
         begin -= padding
         end += padding
         results = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative,

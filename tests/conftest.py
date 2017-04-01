@@ -37,6 +37,13 @@ def buckeye_test_dir(test_dir):
 
 
 @pytest.fixture(scope='session')
+def results_test_dir(test_dir):
+    results = os.path.join(test_dir, 'generated', 'results')
+    os.makedirs(results, exist_ok=True)
+    return results
+
+
+@pytest.fixture(scope='session')
 def timit_test_dir(test_dir):
     return os.path.join(test_dir, 'timit')
 

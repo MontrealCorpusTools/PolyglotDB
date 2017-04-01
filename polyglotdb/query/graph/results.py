@@ -160,6 +160,9 @@ class QueryResults(object):
                     a.cached_settings, a.cached_data = cache[a.label]
                 discourse = r[a.discourse_alias]
                 channel = self.corpus.census.lookup_channel(r[a.speaker_alias], discourse)
+                if r[a.begin_alias] is None:
+                    print(a.attribute, discourse, a, a.attribute.label)
+                    error
                 t = a.hydrate(self.corpus, discourse,
                               r[a.begin_alias],
                               r[a.end_alias],
@@ -233,7 +236,7 @@ class Record(object):
             return self.values[self.columns.index(key)]
         elif key in self.acoustic_columns:
             return self.acoustic_values[self.acoustic_columns.index(key)]
-        raise KeyError('{} not in columns {} or {}'.format(key, self.columns, self.acoustic_columns))
+        raise KeyError('{} not in columns {} or {}'.format(key, self.colu))
 
     def add_acoustic(self, key, value):
         self.acoustic_columns.append(key)
