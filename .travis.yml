@@ -33,6 +33,7 @@ install:
 
 # Run test
 script:
+  - cat $HOME/.pgdb/config.ini
   - python bin/pgdb.py start
   - sleep 45
   - "coverage run --source=polyglotdb setup.py test"

@@ -13,7 +13,7 @@ CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.ini')
 CONFIG = configparser.ConfigParser()
 if os.path.exists(CONFIG_PATH):
     CONFIG.read(CONFIG_PATH)
-    BASE_DIR = os.path.join(CONFIG['Data']['directory'], 'data')
+    BASE_DIR = os.path.expanduser(os.path.join(CONFIG['Data']['directory'], 'data'))
 
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
