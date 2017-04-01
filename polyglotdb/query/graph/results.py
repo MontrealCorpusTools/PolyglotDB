@@ -160,6 +160,9 @@ class QueryResults(object):
                     a.cached_settings, a.cached_data = cache[a.label]
                 discourse = r[a.discourse_alias]
                 channel = self.corpus.census.lookup_channel(r[a.speaker_alias], discourse)
+                if r[a.begin_alias] is None:
+                    print(a.attribute, a, discourse, a.label, a.attribute.pos,)
+                    error
                 t = a.hydrate(self.corpus, discourse,
                               r[a.begin_alias],
                               r[a.end_alias],
