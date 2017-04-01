@@ -82,6 +82,8 @@ class CorpusConfig(object):
         self.temp_dir = os.path.join(self.base_dir, 'temp')
         self.data_dir = os.path.join(self.base_dir, 'data')
         self.audio_dir = os.path.join(self.data_dir, 'audio')
+        if '~' in self.audio_dir:
+            error
 
         self.engine = 'sqlite'
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
