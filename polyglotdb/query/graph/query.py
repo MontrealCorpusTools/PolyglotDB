@@ -503,7 +503,6 @@ class GraphQuery(object):
                     self._hidden_columns.append(a.annotation.begin.column_name(a.begin_alias))
                 if not end_found:
                     self._hidden_columns.append(a.annotation.end.column_name(a.end_alias))
-        print(self.cypher(), self.cypher_params())
         return QueryResults(self)
 
     def to_csv(self, path):
