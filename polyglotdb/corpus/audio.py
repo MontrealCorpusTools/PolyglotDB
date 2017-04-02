@@ -344,6 +344,9 @@ class AudioContext(SyllabicContext):
             raise (NotImplementedError('Only pitch, formants, and intensity can be currently saved.'))
         data = []
         for seg, track in tracks.items():
+            if not len(track.keys()):
+                print(seg)
+                continue
             file_path, begin, end, channel = seg
             discourse = self.sql_session.query(Discourse).join(SoundFile).filter(
                 SoundFile.vowel_filepath == file_path).first()

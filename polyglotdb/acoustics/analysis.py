@@ -36,7 +36,6 @@ def generate_speaker_segments(corpus_context):
         segments = []
         discourses = corpus_context.census[s].discourses
         for d in discourses:
-
             q = corpus_context.sql_session.query(SoundFile).join(Discourse)
             q = q.filter(Discourse.name == d.discourse.name)
             sound_file = q.first()
@@ -47,7 +46,7 @@ def generate_speaker_segments(corpus_context):
             prob_utt = getattr(corpus_context, atype)
             q = corpus_context.query_graph(prob_utt)
             q = q.filter(prob_utt.discourse.name == sound_file.discourse.name)
-            q = q.preload(prob_utt.discourse, prob_utt.speaker)
+            q = q.filter(prob_utt.speaker.name == s)
             utterances = q.all()
             for u in utterances:
                 segments.append((sound_file.vowel_filepath, u.begin, u.end, channel))
