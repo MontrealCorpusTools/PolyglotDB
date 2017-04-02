@@ -68,9 +68,13 @@ def query_to_cypher(query):
     kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
 
     if optional_match_strings:
-        kwargs['optional_match'] = 'OPTIONAL MATCH ' + ',\n'.join(optional_match_strings) # FIXME should be multiple optional matches per annotation type
-        if optional_where_strings:
-            kwargs['optional_match'] += '\nWHERE ' + 'AND\n'.join(optional_where_strings)
+        s = ''
+        for i, o in enumerate(optional_match_strings):
+            s += 'OPTIONAL MATCH ' + o + '\n'
+            w = optional_where_strings[i]
+            if w:
+                s += 'WHERE ' + w + '\n'
+        kwargs['optional_match'] = s
 
     kwargs['where'] = generate_wheres(query._criterion, wheres)
 

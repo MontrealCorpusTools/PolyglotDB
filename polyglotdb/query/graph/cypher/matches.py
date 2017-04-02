@@ -45,8 +45,6 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
 
     statements = []
     wheres = []
-    optional_wheres = []
-    optional_statements = []
     if isinstance(annotation_type, PauseAnnotation):
         prec = prec_pause_template
         foll = foll_pause_template
@@ -56,6 +54,7 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
         anchor_string = annotation_type.for_match()
         defined.update(annotation_type.withs)
         statements.append(anchor_string)
+    optionals = {}
     for a in annotation_list:
         where = ''
         if a.pos == 0:
@@ -170,12 +169,26 @@ def generate_match(query, annotation_type, annotation_list, filter_annotations):
             if where:
                 wheres.append(where)
         else:
-            optional_statements.append(anchor_string)
-            if where:
-                optional_wheres.append(where)
+            if a.type not in optionals:
+                optionals[a.type] = []
+            optionals[a.type].append((anchor_string, where))
         if isinstance(annotation_type, PauseAnnotation):
             defined.add(a.path_alias)
         else:
             defined.add(a.alias)
             defined.add(a.type_alias)
+    optional_wheres = []
+    optional_statements = []
+    for k, v in optionals.items():
+        if len(v) == 1:
+            optional_statements.append(v[0][0])
+            optional_wheres.append(v[0][1])
+        else:
+            optional_statements.append(',\n'.join(x[0] for x in v))
+            w = [x[1] for x in v if x[1]]
+            if w:
+                optional_wheres.append('\nAND '.join(w))
+            else:
+                optional_wheres.append('')
+
     return statements, optional_statements, defined, wheres, optional_wheres
