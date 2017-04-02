@@ -27,7 +27,7 @@ def import_type_csvs(corpus_context, type_headers):
                             '{}_type.csv'.format(at))
         type_path = 'file:///{}'.format(make_path_safe(path))
 
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type:%s) ASSERT node.id IS UNIQUE' % (at, corpus_context.cypher_safe_name))
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
 
         properties = []
         for x in h:
