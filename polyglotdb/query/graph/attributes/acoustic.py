@@ -19,7 +19,7 @@ class AcousticAttribute(Attribute):
         self.cached_data = None
         self.cached_settings = None
         self.relative = False
-        self.relative_times = False
+        self.relative_time = False
 
     def __getattr__(self, key):
         if key == 'min':
@@ -140,13 +140,17 @@ class SampledTrack(Track):
 
 
 class InterpolatedTrack(Track):
-    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=10):
+    def __init__(self, *args, **kwargs):
+        super(InterpolatedTrack, self).__init__(*args, **kwargs)
+        self.num_points = 10
+
+    def hydrate(self, corpus, discourse, begin, end, channel=0):
         from scipy import interpolate
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel, padding=0.01)
         duration = end - begin
-        time_step = duration / (num_points - 1)
+        time_step = duration / (self.num_points - 1)
 
-        new_data = {begin + x * time_step: dict() for x in range(0, num_points)}
+        new_data = {begin + x * time_step: dict() for x in range(0, self.num_points)}
         x = sorted(data.keys())
         undef_regions = []
         for i, x1 in enumerate(x):
@@ -205,19 +209,19 @@ class PitchAttribute(AcousticAttribute):
             A dictionary with 'F0' as the keys and a dictionary of times and F0 values as the value
          """
 
-        # if self.cached_settings == (discourse, begin, end, channel, self.relative, num_points):
-        #    data = self.cached_data
-        # else:
-        data = {}
+        if self.cached_settings == (discourse, begin, end, channel, self.relative, num_points):
+           data = self.cached_data
+        else:
+            data = {}
 
-        begin -= padding
-        end += padding
-        results = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative,
-                                   num_points=num_points)
-        for line in results:
-            data[line[0]] = {self.output_columns[0]: line[1]}
-            #   self.cached_settings = (discourse, begin, end, channel, self.relative, num_points)
-            #   self.cached_data = data
+            begin -= padding
+            end += padding
+            results = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative,
+                                       num_points=num_points, relative_time=self.relative_time)
+            for line in results:
+                data[line[0]] = {self.output_columns[0]: line[1]}
+                self.cached_settings = (discourse, begin, end, channel, self.relative, num_points)
+                self.cached_data = data
         return data
 
 
@@ -257,7 +261,7 @@ class IntensityAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {}
-            results = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative, num_points=0)
+            results = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative, relative_time=self.relative_time)
             for line in results:
                 data[line[0]] = {self.output_columns[0]: line[1]}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
@@ -301,7 +305,7 @@ class FormantAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {}
-            results = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative, num_points=0)
+            results = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative, relative_time=self.relative_time)
             for line in results:
                 data[line[0]] = {self.output_columns[i]: line[i + 1] for i in range(3)}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
