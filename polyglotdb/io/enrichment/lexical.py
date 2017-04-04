@@ -19,4 +19,5 @@ def enrich_lexicon_from_csv(corpus_context, path, case_sensitive=False):
     else:
         labels = set(x.lower() for x in corpus_context.lexicon.words)
     data, type_data = parse_file(path, labels=labels, case_sensitive=case_sensitive)
-    corpus_context.enrich_lexicon(data, type_data, case_sensitive=case_sensitive)
+    if data:
+        corpus_context.enrich_lexicon(data, type_data, case_sensitive=case_sensitive)
