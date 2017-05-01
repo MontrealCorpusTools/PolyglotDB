@@ -1,4 +1,3 @@
-
 import os
 
 from textgrid import TextGrid, IntervalTier
@@ -9,6 +8,7 @@ from polyglotdb.structure import Hierarchy
 from .base import BaseParser, DiscourseData
 
 from ..helper import find_wav_path
+
 
 class TextgridParser(BaseParser):
     '''
@@ -29,21 +29,23 @@ class TextgridParser(BaseParser):
         Function to output progress messages
     '''
     _extensions = ['.textgrid']
-    def __init__(self, annotation_types, hierarchy, make_transcription = True, 
-        make_label = False, 
-        stop_check = None, call_back = None):
+
+    def __init__(self, annotation_types, hierarchy, make_transcription=True,
+                 make_label=False,
+                 stop_check=None, call_back=None):
         super(TextgridParser, self).__init__(annotation_types, hierarchy,
-                    make_transcription = True, make_label = True,
-                    stop_check = stop_check, call_back = call_back)
+                                             make_transcription=True, make_label=True,
+                                             stop_check=stop_check, call_back=call_back)
+
     def load_textgrid(self, path):
         tg = TextGrid()
         try:
             tg.read(path)
         except ValueError as e:
-            raise(TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
+            raise (TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
         return tg
 
-    def parse_discourse(self, path, types_only = False):
+    def parse_discourse(self, path, types_only=False):
         '''
         Parse a TextGrid file for later importing.
 
@@ -60,7 +62,9 @@ class TextgridParser(BaseParser):
         tg = self.load_textgrid(path)
 
         if len(tg.tiers) != len(self.annotation_types):
-            raise(TextGridError("The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(path)))
+            raise (TextGridError(
+                "The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(
+                    path)))
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         if self.speaker_parser is not None:
@@ -72,7 +76,7 @@ class TextgridParser(BaseParser):
             a.reset()
             a.speaker = speaker
 
-        #Parse the tiers
+        # Parse the tiers
         for i, ti in enumerate(tg.tiers):
 
             if isinstance(ti, IntervalTier):

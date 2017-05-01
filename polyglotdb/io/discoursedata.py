@@ -1,4 +1,3 @@
-
 class DiscourseData(object):
     """
     Class for collecting information about a discourse to be loaded
@@ -25,20 +24,24 @@ class DiscourseData(object):
         Path to sound file if it exists
 
     """
+
     def __init__(self, name, annotation_types, hierarchy):
         self.name = name
         self.data = annotation_types
         self.speaker_channel_mapping = {}
 
         self.segment_type = None
-        for k,v in self.data.items():
+        for k, v in self.data.items():
             if k not in hierarchy.values() and not v.is_word:
                 self.segment_type = k
         self.hierarchy = hierarchy
         self.wav_path = None
         for k, at in self.data.items():
             self.hierarchy.type_properties[at.name] = at.type_properties
-            self.hierarchy.token_properties[at.name] = at.token_properties
+            if not at.token_properties:
+                self.hierarchy.token_properties[at.name] = set((x, type(None)) for x in at.token_property_keys)
+            else:
+                self.hierarchy.token_properties[at.name] = at.token_properties
 
     def __getitem__(self, key):
         return self.data[key]
@@ -56,12 +59,12 @@ class DiscourseData(object):
             the ordered hierarchy
         """
         ats = []
-        for k,v in self.hierarchy.items():
+        for k, v in self.hierarchy.items():
             if v is None:
                 ats.append(k)
                 break
         while len(ats) < len(self.hierarchy.keys()):
-            for k,v in self.hierarchy.items():
+            for k, v in self.hierarchy.items():
                 if v == ats[-1]:
                     ats.append(k)
                     break
@@ -71,8 +74,8 @@ class DiscourseData(object):
     def token_headers(self):
         headers = {}
         for x in self.annotation_types:
-            token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse']
-            token_header += sorted(self[x].token_property_keys)
+            token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse', 'label']
+            token_header += sorted(y[0] for y in self.hierarchy.token_properties[x] if y[0] != 'label')
             supertype = self[x].supertype
             if supertype is not None:
                 token_header.append(supertype)

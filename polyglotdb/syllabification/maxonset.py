@@ -1,5 +1,3 @@
-
-
 def split_ons_coda_maxonset(string, onsets):
     """
     Finds the split between onset and coda in a string
@@ -25,6 +23,7 @@ def split_ons_coda_maxonset(string, onsets):
             continue
         return i
     return None
+
 
 def split_nonsyllabic_maxonset(string, onsets):
     """

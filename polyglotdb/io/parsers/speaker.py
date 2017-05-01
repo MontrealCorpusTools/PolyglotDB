@@ -1,11 +1,13 @@
 import os
 
+
 class SpeakerParser(object):
     def parse_path(self, path):
-        raise(NotImplementedError)
+        raise (NotImplementedError)
+
 
 class FilenameSpeakerParser(SpeakerParser):
-    def __init__(self, number_of_characters, orientation = 'left'):
+    def __init__(self, number_of_characters, orientation='left'):
         self.number_of_characters = number_of_characters
         self.orientation = orientation
 
@@ -29,6 +31,7 @@ class FilenameSpeakerParser(SpeakerParser):
             return name[:self.number_of_characters]
         else:
             return name[-1 * self.number_of_characters:]
+
 
 class DirectorySpeakerParser(SpeakerParser):
     def __init__(self):

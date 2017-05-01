@@ -1,5 +1,6 @@
 from csv import DictWriter
 
+
 def make_safe(value, delimiter):
     """
     Recursively parse transcription lists into strings for saving
@@ -17,14 +18,14 @@ def make_safe(value, delimiter):
     str
         Safe string
     """
-    if isinstance(value,list):
-        return delimiter.join(map(lambda x: make_safe(x, delimiter),value))
+    if isinstance(value, list):
+        return delimiter.join(map(lambda x: make_safe(x, delimiter), value))
     if value is None:
         return ''
     return str(value)
 
 
-def save_results(results, path, header = None, mode = 'w'):
+def save_results(results, path, header=None, mode='w'):
     """
     Writes results to path specified 
 
@@ -41,17 +42,21 @@ def save_results(results, path, header = None, mode = 'w'):
     """
     if header is None:
         header = results.columns
-    with open(path, mode, encoding = 'utf8', newline = '') as f:
+    with open(path, mode, encoding='utf8', newline='') as f:
         writer = DictWriter(f, header)
         if mode != 'a':
             writer.writeheader()
         for line in results:
-            line = {k: make_safe(line[k], '/') for k in header}
+            try:
+                line = {k: make_safe(line[k], '/') for k in header}
+            except KeyError:
+                continue
             writer.writerow(line)
 
+
 def export_corpus_csv(corpus, path,
-                    delimiter = ',', trans_delimiter = '.',
-                    variant_behavior = None):
+                      delimiter=',', trans_delimiter='.',
+                      variant_behavior=None):
     """
     Save a corpus as a column-delimited text file
 
@@ -88,7 +93,7 @@ def export_corpus_csv(corpus, path,
         for word in corpus.iter_sort():
             word_outline = []
             for a in corpus.attributes:
-                word_outline.append(make_safe(getattr(word, a.name),trans_delimiter))
+                word_outline.append(make_safe(getattr(word, a.name), trans_delimiter))
             if variant_behavior == 'token':
                 var = word.variants()
                 for v, freq in var.items():
@@ -109,11 +114,12 @@ def export_corpus_csv(corpus, path,
                 d = ', '
                 if delimiter == ',':
                     d = '; '
-                var = d.join(make_safe(x,trans_delimiter) for x in sorted(var.keys(), key = lambda y: var[y]))
+                var = d.join(make_safe(x, trans_delimiter) for x in sorted(var.keys(), key=lambda y: var[y]))
                 word_outline.append(var)
             print(delimiter.join(word_outline), file=f)
 
-def export_feature_matrix_csv(feature_matrix, path, delimiter = ','):
+
+def export_feature_matrix_csv(feature_matrix, path, delimiter=','):
     """
     Save a FeatureMatrix as a column-delimited text file
 
@@ -128,16 +134,15 @@ def export_feature_matrix_csv(feature_matrix, path, delimiter = ','):
     """
     with open(path, encoding='utf-8', mode='w') as f:
         header = ['symbol'] + feature_matrix.features
-        writer = DictWriter(f, header,delimiter=delimiter)
+        writer = DictWriter(f, header, delimiter=delimiter)
         writer.writerow({h: h for h in header})
         for seg in feature_matrix.segments:
-            #If FeatureMatrix uses dictionaries
-            #outdict = feature_matrix[seg]
-            #outdict['symbol'] = seg
-            #writer.writerow(outdict)
-            if seg in ['#','']: #wtf
+            # If FeatureMatrix uses dictionaries
+            # outdict = feature_matrix[seg]
+            # outdict['symbol'] = seg
+            # writer.writerow(outdict)
+            if seg in ['#', '']:  # wtf
                 continue
             featline = feature_matrix.seg_to_feat_line(seg)
             outdict = {header[i]: featline[i] for i in range(len(header))}
             writer.writerow(outdict)
-

@@ -1,4 +1,3 @@
-
 import os
 
 from textgrid import TextGrid, IntervalTier
@@ -11,6 +10,7 @@ from ..helper import find_wav_path
 from .base import DiscourseData
 from .speaker import DirectorySpeakerParser
 
+
 class LabbCatParser(TextgridParser):
     def _is_valid(self, tg):
         found_word = False
@@ -22,7 +22,7 @@ class LabbCatParser(TextgridParser):
                 found_phone = True
         return found_word and found_phone
 
-    def parse_discourse(self, path, types_only = False):
+    def parse_discourse(self, path, types_only=False):
         '''
         Parse a TextGrid file for later importing.
 
@@ -38,7 +38,7 @@ class LabbCatParser(TextgridParser):
         '''
         tg = self.load_textgrid(path)
         if not self._is_valid(tg):
-            raise(TextGridError('The file "{}" cannot be parsed by the LaBB-CAT parser.'.format(path)))
+            raise (TextGridError('The file "{}" cannot be parsed by the LaBB-CAT parser.'.format(path)))
         name = os.path.splitext(os.path.split(path)[1])[0]
         self.speaker_parser = DirectorySpeakerParser()
         if self.speaker_parser is not None:
@@ -50,7 +50,7 @@ class LabbCatParser(TextgridParser):
             a.reset()
             a.speaker = speaker
 
-        #Parse the tiers
+        # Parse the tiers
         for i, ti in enumerate(tg.tiers):
             if ti.name.startswith('transcrip'):
                 self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))

@@ -1,6 +1,3 @@
-
-from .graph.helper import value_for_cypher
-
 class Hierarchy(object):
     '''
     Class containing information about how a corpus is structured.
@@ -34,7 +31,7 @@ class Hierarchy(object):
         MATCH (c)<-[:contained_by*]-(n:{type})
         SET n.subsets = {{subsets}}'''
 
-    def __init__(self, data = None):
+    def __init__(self, data=None):
         if data is None:
             data = {}
         self._data = data
@@ -49,62 +46,62 @@ class Hierarchy(object):
         self.discourse_properties = set([('name', str)])
 
     def add_type_labels(self, corpus_context, annotation_type, labels):
-        statement = self.get_type_subset_template.format(type = annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
+        statement = self.get_type_subset_template.format(type=annotation_type)
+        res = list(corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name))
         try:
             cur_subsets = res[0]['subsets']
         except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets + labels)
-        statement = self.set_type_subset_template.format(type = annotation_type)
+        statement = self.set_type_subset_template.format(type=annotation_type)
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
-                                corpus_name = corpus_context.corpus_name)
+                                      corpus_name=corpus_context.corpus_name)
         self.subset_types[annotation_type] = updated
 
     def remove_type_labels(self, corpus_context, annotation_type, labels):
-        statement = self.get_type_subset_template.format(type = annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
+        statement = self.get_type_subset_template.format(type=annotation_type)
+        res = list(corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name))
         try:
             cur_subsets = res[0]['subsets']
         except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets) - set(labels)
-        statement = self.set_type_subset_template.format(type = annotation_type)
+        statement = self.set_type_subset_template.format(type=annotation_type)
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
-                                corpus_name = corpus_context.corpus_name)
+                                      corpus_name=corpus_context.corpus_name)
         self.subset_types[annotation_type] = updated
 
     def add_token_labels(self, corpus_context, annotation_type, labels):
-        statement = self.get_token_subset_template.format(type = annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
+        statement = self.get_token_subset_template.format(type=annotation_type)
+        res = list(corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name))
         try:
             cur_subsets = res[0]['subsets']
         except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets + labels)
-        statement = self.set_token_subset_template.format(type = annotation_type)
+        statement = self.set_token_subset_template.format(type=annotation_type)
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
-                                corpus_name = corpus_context.corpus_name)
+                                      corpus_name=corpus_context.corpus_name)
         self.subset_tokens[annotation_type] = updated
 
     def remove_token_labels(self, corpus_context, annotation_type, labels):
-        statement = self.get_token_subset_template.format(type = annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name = corpus_context.corpus_name))
+        statement = self.get_token_subset_template.format(type=annotation_type)
+        res = list(corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name))
         try:
             cur_subsets = res[0]['subsets']
         except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets) - set(labels)
-        statement = self.set_token_subset_template.format(type = annotation_type)
+        statement = self.set_token_subset_template.format(type=annotation_type)
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
-                                corpus_name = corpus_context.corpus_name)
+                                      corpus_name=corpus_context.corpus_name)
         self.subset_tokens[annotation_type] = updated
 
     def add_type_properties(self, corpus_context, annotation_type, properties):
         set_template = 'n.{0} = {{{0}}}'
         ps = []
         kwargs = {}
-        for k,v in properties:
+        for k, v in properties:
             if v == int:
                 v = 0
             elif v == list:
@@ -122,12 +119,12 @@ class Hierarchy(object):
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        SET {sets}'''.format(type = annotation_type, sets = ', '.join(ps))
+        SET {sets}'''.format(type=annotation_type, sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
-                corpus_name = corpus_context.corpus_name, **kwargs)
+                                      corpus_name=corpus_context.corpus_name, **kwargs)
 
         if annotation_type not in self.type_properties:
-            self.type_properties[annotation_type] = set([('id',str)])
+            self.type_properties[annotation_type] = set([('id', str)])
         self.type_properties[annotation_type].update(k for k in properties)
 
     def remove_type_properties(self, corpus_context, annotation_type, properties):
@@ -138,21 +135,20 @@ class Hierarchy(object):
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        REMOVE {removes}'''.format(type = annotation_type, removes = ', '.join(ps))
+        REMOVE {removes}'''.format(type=annotation_type, removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
-                corpus_name = corpus_context.corpus_name)
+                                      corpus_name=corpus_context.corpus_name)
         if annotation_type not in self.type_properties:
-            self.type_properties[annotation_type] = set([('id',str)])
+            self.type_properties[annotation_type] = set([('id', str)])
 
         to_remove = set(x for x in self.type_properties[annotation_type] if x[0] in properties)
         self.type_properties[annotation_type].difference_update(to_remove)
-
 
     def add_token_properties(self, corpus_context, annotation_type, properties):
         set_template = 'n.{0} = {{{0}}}'
         ps = []
         kwargs = {}
-        for k,v in properties:
+        for k, v in properties:
             if v == int:
                 v = 0
             elif v == list:
@@ -170,9 +166,9 @@ class Hierarchy(object):
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(n:{type})
-        SET {sets}'''.format(type = annotation_type, sets = ', '.join(ps))
+        SET {sets}'''.format(type=annotation_type, sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
-                corpus_name = corpus_context.corpus_name, **kwargs)
+                                      corpus_name=corpus_context.corpus_name, **kwargs)
         if annotation_type not in self.token_properties:
             self.token_properties[annotation_type] = set([('id', str)])
         self.token_properties[annotation_type].update(k for k in properties)
@@ -185,9 +181,9 @@ class Hierarchy(object):
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)<-[:contained_by*]-(n:{type})
-        REMOVE {removes}'''.format(type = annotation_type, removes = ', '.join(ps))
+        REMOVE {removes}'''.format(type=annotation_type, removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
-                corpus_name = corpus_context.corpus_name)
+                                      corpus_name=corpus_context.corpus_name)
         if annotation_type not in self.token_properties:
             self.token_properties[annotation_type] = set([('id', str)])
         to_remove = set(x for x in self.token_properties[annotation_type] if x[0] in properties)
@@ -197,7 +193,7 @@ class Hierarchy(object):
         set_template = 's.{0} = {{{0}}}'
         ps = []
         kwargs = {}
-        for k,v in properties:
+        for k, v in properties:
             if v == int:
                 v = 0
             elif v == list:
@@ -215,9 +211,9 @@ class Hierarchy(object):
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)-[:spoken_by]->(s:Speaker)
-        SET {sets}'''.format(sets = ', '.join(ps))
+        SET {sets}'''.format(sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
-                corpus_name = corpus_context.corpus_name, **kwargs)
+                                      corpus_name=corpus_context.corpus_name, **kwargs)
 
         self.speaker_properties.update(k for k in properties)
 
@@ -229,9 +225,9 @@ class Hierarchy(object):
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)-[:spoken_by]->(s:Speaker)
-        REMOVE {removes}'''.format(removes = ', '.join(ps))
+        REMOVE {removes}'''.format(removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
-                corpus_name = corpus_context.corpus_name)
+                                      corpus_name=corpus_context.corpus_name)
         to_remove = set(x for x in self.speaker_properties if x[0] in properties)
         self.speaker_properties.difference_update(to_remove)
 
@@ -239,7 +235,7 @@ class Hierarchy(object):
         set_template = 'd.{0} = {{{0}}}'
         ps = []
         kwargs = {}
-        for k,v in properties:
+        for k, v in properties:
             if v == int:
                 v = 0
             elif v == list:
@@ -257,9 +253,9 @@ class Hierarchy(object):
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)-[:spoken_in]->(d:Discourse)
-        SET {sets}'''.format(sets = ', '.join(ps))
+        SET {sets}'''.format(sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
-                corpus_name = corpus_context.corpus_name, **kwargs)
+                                      corpus_name=corpus_context.corpus_name, **kwargs)
 
         self.discourse_properties.update(k for k in properties)
 
@@ -271,9 +267,9 @@ class Hierarchy(object):
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
         MATCH (c)-[:spoken_in]->(d:Discourse)
-        REMOVE {removes}'''.format(removes = ', '.join(ps))
+        REMOVE {removes}'''.format(removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
-                corpus_name = corpus_context.corpus_name)
+                                      corpus_name=corpus_context.corpus_name)
         to_remove = set(x for x in self.discourse_properties if x[0] in properties)
         self.discourse_properties.difference_update(to_remove)
 
@@ -319,7 +315,7 @@ class Hierarchy(object):
 
     def __delitem__(self, key):
         del self._data[key]
-        for k,v in self._data.items():
+        for k, v in self._data.items():
             if v == key:
                 self._data[k] = None
 
@@ -341,7 +337,7 @@ class Hierarchy(object):
         else:
             self._data.update(other._data)
             self.subannotations.update(other.subannotations)
-            for k,v in other.type_properties.items():
+            for k, v in other.type_properties.items():
                 if k not in self.type_properties.items():
                     self.type_properties[k] = v
                 else:
@@ -360,7 +356,7 @@ class Hierarchy(object):
 
     @property
     def highest(self):
-        for k,v in self.items():
+        for k, v in self.items():
             if v is None:
                 return k
 
@@ -368,7 +364,7 @@ class Hierarchy(object):
     def highest_to_lowest(self):
         ats = [self.highest]
         while len(ats) < len(self.keys()):
-            for k,v in self.items():
+            for k, v in self.items():
                 if v == ats[-1]:
                     ats.append(k)
                     break

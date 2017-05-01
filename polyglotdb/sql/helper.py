@@ -1,5 +1,6 @@
 from sqlalchemy.sql.expression import ClauseElement
 
+
 def get_or_create(session, model, defaults=None, **kwargs):
     """
     either get or create a row in the sql table specified by model

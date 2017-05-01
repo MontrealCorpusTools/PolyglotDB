@@ -4,6 +4,7 @@ from ..types.parsing import *
 
 from ..parsers.partitur import PartiturParser
 
+
 def inspect_partitur(path):
     """
     Generate an :class:`~polyglotdb.io.parsers.partitur.PartiturParser`
@@ -20,8 +21,8 @@ def inspect_partitur(path):
         Autodetected parser for BAS Partitur
     """
     annotation_types = [OrthographyTier('word', 'word'),
-                            OrthographyTier('transcription','word'),
-                            OrthographyTier('phones', 'phone')]
+                        OrthographyTier('transcription', 'word'),
+                        OrthographyTier('phones', 'phone')]
 
     annotation_types[0].label = True
     annotation_types[1].label = False

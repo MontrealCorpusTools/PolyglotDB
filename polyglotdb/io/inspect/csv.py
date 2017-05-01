@@ -1,13 +1,12 @@
-
-
 from ..types.content import (OrthographyAnnotationType, TranscriptionAnnotationType,
-                            NumericAnnotationType)
+                             NumericAnnotationType)
 
 from ..helper import guess_type
 
 from ..parsers import CsvParser
 
-def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
+
+def inspect_csv(path, num_lines=10, coldelim=None, transdelim=None):
     """
     Generate a :class:`~polyglotdb.io.parsers.csv.CsvParser`
     for a specified text file for parsing it as a column-delimited file
@@ -33,22 +32,22 @@ def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
     if coldelim is not None:
         common_delimiters = [coldelim]
     else:
-        common_delimiters = [',','\t',':','|']
+        common_delimiters = [',', '\t', ':', '|']
     if transdelim is not None:
         trans_delimiters = [transdelim]
     else:
-        trans_delimiters = ['.',' ', ';', ',']
+        trans_delimiters = ['.', ' ', ';', ',']
 
-    with open(path,'r', encoding='utf-8') as f:
+    with open(path, 'r', encoding='utf-8') as f:
         lines = []
         head = f.readline().strip()
         for line in f.readlines():
             lines.append(line.strip())
-        #for i in range(num_lines):
-        #    line = f.readline()
-        #    if not line:
-        #        break
-        #    lines.append(line)
+            # for i in range(num_lines):
+            #    line = f.readline()
+            #    if not line:
+            #        break
+            #    lines.append(line)
 
     best = ''
     num = 1
@@ -58,7 +57,7 @@ def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
             num = trial
             best = d
     if best == '':
-        raise(DelimiterError('The column delimiter specified did not create multiple columns.'))
+        raise (DelimiterError('The column delimiter specified did not create multiple columns.'))
 
     head = head.split(best)
     vals = {h: [] for h in head}
@@ -66,7 +65,7 @@ def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
     for line in lines:
         l = line.strip().split(best)
         if len(l) != len(head):
-            raise(PCTError('{}, {}'.format(l,head)))
+            raise (PCTError('{}, {}'.format(l, head)))
         for i in range(len(head)):
             vals[head[i]].append(l[i])
     atts = []
@@ -82,7 +81,7 @@ def inspect_csv(path, num_lines = 10, coldelim = None, transdelim = None):
             a = NumericAnnotationType(h, 'word')
         else:
             a = OrthographyAnnotationType(h, 'word')
-        a.add(((x,) for x in vals[h]), save = False)
+        a.add(((x,) for x in vals[h]), save=False)
         atts.append(a)
 
     return CsvParser(atts, best)

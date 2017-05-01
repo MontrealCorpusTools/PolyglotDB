@@ -3,30 +3,32 @@ import pytest
 
 from polyglotdb import CorpusContext
 
+
 def test_encode_positions(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_utterance_position()
 
         q = g.query_graph(g.word).columns(g.word.label.column_name('label'),
-                        g.word.position_in_utterance.column_name('pos'))
+                                          g.word.position_in_utterance.column_name('pos'))
         q = q.order_by(g.word.begin)
         results = q.all()
-        assert(results[0]['label'] == 'this')
-        assert(results[0]['pos'] == 1)
+        assert (results[0]['label'] == 'this')
+        assert (results[0]['pos'] == 1)
 
         q = g.query_graph(g.word)
         q = q.filter(g.word.begin == g.utterance.begin)
         q = q.columns(g.word.label.column_name('label'),
-                        g.word.position_in_utterance.column_name('pos'))
+                      g.word.position_in_utterance.column_name('pos'))
         q = q.order_by(g.word.begin)
         results = q.all()
-        assert(all(x['pos'] == 1 for x in results))
+        assert (all(x['pos'] == 1 for x in results))
 
         g.reset_utterance_position()
 
         q = g.query_graph(g.word)
         with pytest.raises(AttributeError):
             g.word.position_in_utterance == 0
+
 
 def test_encode_speech_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
@@ -41,7 +43,7 @@ def test_encode_speech_rate(acoustic_config):
         q = q.order_by(g.utterance.begin)
         results = q.all()
 
-        assert(round(results[0]['speech_rate'],5) == round(4 / (7.541484 - 1.059223), 5))
+        assert (round(results[0]['speech_rate'], 5) == round(4 / (7.541484 - 1.059223), 5))
 
         g.reset_speech_rate()
 

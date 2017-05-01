@@ -1,7 +1,7 @@
-
+from ..query.graph.helper import value_for_cypher
 from ..structure import Hierarchy
+from .base import BaseContext
 
-from ..graph.helper import value_for_cypher
 
 def generate_cypher_property_list(property_set):
     """
@@ -27,7 +27,7 @@ def generate_cypher_property_list(property_set):
     return ', '.join(props)
 
 
-class StructuredContext(object):
+class StructuredContext(BaseContext):
     def generate_hierarchy(self):
         """
         Creates the hierarchy, which is information on how the corpus is structured
@@ -40,7 +40,7 @@ class StructuredContext(object):
         """
         exists_statement = '''MATCH (c:Corpus)<-[:contained_by]-(s)
         WHERE c.name = {corpus_name} RETURN c LIMIT 1'''
-        if self.execute_cypher(exists_statement, corpus_name = self.corpus_name):
+        if self.execute_cypher(exists_statement, corpus_name=self.corpus_name):
             hierarchy_statement = '''MATCH
             path = (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(nt),
             (c)-[:spoken_by]->(s:Speaker),
@@ -50,7 +50,7 @@ class StructuredContext(object):
             OPTIONAL MATCH (n)<-[:annotates]-(subs)
             return n,nt, path, collect(subs) as subs, s, d
             order by size(nodes(path))'''
-            results = self.execute_cypher(hierarchy_statement, corpus_name = self.corpus_name)
+            results = self.execute_cypher(hierarchy_statement, corpus_name=self.corpus_name)
             sup = None
             data = {}
             subs = {}
@@ -95,7 +95,7 @@ class StructuredContext(object):
             h.type_properties = type_properties
             h.speaker_properties = speaker_properties
             h.discourse_properties = discourse_properties
-        else: #FIXME I don't think this gets run and «...» syntax isn't supported any longer by py2neo
+        else:  # FIXME I don't think this gets run and «...» syntax isn't supported any longer by py2neo
             all_labels = self.graph.node_labels
             linguistic_labels = []
             discourses = set(self.discourses)
@@ -108,23 +108,25 @@ class StructuredContext(object):
                     continue
                 if label == self.corpus_name:
                     continue
-                if not self.execute_cypher(exists_statement, labels = [self.corpus_name, label]):
+                if not self.execute_cypher(exists_statement, labels=[self.corpus_name, label]):
                     continue
                 if label.endswith('_type'):
                     continue
                 linguistic_labels.append(label)
             h = {}
             subs = {}
-            contain_statement = '''MATCH (t:{corpus_name}:«super_label»)<-[:contained_by]-(n:{corpus_name}:«sub_label») RETURN 1 LIMIT 1'''.format(corpus_name = self.corpus_name)
-            annotate_statement = '''MATCH (t:{corpus_name}:«super_label»)<-[:annotates]-(n:{corpus_name}:«sub_label») RETURN 1 LIMIT 1'''.format(corpus_name = self.corpus_name)
+            contain_statement = '''MATCH (t:{corpus_name}:«super_label»)<-[:contained_by]-(n:{corpus_name}:«sub_label») RETURN 1 LIMIT 1'''.format(
+                corpus_name=self.corpus_name)
+            annotate_statement = '''MATCH (t:{corpus_name}:«super_label»)<-[:annotates]-(n:{corpus_name}:«sub_label») RETURN 1 LIMIT 1'''.format(
+                corpus_name=self.corpus_name)
             for sub_label in linguistic_labels:
                 for sup_label in linguistic_labels:
                     if sub_label == sup_label:
                         continue
-                    if self.execute_cypher(contain_statement, super_label = sup_label, sub_label = sub_label):
+                    if self.execute_cypher(contain_statement, super_label=sup_label, sub_label=sub_label):
                         h[sub_label] = sup_label
                         break
-                    if self.execute_cypher(annotate_statement, super_label = sup_label, sub_label = sub_label):
+                    if self.execute_cypher(annotate_statement, super_label=sup_label, sub_label=sub_label):
                         if sup_label not in subs:
                             subs[sup_label] = set([])
                         subs[sup_label].add(sub_label)
@@ -154,7 +156,7 @@ class StructuredContext(object):
                                 WHERE c.name = {corpus}
                                 WITH n, t, c, s, d
                                 OPTIONAL MATCH (t)<-[:annotates]-(a)
-                                DETACH DELETE a, t, n, s, d''', corpus = self.corpus_name)
+                                DETACH DELETE a, t, n, s, d''', corpus=self.corpus_name)
 
     def encode_hierarchy(self):
         """
@@ -181,13 +183,13 @@ class StructuredContext(object):
             try:
                 token_props = generate_cypher_property_list(self.hierarchy.token_properties[at])
                 if token_props:
-                    token_props = ', '+ token_props
+                    token_props = ', ' + token_props
             except KeyError:
                 token_props = ''
             try:
                 type_props = generate_cypher_property_list(self.hierarchy.type_properties[at])
                 if type_props:
-                    type_props = ', '+ type_props
+                    type_props = ', ' + type_props
                 else:
                     type_props = ''
             except KeyError:
@@ -208,17 +210,16 @@ class StructuredContext(object):
                 subannotations = []
             sub = "{0}:{0} {{label: '', subsets: {2}, begin:0, end: 0{1}}}".format(at, token_props, token_subsets)
             sub_type = "{0}_type:{0}_type {{label: '', subsets: {2}{1}}}".format(at, type_props, type_subsets)
-            merge_statements.append(hierarchy_template.format(super = sup, sub = sub,
-                                                    sub_type = sub_type))
+            merge_statements.append(hierarchy_template.format(super=sup, sub=sub,
+                                                              sub_type=sub_type))
             for sa in subannotations:
                 sa = "{0}:{0} {{label: '', begin:0, end: 0}}".format(sa)
-                merge_statements.append(subannotation_template.format(super = at, sub = sa))
+                merge_statements.append(subannotation_template.format(super=at, sub=sa))
 
+        statement = statement.format(merge_statement='\nMERGE '.join(merge_statements))
+        self.execute_cypher(statement, corpus_name=self.corpus_name)
 
-        statement = statement.format(merge_statement = '\nMERGE '.join(merge_statements))
-        self.execute_cypher(statement, corpus_name = self.corpus_name)
-
-    def encode_position(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+    def encode_position(self, higher_annotation_type, lower_annotation_type, name, subset=None):
         """
         Encodes position of lower type in higher type
 
@@ -248,7 +249,7 @@ class StructuredContext(object):
         self.hierarchy.add_token_properties(self, lower_annotation_type, [(name, float)])
         self.save_variables()
 
-    def encode_rate(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+    def encode_rate(self, higher_annotation_type, lower_annotation_type, name, subset=None):
         """
         Encodes the rate of the lower type in the higher type
 
@@ -274,7 +275,7 @@ class StructuredContext(object):
         self.hierarchy.add_token_properties(self, higher_annotation_type, [(name, float)])
         self.save_variables()
 
-    def encode_count(self, higher_annotation_type, lower_annotation_type, name, subset = None):
+    def encode_count(self, higher_annotation_type, lower_annotation_type, name, subset=None):
         """
         Encodes the rate of the lower type in the higher type
 

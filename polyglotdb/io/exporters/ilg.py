@@ -1,5 +1,5 @@
 def export_discourse_ilg(corpus_context, discourse, path,
-                    trans_delim = '.', annotations = None, words_per_line = 10):
+                         trans_delim='.', annotations=None, words_per_line=10):
     """
     Export a discourse to an interlinear gloss text file, with a maximal
     line size of 10 words
@@ -16,7 +16,7 @@ def export_discourse_ilg(corpus_context, discourse, path,
         Delimiter for segments, defaults to ``.``
     """
     if annotations is None:
-        raise(Exception('Must specify annotations to output'))
+        raise (Exception('Must specify annotations to output'))
     discourse = corpus_context.discourse(discourse, annotations)
     with open(path, encoding='utf-8', mode='w') as f:
         line = {x: [] for x in annotations}
@@ -24,8 +24,8 @@ def export_discourse_ilg(corpus_context, discourse, path,
         for i, wt in enumerate(discourse):
             count += 1
             for a in annotations:
-                line[a].append(getattr(wt,a))
-            if i != len(discourse) -1:
+                line[a].append(getattr(wt, a))
+            if i != len(discourse) - 1:
                 if words_per_line > 0 and count == words_per_line:
                     for a in annotations:
                         f.write(' '.join(line[a]) + '\n')
@@ -36,5 +36,3 @@ def export_discourse_ilg(corpus_context, discourse, path,
                 f.write(' '.join(line[a]) + '\n')
             count = 0
             line = {x: [] for x in annotations}
-
-

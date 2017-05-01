@@ -1,21 +1,24 @@
 import re
 import os
-from polyglotdb.io.parsers.base import BaseParser #, PGAnnotation, PGAnnotationType, DiscourseData
+from polyglotdb.io.parsers.base import BaseParser  # , PGAnnotation, PGAnnotationType, DiscourseData
 
 from .speaker import FilenameSpeakerParser
 from .speaker import DirectorySpeakerParser
 
 from .base import DiscourseData
 
+
 class PartiturParser(BaseParser):
     _extensions = ['.par,2']
+
     def __init__(self, annotation_types, hierarchy,
-                stop_check = None, call_back = None):
+                 stop_check=None, call_back=None):
         super(PartiturParser, self).__init__(annotation_types, hierarchy,
-                    make_transcription = False, make_label = False,
-                    stop_check = stop_check, call_back = call_back)
+                                             make_transcription=False, make_label=False,
+                                             stop_check=stop_check, call_back=call_back)
         self.speaker_parser = DirectorySpeakerParser()
-    def parse_discourse(self, path, types_only = False):
+
+    def parse_discourse(self, path, types_only=False):
         '''
         Parse a BAS Partitur file for later importing.
 
@@ -38,17 +41,17 @@ class PartiturParser(BaseParser):
 
         phones = read_phones(path)
         scrambled = match_words(read_words(path), phones)
-        words = sorted(scrambled.values(), key = lambda x : x[1])
+        words = sorted(scrambled.values(), key=lambda x: x[1])
 
         for i, tup in enumerate(words):
-            #tup = (key, words[key][0], words[key][1])
+            # tup = (key, words[key][0], words[key][1])
 
             word = tup[0]
             self.annotation_types[0].add([tup[0:3]])
             self.annotation_types[1].add([(str(tup[3]), tup[1], tup[2])])
 
 
-            #self.annotation_types[0][-1].type_properties['transcription'] = tup[3]
+            # self.annotation_types[0][-1].type_properties['transcription'] = tup[3]
 
         for tup in phones.values():
             self.annotation_types[2].add(((x for x in tup)))
@@ -58,6 +61,7 @@ class PartiturParser(BaseParser):
         for a in self.annotation_types:
             a.reset()
         return data
+
 
 def parse_speaker(path):
     """
@@ -73,7 +77,7 @@ def parse_speaker(path):
         the speaker id
     """
     speaker = ''
-    with open(path, 'r', encoding = 'utf8') as f:
+    with open(path, 'r', encoding='utf8') as f:
         lines = f.readlines()
     for line in lines:
         splitline = re.split("\s", line)
@@ -81,6 +85,7 @@ def parse_speaker(path):
             return splitline[1].strip()
 
     return None
+
 
 def read_words(path):
     """
@@ -96,7 +101,7 @@ def read_words(path):
         dictionary of words and their indexes
     """
     words = {}
-    with open(path, 'r', encoding = 'utf8') as f:
+    with open(path, 'r', encoding='utf8') as f:
         lines = f.readlines()
     for line in lines:
         splitline = re.split("\s", line)
@@ -104,16 +109,18 @@ def read_words(path):
             try:
                 words[splitline[1]][0] = splitline[2]
             except KeyError:
-                words[splitline[1]] = [None,None]
+                words[splitline[1]] = [None, None]
                 words[splitline[1]][0] = splitline[2]
-            #words.update({splitline[1].strip():splitline[2].strip()})
+                # words.update({splitline[1].strip():splitline[2].strip()})
         if splitline[0] == 'KAN:':
             try:
                 words[splitline[1]][-1] = splitline[2]
             except KeyError:
-                words[splitline[1]] = [None,None]
+                words[splitline[1]] = [None, None]
                 words[splitline[1]][-1] = splitline[2]
     return words
+
+
 def read_phones(path):
     """
     Get all phone info from a BAS partitur file
@@ -128,13 +135,13 @@ def read_phones(path):
         dictionary of phones, their word indexes, and their begin and end
     """
     phones = {}
-    with open(path, 'r', encoding = 'utf8') as f:
+    with open(path, 'r', encoding='utf8') as f:
         lines = f.readlines()
     for i, line in enumerate(lines):
         splitline = re.split("\s", line)
         if splitline[0] == 'MAU:':
-            begin = float(splitline[1].strip())/10000
-            end = begin+float(splitline[2].strip())/10000
+            begin = float(splitline[1].strip()) / 10000
+            end = begin + float(splitline[2].strip()) / 10000
             index = splitline[3]
             try:
                 phones[index].append((splitline[4].strip(), begin, end))
@@ -142,6 +149,8 @@ def read_phones(path):
                 phones[index] = [(splitline[4].strip(), begin, end)]
 
     return phones
+
+
 def match_words(words, phones):
     """
     Matches a dict of phones to a dict of words using their indexes
@@ -156,11 +165,11 @@ def match_words(words, phones):
         a dict of phones, their indexes, and their begins and ends
     """
     newwords = {}
-    for i,key in enumerate(words):
+    for i, key in enumerate(words):
         v = words[key]
         word = words[key][0]
         transcription = words[key][1]
-        #"Kuchen": '3'
+        # "Kuchen": '3'
         in_word = phones[key]
         begmin = in_word[0][2]
         endmax = in_word[0][1]
@@ -170,10 +179,7 @@ def match_words(words, phones):
             if tup[2] > endmax:
                 endmax = tup[2]
 
-        #words[key] = (key, begmin, endmax)
+        # words[key] = (key, begmin, endmax)
         newwords[word] = (word, begmin, endmax, transcription)
 
-
-
     return newwords
-

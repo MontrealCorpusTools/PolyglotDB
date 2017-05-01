@@ -1,36 +1,26 @@
 import os
-import re
-import sys
-import shutil
 import pickle
-import logging
-import time
-from collections import defaultdict
+import shutil
+import sys
+from decimal import Decimal
 
-import sqlalchemy
 import py2neo
-
+import sqlalchemy
 from py2neo import Graph
-
-from py2neo.database.status import (ClientError, DatabaseError, Forbidden,
-                    TransientError, Unauthorized, ConstraintError)
-
+from py2neo.database.status import (ClientError, Forbidden,
+                                    TransientError, Unauthorized, ConstraintError)
 from sqlalchemy import create_engine
-from ..sql.models import Base, Discourse, Speaker
-from ..sql.config import Session
-from ..sql.query import Lexicon, Census
 
+from ..query.graph.attributes import AnnotationAttribute, PauseAnnotation
+from ..query.graph import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
 from ..config import CorpusConfig
-
-from ..structure import Hierarchy
-
-from ..graph.attributes import AnnotationAttribute, PauseAnnotation
-
-from ..graph.query import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
-
 from ..exceptions import (CorpusConfigError, GraphQueryError,
-        ConnectionError, AuthorizationError, TemporaryConnectionError,
-        NetworkAddressError, NoSoundFileError)
+                          ConnectionError, AuthorizationError, TemporaryConnectionError,
+                          NetworkAddressError)
+from ..sql.config import Session
+from ..sql.models import Base, Discourse, Speaker
+from ..sql.query import Lexicon, Census
+from ..structure import Hierarchy
 
 
 class BaseContext(object):
@@ -47,9 +37,10 @@ class BaseContext(object):
         If a :class:`~polyglotdb.config.CorpusConfig` object is not specified, all arguments and
         keyword arguments are passed to a CorpusConfig object
     """
+
     def __init__(self, *args, **kwargs):
         if len(args) == 0:
-            raise(CorpusConfigError('Need to specify a corpus name or CorpusConfig.'))
+            raise (CorpusConfigError('Need to specify a corpus name or CorpusConfig.'))
         if isinstance(args[0], CorpusConfig):
             self.config = args[0]
         else:
@@ -134,19 +125,23 @@ class BaseContext(object):
         raises error
 
         """
+        for k, v in parameters.items():
+            if isinstance(v, Decimal):
+                parameters[k] = float(v)
         try:
             return self.graph.run(statement, **parameters)
         except (py2neo.packages.httpstream.http.SocketError,
-                py2neo.packages.neo4j.v1.exceptions.ProtocolError):
-            raise(ConnectionError('PolyglotDB could not connect to the server specified.'))
+                py2neo.packages.neo4j.v1.exceptions.ProtocolError) as e:
+            raise (ConnectionError('PolyglotDB could not connect to the server specified: {}'.format(str(e))))
         except ClientError:
             raise
         except (Unauthorized):
-            raise(AuthorizationError('The specified user and password were not authorized by the server.'))
+            raise (AuthorizationError('The specified user and password were not authorized by the server.'))
         except Forbidden:
-            raise(NetworkAddressError('The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
+            raise (NetworkAddressError(
+                'The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
         except (TransientError):
-            raise(TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
+            raise (TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
         except ConstraintError as e:
             pass
         except Exception:
@@ -161,17 +156,21 @@ class BaseContext(object):
         '''
         Return a list of all discourses in the corpus.
         '''
-        q = self.sql_session.query(Discourse).all()
-        if not len(q):
-            res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(corpus_name = self.cypher_safe_name))
-            discourses = []
-            for d in res:
-                instance = Discourse(name = d.discourse)
-                self.sql_session.add(instance)
-                discourses.append(d.discourse)
-            self.sql_session.flush()
-            return discourses
-        return [x.name for x in q]
+        try:
+            q = self.sql_session.query(Discourse).all()
+            if not len(q):
+                res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(
+                    corpus_name=self.cypher_safe_name))
+                discourses = []
+                for d in res:
+                    instance = Discourse(name=d['discourse'])
+                    self.sql_session.add(instance)
+                    discourses.append(d['discourse'])
+                self.sql_session.flush()
+                return discourses
+            return [x.name for x in q]
+        except AttributeError as error:
+            raise (RuntimeError("AttributeError: " + str(error), sys.exc_info()[2]))
 
     @property
     def speakers(self):
@@ -185,11 +184,12 @@ class BaseContext(object):
         """
         q = self.sql_session.query(Speaker).order_by(Speaker.name).all()
         if not len(q):
-            res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(corpus_name = self.cypher_safe_name))
+            res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(
+                corpus_name=self.cypher_safe_name))
 
             speakers = []
             for s in res:
-                instance = Speaker(name = s['speaker'])
+                instance = Speaker(name=s['speaker'])
                 self.sql_session.add(instance)
                 speakers.append(s['speaker'])
             self.sql_session.flush()
@@ -199,15 +199,15 @@ class BaseContext(object):
     def __enter__(self):
         self.sql_session = Session()
         self.load_variables()
-        #if self.corpus_name:
+        # if self.corpus_name:
         #    self.hierarchy = self.generate_hierarchy()
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):
         if exc_type is None:
-            #try:
+            # try:
             #    shutil.rmtree(self.config.temp_dir)
-            #except:
+            # except:
             #    pass
             self.sql_session.commit()
             return True
@@ -218,12 +218,14 @@ class BaseContext(object):
 
     def __getattr__(self, key):
         if key == 'pause':
-            return PauseAnnotation(corpus = self.corpus_name)
+            return PauseAnnotation(corpus=self.corpus_name)
         if key + 's' in self.hierarchy.annotation_types:
-            key += 's' # FIXME
+            key += 's'  # FIXME
         if key in self.hierarchy.annotation_types:
-            return AnnotationAttribute(key, corpus = self.corpus_name, hierarchy = self.hierarchy)
-        raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(sorted(self.hierarchy.annotation_types)))))
+            return AnnotationAttribute(key, corpus=self.corpus_name, hierarchy=self.hierarchy)
+        raise (GraphQueryError(
+            'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(
+                sorted(self.hierarchy.annotation_types)))))
 
     @property
     def word_name(self):
@@ -236,7 +238,7 @@ class BaseContext(object):
             word name
         """
         for at in self.hierarchy.annotation_types:
-            if at.startswith('word'): #FIXME need a better way for storing word name
+            if at.startswith('word'):  # FIXME need a better way for storing word name
                 return at
         return 'word'
 
@@ -255,7 +257,7 @@ class BaseContext(object):
             name = 'phone'
         return name
 
-    def reset_graph(self, call_back = None, stop_check = None):
+    def reset_graph(self, call_back=None, stop_check=None):
         '''
         Remove all nodes and relationships in the corpus.
         '''
@@ -269,7 +271,8 @@ class BaseContext(object):
 
         if call_back is not None:
             call_back('Resetting database...')
-            number = self.execute_cypher('''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
+            number = self.execute_cypher(
+                '''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
             call_back(0, number)
         num_deleted = 0
         for a in self.hierarchy.annotation_types:
@@ -282,7 +285,8 @@ class BaseContext(object):
                 while deleted > 0:
                     if stop_check is not None and stop_check():
                         break
-                    deleted = self.execute_cypher(delete_statement.format(corpus = self.cypher_safe_name, anno = a), speaker = s).evaluate()
+                    deleted = self.execute_cypher(delete_statement.format(corpus=self.cypher_safe_name, anno=a),
+                                                  speaker=s).evaluate()
                     num_deleted += deleted
                     if call_back is not None:
                         call_back(num_deleted)
@@ -291,7 +295,8 @@ class BaseContext(object):
             while deleted > 0:
                 if stop_check is not None and stop_check():
                     break
-                deleted = self.execute_cypher(delete_type_statement.format(corpus = self.cypher_safe_name, anno = a)).evaluate()
+                deleted = self.execute_cypher(
+                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a)).evaluate()
                 num_deleted += deleted
                 if call_back is not None:
                     call_back(num_deleted)
@@ -299,10 +304,10 @@ class BaseContext(object):
         self.execute_cypher('''MATCH (n:{}:Speaker) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.execute_cypher('''MATCH (n:{}:Discourse) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.reset_hierarchy()
-        self.execute_cypher('''MATCH (n:Corpus) where n.name = {corpus_name} DELETE n ''', corpus_name = self.corpus_name)
+        self.execute_cypher('''MATCH (n:Corpus) where n.name = {corpus_name} DELETE n ''', corpus_name=self.corpus_name)
         self.hierarchy = Hierarchy({})
 
-    def reset(self, call_back = None, stop_check = None):
+    def reset(self, call_back=None, stop_check=None):
         '''
         Reset the graph and SQL databases for a corpus.
         '''
@@ -330,8 +335,10 @@ class BaseContext(object):
 
         '''
         if annotation_type.type not in self.hierarchy.annotation_types \
-                and annotation_type.type != 'pause': #FIXME make more general
-            raise(GraphQueryError('The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(annotation_type.name, ', '.join(sorted(self.hierarchy.annotation_types)))))
+                and annotation_type.type != 'pause':  # FIXME make more general
+            raise (GraphQueryError(
+                'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(
+                    annotation_type.name, ', '.join(sorted(self.hierarchy.annotation_types)))))
         if self.config.query_behavior == 'speaker':
             cls = SpeakerGraphQuery
         elif self.config.query_behavior == 'discourse':
@@ -364,7 +371,7 @@ class BaseContext(object):
         '''
         self.execute_cypher('''MATCH (n:{}:{})-[r]->() DELETE n, r'''.format(self.cypher_safe_name, name))
 
-    def discourse(self, name, annotations = None):
+    def discourse(self, name, annotations=None):
         '''
         Get all words spoken in a discourse.
 
@@ -374,7 +381,7 @@ class BaseContext(object):
             Name of the discourse
         '''
 
-        w = getattr(self, self.word_name) #FIXME make more general
+        w = getattr(self, self.word_name)  # FIXME make more general
         q = GraphQuery(self, w)
         q = q.filter(w.discourse.name == name)
         q = q.order_by(w.begin)

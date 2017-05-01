@@ -1,10 +1,9 @@
-
-
 from polyglotdb.structure import Hierarchy
 
 from ..types.parsing import *
 
 from ..parsers import BuckeyeParser
+
 
 def inspect_buckeye(word_path):
     """
@@ -22,10 +21,10 @@ def inspect_buckeye(word_path):
         Auto-detected parser for the Buckeye corpus
     """
     annotation_types = [OrthographyTier('word', 'word'),
-                            TranscriptionTier('transcription', 'word'),
-                            TranscriptionTier('surface_transcription', 'word'),
-                            OrthographyTier('category', 'word'),
-                            SegmentTier('phone', 'phone')]
+                        TranscriptionTier('transcription', 'word'),
+                        TranscriptionTier('surface_transcription', 'word'),
+                        OrthographyTier('category', 'word'),
+                        SegmentTier('phone', 'phone')]
     annotation_types[1].trans_delimiter = ' '
     annotation_types[2].trans_delimiter = ' '
     annotation_types[2].type_property = False

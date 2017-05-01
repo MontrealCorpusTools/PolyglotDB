@@ -27,18 +27,23 @@ before_install:
 install:
   - export PATH="$HOME/miniconda/miniconda/bin:$PATH"
   - source activate test-environment
+  - pip install -r requirements.txt
   - which python
   - conda list
 
 # Run test
 script:
+  - cat $HOME/.pgdb/config.ini
   - python bin/pgdb.py start
-  - sleep 10
+  - sleep 45
   - "coverage run --source=polyglotdb setup.py test"
 
 # Calculate coverage
 after_success:
   - coveralls
+
+after_script:
+  - python bin/pgdb.py stop
 
 cache:
   pip: true
@@ -46,3 +51,5 @@ cache:
   directories:
     - $HOME/miniconda
     - $HOME/pgdb
+    - $HOME/.pgdb
+    - $HOME/tools

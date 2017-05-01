@@ -1,13 +1,15 @@
-
 from uuid import uuid1
 import hashlib
 
 from ..helper import normalize_values_for_neo4j
 
+
 class PGAnnotation(object):
     def __init__(self, label, begin, end):
         self.id = uuid1()
         self.label = label
+        if begin > end:
+            begin, end = end, begin
         self.begin = begin
         self.end = end
         try:
@@ -23,7 +25,7 @@ class PGAnnotation(object):
 
         self.subannotations = []
 
-    def sha(self, corpus = None):
+    def sha(self, corpus=None):
         """
         Constructs hash of values and corpus name
 
@@ -127,13 +129,14 @@ class PGAnnotationType(object):
         """
         if self._lookup_dict is not None:
             return
-        self._list = sorted(self._list, key = lambda x: x.begin)
+        self._list = sorted(self._list, key=lambda x: x.begin)
         if len(self._list) > 1000:
             self._lookup_dict = {}
             cur = 0
             while cur < len(self._list):
                 self._lookup_dict[cur] = self._list[cur].begin
                 cur += 1000
+
     def add(self, annotation):
         """
         adds annotation to PGAnnotationType object
@@ -145,14 +148,14 @@ class PGAnnotationType(object):
         """
         self._list.append(annotation)
         self.type_property_keys.update(annotation.type_keys())
-        for k,v in annotation.type_properties.items():
+        for k, v in annotation.type_properties.items():
             if isinstance(v, list):
                 t = str
             else:
                 t = type(v)
             self.type_properties.add((k, t))
         self.token_property_keys.update(annotation.token_keys())
-        self.token_properties.update((k, type(v)) for k,v in annotation.token_properties.items())
+        self.token_properties.update((k, type(v)) for k, v in annotation.token_properties.items() if v is not None)
 
     @property
     def speakers(self):
@@ -172,7 +175,7 @@ class PGAnnotationType(object):
             speakers.add(s)
         return speakers
 
-    def lookup(self, timepoint, speaker = None):
+    def lookup(self, timepoint, speaker=None):
         """
         Searches the lookup_dict for a particular begin time, and optionally a speaker 
 
@@ -189,31 +192,28 @@ class PGAnnotationType(object):
                 if timepoint < time:
                     if prev != 0:
                         prev -= 500
-                    lookup_list = self._list[prev:ind+100]
+                    lookup_list = self._list[prev:ind + 100]
                     break
                 prev = ind
             else:
                 if ind != 0:
                     ind -= 500
                 lookup_list = self._list[ind:]
-                #print('didn\'t break')
-            #print(sorted(self._lookup_dict.items()))
-            #print(prev, ind, time, timepoint, len(lookup_list), lookup_list[0].begin, lookup_list[-1].end)
         else:
             lookup_list = self._list
         if speaker is None:
             return next((x for x in lookup_list
-                            if timepoint >= x.begin and
-                                timepoint <= x.end),
+                         if timepoint >= x.begin and
+                         timepoint <= x.end),
                         None)
         else:
             return next((x for x in lookup_list
-                            if x.speaker == speaker and
-                                timepoint >= x.begin and
-                                timepoint <= x.end),
+                         if x.speaker == speaker and
+                         timepoint >= x.begin and
+                         timepoint <= x.end),
                         None)
 
-    def lookup_range(self, begin, end, speaker = None):
+    def lookup_range(self, begin, end, speaker=None):
         """
         Searches the lookup_dict for objects between begin time, end time, and optionally a speaker 
 
@@ -235,7 +235,7 @@ class PGAnnotationType(object):
                         lookup_list = self._list[prev:ind]
                     else:
                         try:
-                            lookup_list = self._list[prev:mapping[i+1][0]]
+                            lookup_list = self._list[prev:mapping[i + 1][0]]
                         except IndexError:
                             lookup_list = self._list[prev:]
                     break
@@ -246,15 +246,15 @@ class PGAnnotationType(object):
             lookup_list = self._list
         if speaker is None:
             return sorted([x for x in lookup_list
-                            if x.midpoint >= begin and
-                                x.midpoint <= end],
-                        key = lambda x: x.begin)
+                           if x.midpoint >= begin and
+                           x.midpoint <= end],
+                          key=lambda x: x.begin)
         else:
             return sorted([x for x in lookup_list
-                            if x.speaker == speaker and
-                                x.midpoint >= begin and
-                                x.midpoint <= end],
-                        key = lambda x: x.begin)
+                           if x.speaker == speaker and
+                           x.midpoint >= begin and
+                           x.midpoint <= end],
+                          key=lambda x: x.begin)
 
     def __getitem__(self, key):
         return self._list[key]
@@ -262,6 +262,7 @@ class PGAnnotationType(object):
     def __iter__(self):
         for a in self._list:
             yield a
+
 
 class PGSubAnnotation(PGAnnotation):
     def __init__(self, label, type, begin, end):
@@ -273,4 +274,3 @@ class PGSubAnnotation(PGAnnotation):
 
         self.type_properties = {}
         self.token_properties = {}
-

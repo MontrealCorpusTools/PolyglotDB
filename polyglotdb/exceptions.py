@@ -4,12 +4,14 @@ import traceback
 
 from py2neo.packages.httpstream.http import SocketError
 
+
 ## Base exception classes
 
 class PGError(Exception):
     """
     Base class for all exceptions explicitly raised in corpustools.
     """
+
     def __init__(self, value):
         self.value = value
 
@@ -19,6 +21,7 @@ class PGError(Exception):
     def __str__(self):
         return self.value
 
+
 ## Context Manager exceptions
 
 class PGContextError(PGError):
@@ -27,10 +30,12 @@ class PGContextError(PGError):
     """
     pass
 
+
 ## Corpus loading exceptions
 
 class ParseError(PGError):
     pass
+
 
 class PGOSError(PGError):
     """
@@ -39,11 +44,13 @@ class PGOSError(PGError):
     """
     pass
 
+
 class CorpusIntegrityError(PGError):
     """
     Exception for when a problem arises while loading in the corpus.
     """
     pass
+
 
 class DelimiterError(PGError):
     """
@@ -52,11 +59,13 @@ class DelimiterError(PGError):
     """
     pass
 
+
 class ILGError(ParseError):
     """
     Exception for general issues when loading interlinear gloss files.
     """
     pass
+
 
 class ILGWordMismatchError(ParseError):
     """
@@ -70,6 +79,7 @@ class ILGWordMismatchError(ParseError):
     transcription_line : list
         List of words in the transcription line
     """
+
     def __init__(self, mismatching_lines):
         self.main = "There doesn't appear to be equal numbers of words in one or more of the glosses."
 
@@ -78,9 +88,10 @@ class ILGWordMismatchError(ParseError):
         for ml in mismatching_lines:
             line_inds, line = ml
             self.details += 'From lines {} to {}:\n'.format(*line_inds)
-            for k,v in line.items():
-                self.details += '({}, {} words) '.format(k,len(v))
+            for k, v in line.items():
+                self.details += '({}, {} words) '.format(k, len(v))
                 self.details += ' '.join(str(x) for x in v) + '\n'
+
 
 class ILGLinesMismatchError(ParseError):
     """
@@ -92,19 +103,22 @@ class ILGLinesMismatchError(ParseError):
     lines : list
         List of the lines in the interlinear gloss file
     """
+
     def __init__(self, lines):
         self.main = "There doesn't appear to be equal numbers of orthography and transcription lines"
 
         self.information = ''
         self.details = 'The following is the contents of the file after initial preprocessing:\n\n'
         for line in lines:
-            if isinstance(line,tuple):
+            if isinstance(line, tuple):
                 self.details += '{}: {}\n'.format(*line)
             else:
                 self.details += str(line) + '\n'
 
+
 class TextGridError(ParseError):
     pass
+
 
 class TextGridTierError(ParseError):
     """
@@ -119,6 +133,7 @@ class TextGridTierError(ParseError):
     tiers : list
         List of tiers in the TextGrid that were inspected
     """
+
     def __init__(self, tier_type, tier_name, tiers):
         self.main = 'The {} tier name was not found'.format(tier_type)
         self.information = 'The tier name \'{}\' was not found in any tiers'.format(tier_name)
@@ -127,12 +142,13 @@ class TextGridTierError(ParseError):
         for t in tiers:
             self.details += '{}\n'.format(t.name)
 
+
 class BuckeyeParseError(ParseError):
     def __init__(self, path, misparsed_lines):
         if len(misparsed_lines) == 1:
             self.main = 'One line in \'{}\' was not parsed correctly.'.format(path)
         else:
-            self.main = '{} lines in \'{}\' were not parsed correctly.'.format(len(misparsed_lines),path)
+            self.main = '{} lines in \'{}\' were not parsed correctly.'.format(len(misparsed_lines), path)
         self.information = 'The lines did not have enough fields to be parsed correctly.'
         self.details = 'The following lines were missing entries:\n\n'
         for t in misparsed_lines:
@@ -146,32 +162,42 @@ class BuckeyeParseError(ParseError):
 class NoSoundFileError(PGError):
     pass
 
+
 class AcousticError(PGError):
     pass
+
 
 class GraphQueryError(PGError):
     pass
 
+
 class CorpusConfigError(PGError):
     pass
+
 
 class SubannotationError(PGError):
     pass
 
+
 class GraphModelError(PGError):
     pass
+
 
 class ConnectionError(PGError):
     pass
 
+
 class AuthorizationError(PGError):
     pass
+
 
 class NetworkAddressError(PGError):
     pass
 
+
 class TemporaryConnectionError(PGError):
     pass
+
 
 class SubsetError(PGError):
     pass
@@ -180,4 +206,3 @@ class SubsetError(PGError):
 class AlphabetError(PGError):
     def __init__(self):
         self.value = "None of these phones appear to be in the corpus alphabet. Please check to make sure the alphabet you are using corresponds to that of the corpus\n\n"
-

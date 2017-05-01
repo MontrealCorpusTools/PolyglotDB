@@ -6,6 +6,7 @@ from ..helper import find_wav_path
 
 from .speaker import DirectorySpeakerParser
 
+
 class TimitParser(BaseParser):
     '''
     Parser for the TIMIT corpus.
@@ -26,13 +27,13 @@ class TimitParser(BaseParser):
     _extensions = ['.wrd']
 
     def __init__(self, annotation_types, hierarchy,
-                    stop_check = None, call_back = None):
+                 stop_check=None, call_back=None):
         super(TimitParser, self).__init__(annotation_types, hierarchy,
-                    make_transcription = True, make_label = False,
-                    stop_check = stop_check, call_back = call_back)
+                                          make_transcription=True, make_label=False,
+                                          stop_check=stop_check, call_back=call_back)
         self.speaker_parser = DirectorySpeakerParser()
 
-    def parse_discourse(self, word_path, types_only = False):
+    def parse_discourse(self, word_path, types_only=False):
         '''
         Parse a TIMIT file for later importing.
 
@@ -65,7 +66,7 @@ class TimitParser(BaseParser):
 
         if self.call_back is not None:
             self.call_back('Reading files...')
-            self.call_back(0,0)
+            self.call_back(0, 0)
         words = read_words(word_path)
         phones = read_phones(phone_path)
         if words[-1]['end'] != phones[-1][2]:
@@ -82,6 +83,7 @@ class TimitParser(BaseParser):
 
         data.wav_path = find_wav_path(word_path)
         return data
+
 
 def read_phones(path):
     """
@@ -100,14 +102,15 @@ def read_phones(path):
     """
     output = []
     sr = 16000
-    with open(path,'r') as file_handle:
+    with open(path, 'r') as file_handle:
         for line in file_handle:
             l = line.strip().split(' ')
             begin = float(l[0]) / sr
-            end = float(l[1])/ sr
+            end = float(l[1]) / sr
             label = l[2]
             output.append((label, begin, end))
     return output
+
 
 def read_words(path):
     """
@@ -127,16 +130,16 @@ def read_words(path):
     output = []
     sr = 16000
     prev = None
-    with open(path,'r') as file_handle:
+    with open(path, 'r') as file_handle:
         for line in file_handle:
             l = line.strip().split(' ')
             begin = float(l[0]) / sr
             end = float(l[1]) / sr
             word = l[2]
             if prev is not None and begin != prev:
-                output.append({'spelling': '<SIL>', 'begin':prev, 'end':begin})
+                output.append({'spelling': '<SIL>', 'begin': prev, 'end': begin})
             elif prev is None and begin != 0:
-                output.append({'spelling': '<SIL>', 'begin':0, 'end':begin})
-            output.append({'spelling':word, 'begin':begin, 'end':end})
+                output.append({'spelling': '<SIL>', 'begin': 0, 'end': begin})
+            output.append({'spelling': word, 'begin': begin, 'end': end})
             prev = end
     return output

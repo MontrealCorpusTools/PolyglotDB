@@ -1,9 +1,10 @@
-
 import csv
 from collections import defaultdict
 
+
 def sanitize_name(string):
     return string.strip().replace(' ', '_').lower()
+
 
 def parse_string(value):
     """
@@ -31,7 +32,8 @@ def parse_string(value):
     except ValueError:
         return value
 
-def parse_file(path, labels = None, case_sensitive = True):
+
+def parse_file(path, labels=None, case_sensitive=True):
     """
     Parses a csv file into data and type_data
 
@@ -48,10 +50,10 @@ def parse_file(path, labels = None, case_sensitive = True):
         data and type_data for a csv file
 
     """
-    with open(path, 'r', encoding = 'utf-8-sig') as csvfile:
+    with open(path, 'r', encoding='utf-8-sig') as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read())
         csvfile.seek(0)
-        reader = csv.DictReader(csvfile, dialect = dialect)
+        reader = csv.DictReader(csvfile, dialect=dialect)
         header = reader.fieldnames
         key_name = header[0]
         sanitized_names = [sanitize_name(x) for x in header]
@@ -74,5 +76,5 @@ def parse_file(path, labels = None, case_sensitive = True):
                 if v != None:
                     type_data[k][type(v)] += 1
                 data[p][k] = v
-    type_data = {k: max(v.keys(), key = lambda x: v[x]) for k, v in type_data.items()}
+    type_data = {k: max(v.keys(), key=lambda x: v[x]) for k, v in type_data.items()}
     return data, type_data

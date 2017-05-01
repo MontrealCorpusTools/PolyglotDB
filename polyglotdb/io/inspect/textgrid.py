@@ -1,4 +1,3 @@
-
 import os
 import math
 
@@ -26,8 +25,9 @@ def calculate_probability(x, mean, stdev):
     stdev : float
         standard deviation from mean
     """
-    exponent = math.exp(-(math.pow(x-mean,2)/(2*math.pow(stdev,2))))
-    return (1 / (math.sqrt(2*math.pi) * stdev)) * exponent
+    exponent = math.exp(-(math.pow(x - mean, 2) / (2 * math.pow(stdev, 2))))
+    return (1 / (math.sqrt(2 * math.pi) * stdev)) * exponent
+
 
 def word_probability(average_duration):
     """
@@ -43,9 +43,10 @@ def word_probability(average_duration):
     float
         the probability that the tier is a word tier
     """
-    mean = 0.2465409 # Taken from the Buckeye corpus
+    mean = 0.2465409  # Taken from the Buckeye corpus
     sd = 0.03175723
     return calculate_probability(average_duration, mean, sd)
+
 
 def segment_probability(average_duration):
     """
@@ -61,8 +62,8 @@ def segment_probability(average_duration):
     float
         the probability that the tier is a phone tier
     """
-    mean = 0.08327773 # Taken from the Buckeye corpus
-    sd = 0.03175723 #Actually=0.009260103
+    mean = 0.08327773  # Taken from the Buckeye corpus
+    sd = 0.03175723  # Actually=0.009260103
     return calculate_probability(average_duration, mean, sd)
 
 
@@ -85,6 +86,7 @@ def uniqueLabels(tier):
     except AttributeError:
         return set(x.mark for x in tier.points)
 
+
 def average_duration(tier):
     """
     Gets the average duration of elements in a tier
@@ -103,7 +105,8 @@ def average_duration(tier):
     if isinstance(tier, IntervalTier):
         return sum(x.maxTime - x.minTime for x in tier) / len(tier)
     else:
-        return tier.maxTime/ len(tier)
+        return tier.maxTime / len(tier)
+
 
 def averageLabelLen(tier):
     """
@@ -122,7 +125,8 @@ def averageLabelLen(tier):
     labels = uniqueLabels(tier)
     if not labels:
         return 0
-    return sum(len(lab) for lab in labels)/len(labels)
+    return sum(len(lab) for lab in labels) / len(labels)
+
 
 def figure_linguistic_type(labels):
     """
@@ -142,8 +146,9 @@ def figure_linguistic_type(labels):
         return None
     elif len(labels) == 1:
         return labels[0][0]
-    label = min(labels, key = lambda x: x[1])
+    label = min(labels, key=lambda x: x[1])
     return label[0]
+
 
 def guess_tiers(tg):
     """
@@ -163,12 +168,12 @@ def guess_tiers(tg):
     """
     tier_properties = {}
     tier_guesses = {}
-    for i,t in enumerate(tg.tiers):
+    for i, t in enumerate(tg.tiers):
         if len(t) == 0:
             continue
         t.maxTime = tg.maxTime
         tier_properties[t.name] = (i, average_duration(t))
-    for k,v in tier_properties.items():
+    for k, v in tier_properties.items():
         if v is None:
             continue
         word_p = word_probability(v[1])
@@ -177,11 +182,11 @@ def guess_tiers(tg):
             tier_guesses[k] = ('word', v[0])
         else:
             tier_guesses[k] = ('segment', v[0])
-    word_labels = [(k,v[1]) for k,v in tier_guesses.items() if v[0] == 'word']
-    phone_labels = [(k,v[1]) for k,v in tier_guesses.items() if v[0] == 'segment']
+    word_labels = [(k, v[1]) for k, v in tier_guesses.items() if v[0] == 'word']
+    phone_labels = [(k, v[1]) for k, v in tier_guesses.items() if v[0] == 'segment']
     word_type = figure_linguistic_type(word_labels)
     phone_type = figure_linguistic_type(phone_labels)
-    for k,v in tier_guesses.items():
+    for k, v in tier_guesses.items():
         if v[0] == 'word':
             tier_guesses[k] = word_type
         else:
@@ -191,6 +196,7 @@ def guess_tiers(tg):
         h[phone_type] = word_type
     hierarchy = Hierarchy(h)
     return tier_guesses, hierarchy
+
 
 def inspect_textgrid(path):
     """
@@ -206,14 +212,14 @@ def inspect_textgrid(path):
     :class:`~polyglotdb.io.parsers.textgrid.TextgridParser`
         Autodetected parser for the TextGrid file
     """
-    trans_delimiters = ['.',' ', ';', ',']
+    trans_delimiters = ['.', ' ', ';', ',']
     textgrids = []
     if os.path.isdir(path):
         for root, subdirs, files in os.walk(path):
             for filename in files:
                 if not filename.lower().endswith('.textgrid'):
                     continue
-                textgrids.append(os.path.join(root,filename))
+                textgrids.append(os.path.join(root, filename))
     else:
         textgrids.append(path)
     anno_types = []
@@ -236,7 +242,7 @@ def inspect_textgrid(path):
                         a.trans_delimiter = guess_trans_delimiter(labels)
                     elif cat == 'numeric':
                         if isinstance(ti, IntervalTier):
-                            raise(NotImplementedError)
+                            raise (NotImplementedError)
                         else:
                             a = BreakIndexTier(ti.name, tier_guesses[ti.name])
                     elif cat == 'orthography':
@@ -251,22 +257,21 @@ def inspect_textgrid(path):
                     else:
                         print(ti.name)
                         print(cat)
-                        raise(NotImplementedError)
+                        raise (NotImplementedError)
                 if not a.ignored:
                     try:
-                        a.add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti), save = False)
+                        a.add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti), save=False)
                     except AttributeError:
-                        a.add(((x.mark.strip(), x.time) for x in ti), save = False)
+                        a.add(((x.mark.strip(), x.time) for x in ti), save=False)
                 anno_types.append(a)
         else:
             for i, ti in enumerate(tg.tiers):
                 if anno_types[i].ignored:
                     continue
                 try:
-                    anno_types[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti), save = False)
+                    anno_types[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti), save=False)
                 except AttributeError:
-                    anno_types[i].add(((x.mark.strip(), x.time) for x in ti), save = False)
-    
+                    anno_types[i].add(((x.mark.strip(), x.time) for x in ti), save=False)
 
     parser = TextgridParser(anno_types, hierarchy)
     return parser

@@ -1,4 +1,3 @@
-
 import string
 import re
 
@@ -8,14 +7,17 @@ parse_numbers = re.compile('\d+|\S')
 
 from .base import BaseAnnotationType, BaseAnnotation
 
+
 class GroupingAnnotation(BaseAnnotation):
     @property
     def value(self):
         """Returns empty string"""
         return ''
 
+
 class GroupingAnnotationType(BaseAnnotationType):
     annotation_class = GroupingAnnotation
+
 
 class OrthographyAnnotation(BaseAnnotation):
     def __init__(self, label):
@@ -26,9 +28,11 @@ class OrthographyAnnotation(BaseAnnotation):
         """Returns BaseAnnotation label"""
         return self.label
 
+
 class OrthographyAnnotationType(BaseAnnotationType):
     annotation_class = OrthographyAnnotation
-    def __init__(self, name, linguistic_type, label = False):
+
+    def __init__(self, name, linguistic_type, label=False):
         self.characters = set()
         self.ignored_characters = set()
 
@@ -50,8 +54,10 @@ class MorphemeAnnotation(OrthographyAnnotation):
         """Returns OrthographyAnnotation morphemes"""
         return self._list
 
+
 class MorphemeAnnotationType(OrthographyAnnotationType):
     annotation_class = MorphemeAnnotation
+
     def __init__(self, name, linguistic_type):
         self.morph_delimiters = set()
         OrthographyAnnotationType.__init__(self, name, linguistic_type)
@@ -64,7 +70,7 @@ class MorphemeAnnotationType(OrthographyAnnotationType):
             morphemes = [string]
         return morphemes
 
-    def add(self, annotations, save = True):
+    def add(self, annotations, save=True):
         """
         save annotations  to _list
 
@@ -81,7 +87,7 @@ class MorphemeAnnotationType(OrthographyAnnotationType):
             label = a.pop(0)
             self.characters.update(label)
             if save or len(self._list) < 10:
-                #If save is False, only the first 10 annotations are saved
+                # If save is False, only the first 10 annotations are saved
                 morphemes = self._parse_morphemes(label)
                 a.insert(0, morphemes)
                 annotation = self.annotation_class(*a)
@@ -89,7 +95,7 @@ class MorphemeAnnotationType(OrthographyAnnotationType):
 
 
 class TranscriptionAnnotation(MorphemeAnnotation):
-    def __init__(self, segments, morpheme_breaks = None, stress = None, tone = None):
+    def __init__(self, segments, morpheme_breaks=None, stress=None, tone=None):
         self._list = segments
         if morpheme_breaks is None:
             self.morpheme_breaks = []
@@ -102,8 +108,10 @@ class TranscriptionAnnotation(MorphemeAnnotation):
         elif tone is not None:
             self.tone = tone
 
+
 class TranscriptionAnnotationType(MorphemeAnnotationType):
     annotation_class = TranscriptionAnnotation
+
     def __init__(self, name, linguistic_type):
         self.digraphs = set()
         self.trans_delimiter = None
@@ -121,11 +129,11 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
             the information
         """
         string = ('{}:\n'.format(self.name) +
-                '    Ignored characters: {}\n'.format(', '.join(self.ignored_characters)) +
-                '    Digraphs: {}\n'.format(', '.join(self.digraphs)) +
-                '    Transcription delimiter: {}\n'.format(self.trans_delimiter) +
-                '    Morpheme delimiters: {}\n'.format(', '.join(self.morph_delimiters)) +
-                '    Number behavior: {}\n'.format(self.number_behavior))
+                  '    Ignored characters: {}\n'.format(', '.join(self.ignored_characters)) +
+                  '    Digraphs: {}\n'.format(', '.join(self.digraphs)) +
+                  '    Transcription delimiter: {}\n'.format(self.trans_delimiter) +
+                  '    Morpheme delimiters: {}\n'.format(', '.join(self.morph_delimiters)) +
+                  '    Number behavior: {}\n'.format(self.number_behavior))
         return string
 
     @property
@@ -140,12 +148,12 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         """
         if len(self.digraphs) == 0:
             return None
-        digraph_list = sorted(self.digraphs, key = lambda x: len(x), reverse=True)
+        digraph_list = sorted(self.digraphs, key=lambda x: len(x), reverse=True)
         pattern = '|'.join(re.escape(d) for d in digraph_list)
         pattern += '|\d+|\S'
         return re.compile(pattern)
 
-    def add(self, annotations, save = True):
+    def add(self, annotations, save=True):
         """
         save annotations  to _list
 
@@ -161,7 +169,7 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
             label = a.pop(0)
             self.characters.update(label)
             if save or len(self._list) < 10:
-                #If save is False, only the first 10 annotations are saved
+                # If save is False, only the first 10 annotations are saved
                 trans, morph = self._parse_transcription(label)
                 trans, prosody = self._parse_numbers(trans)
                 kwargs = {'morpheme_breaks': morph}
@@ -191,7 +199,7 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         md = self.morph_delimiters
         morph_boundaries = []
         if len(md) and any(x in string for x in md):
-            morphs = re.split("|".join(md),string)
+            morphs = re.split("|".join(md), string)
             transcription = []
             for i, m in enumerate(morphs):
                 trans, _ = self._parse_transcription(m)
@@ -232,14 +240,16 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
                 prosody[len(parsed_transcription) - 1] = num
         return parsed_transcription, prosody
 
+
 class NumericAnnotation(BaseAnnotation):
     def __init__(self, value):
         self.value = value
 
+
 class NumericAnnotationType(BaseAnnotationType):
     annotation_class = NumericAnnotation
 
-    def add(self, annotations, save = True):
+    def add(self, annotations, save=True):
         """
         save annotations  to _list
 
@@ -258,4 +268,3 @@ class NumericAnnotationType(BaseAnnotationType):
                 a.insert(0, float(label))
                 annotation = self.annotation_class(*a)
                 self._list.append(annotation)
-
