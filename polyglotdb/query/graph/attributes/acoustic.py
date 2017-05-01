@@ -147,7 +147,10 @@ class InterpolatedTrack(Track):
     def hydrate(self, corpus, discourse, begin, end, channel=0):
         from scipy import interpolate
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel, padding=0.01)
-        duration = end - begin
+        if self.attribute.relative_time:
+            duration = 1
+        else:
+            duration = end - begin
         time_step = duration / (self.num_points - 1)
 
         new_data = {begin + x * time_step: dict() for x in range(0, self.num_points)}
