@@ -13,6 +13,7 @@ from polyglotdb.exceptions import DelimiterError
 from polyglotdb import CorpusContext
 
 
+@pytest.mark.xfail
 def test_to_csv(graph_db, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export.csv')
     with CorpusContext('acoustic', **graph_db) as g:
