@@ -35,10 +35,11 @@ def test_to_csv(graph_db, export_test_dir):
             if line == '':
                 continue
             line = line.split(',')
-            print(line)
             if i != 0:
                 line = [line[0], float(line[1]), float(line[2])]
-            assert line == pytest.approx(expected[i])
+            print(line)
+            assert line[0] == expected[i][0]
+            assert line[1:] == pytest.approx(expected[i][1:])
             i += 1
 
     with CorpusContext('acoustic', **graph_db) as g:
