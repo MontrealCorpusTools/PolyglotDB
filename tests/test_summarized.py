@@ -1,4 +1,5 @@
 import pytest
+from pytest import approx
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_buckeye
 from polyglotdb.exceptions import GraphQueryError
@@ -12,7 +13,7 @@ def test_get_measure(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'uw':
                 break
-        assert (abs(res[i][1] - 0.08043999999999973) < .0000000000001)
+        assert res[i][1] == approx(0.08043999999999973)
 
 
 def test_phone_mean_duration(summarized_config):
@@ -24,7 +25,7 @@ def test_phone_mean_duration(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'uw':
                 break
-        assert (abs(res[i][1] - 0.08043999999999973) < .0000000000001)
+        assert res[i][1] == approx(0.08043999999999973)
 
 
 def test_phone_mean_duration_speaker(summarized_config):
@@ -37,7 +38,7 @@ def test_phone_mean_duration_speaker(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'uw':
                 break
-        assert (abs(res[i][1] - 0.08043999999999973) < .0000000000001)
+        assert res[i][1] == approx(0.08043999999999973)
 
 
 def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
@@ -51,8 +52,8 @@ def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
                 dx = i
             if r[0] == 'eh':
                 eh = i
-        assert (abs(res[dx][1] - 0.029999999999999805) < .0000000000001)
-        assert (abs(res[eh][1] - 0.04932650000000005) < .0000000000001)
+        assert res[dx][1] == approx(0.029999999999999805)
+        assert res[eh][1] == approx(0.04932650000000005)
 
 
 def test_phone_mean_duration_with_speaker(summarized_config):
@@ -66,7 +67,7 @@ def test_phone_mean_duration_with_speaker(summarized_config):
         for i, r in enumerate(res):
             if r[1] == 'uw':
                 break
-        assert (abs(res[i][2] - 0.08043999999999973) < .0000000000001)
+        assert res[i][2] == approx(0.08043999999999973)
 
 
 def test_phone_std_dev(summarized_config):
@@ -79,7 +80,7 @@ def test_phone_std_dev(summarized_config):
                 break
 
         assert (len(res) == 33)
-        assert (abs(res[i][1] - 0.026573072836990105) < .0000000000001)
+        assert res[i][1] == approx(0.026573072836990105)
 
 
 def test_phone_median(summarized_config):
@@ -90,7 +91,7 @@ def test_phone_median(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'n':
                 break
-        assert (abs(res[i][1] - 0.059820000000000206) < .0000000000001)
+        assert res[i][1] == approx(0.059820000000000206)
 
 
 def test_word_mean_duration(summarized_config):
@@ -102,7 +103,7 @@ def test_word_mean_duration(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'words':
                 break
-        assert (abs(res[i][1] - 0.5340040000000001) < .0000000000001)
+        assert res[i][1] == approx(0.5340040000000001)
 
 
 def test_word_mean_duration_with_speaker(summarized_config):
@@ -114,7 +115,7 @@ def test_word_mean_duration_with_speaker(summarized_config):
         for i, r in enumerate(res):
             if r[1] == 'words':
                 break
-        assert (abs(res[i][2] - 0.5340040000000001) < .0000000000001)
+        assert res[i][2] == approx(0.5340040000000001)
 
 
 @pytest.mark.xfail
@@ -127,7 +128,7 @@ def test_word_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
             if r[1] == 'that\'s':
                 break
         assert (len(res) == 9)
-        assert (abs(res[i][2] - 0.17431200000000002) < .0000000000001)
+        assert res[i][2] == approx(0.17431200000000002)
 
 
 def test_word_median(summarized_config):
@@ -139,7 +140,7 @@ def test_word_median(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'words':
                 break
-        assert (abs(res[i][1] - 0.5489699999999971) < .0000000000001)
+        assert res[i][1] == approx(0.5489699999999971)
 
 
 def test_word_std_dev(summarized_config):
@@ -152,7 +153,7 @@ def test_word_std_dev(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'words':
                 break
-        assert (abs(res[i][1] - 0.26996736762060747) < .0000000000001)
+        assert res[i][1] == approx(0.26996736762060747)
 
 
 def test_syllable_mean_duration(summarized_config):
@@ -169,7 +170,7 @@ def test_syllable_mean_duration(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'w.er.d.z':
                 break
-        assert (abs(res[i][1] - 0.5340040000000001) < .0000000000001)
+        assert res[i][1] == approx(0.5340040000000001)
 
 
 def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
@@ -187,7 +188,7 @@ def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir)
         for i, r in enumerate(res):
             if r[1] == 'dh.ae.s':
                 break
-        assert (abs(res[i][2] - 0.17030199999999995) < .0000000000001)
+        assert res[i][2] == approx(0.17030199999999995)
 
 
 def test_syllable_median(summarized_config):
@@ -218,12 +219,12 @@ def test_syllable_std_dev(summarized_config):
 
 @pytest.mark.xfail
 def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
-    with CorpusContext('directory_buckeye', **graph_db) as c:
+    with CorpusContext('directory_buckeye', **graph_db) as g:
         res = g.get_measure('duration', 'baseline', 'word')
         print(res)
         assert (len(res) == 9)
 
-        assert (abs(res['they'] - 0.11224799999999968) < .0000000000001)
+        assert res['they'] == approx(0.11224799999999968)
 
 
 def test_baseline_word(summarized_config):
@@ -231,7 +232,7 @@ def test_baseline_word(summarized_config):
         res = g.get_measure('duration', 'baseline', 'word')
         print(res)
 
-        assert (abs(res['this'] - 0.20937191666666685) < .0000000000001)
+        assert res['this'] == approx(0.20937191666666685)
         assert (len(res) == 44)
 
 
@@ -239,17 +240,17 @@ def test_baseline_speaker_word(summarized_config):
     with CorpusContext(summarized_config) as g:
         res = g.get_measure('duration', 'baseline', 'word', False, 'unknown')
         print(res)
-        assert (abs(res['this'] - 0.20937191666666685) < .0000000000001)
+        assert res['this'] == approx(0.20937191666666685)
         assert (len(res) == 44)
 
 
 @pytest.mark.xfail
 def test_baseline_speaker_buckeye_word(graph_db, buckeye_test_dir):
-    with CorpusContext('directory_buckeye', **graph_db) as c:
+    with CorpusContext('directory_buckeye', **graph_db) as g:
         res = g.get_measure('duration', 'baseline', 'word', False, 'tes')
         print(res)
         assert (len(res) == 9)
-        assert (abs(res['they'] - 0.11224799999999968) < .0000000000001)
+        assert res['they'] == approx(0.11224799999999968)
 
 
 def test_baseline_utterance(acoustic_config):
@@ -276,7 +277,7 @@ def test_average_speech_rate(acoustic_config):
         g.encode_utterances()
         res = g.average_speech_rate()
         print(res)
-        assert (abs(res[0][1] - 2.6194399113581532) < 0.001)
+        assert res[0][1] == approx(2.6194399113581532)
         assert (len(res) == 1)
 
 
@@ -296,5 +297,5 @@ def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
         c.encode_syllables('maxonset')
         res = c.average_speech_rate()
         print(res)
-        assert (abs(res[0][1] - 5.929060725) < .00001)
+        assert res[0][1] == approx(5.929060725)
         assert (len(res) == 1)
