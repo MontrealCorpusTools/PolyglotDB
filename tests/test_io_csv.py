@@ -25,9 +25,9 @@ def test_to_csv(graph_db, export_test_dir):
 
     # ignore ids
     expected = [['label', 'duration', 'begin'],
-                ['aa', '0.0783100000000001', '2.70424'],
-                ['aa', '0.12199999999999989', '9.32077'],
-                ['aa', '0.03981000000000279', '24.56029']]
+                ['aa', 0.0783100000000001, 2.70424],
+                ['aa', 0.12199999999999989, 9.32077],
+                ['aa', 0.03981000000000279, 24.56029]]
     with open(export_path, 'r') as f:
         i = 0
         for line in f.readlines():
@@ -36,7 +36,9 @@ def test_to_csv(graph_db, export_test_dir):
                 continue
             line = line.split(',')
             print(line)
-            assert (line == expected[i])
+            if i != 0:
+                line = [line[0], float(line[1]), float(line[2])]
+            assert line == pytest.approx(expected[i])
             i += 1
 
     with CorpusContext('acoustic', **graph_db) as g:
