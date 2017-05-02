@@ -42,7 +42,6 @@ def test_to_csv(graph_db, export_test_dir):
             assert line[1:] == pytest.approx(expected[i][1:], 1e-3)
             i += 1
 
-    export_path = os.path.join(export_test_dir, 'results_export2.csv')
     with CorpusContext('acoustic', **graph_db) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.columns(g.phone.label,
@@ -53,9 +52,9 @@ def test_to_csv(graph_db, export_test_dir):
 
     # ignore ids
     expected = [['node_phone_label', 'node_phone_duration', 'node_phone_begin'],
-                ['aa', '0.0783100000000001', '2.70424'],
-                ['aa', '0.12199999999999989', '9.32077'],
-                ['aa', '0.03981000000000279', '24.56029']]
+                ['aa', 0.0783100000000001,2.70424],
+                ['aa', 0.12199999999999989, 9.32077],
+                ['aa', 0.03981000000000279, 24.56029]]
     with open(export_path, 'r') as f:
         i = 0
         for line in f.readlines():
