@@ -62,8 +62,11 @@ def test_to_csv(graph_db, export_test_dir):
             if line == '':
                 continue
             line = line.split(',')
+            if i != 0:
+                line = [line[0], float(line[1]), float(line[2])]
             print(line)
-            assert (line == expected[i])
+            assert line[0] == expected[i][0]
+            assert line[1:] == pytest.approx(expected[i][1:], 1e-3)
             i += 1
 
 
