@@ -13,7 +13,7 @@ def test_get_measure(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'uw':
                 break
-        assert res[i][1] == approx(0.08043999999999973)
+        assert res[i][1] == approx(0.08043999999999973, 1e-3)
 
 
 def test_phone_mean_duration(summarized_config):
