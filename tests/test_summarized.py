@@ -25,7 +25,7 @@ def test_phone_mean_duration(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'uw':
                 break
-        assert res[i][1] == approx(0.08043999999999973)
+        assert res[i][1] == approx(0.08043999999999973, 1e-3)
 
 
 def test_phone_mean_duration_speaker(summarized_config):
@@ -38,7 +38,7 @@ def test_phone_mean_duration_speaker(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'uw':
                 break
-        assert res[i][1] == approx(0.08043999999999973)
+        assert res[i][1] == approx(0.08043999999999973, 1e-3)
 
 
 def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
@@ -52,8 +52,8 @@ def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
                 dx = i
             if r[0] == 'eh':
                 eh = i
-        assert res[dx][1] == approx(0.029999999999999805)
-        assert res[eh][1] == approx(0.04932650000000005)
+        assert res[dx][1] == approx(0.029999999999999805, 1e-3)
+        assert res[eh][1] == approx(0.04932650000000005, 1e-3)
 
 
 def test_phone_mean_duration_with_speaker(summarized_config):
@@ -67,7 +67,7 @@ def test_phone_mean_duration_with_speaker(summarized_config):
         for i, r in enumerate(res):
             if r[1] == 'uw':
                 break
-        assert res[i][2] == approx(0.08043999999999973)
+        assert res[i][2] == approx(0.08043999999999973, 1e-3)
 
 
 def test_phone_std_dev(summarized_config):
@@ -80,7 +80,7 @@ def test_phone_std_dev(summarized_config):
                 break
 
         assert (len(res) == 33)
-        assert res[i][1] == approx(0.026573072836990105)
+        assert res[i][1] == approx(0.026573072836990105, 1e-3)
 
 
 def test_phone_median(summarized_config):
@@ -91,7 +91,7 @@ def test_phone_median(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'n':
                 break
-        assert res[i][1] == approx(0.059820000000000206)
+        assert res[i][1] == approx(0.059820000000000206, 1e-3)
 
 
 def test_word_mean_duration(summarized_config):
@@ -103,7 +103,7 @@ def test_word_mean_duration(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'words':
                 break
-        assert res[i][1] == approx(0.5340040000000001)
+        assert res[i][1] == approx(0.5340040000000001, 1e-3)
 
 
 def test_word_mean_duration_with_speaker(summarized_config):
@@ -115,7 +115,7 @@ def test_word_mean_duration_with_speaker(summarized_config):
         for i, r in enumerate(res):
             if r[1] == 'words':
                 break
-        assert res[i][2] == approx(0.5340040000000001)
+        assert res[i][2] == approx(0.5340040000000001, 1e-3)
 
 
 @pytest.mark.xfail
@@ -128,7 +128,7 @@ def test_word_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
             if r[1] == 'that\'s':
                 break
         assert (len(res) == 9)
-        assert res[i][2] == approx(0.17431200000000002)
+        assert res[i][2] == approx(0.17431200000000002, 1e-3)
 
 
 def test_word_median(summarized_config):
@@ -140,7 +140,7 @@ def test_word_median(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'words':
                 break
-        assert res[i][1] == approx(0.5489699999999971)
+        assert res[i][1] == approx(0.5489699999999971, 1e-3)
 
 
 def test_word_std_dev(summarized_config):
@@ -153,7 +153,7 @@ def test_word_std_dev(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'words':
                 break
-        assert res[i][1] == approx(0.26996736762060747)
+        assert res[i][1] == approx(0.26996736762060747, 1e-3)
 
 
 def test_syllable_mean_duration(summarized_config):
@@ -170,7 +170,7 @@ def test_syllable_mean_duration(summarized_config):
         for i, r in enumerate(res):
             if r[0] == 'w.er.d.z':
                 break
-        assert res[i][1] == approx(0.5340040000000001)
+        assert res[i][1] == approx(0.5340040000000001, 1e-3)
 
 
 def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
@@ -188,7 +188,7 @@ def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir)
         for i, r in enumerate(res):
             if r[1] == 'dh.ae.s':
                 break
-        assert res[i][2] == approx(0.17030199999999995)
+        assert res[i][2] == approx(0.17030199999999995, 1e-3)
 
 
 def test_syllable_median(summarized_config):
@@ -224,7 +224,7 @@ def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
         print(res)
         assert (len(res) == 9)
 
-        assert res['they'] == approx(0.11224799999999968)
+        assert res['they'] == approx(0.11224799999999968, 1e-3)
 
 
 def test_baseline_word(summarized_config):
@@ -232,7 +232,7 @@ def test_baseline_word(summarized_config):
         res = g.get_measure('duration', 'baseline', 'word')
         print(res)
 
-        assert res['this'] == approx(0.20937191666666685)
+        assert res['this'] == approx(0.20937191666666685, 1e-3)
         assert (len(res) == 44)
 
 
@@ -240,7 +240,7 @@ def test_baseline_speaker_word(summarized_config):
     with CorpusContext(summarized_config) as g:
         res = g.get_measure('duration', 'baseline', 'word', False, 'unknown')
         print(res)
-        assert res['this'] == approx(0.20937191666666685)
+        assert res['this'] == approx(0.20937191666666685, 1e-3)
         assert (len(res) == 44)
 
 
@@ -250,7 +250,7 @@ def test_baseline_speaker_buckeye_word(graph_db, buckeye_test_dir):
         res = g.get_measure('duration', 'baseline', 'word', False, 'tes')
         print(res)
         assert (len(res) == 9)
-        assert res['they'] == approx(0.11224799999999968)
+        assert res['they'] == approx(0.11224799999999968, 1e-3)
 
 
 def test_baseline_utterance(acoustic_config):
@@ -277,7 +277,7 @@ def test_average_speech_rate(acoustic_config):
         g.encode_utterances()
         res = g.average_speech_rate()
         print(res)
-        assert res[0][1] == approx(2.6194399113581532)
+        assert res[0][1] == approx(2.6194399113581532, 1e-3)
         assert (len(res) == 1)
 
 
@@ -297,5 +297,5 @@ def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
         c.encode_syllables('maxonset')
         res = c.average_speech_rate()
         print(res)
-        assert res[0][1] == approx(5.929060725)
+        assert res[0][1] == approx(5.929060725, 1e-3)
         assert (len(res) == 1)
