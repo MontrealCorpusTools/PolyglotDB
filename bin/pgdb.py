@@ -106,25 +106,30 @@ def download_influxdb(data_directory, overwrite=False):
     if not overwrite and os.path.exists(influxdb_directory):
         print('Using existing InfluxDB installation.')
         return
-    os.makedirs(TEMP_DIR, exist_ok=True)
-    print('Downloading InfluxDB...')
+    if sys.platform != 'darwin':
+        os.makedirs(TEMP_DIR, exist_ok=True)
+        print('Downloading InfluxDB...')
 
-    if sys.platform.startswith('win'):
-        dist_string = 'windows_amd64.zip'
-        path = os.path.join(TEMP_DIR, 'influxdb.zip')
+        if sys.platform.startswith('win'):
+            dist_string = 'windows_amd64.zip'
+            path = os.path.join(TEMP_DIR, 'influxdb.zip')
+        else:
+            dist_string = 'linux_amd64.tar.gz'
+            path = os.path.join(TEMP_DIR, 'influxdb.tar.gz')
+
+        download_link = 'https://dl.influxdata.com/influxdb/releases/influxdb-{version}_{dist_string}'.format(
+            version=INFLUXDB_VERSION, dist_string=dist_string)
+
+        with tqdm(unit='B', unit_scale=True, miniters=1) as t:
+            filename, headers = urlretrieve(download_link, path, reporthook=tqdm_hook(t), data=None)
+        shutil.unpack_archive(filename, data_directory)
+        for d in os.listdir(data_directory):
+            if d.startswith(('influxdb')):
+                os.rename(os.path.join(data_directory, d), influxdb_directory)
     else:
-        dist_string = 'linux_amd64.tar.gz'
-        path = os.path.join(TEMP_DIR, 'influxdb.tar.gz')
-
-    download_link = 'https://dl.influxdata.com/influxdb/releases/influxdb-{version}_{dist_string}'.format(
-        version=INFLUXDB_VERSION, dist_string=dist_string)
-
-    with tqdm(unit='B', unit_scale=True, miniters=1) as t:
-        filename, headers = urlretrieve(download_link, path, reporthook=tqdm_hook(t), data=None)
-    shutil.unpack_archive(filename, data_directory)
-    for d in os.listdir(data_directory):
-        if d.startswith(('influxdb')):
-            os.rename(os.path.join(data_directory, d), influxdb_directory)
+        print('Installing InfluxDB...')
+        subprocess.call(['brew', 'update'])
+        subprocess.call(['brew', 'install', 'influxdb'])
     return True
 
 
@@ -206,8 +211,9 @@ def start(name):
     subprocess.call([neo4j_bin, 'start'])
     if sys.platform.startswith('win'):
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxd.exe')
+    elif sys.platform == 'darwin':
+        influxdb_bin = 'influxd'
     else:
-        exe = 'influxd'
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'usr', 'bin', 'influxd')
     influxdb_conf = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxdb.conf')
     influx_proc = subprocess.Popen([influxdb_bin, '-config', influxdb_conf],
