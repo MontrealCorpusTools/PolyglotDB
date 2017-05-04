@@ -8,7 +8,8 @@ branches:
 notifications:
   email: false
 
-sudo: true
+dist: trusty
+sudo: required
 
 addons:
   apt:

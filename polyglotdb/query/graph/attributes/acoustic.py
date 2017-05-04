@@ -147,7 +147,10 @@ class InterpolatedTrack(Track):
     def hydrate(self, corpus, discourse, begin, end, channel=0):
         from scipy import interpolate
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel, padding=0.01)
-        duration = end - begin
+        if self.attribute.relative_time:
+            duration = 1
+        else:
+            duration = end - begin
         time_step = duration / (self.num_points - 1)
 
         new_data = {begin + x * time_step: dict() for x in range(0, self.num_points)}
@@ -210,7 +213,7 @@ class PitchAttribute(AcousticAttribute):
          """
 
         if self.cached_settings == (discourse, begin, end, channel, self.relative, num_points):
-           data = self.cached_data
+            data = self.cached_data
         else:
             data = {}
 
@@ -261,7 +264,8 @@ class IntensityAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {}
-            results = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative, relative_time=self.relative_time)
+            results = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative,
+                                           relative_time=self.relative_time)
             for line in results:
                 data[line[0]] = {self.output_columns[0]: line[1]}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
@@ -305,7 +309,8 @@ class FormantAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {}
-            results = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative, relative_time=self.relative_time)
+            results = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative,
+                                          relative_time=self.relative_time)
             for line in results:
                 data[line[0]] = {self.output_columns[i]: line[i + 1] for i in range(3)}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
