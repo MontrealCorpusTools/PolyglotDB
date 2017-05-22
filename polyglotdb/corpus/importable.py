@@ -185,6 +185,7 @@ class ImportContext(StructuredContext):
         types = defaultdict(set)
         type_headers = None
         token_headers = None
+        #subannotations = None
         for i, t in enumerate(file_tuples):
             if parser.stop_check is not None and parser.stop_check():
                 return
@@ -200,6 +201,8 @@ class ImportContext(StructuredContext):
                 token_headers = information['token_headers']
                 subannotations = information['subannotations']
             except ParseError:
+                print (t)
+                raise
                 continue
             for k, v in information['types'].items():
                 types[k].update(v)

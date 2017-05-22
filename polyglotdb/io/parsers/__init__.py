@@ -14,7 +14,7 @@ from .text_orthography import OrthographyTextParser
 
 from .text_transcription import TranscriptionTextParser
 
-from .textgrid import TextgridParser
+from .textgrids import TextgridParser
 
 from .timit import TimitParser
 

@@ -5,9 +5,9 @@ from textgrid import TextGrid, IntervalTier
 from polyglotdb.exceptions import TextGridError
 from polyglotdb.structure import Hierarchy
 
-from .base import BaseParser, DiscourseData
+from polyglotdb.io.parsers.base import BaseParser, DiscourseData
 
-from ..helper import find_wav_path
+from polyglotdb.io.helper import find_wav_path
 
 
 class TextgridParser(BaseParser):

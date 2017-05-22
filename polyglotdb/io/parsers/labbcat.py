@@ -2,7 +2,7 @@ import os
 
 from textgrid import TextGrid, IntervalTier
 
-from .textgrid import TextgridParser
+from polyglotdb.io.parsers.textgrids import TextgridParser
 
 from polyglotdb.exceptions import TextGridError
 from ..helper import find_wav_path

@@ -1,15 +1,16 @@
+#from __future__ import absolute_import
 import os
 
 from textgrid import TextGrid, IntervalTier
 
-from .textgrid import TextgridParser
+from polyglotdb.io.parsers.textgrids import TextgridParser
 
 from polyglotdb.exceptions import TextGridError
-from ..helper import find_wav_path
+from polyglotdb.io.helper import find_wav_path
 
-from .base import DiscourseData
+from polyglotdb.io.parsers.base import DiscourseData
 
-from .speaker import DirectorySpeakerParser
+from polyglotdb.io.parsers.speaker import DirectorySpeakerParser
 
 
 class MfaParser(TextgridParser):
@@ -21,14 +22,51 @@ class MfaParser(TextgridParser):
         self.speaker_parser = DirectorySpeakerParser()
 
     def _is_valid(self, tg):
-        found_word = False
-        found_phone = False
-        for ti in tg.tiers:
-            if ti.name == 'words':
-                found_word = True
-            elif ti.name == 'phones':
-                found_phone = True
-        return found_word and found_phone
+        format_1 = False
+        format_2 = False
+        # (1) Checks for words ; phones format
+        if tg.tiers[0].name == "words" and tg.tiers[1].name == "phones" and len(tg.tiers) == 2:
+            format_1 = True
+        # (2) Checks for Speaker1 - words; Speaker1 - phones; Speaker2 - words; Speaker2 - phones format
+        else:
+            if len(tg.tiers) % 2 == 0:  # Get into pairs and check each pair
+                pairs = []
+                pair = []
+                for index, ti in enumerate(tg.tiers):
+                    if index % 2 == 0:
+                        pair = []
+                        pair.append(ti.name)
+                    else:
+                        pair.append(ti.name)
+                        pairs.append(pair)
+                for pair in pairs:
+                    if " - " in pair[0] and " - " in pair[1]:
+                        item1 = pair[0].split(" - ")
+                        item2 = pair[1].split(" - ")
+                        if item1[0] == item2[0]:
+                            if item1[1] == "words" and item2[1] == "phones":
+                                format_2 = True
+                            else:
+                                format_2 = False
+                                break
+                        else:
+                            format_2 = False
+                            break
+                    else:
+                        format_2 = False
+                        break
+            else:
+                format_2 = False
+
+        if (format_1 == True or format_2 == True) and not (format_1 == True and format_2 == True):
+            return True
+        else:
+            return False
+                
+                
+
+
+
 
     def parse_discourse(self, path, types_only=False):
         '''
