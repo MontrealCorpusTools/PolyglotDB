@@ -78,8 +78,8 @@ class AudioContext(SyllabicContext):
     def analyze_formants(self, stop_check=None, call_back=None):
         analyze_formants(self, stop_check, call_back)
 
-    # def analyze_formants_vowel_segments(self, stop_check=None, call_back=None, vowel_inventory=None):
-    #     analyze_formants_vowel_segments(self, stop_check, call_back, vowel_inventory)
+    def analyze_formants_vowel_segments(self, stop_check=None, call_back=None, vowel_inventory=None):
+        analyze_formants_vowel_segments(self, stop_check, call_back, vowel_inventory)
 
     def analyze_intensity(self, stop_check=None, call_back=None):
         analyze_intensity(self, stop_check, call_back)

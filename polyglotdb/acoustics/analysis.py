@@ -249,9 +249,6 @@ def analyze_formants_vowel_segments(corpus_context,
                                     vowel_inventory=None):
     """
     Analyze formants of individual vowels, and save the resulting formant tracks into the database for each phone.
-    This does not work yet. Mostly finished, but needs some debugging, and I'm not sure whether saving the formants as tracks or as a single value is better
-    This is modeled on analyze_script and analyze_formants.
-    To work on this, uncomment the lines in audio.py that allow it to be used.
 
     Arguments:
     -- corpus_context: corpus context to use
@@ -365,6 +362,7 @@ def analyze_script(corpus_context,
     
     Result: saves the measurement results from the praat script into the database in a column with the same name as result_measurement.
     '''
+    output_type = None
     if call_back is not None:
         call_back('Analyzing phones...')
     directory = corpus_context.config.temporary_directory('csv')

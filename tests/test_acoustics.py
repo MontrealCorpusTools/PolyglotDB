@@ -287,8 +287,8 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path):
         assert(len(results) > 0)
         print(len(results))
         for r in results:
-            print(r.phone.formants.track)
-            assert(r.phone.formants.track)
+            #print(r.track)
+            assert(r.track)
 
 @acoustic
 def test_analyze_formants_gendered_praat(acoustic_utt_config, praat_path):

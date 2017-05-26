@@ -21,7 +21,7 @@ graph_db = {'graph_host':'localhost', 'graph_port': 7474,
 praat_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\praatcon.exe'
 script_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\PolyglotDB\\examples\\COG.praat'
 #script_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\PolyglotDB\\examples\\COG_middle50percent.praat'
-output_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\cog_data.csv'
+output_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\PolyglotDB\\examples\\cog_data.csv'
 
 
 config = CorpusConfig('librispeech', **graph_db)
