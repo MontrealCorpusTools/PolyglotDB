@@ -498,13 +498,13 @@ def partitur_corpus_config(graph_db, partitur_test_dir):
 
 @pytest.fixture(scope='session')
 def praat_path():
-    # if sys.platform == 'win32':
-    #     return 'praatcon.exe'
-    # elif os.environ.get('TRAVIS', False):
-    #     return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
-    # else:
-    #     return 'praat'
-    return 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\praatcon.exe'
+    if sys.platform == 'win32':
+        return 'praatcon.exe'
+    elif os.environ.get('TRAVIS', False):
+        return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
+    else:
+        return 'praat'
+    #return 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\praatcon.exe'
 
 
 @pytest.fixture(scope='session')

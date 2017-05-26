@@ -35,113 +35,62 @@ from contextlib import redirect_stdout
 PADDING = 0.1
 
 def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=None):
+    """
+    Generate segment vectors for each phone, to be used as input to analyze_file_segments.
+    
+    Arguments:
+    -- corpus_context: corpus context to use
+    -- phone_class: the phone class to generate segments for
+    (optional:) call_back: call back function
+    
+    Returns: 
+    -- a mapping from speaker to a list of phone vectors belonging to that speaker, 
+    -- a mapping from discourse name to the sound file path for that discourse,
+    -- a mapping from the phone vector to the phone id
+    """
     speakers = corpus_context.speakers
     segment_mapping = {}
     discourse_mapping = {}
     phone_ids = {}
-    #query_phones = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.id.in_(query))
-    #query_phones = query
     for s in speakers:
         time_sp = time.time()
-        time_s = time.time()
         segments = []
         speaker_has_phone = False
         discourses = corpus_context.census[s].discourses
         discourses = list(discourses)
         print(s)
-        #print("time for sp setup: " + str(time.time() - time_s))
         for d in discourses:
-            time_disc = time.time()
+            # qr = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.id.in_(query))
             qr = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.type_subset == phone_class)
-            #qr = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.id.in_(query))
-            #qr = query_phones
             qr = qr.filter(corpus_context.phone.discourse.name == d.discourse.name)
             qr = qr.filter(corpus_context.phone.speaker.name == s)
-            #print("query took: " + str(time.time() - time_disc))
             if qr.count() == 0:
                 continue
             phones = qr.all()
             speaker_has_phone = True
-            time_sql = time.time()
             q = corpus_context.sql_session.query(SoundFile).join(Discourse)
             q = q.filter(Discourse.name == d.discourse.name)
             sound_file = q.first()
-            #print("sql query took: " + str(time.time() - time_sql))
             if sound_file is None:
                 print(d.discourse.name)
             channel = d.channel
-            #print("time for discourse setup: " + str(time.time() - time_disc))
-            time_phones = time.time()
             if phones is not None:
                 for ph in phones:
-                    #time_ph = time.time()
-                    phone_ids[(sound_file.consonant_filepath, ph.begin, ph.end, channel)] = ph.id
-                    segments.append((sound_file.consonant_filepath, ph.begin, ph.end, channel))
-                    #print(sound_file.consonant_filepath + " " + str(ph.begin) + " " + str(ph.end) + " " + str(channel))
-                    #print("time per phone: " + str(time.time() - time_ph))
-            #print("time for all phones: " + str(time.time() - time_phones))
-            discourse_mapping[sound_file.discourse.name] = sound_file.consonant_filepath
-            #print("time for one discourse: " + str(time.time() - time_disc))
+                    if 'vowel' in phone_class:
+                        phone_ids[(sound_file.vowel_filepath, ph.begin, ph.end, channel)] = ph.id
+                        segments.append((sound_file.vowel_filepath, ph.begin, ph.end, channel))
+                    else:
+                        phone_ids[(sound_file.consonant_filepath, ph.begin, ph.end, channel)] = ph.id
+                        segments.append((sound_file.consonant_filepath, ph.begin, ph.end, channel))
+            if phone_class is 'vowel':
+                discourse_mapping[sound_file.discourse.name] = sound_file.consonant_filepath
+            else:
+                discourse_mapping[sound_file.discourse.name] = sound_file.consonant_filepath
         if speaker_has_phone:
-            #print("speaker has phone")
             segment_mapping[s] = segments
-        print("time for one speaker: " + str(time.time() - time_sp))
+        print("time for current speaker: " + str(time.time() - time_sp))
     return segment_mapping, discourse_mapping, phone_ids
 
-
-# def generate_phone_segments_by_speaker(corpus_context, query, call_back=None):
-#     speakers = corpus_context.speakers
-#     print(speakers)
-#
-#     segment_mapping = {}
-#     discourse_mapping = {}
-#     phone_ids = {}
-#     time_sp = time.time()
-#     query_phones = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.id.in_(query))
-#     for s in speakers:
-#         time_s = time.time()
-#         segments = []
-#         speaker_has_phone = False
-#         discourses = corpus_context.census[s].discourses
-#         discourses = list(discourses)
-#         print(s)
-#         print("time for sp setup: " + str(time.time() - time_s))
-#         for d in discourses:
-#             time_disc = time.time()
-#             #qr = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.id.in_(query))
-#             qr = query_phones
-#             qr = qr.filter(corpus_context.phone.discourse.name == d.discourse.name)
-#             qr = qr.filter(corpus_context.phone.speaker.name == s)
-#             print("query took: " + str(time.time() - time_disc))
-#             if qr.count() == 0:
-#                 continue
-#             phones = qr.all()
-#             speaker_has_phone = True
-#             time_sql = time.time()
-#             q = corpus_context.sql_session.query(SoundFile).join(Discourse)
-#             q = q.filter(Discourse.name == d.discourse.name)
-#             sound_file = q.first()
-#             print("sql query took: " + str(time.time() - time_sql))
-#             if sound_file is None:
-#                 print(d.discourse.name)
-#             channel = d.channel
-#             print("time for discourse setup: " + str(time.time() - time_disc))
-#             time_phones = time.time()
-#             for ph in phones:
-#                 #time_ph = time.time()
-#                 phone_ids[(sound_file.consonant_filepath, ph.begin, ph.end, channel)] = ph.id
-#                 segments.append((sound_file.consonant_filepath, ph.begin, ph.end, channel))
-#                 #print("time per phone: " + str(time.time() - time_ph))
-#             print("time for all phones: " + str(time.time() - time_phones))
-#             discourse_mapping[sound_file.discourse.name] = sound_file.consonant_filepath
-#             print("time for one discourse: " + str(time.time() - time_disc))
-#         if speaker_has_phone:
-#             print("speaker has phone")
-#             segment_mapping[s] = segments
-#         print("time for one speaker: " + str(time.time() - time_sp))
-#         if call_back is not None:
-#             call_back("time for one speaker: " + str(time.time() - time_sp))
-#     return segment_mapping, discourse_mapping, phone_ids
 
 def generate_speaker_segments(corpus_context):
     speakers = corpus_context.speakers
@@ -237,7 +186,7 @@ def analyze_pitch(corpus_context,
         output = analyze_file_segments(v, pitch_function, padding=PADDING, stop_check=stop_check)
         corpus_context.save_pitch_tracks(output, speaker)
 
-# old
+# old analyze_formants function
 # def analyze_formants(corpus_context,
 #                      call_back=None,
 #                      stop_check=None):
@@ -266,6 +215,14 @@ def analyze_pitch(corpus_context,
 def analyze_formants(corpus_context,
                      call_back=None,
                      stop_check=None):
+    """
+    Analyze formants of an entire utterance using multiprocessing from acousticsim, and save the resulting formant tracks into the database.
+    
+    Arguments:
+    -- corpus_context: corpus context to use
+    (optional:) call_back: call back function
+    (optional:) stop_check: stop check function
+    """
     q = corpus_context.sql_session.query(SoundFile).join(Discourse)
     sound_files = q.all()
 
@@ -274,7 +231,6 @@ def analyze_formants(corpus_context,
     if call_back is not None:
         call_back('Analyzing files...')
         call_back(0, num_sound_files)
-    #formant_function = generate_base_formants_function(corpus_context, signal=False, gender=g))
     for i, (speaker, v) in enumerate(segment_mapping.items()):
         if corpus_context.hierarchy.has_speaker_property('gender'):
             gen = corpus_context.census[speaker].get('Gender')
@@ -284,10 +240,46 @@ def analyze_formants(corpus_context,
                 formant_function = generate_base_formants_function(corpus_context, signal=True)
         else:
             formant_function = generate_base_formants_function(corpus_context, signal=True)
-        output = analyze_file_segments(v, formant_function, padding=1, stop_check=stop_check)
+        output = analyze_file_segments(v, formant_function, padding=PADDING, stop_check=stop_check)
         corpus_context.save_formant_tracks(output, speaker)
 
-# old
+def analyze_formants_vowel_segments(corpus_context,
+                                    call_back=None,
+                                    stop_check=None,
+                                    vowel_inventory=None):
+    """
+    Analyze formants of individual vowels, and save the resulting formant tracks into the database for each phone.
+    This does not work yet. Mostly finished, but needs some debugging, and I'm not sure whether saving the formants as tracks or as a single value is better
+    This is modeled on analyze_script and analyze_formants.
+    To work on this, uncomment the lines in audio.py that allow it to be used.
+
+    Arguments:
+    -- corpus_context: corpus context to use
+    -- call_back: call back function
+    (optional:) stop_check: stop check function
+    (optional:) vowel_inventory: list of vowels used to encode a class 'vowel': if not used, it's assumed that 'vowel' is already a phone class
+    """
+    # encodes vowel inventory into a phone class if it's specified
+    if vowel_inventory is not None:
+        corpus_context.encode_class(vowel_inventory, 'vowel')
+    # gets segment mapping of phones that are vowels
+    segment_mapping, discourse_mapping, phone_ids = generate_phone_segments_by_speaker(corpus_context, 'vowel', call_back=call_back)
+    if call_back is not None:
+        call_back('Analyzing files...')
+    # goes through each phone and: makes a formant function, analyzes the phone, and saves the tracks
+    for i, (speaker, v) in enumerate(segment_mapping.items()):
+        if corpus_context.hierarchy.has_speaker_property('gender'):
+            gen = corpus_context.census[speaker].get('Gender')
+            if gen is not None:
+                formant_function = generate_base_formants_function(corpus_context, signal=True, gender=gen)
+            else:
+                formant_function = generate_base_formants_function(corpus_context, signal=True)
+        else:
+            formant_function = generate_base_formants_function(corpus_context, signal=True)
+        output = analyze_file_segments(v, formant_function, padding=None, stop_check=stop_check)
+        corpus_context.save_formant_tracks(output, speaker)
+
+# old analyze_intensity function
 # def analyze_intensity(corpus_context,
 #                       call_back=None,
 #                       stop_check=None):
@@ -316,6 +308,14 @@ def analyze_formants(corpus_context,
 def analyze_intensity(corpus_context,
                      call_back=None,
                      stop_check=None):
+    """
+    Analyze intensity of an entire utterance using multiprocessing from acousticsim, and save the resulting intensity tracks into the database.
+
+    Arguments:
+    -- corpus_context: corpus context to use
+    -- call_back: call back function
+    -- stop_check: stop check function
+    """
     q = corpus_context.sql_session.query(SoundFile).join(Discourse)
     sound_files = q.all()
 
@@ -334,7 +334,7 @@ def analyze_intensity(corpus_context,
                 intensity_function = generate_base_intensity_function(corpus_context, signal=True)
         else:
             intensity_function = generate_base_intensity_function(corpus_context, signal=True)
-        output = analyze_file_segments(v, intensity_function, padding=1, stop_check=stop_check)
+        output = analyze_file_segments(v, intensity_function, padding=PADDING, stop_check=stop_check)
         corpus_context.save_intensity_tracks(output, speaker)
 
 
@@ -348,51 +348,50 @@ def analyze_script(corpus_context,
                    arguments=None,
                    call_back=None,
                    stop_check=None):
-    # only works for phones currently - is there any reason why it should also handle words etc?
-    time_section = time.time()
-    #phones = query.all()
+    '''
+    Perform acoustic analysis of phones using an input praat script.
+    Praat script requirements: 
+        -the only input is the full path to the soundfile containing (only) the phone
+        -the script prints the output to the Praat Info window
+    
+    Arguments:
+    -- corpus_context: corpus context to use
+    -- phone_class: an already encoded phone class, on which the analysis will be run
+    -- script_path: path to the praat script
+    -- result_measurement: name to be used in the database for the measurement generated by the praat script
+    (optional:) arguments: a list containing any arguments to the praat script (currently not working)
+    (optional:) call_back: call back function
+    (optional:) stop_check: stop check function
+    
+    Result: saves the measurement results from the praat script into the database in a column with the same name as result_measurement.
+    '''
     if call_back is not None:
         call_back('Analyzing phones...')
-        #call_back(0, num_phones)
     directory = corpus_context.config.temporary_directory('csv')
     csv_name = 'analyze_script_import_' + result_measurement + '.csv'
-    print("initial setup took: " + str(time.time() - time_section))
-    if call_back is not None:
-        call_back("initial setup took: " + str(time.time() - time_section))
     time_section = time.time()
-    # segment_mapping, discourse_mapping = generate_speaker_segments(corpus_context)
     segment_mapping, discourse_mapping, phone_ids = generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=call_back)
-    # segment_mapping, discourse_mapping = generate_phone_segments(corpus_context, query)
     print("generate segments took: " + str(time.time() - time_section))
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
     praat_path = corpus_context.config.praat_path
-    time_section = time.time()
     script_function = generate_praat_script_function(praat_path, script_path, result_measurement, arguments=arguments)
-    print("generate function took: " + str(time.time() - time_section))
-    if call_back is not None:
-        call_back("generate function took: " + str(time.time() - time_section))
-    time_section = time.time()
     with open(os.path.join(directory, csv_name), 'w', newline='') as f:
         header = ['id', 'begin', 'end', result_measurement]
         writer = csv.DictWriter(f, header, delimiter=',')
         writer.writeheader()
-        print("csv setup took: " + str(time.time() - time_section))
-        for i, (discourse, v) in enumerate(segment_mapping.items()):
+        for i, (speaker, v) in enumerate(segment_mapping.items()):
             if stop_check is not None and stop_check():
                 break
             if call_back is not None:
                 #call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.filepath))
                 call_back(i)
             time_section = time.time()
-            #output = analyze_script_file(corpus_context, script_path, filepath, begin, end, call_back, *args)
-            output = analyze_file_segments(v, script_function, padding=1, stop_check=stop_check)
+            output = analyze_file_segments(v, script_function, padding=None, stop_check=stop_check)
             if call_back is not None:
                 call_back("time analyzing segments: " + str(time.time() - time_section))
             print("time analyzing segments: " + str(time.time() - time_section))
-            #print(output)
 
-            time_section = time.time()
             for vector in output.keys():
                 filepath, begin, end, channel = vector
                 row = {}
@@ -402,20 +401,18 @@ def analyze_script(corpus_context,
                 row[result_measurement] = output[vector]
                 writer.writerow(row)
                 output_type = type(output[vector]).__name__
-                #print(time.time() - time_begin)
-                #print("saving to row csv took: " + str(time.time() - time_section))
-                #print(row)
-            print("saving to csv took: " + str(time.time() - time_section))
-            if call_back is not None:
-                call_back("saving to csv took: " + str(time.time() - time_section))
-    time_csv = time.time()
     script_data_from_csv(corpus_context, result_measurement, output_type)
-    print("import from csv took: " + str(time.time() - time_csv))
-    if call_back is not None:
-        call_back("import from csv took: " + str(time.time() - time_csv))
 
 
 def script_data_from_csv(corpus_context, result_measurement, output_type):
+    '''
+    Save data from a csv file into the database.
+    
+    Arguments:
+    -- corpus_context: corpus context
+    -- result_measurement: measurement label
+    -- output_type: type of the result being saved
+    '''
     if output_type == 'int':
         cypher_set_template = 'n.{name} = toInt(csvLine.{name})'
     elif output_type == 'bool':
@@ -428,7 +425,6 @@ def script_data_from_csv(corpus_context, result_measurement, output_type):
     csv_name = 'analyze_script_import_' + result_measurement + '.csv'
     path = os.path.join(directory, csv_name)
     feat_path = 'file:///{}'.format(make_path_safe(path))
-    #print(feat_path)
     import_statement = '''CYPHER planner=rule
         LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
         MATCH (n:phone:{corpus_name}) where n.id = csvLine.id
@@ -442,25 +438,26 @@ def script_data_from_csv(corpus_context, result_measurement, output_type):
     corpus_context.hierarchy.add_token_properties(corpus_context, 'phone', types.items())
     corpus_context.refresh_hierarchy()
 
-def analyze_script_file(corpus_context=None, script_path=None, call_back=None, *args):
-    # removed begin and end entirely because that's handled by the segments??, also removed soundfile path for similar reason
-#    time_praat = time.time()
-    script_output = run_script(corpus_context.config.praat_path, script_path, *args).strip() # assumes soundfile is the first argument to the script
-#    print("praat script took: " + str(time.time() - time_praat))
-    if script_output.replace('.','').isnumeric():
-        if '.' in script_output:
-            script_output = float(script_output)
-        else:
-            script_output = int(script_output)
-    else:
-        print('Praat output: ' + script_output)
-        if call_back is not None:
-            call_back('Praat output: ' + script_output)
-        script_output = None
-    return script_output
 
 def signal_to_praat_script(signal, sr, praat_path=None,time_step=0.01,
                            begin=None, padding=None, script_path=None, result_measurement=None, arguments=None):
+    '''
+    Create a sound file for one phone from a signal and sample rate (using acousticsim), and run the praat script on that phone.
+    
+    Arguments:
+    -- signal: input from acousticsim multiprocessing, used to get phone wavfile
+    -- sr: input from acousticsim multiprocessing, used to get phone wavfile
+    -- praat_path: path to praat
+    -- time_step: parameter that can be used by acousticsim for multiprocessing?
+    -- begin: parameter that can be used by acousticsim for multiprocessing?
+    -- padding: time padding around segment: must be None or 0 for phone analysis to work!
+    -- script_path: path to the praat script
+    -- result_measurement: measurement label
+    (optional:) arguments: a list containing any arguments to the praat script (currently not used)
+    
+    Returns:
+    -- output from Praat script on the file
+    '''
     with ASTemporaryWavFile(signal, sr) as wav_path:
         if praat_path is None:
             praat_path = 'praat'
@@ -481,37 +478,21 @@ def signal_to_praat_script(signal, sr, praat_path=None,time_step=0.01,
             script_output = None
         return script_output
 
-# def file_to_praat_script(wav_path, praat_path=None,time_step=0.01, begin=None, padding=None, script_path=None, arguments=None):
-#     # if praat_path is None:
-#     #     praat_path = 'praat'
-#     #     if sys.platform == 'win32':
-#     #         praat_path += 'con.exe'
-#     # script_function = partial(run_script, praat_path, script_path, wav_path)
-#     # for arg in arguments:
-#     #     script_function = partial(script_function, arg)
-#     # script_output = script_function().strip()
-#     script_output = run_script(praat_path, script_path, wav_path).strip()
-#     if script_output.replace('.', '').isnumeric():
-#         if '.' in script_output:
-#             script_output = float(script_output)
-#         else:
-#             script_output = int(script_output)
-#     else:
-#         print('Praat output: ' + script_output)
-#         # if call_back is not None:
-#         #     call_back('Praat output: ' + script_output)
-#         script_output = None
-#     return script_output
-
-def generate_praat_script_function(praat_path, script_path, result_measurement, arguments=None, padding=None):
-    if padding is not None:
-        praat_function = partial(signal_to_praat_script,
-                                 praat_path=praat_path,
-                                 script_path=script_path, result_measurement=result_measurement, arguments=arguments, padding=padding)
-    else:
-        praat_function = partial(signal_to_praat_script,
-                                 praat_path=praat_path,
-                                 script_path=script_path, result_measurement=result_measurement, arguments=arguments)
+def generate_praat_script_function(praat_path, script_path, result_measurement, arguments=None):
+    '''
+    Generate a partial function that calls the praat script specified.
+    (used as input to analyze_file_segments)
+    
+    Arguments:
+    -- praat_path: path to praat/praatcon
+    -- script_path: path to the script
+    -- result_measurement: measurement label
+    (optional:) arguments: a list containing any arguments to the praat script (not currently used)
+    :return: the partial function
+    '''
+    praat_function = partial(signal_to_praat_script,
+                             praat_path=praat_path,
+                             script_path=script_path, result_measurement=result_measurement, arguments=arguments)
     return praat_function
 
 def generate_pitch_function(algorithm, min_pitch, max_pitch, signal=False, path=None):
@@ -593,7 +574,7 @@ def generate_base_intensity_function(corpus_context, signal=False, gender=None):
         #                                 time_step=0.01)
     return intensity_function
 
-
+# old helper functions for old acoustics functions
 # def analyze_formants_long_file(corpus_context, sound_file, stop_check=None, use_gender=True):
 #     filepath = os.path.expanduser(sound_file.vowel_filepath)
 #     if not os.path.exists(filepath):

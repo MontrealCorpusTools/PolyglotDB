@@ -5,7 +5,7 @@ from decimal import Decimal
 from influxdb import InfluxDBClient
 
 from polyglotdb.query.discourse import DiscourseInspector
-from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_intensity, analyze_script, analyze_script_file
+from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_formants_vowel_segments, analyze_intensity, analyze_script
 from ..sql.models import SoundFile, Discourse
 from .syllabic import SyllabicContext
 
@@ -78,14 +78,14 @@ class AudioContext(SyllabicContext):
     def analyze_formants(self, stop_check=None, call_back=None):
         analyze_formants(self, stop_check, call_back)
 
+    # def analyze_formants_vowel_segments(self, stop_check=None, call_back=None, vowel_inventory=None):
+    #     analyze_formants_vowel_segments(self, stop_check, call_back, vowel_inventory)
+
     def analyze_intensity(self, stop_check=None, call_back=None):
         analyze_intensity(self, stop_check, call_back)
 
     def analyze_script(self, phone_class, script_path, result_measurement, arguments=None, stop_check=None, call_back=None):
         analyze_script(self, phone_class, script_path, result_measurement, arguments=arguments, stop_check=stop_check, call_back=call_back)
-
-    def analyze_script_file(self, script_path, soundfile, begin, end, call_back=None, *args):
-        return analyze_script_file(self, script_path, soundfile, begin, end, call_back, *args)
 
     def genders(self):
         res = self.execute_cypher(
