@@ -154,6 +154,7 @@ def make_influxdb_safe(string):
 
 
 def configure_influxdb(data_directory):
+    os.makedirs(os.path.join(data_directory, 'influxdb'), exist_ok=True)
     neo4j_conf_path = os.path.join(data_directory, 'influxdb', 'influxdb.conf')
     if hasattr(sys, 'frozen'):
         base_pgdb_dir = os.path.dirname(sys.executable)
