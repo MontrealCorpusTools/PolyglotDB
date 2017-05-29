@@ -1,3 +1,6 @@
+from .exceptions import HierarchyError
+
+
 class Hierarchy(object):
     '''
     Class containing information about how a corpus is structured.
@@ -36,6 +39,7 @@ class Hierarchy(object):
             data = {}
         self._data = data
         self.subannotations = {}
+        self.subannotation_properties = {}
         self.annotation_types = set(data.keys())
         self.subset_types = {}
         self.token_properties = {}
@@ -337,15 +341,22 @@ class Hierarchy(object):
         else:
             self._data.update(other._data)
             self.subannotations.update(other.subannotations)
+            self.subannotation_properties.update(other.subannotation_properties)
+            for k, v in other.subannotation_properties.items():
+                if k not in self.subannotation_properties:
+                    self.subannotation_properties[k] = v
+                else:
+                    self.subannotation_properties[k] = self.subannotation_properties[k] & v
             for k, v in other.type_properties.items():
                 if k not in self.type_properties.items():
                     self.type_properties[k] = v
                 else:
                     self.type_properties[k] = self.type_properties[k] & v
+            for k, v in other.token_properties.items():
                 if k not in self.token_properties.items():
                     self.token_properties[k] = other.token_properties[k]
                 else:
-                    self.type_properties[k] = self.type_properties[k] & other.token_properties[k]
+                    self.token_properties[k] = self.token_properties[k] & other.token_properties[k]
         self.annotation_types.update(self._data.keys())
 
     @property
@@ -416,9 +427,50 @@ class Hierarchy(object):
         return higher
 
     def add_subannotation_type(self, linguistic_type, subannotation_type):
+        if subannotation_type in self.subannotation_properties:
+            raise (HierarchyError('The subannotation_type {} is already specified for another linguistic type.'
+                                  ' Please use a different name.'.format(subannotation_type)))
         if linguistic_type not in self.subannotations:
             self.subannotations[linguistic_type] = set()
         self.subannotations[linguistic_type].add(subannotation_type)
+        self.subannotation_properties[subannotation_type] = set()
+
+    def remove_subannotation_type(self, subannotation_type):
+        try:
+            del self.subannotation_properties[subannotation_type]
+        except KeyError:
+            pass
+        for k, v in self.subannotations.items():
+            if subannotation_type in v:
+                self.subannotations[k] = v - {subannotation_type}
+
+    def add_subannotation_properties(self, corpus_context, subannotation_type, properties):
+        set_template = 'n.{0} = {{{0}}}'
+        ps = []
+        kwargs = {}
+        for k, v in properties:
+            if v == int:
+                v = 0
+            elif v == list:
+                v = []
+            elif v == float:
+                v = 0.0
+            elif v == str:
+                v = ''
+            elif v == bool:
+                v = False
+            elif v == type(None):
+                v = None
+            ps.append(set_template.format(k))
+            kwargs[k] = v
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(n)<-[:annotates]-(n:{type})
+        SET {sets}'''.format(sets=', '.join(ps), type=subannotation_type)
+        corpus_context.execute_cypher(statement,
+                                      corpus_name=corpus_context.corpus_name, **kwargs)
+
+        self.subannotation_properties[subannotation_type].update(k for k in properties)
 
     def has_speaker_property(self, key):
         for name, t in self.speaker_properties:

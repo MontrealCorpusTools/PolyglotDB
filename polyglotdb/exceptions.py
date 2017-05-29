@@ -205,4 +205,10 @@ class SubsetError(PGError):
 
 class AlphabetError(PGError):
     def __init__(self):
-        self.value = "None of these phones appear to be in the corpus alphabet. Please check to make sure the alphabet you are using corresponds to that of the corpus\n\n"
+        self.value = "None of these phones appear to be in the corpus alphabet. " \
+                     "Please check to make sure the alphabet you are using corresponds " \
+                     "to that of the corpus\n\n"
+
+
+class HierarchyError(PGError):
+    pass

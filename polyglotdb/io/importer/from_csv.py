@@ -712,7 +712,7 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.AnnotatedContext`
         the corpus to load into
     type : str
         the file name of the csv

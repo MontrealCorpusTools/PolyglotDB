@@ -314,6 +314,7 @@ ORDER BY begin'''.format(corpus=self.cypher_safe_name, word_type=word_type)
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
             '''.format(w_type=w_type, corpus_name=self.cypher_safe_name)
+            split_names = self.discourses
         else:
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name}),
             (node_word_in_node_utterance:{w_type}:{corpus_name})-[:contained_by]->(node_utterance)
@@ -326,6 +327,7 @@ ORDER BY begin'''.format(corpus=self.cypher_safe_name, word_type=word_type)
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
             '''.format(w_type=w_type, corpus_name=self.cypher_safe_name)
+            split_names = None
 
         if split_names is None:
             if call_back is not None:

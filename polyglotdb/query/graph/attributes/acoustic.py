@@ -149,6 +149,7 @@ class InterpolatedTrack(Track):
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel, padding=0.01)
         if self.attribute.relative_time:
             duration = 1
+            begin = 0
         else:
             duration = end - begin
         time_step = duration / (self.num_points - 1)

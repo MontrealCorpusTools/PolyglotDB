@@ -185,6 +185,7 @@ class ImportContext(StructuredContext):
         types = defaultdict(set)
         type_headers = None
         token_headers = None
+        subannotations = None
         for i, t in enumerate(file_tuples):
             if parser.stop_check is not None and parser.stop_check():
                 return

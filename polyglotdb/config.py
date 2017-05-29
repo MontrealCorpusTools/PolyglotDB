@@ -61,7 +61,7 @@ class CorpusConfig(object):
         defaults to "Documents/SCT" under the current user's home directory
     """
 
-    def __init__(self, corpus_name, **kwargs):
+    def __init__(self, corpus_name, data_dir=None, **kwargs):
         self.corpus_name = corpus_name
         self.acoustic_user = None
         self.acoustic_password = None
@@ -73,7 +73,9 @@ class CorpusConfig(object):
         self.graph_port = 7474
         self.bolt_port = 7687
 
-        self.base_dir = os.path.join(BASE_DIR, self.corpus_name)
+        if data_dir is None:
+            data_dir = BASE_DIR
+        self.base_dir = os.path.join(data_dir, self.corpus_name)
 
         self.log_level = logging.DEBUG
 
@@ -82,8 +84,6 @@ class CorpusConfig(object):
         self.temp_dir = os.path.join(self.base_dir, 'temp')
         self.data_dir = os.path.join(self.base_dir, 'data')
         self.audio_dir = os.path.join(self.data_dir, 'audio')
-        if '~' in self.audio_dir:
-            error
 
         self.engine = 'sqlite'
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
