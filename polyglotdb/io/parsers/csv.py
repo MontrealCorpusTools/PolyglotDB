@@ -1,16 +1,12 @@
 import os
-#from csv import DictReader
-import csv
+from csv import DictReader
 
 from polyglotdb.exceptions import DelimiterError, CorpusIntegrityError
 from polyglotdb.structure import Hierarchy
 
-from polyglotdb.io.parsers.base import BaseParser, DiscourseData
+from .base import BaseParser, DiscourseData
 
-#from ..types.content import (OrthographyAnnotationType, TranscriptionAnnotationType,
-#                             NumericAnnotationType)
-
-from polyglotdb.io.types.content import (OrthographyAnnotationType, TranscriptionAnnotationType,
+from ..types.content import (OrthographyAnnotationType, TranscriptionAnnotationType,
                              NumericAnnotationType)
 
 

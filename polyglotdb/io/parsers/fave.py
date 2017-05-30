@@ -2,7 +2,7 @@ import os
 
 from textgrid import TextGrid, IntervalTier
 
-from .textgrids import TextgridParser
+from .textgrid import TextgridParser
 
 from ..types.parsing import OrthographyTier
 

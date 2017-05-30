@@ -1,17 +1,12 @@
 import os
 
-#import polyglotdb.io.types
-from polyglotdb.io.types.standardized import PGAnnotation, PGSubAnnotation, PGAnnotationType
-#from ..types.standardized import PGAnnotation, PGSubAnnotation, PGAnnotationType
+from ..types.standardized import PGAnnotation, PGSubAnnotation, PGAnnotationType
 
-#from ..types.parsing import Tobi, BreakIndex
-from polyglotdb.io.types.parsing import Tobi, BreakIndex
+from ..types.parsing import Tobi, BreakIndex
 
-#from ..discoursedata import DiscourseData
-from polyglotdb.io.discoursedata import DiscourseData
+from ..discoursedata import DiscourseData
 
-#from ...exceptions import ParseError
-from polyglotdb.exceptions import ParseError
+from ...exceptions import ParseError
 
 
 class BaseParser(object):

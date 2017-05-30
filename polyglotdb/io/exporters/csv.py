@@ -1,5 +1,4 @@
-import csv
-#from csv import DictWriter
+from csv import DictWriter
 
 
 def make_safe(value, delimiter):
