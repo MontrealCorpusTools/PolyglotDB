@@ -1,13 +1,11 @@
 import os
-import re
-import librosa
 from datetime import datetime
 from decimal import Decimal
 
 from influxdb import InfluxDBClient
 
 from polyglotdb.query.discourse import DiscourseInspector
-from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_intensity
+from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_formants_vowel_segments, analyze_intensity, analyze_script
 from ..sql.models import SoundFile, Discourse
 from .syllabic import SyllabicContext
 
@@ -58,26 +56,13 @@ def to_nano(seconds):
     return int(seconds * Decimal('1e9'))
 
 
-def s_to_ms(seconds):
-    if not isinstance(seconds, Decimal):
-        seconds = Decimal(seconds).quantize(Decimal('0.001'))
-    return int(seconds * Decimal('1e3'))
-
-
 def to_seconds(time_string):
     try:
         d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%S.%fZ')
-        s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
     except:
-        try:
-            d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%SZ')
-            s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
-        except:
-            m = re.search('T(\d{2}):(\d{2}):(\d+)\.(\d+)?', time_string)
-            p = m.groups()
+        d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%SZ')
 
-            s = 60 * 60 * int(p[0]) + 60 * int(p[1]) + int(p[2]) + int(p[3][:6]) / 1e6
-
+    s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
     s = Decimal(s).quantize(Decimal('0.001'))
     return s
 
@@ -87,27 +72,20 @@ class AudioContext(SyllabicContext):
     Class that contains methods for dealing with audio files for corpora
     """
 
-    def load_audio(self, discourse, file_type):
-        sound_file = self.discourse_sound_file(discourse)
-        if file_type == 'consonant':
-            path = os.path.expanduser(sound_file.consonant_filepath)
-        elif file_type == 'vowel':
-            path = os.path.expanduser(sound_file.vowel_filepath)
-        elif file_type == 'low_freq':
-            path = os.path.expanduser(sound_file.low_freq_filepath)
-        else:
-            path = os.path.expanduser(sound_file.filepath)
-        signal, sr = librosa.load(path, sr=None)
-        return signal, sr
-
     def analyze_pitch(self, stop_check=None, call_back=None):
         analyze_pitch(self, stop_check, call_back)
 
     def analyze_formants(self, stop_check=None, call_back=None):
         analyze_formants(self, stop_check, call_back)
 
+    def analyze_formants_vowel_segments(self, stop_check=None, call_back=None, vowel_inventory=None):
+        analyze_formants_vowel_segments(self, stop_check, call_back, vowel_inventory)
+
     def analyze_intensity(self, stop_check=None, call_back=None):
         analyze_intensity(self, stop_check, call_back)
+
+    def analyze_script(self, phone_class, script_path, result_measurement, arguments=None, stop_check=None, call_back=None):
+        analyze_script(self, phone_class, script_path, result_measurement, arguments=arguments, stop_check=stop_check, call_back=call_back)
 
     def genders(self):
         res = self.execute_cypher(
@@ -438,11 +416,11 @@ class AudioContext(SyllabicContext):
                     fields['Intensity'] = value
                 d = {'measurement': measurement,
                      'tags': t_dict,
-                     'time': s_to_ms(time_point),
+                     'time': to_nano(time_point),
                      'fields': fields
                      }
                 data.append(d)
-        self.acoustic_client().write_points(data, batch_size=1000, time_precision='ms')
+        self.acoustic_client().write_points(data, batch_size=1000)
 
     def _save_measurement(self, sound_file, track, measurement, **kwargs):
         if not len(track.keys()):
@@ -558,6 +536,9 @@ class AudioContext(SyllabicContext):
         """
         self._save_measurement(sound_file, formant_track, 'formants', **kwargs)
 
+    def save_formant_tracks(self, tracks, speaker):
+        self._save_measurement_tracks('formants', tracks, speaker)
+
     def save_pitch(self, sound_file, pitch_track, **kwargs):
         """
         Save a pitch track for a sound file
@@ -590,6 +571,9 @@ class AudioContext(SyllabicContext):
             Tags to save for acoustic measurements
         """
         self._save_measurement(sound_file, intensity_track, 'intensity', **kwargs)
+
+    def save_intensity_tracks(self, tracks, speaker):
+        self._save_measurement_tracks('intensity', tracks, speaker)
 
     def has_formants(self, discourse, source=None):
         """
