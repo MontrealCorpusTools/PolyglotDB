@@ -4,11 +4,57 @@ from decimal import Decimal
 import pytest
 
 from polyglotdb import CorpusContext
+from acousticsim.analysis.praat import run_script
 
 acoustic = pytest.mark.skipif(
     pytest.config.getoption("--skipacoustics"),
     reason="remove --skipacoustics option to run"
 )
+
+
+# def test_run_script(acoustic_utt_config, praat_path, praatscript_test_dir):
+#     with CorpusContext(acoustic_utt_config) as g:
+#         g.config.praat_path = praat_path
+#         script_path = os.path.join(praatscript_test_dir, 'COG.praat')
+#         sibilantfile_path = os.path.join(textgrid_test_dir, 'acoustic_corpus_sib1.wav')
+#         output = run_script(g.config.praat_path, script_path, sibilantfile_path, 0.0, 0.137, '1', '2')
+#         output = output.strip()
+#         assert (float(output) == 4654.12)
+#         assert (output.replace('.','').isnumeric())
+#
+# def test_analyze_script_file(acoustic_utt_config, praat_path, praatscript_test_dir):
+#     with CorpusContext(acoustic_utt_config) as g:
+#         g.config.praat_path = praat_path
+#         script_path = os.path.join(praatscript_test_dir, 'COG.praat')
+#         sibilantfile_path = os.path.join(textgrid_test_dir, 'acoustic_corpus_sib1.wav')
+#         output = g.analyze_script_file(script_path, sibilantfile_path, 0.0, 0.137, None, '1', '2')
+#         assert(output == 4654.12)
+#
+def test_analyze_script(acoustic_utt_config, praat_path, praatscript_test_dir):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.praat_path = praat_path
+        g.encode_class(['s', 'z', 'sh', 'zh'], 'sibilant')
+        script_path = os.path.join(praatscript_test_dir, 'COG.praat')
+        g.analyze_script('sibilant', script_path, 'COG', stop_check=None, call_back=None)
+        #g.analyze_script(q, script_path, 'COG', ['1', '2'], stop_check=None, call_back=None)
+        directory = g.config.temporary_directory('csv')
+        path = os.path.join(directory, 'analyze_script_import_COG.csv')
+        assert(os.path.isfile(path))
+        q = g.query_graph(g.phone).filter(g.phone.type_subset == 'sibilant')
+        q = q.columns(g.phone.begin, g.phone.end, g.phone.COG)
+        results = q.all()
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.values)
+
+# def test_query(acoustic_utt_config, praat_path):
+#     with CorpusContext(acoustic_utt_config) as g:
+#         g.config.praat_path = praat_path
+#         q = g.query_graph(g.phone).filter(g.phone.label.in_(['s']))
+#         sound_files = q.all()
+#         #q.to_csv("C:\\Users\\samih\\Documents\\0_SPADE_labwork\\sib_query.csv")
+#         num_sound_files = len(sound_files)
+#         assert(num_sound_files)
 
 
 def test_wav_info(acoustic_utt_config):
@@ -122,13 +168,13 @@ def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_te
             assert(r['following_following_syllable_pitch_mean'] != r['following_syllable_pitch_mean'])
         q.to_csv(os.path.join(results_test_dir, 'test_track_hierarchical_utterance_mean_query.txt'))
 
-@acoustic
-def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
-    with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'reaper'
-        g.config.reaper_path = reaper_path
-        g.config.pitch_algorithm = 'basic'
-        g.analyze_pitch()
+# @acoustic
+# def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
+#     with CorpusContext(acoustic_utt_config) as g:
+#         g.config.pitch_source = 'reaper'
+#         g.config.reaper_path = reaper_path
+#         g.config.pitch_algorithm = 'basic'
+#         g.analyze_pitch()
 
 
 @acoustic
@@ -140,7 +186,7 @@ def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
         g.analyze_pitch()
 
 @acoustic
-def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
+def test_analyze_pitch_speaker_adj_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.pitch_source = 'praat'
@@ -175,6 +221,158 @@ def test_query_pitch(acoustic_utt_config):
             assert (round(v['F0'], 1) == expected_pitch[k]['F0'])
 
 
+def test_query_aggregate_pitch(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_source = 'dummy'
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.label, g.phone.pitch.min,
+                      g.phone.pitch.max, g.phone.pitch.mean)
+        print(q.cypher())
+        results = q.all()
+
+        assert (results[0]['Min_F0'] == 95.8)
+        assert (results[0]['Max_F0'] == 100)
+        assert (round(results[0]['Mean_F0'], 2) == 97.72)
+
+
+def test_export_pitch(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.pitch_source = 'dummy'
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.label.column_name('label'), g.phone.pitch.track)
+        print(q.cypher())
+        results = q.all()
+
+        t = results.rows_for_csv()
+        assert (next(t) == {'label': 'ow', 'time': Decimal('4.23'), 'F0': 98})
+        assert (next(t) == {'label': 'ow', 'time': Decimal('4.24'), 'F0': 100})
+        assert (next(t) == {'label': 'ow', 'time': Decimal('4.25'), 'F0': 99})
+        assert (next(t) == {'label': 'ow', 'time': Decimal('4.26'), 'F0': 95.8})
+        assert (next(t) == {'label': 'ow', 'time': Decimal('4.27'), 'F0': 95.8})
+
+
+@acoustic
+def test_analyze_formants_basic_praat(acoustic_utt_config, praat_path):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.formant_source = 'praat'
+        g.config.praat_path = praat_path
+        g.analyze_formants()
+        assert(g.has_formants(g.discourses[0], 'praat'))
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
+        results = q.all()
+        output_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\formant_data.csv'
+        q.to_csv(output_path)
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.track)
+
+def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.formant_source = 'praat'
+        g.config.praat_path = praat_path
+        vowel_inventory = ['ih','iy','ah','uw','er','ay','aa','ae','eh','ow']
+        g.analyze_formants_vowel_segments(vowel_inventory=vowel_inventory)
+        assert(g.has_formants(g.discourses[0], 'praat'))
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
+        results = q.all()
+        output_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\formant_vowel_data.csv'
+        q.to_csv(output_path)
+        assert(len(results) > 0)
+        print(len(results))
+        for r in results:
+            #print(r.track)
+            assert(r.track)
+
+@acoustic
+def test_analyze_formants_gendered_praat(acoustic_utt_config, praat_path):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.formant_source = 'praat'
+        gender_dict = {'gender': 'male'}
+        g.hierarchy.add_speaker_properties(g, gender_dict.items())
+        assert(g.hierarchy.has_speaker_property('gender'))
+        g.config.praat_path = praat_path
+        g.analyze_formants()
+        assert(g.has_formants(g.discourses[0], 'praat'))
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
+        results = q.all()
+        output_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\formant_data.csv'
+        q.to_csv(output_path)
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.track)
+
+@acoustic
+def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.intensity_source = 'praat'
+        g.config.praat_path = praat_path
+        g.analyze_intensity()
+        assert(g.has_intensity(g.discourses[0], 'praat'))
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin, g.phone.end, g.phone.intensity.track)
+        results = q.all()
+        output_path = 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\intensity_data.csv'
+        q.to_csv(output_path)
+        assert(len(results) > 0)
+        for r in results:
+            assert(r.track)
+
+
+def test_query_formants(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        expected_formants = {Decimal('4.23'): {'F1': 501, 'F2': 1500, 'F3': 2500},
+                             Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2500},
+                             Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
+                             Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2500},
+                             Decimal('4.27'): {'F1': 505, 'F2': 1496, 'F3': 2500}}
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.label, g.phone.formants.track)
+        print(q.cypher())
+        results = q.all()
+
+        print(sorted(expected_formants.items()))
+        print(sorted(results[0].track.items()))
+        for k, v in results[0].track.items():
+            if k in expected_formants.keys():
+                assert (round(v['F1'], 1) == expected_formants[k]['F1'])
+                assert (round(v['F2'], 1) == expected_formants[k]['F2'])
+                assert (round(v['F3'], 1) == expected_formants[k]['F3'])
+
+
+def test_query_aggregate_formants(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.label, g.phone.formants.min,
+                      g.phone.formants.max, g.phone.formants.mean)
+        print(q.cypher())
+        results = q.all()
+
+        assert (round(results[0]['Min_F1'], 0) == 235)
+        assert (round(results[0]['Max_F1'], 0) == 1021)
+        assert (round(results[0]['Mean_F1'], 0) == 649)
+
+        assert (round(results[0]['Min_F2'], 0) == 1095)
+        assert (round(results[0]['Max_F2'], 0) == 2385)
+        assert (round(results[0]['Mean_F2'], 0) == 1745)
+
+        assert (round(results[0]['Min_F3'], 0) == 2372)
+        assert (round(results[0]['Max_F3'], 0) == 3543)
+        assert (round(results[0]['Mean_F3'], 0) == 2878)
+
 def test_query_intensity(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.intensity_source = 'dummy'
@@ -196,88 +394,3 @@ def test_query_intensity(acoustic_utt_config):
         print(sorted(results[0].track.items()))
         for k, v in results[0].track.items():
             assert (round(v['Intensity'], 1) == expected_intensity[k]['Intensity'])
-
-
-def test_query_aggregate_pitch(acoustic_utt_config):
-    with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'dummy'
-        q = g.query_graph(g.phone)
-        q = q.filter(g.phone.label == 'ow')
-        q = q.order_by(g.phone.begin.column_name('begin'))
-        q = q.columns(g.phone.label, g.phone.pitch.min,
-                      g.phone.pitch.max, g.phone.pitch.mean)
-        print(q.cypher())
-        results = q.all()
-
-        assert (results[0]['Min_F0'] == 95.8)
-        assert (results[0]['Max_F0'] == 100)
-        assert (round(results[0]['Mean_F0'], 2) == 97.72)
-
-
-def test_query_formants(acoustic_utt_config):
-    with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_source = 'dummy'
-        expected_formants = {Decimal('4.23'): {'F1': 501, 'F2': 1500, 'F3': 2500},
-                             Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2500},
-                             Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
-                             Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2500},
-                             Decimal('4.27'): {'F1': 505, 'F2': 1496, 'F3': 2500}}
-        g.save_formants('acoustic_corpus', expected_formants)
-
-        q = g.query_graph(g.phone)
-        q = q.filter(g.phone.label == 'ow')
-        q = q.order_by(g.phone.begin.column_name('begin'))
-        q = q.columns(g.phone.label, g.phone.formants.track)
-        print(q.cypher())
-        results = q.all()
-
-        print(sorted(expected_formants.items()))
-        print(sorted(results[0].track.items()))
-        for k, v in results[0].track.items():
-            assert (round(v['F1'], 1) == expected_formants[k]['F1'])
-            assert (round(v['F2'], 1) == expected_formants[k]['F2'])
-            assert (round(v['F3'], 1) == expected_formants[k]['F3'])
-
-
-def test_query_aggregate_formants(acoustic_utt_config):
-    with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_source = 'dummy'
-
-        q = g.query_graph(g.phone)
-        q = q.filter(g.phone.label == 'ow')
-        q = q.order_by(g.phone.begin.column_name('begin'))
-        q = q.columns(g.phone.label, g.phone.formants.min,
-                      g.phone.formants.max, g.phone.formants.mean)
-        print(q.cypher())
-        results = q.all()
-
-        assert (results[0]['Min_F1'] == 501)
-        assert (results[0]['Max_F1'] == 505)
-        assert (round(results[0]['Mean_F1'], 2) == 503)
-
-        assert (results[0]['Min_F2'] == 1496)
-        assert (results[0]['Max_F2'] == 1500)
-        assert (round(results[0]['Mean_F2'], 2) == 1498)
-
-        assert (results[0]['Min_F3'] == 2500)
-        assert (results[0]['Max_F3'] == 2500)
-        assert (round(results[0]['Mean_F3'], 2) == 2500)
-
-
-def test_export_pitch(acoustic_utt_config):
-    with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'dummy'
-
-        q = g.query_graph(g.phone)
-        q = q.filter(g.phone.label == 'ow')
-        q = q.order_by(g.phone.begin.column_name('begin'))
-        q = q.columns(g.phone.label.column_name('label'), g.phone.pitch.track)
-        print(q.cypher())
-        results = q.all()
-
-        t = results.rows_for_csv()
-        assert (next(t) == {'label': 'ow', 'time': Decimal('4.23'), 'F0': 98})
-        assert (next(t) == {'label': 'ow', 'time': Decimal('4.24'), 'F0': 100})
-        assert (next(t) == {'label': 'ow', 'time': Decimal('4.25'), 'F0': 99})
-        assert (next(t) == {'label': 'ow', 'time': Decimal('4.26'), 'F0': 95.8})
-        assert (next(t) == {'label': 'ow', 'time': Decimal('4.27'), 'F0': 95.8})
