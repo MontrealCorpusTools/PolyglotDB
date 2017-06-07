@@ -508,3 +508,8 @@ def reaper_path():
         return os.path.join(os.environ.get('HOME'), 'tools', 'reaper')
     else:
         return 'reaper'
+
+
+@pytest.fixture(scope='session')
+def localhost():
+    return 'http://localhost:8000'

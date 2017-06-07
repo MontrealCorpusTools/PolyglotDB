@@ -2,12 +2,13 @@ import os
 import pickle
 import shutil
 import sys
+import time
 from decimal import Decimal
 
 import py2neo
 import sqlalchemy
 from py2neo import Graph
-from py2neo.database.status import (ClientError, Forbidden,
+from py2neo.status import (ClientError, Forbidden,
                                     TransientError, Unauthorized, ConstraintError)
 from sqlalchemy import create_engine
 
@@ -80,24 +81,6 @@ class BaseContext(object):
         res = list(self.execute_cypher(statement))
         return len(res) > 0
 
-    def load_variables(self):
-        """
-        Loads variables into Hierarchy
-        """
-        try:
-            with open(os.path.join(self.config.data_dir, 'variables'), 'rb') as f:
-                var = pickle.load(f)
-            self.hierarchy = var['hierarchy']
-        except FileNotFoundError:
-            if self.corpus_name:
-                self.hierarchy = self.generate_hierarchy()
-                self.save_variables()
-
-    def save_variables(self):
-        """ saves variables to hierarchy"""
-        with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
-            pickle.dump({'hierarchy': self.hierarchy}, f)
-
     def init_sql(self):
         """
         initializes sql connection
@@ -130,9 +113,8 @@ class BaseContext(object):
                 parameters[k] = float(v)
         try:
             return self.graph.run(statement, **parameters)
-        except (py2neo.packages.httpstream.http.SocketError,
-                py2neo.packages.neo4j.v1.exceptions.ProtocolError) as e:
-            raise (ConnectionError('PolyglotDB could not connect to the server specified: {}'.format(str(e))))
+        except Exception as e:
+            raise
         except ClientError:
             raise
         except (Unauthorized):
@@ -198,7 +180,6 @@ class BaseContext(object):
 
     def __enter__(self):
         self.sql_session = Session()
-        self.load_variables()
         # if self.corpus_name:
         #    self.hierarchy = self.generate_hierarchy()
         return self

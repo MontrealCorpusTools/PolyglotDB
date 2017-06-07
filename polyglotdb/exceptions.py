@@ -2,8 +2,6 @@ import os
 import sys
 import traceback
 
-from py2neo.packages.httpstream.http import SocketError
-
 
 ## Base exception classes
 
@@ -211,4 +209,8 @@ class AlphabetError(PGError):
 
 
 class HierarchyError(PGError):
+    pass
+
+
+class ClientError(PGError):
     pass
