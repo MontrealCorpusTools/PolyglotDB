@@ -55,6 +55,7 @@ if __name__ == '__main__':
                     'polyglotdb.query.graph',
                     'polyglotdb.query.graph.attributes',
                     'polyglotdb.query.graph.cypher',
+                    'polyglotdb.query.graph.profiles',
                     'polyglotdb.query.discourse',
                     'polyglotdb.query.speaker',
                     'polyglotdb.query.speaker.attributes',

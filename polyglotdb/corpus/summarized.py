@@ -296,16 +296,26 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
                     self.encode_measure(property_name, 'mean', 'phone', by_speaker)
                 if res[0].get('sd_{}'.format(property_name), None) is None:
                     self.encode_measure(property_name, 'sd', 'phone', by_speaker)
-
-            statement = '''MATCH (a:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
-            with a, s
-            MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})-[r:spoken_by]->(s)
-            WITH a, avg(case when r.sd_{property_name} > 0 THEN ({property_descriptor} - r.mean_{property_name}) / r.sd_{property_name} ELSE 0 END) as relativized
-            SET a.relativized_{property_name}_by_speaker = relativized'''.format(corpus_name=self.corpus_name,
-                                                                                 phone_name=self.phone_name,
-                                                                                 annotation_type=annotation_type,
-                                                                                 property_name=property_name,
-                                                                                 property_descriptor=property_descriptor)
+            if annotation_type == self.phone_name:
+                statement = '''MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+                with p, s
+                MATCH (p)-[:is_a]->(pt:{phone_name}_type:{corpus_name})-[r:spoken_by]->(s)
+                WITH p, avg(case when r.sd_{property_name} > 0 THEN ({property_descriptor} - r.mean_{property_name}) / r.sd_{property_name} ELSE 0 END) as relativized
+                SET p.relativized_{property_name}_by_speaker = relativized'''.format(corpus_name=self.corpus_name,
+                                                                                     phone_name=self.phone_name,
+                                                                                     annotation_type=annotation_type,
+                                                                                     property_name=property_name,
+                                                                                     property_descriptor=property_descriptor)
+            else:
+                statement = '''MATCH (a:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+                with a, s
+                MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})-[r:spoken_by]->(s)
+                WITH a, avg(case when r.sd_{property_name} > 0 THEN ({property_descriptor} - r.mean_{property_name}) / r.sd_{property_name} ELSE 0 END) as relativized
+                SET a.relativized_{property_name}_by_speaker = relativized'''.format(corpus_name=self.corpus_name,
+                                                                                     phone_name=self.phone_name,
+                                                                                     annotation_type=annotation_type,
+                                                                                     property_name=property_name,
+                                                                                     property_descriptor=property_descriptor)
             self.execute_cypher(statement)
             self.hierarchy.add_token_properties(self, annotation_type,
                                                 [('relativized_{}_by_speaker'.format(property_name), float)])
@@ -314,15 +324,26 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
                 self.encode_measure(property_name, 'mean', 'phone', by_speaker)
             if not self.hierarchy.has_type_property('phone', 'sd_{}'.format(property_name)):
                 self.encode_measure(property_name, 'sd', 'phone', by_speaker)
-            statement = '''MATCH (a:{annotation_type}:{corpus_name})
-            with a
-            MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})
-            WITH a, avg(case when pt.sd_{property_name} > 0 THEN ({property_descriptor} - pt.mean_{property_name}) / pt.sd_{property_name} ELSE 0 END) as relativized
-            SET a.relativized_{property_name} = relativized'''.format(corpus_name=self.corpus_name,
-                                                                      phone_name=self.phone_name,
-                                                                      annotation_type=annotation_type,
-                                                                      property_name=property_name,
-                                                                      property_descriptor=property_descriptor)
+            if annotation_type == self.phone_name:
+                statement = '''MATCH (p:{annotation_type}:{corpus_name})
+                with p
+                MATCH (p)-[:is_a]->(pt:{phone_name}_type:{corpus_name})
+                WITH p, avg(case when pt.sd_{property_name} > 0 THEN ({property_descriptor} - pt.mean_{property_name}) / pt.sd_{property_name} ELSE 0 END) as relativized
+                SET p.relativized_{property_name} = relativized'''.format(corpus_name=self.corpus_name,
+                                                                          phone_name=self.phone_name,
+                                                                          annotation_type=annotation_type,
+                                                                          property_name=property_name,
+                                                                          property_descriptor=property_descriptor)
+            else:
+                statement = '''MATCH (a:{annotation_type}:{corpus_name})
+                with a
+                MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})
+                WITH a, avg(case when pt.sd_{property_name} > 0 THEN ({property_descriptor} - pt.mean_{property_name}) / pt.sd_{property_name} ELSE 0 END) as relativized
+                SET a.relativized_{property_name} = relativized'''.format(corpus_name=self.corpus_name,
+                                                                          phone_name=self.phone_name,
+                                                                          annotation_type=annotation_type,
+                                                                          property_name=property_name,
+                                                                          property_descriptor=property_descriptor)
             self.execute_cypher(statement)
             self.hierarchy.add_token_properties(self, annotation_type,
                                                 [('relativized_{}'.format(property_name), float)])

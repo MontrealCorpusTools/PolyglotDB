@@ -28,6 +28,16 @@ class HierarchicalAnnotation(AnnotationAttribute):
                     break
                 self.depth += 1
 
+    def for_json(self):
+        base = [x for x in self.contained_annotation.for_json()] + [self.type]
+        if self.pos > 0:
+            for i in range(self.pos):
+                base.append('following')
+        elif self.pos < 0:
+            for i in range(self.pos, 0):
+                base.append('previous')
+        return base
+
     def hierarchy_path(self, to_find):
         """ 
         Generates a path for the hierarchy

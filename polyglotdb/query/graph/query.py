@@ -15,6 +15,7 @@ from .results import QueryResults
 from .func import Count
 
 from .cypher import query_to_cypher, query_to_params
+from .profiles.base import Filter, Column
 
 from polyglotdb.exceptions import SubannotationError
 
@@ -642,6 +643,22 @@ class GraphQuery(object):
 
         if props_to_add:
             self.corpus.hierarchy.add_token_properties(self.corpus, self.to_find.type, props_to_add)
+
+    def to_json(self):
+        data = {'to_find': self.to_find.for_json(),
+                'corpus_name': self.corpus.corpus_name,
+                'filters': [x.for_json() for x in self._criterion],
+                'columns': [x.for_json() for x in self._columns]}
+        return data
+
+    def from_json(self, corpus, data):
+        self.corpus = corpus
+        self.to_find = getattr(corpus.hierarchy, data['to_find'])
+        for f in data['filters']:
+            print(f)
+            self._criterion.append(Filter(*f).for_polyglot(corpus))
+        for c in data['columns']:
+            self._columns.append(Column(*c).for_polyglot(corpus, self.to_find))
 
 
 class SplitQuery(GraphQuery):

@@ -19,6 +19,15 @@ class ClauseElement(object):
     def __hash__(self):
         return hash((self.attribute, self.sign, self.value))
 
+    def for_json(self):
+        from .attributes import Attribute
+
+        if isinstance(self.value, Attribute):
+            value = self.value.to_json()
+        else:
+            value = self.value
+        return [self.attribute.for_json(), self.sign, value]
+
     def cypher_value_string(self):
         """
         Create a Cypher parameter for the value of the clause.
@@ -309,6 +318,7 @@ class AlignmentClauseElement(ClauseElement):
     """
     template = "{first}.label = {second}.label"
     side = ''
+    aligned = True
 
     def __init__(self, first, second):
         from .attributes import HierarchicalAnnotation
@@ -330,6 +340,17 @@ class AlignmentClauseElement(ClauseElement):
 
     def __hash__(self):
         return hash((self.first, self.template, self.second))
+
+    def for_json(self):
+        if self.side == 'left':
+            att = 'begin'
+        else:
+            att = 'end'
+        if self.aligned:
+            op = '=='
+        else:
+            op = '!='
+        return [[[x for x in self.first.for_json()] + [att]], op, [[x for x in self.first.for_json()] + [att]]]
 
     @property
     def annotations(self):
@@ -387,6 +408,8 @@ class RightAlignedClauseElement(AlignmentClauseElement):
     """
     template = '''not ({first_node_alias})-[:precedes]->()-[:contained_by{depth}]->({second_node_alias})
     AND ({first_node_alias})-[:contained_by{depth}]->({second_node_alias})'''
+    side = 'right'
+    aligned = True
 
 
 class LeftAlignedClauseElement(AlignmentClauseElement):
@@ -395,6 +418,8 @@ class LeftAlignedClauseElement(AlignmentClauseElement):
     """
     template = '''not ({first_node_alias})<-[:precedes]-()-[:contained_by{depth}]->({second_node_alias})
     AND ({first_node_alias})-[:contained_by{depth}]->({second_node_alias})'''
+    side = 'left'
+    aligned = True
 
 
 class NotRightAlignedClauseElement(RightAlignedClauseElement):
@@ -403,6 +428,8 @@ class NotRightAlignedClauseElement(RightAlignedClauseElement):
     """
     template = '''({first_node_alias})-[:precedes]->()-[:contained_by{depth}]->({second_node_alias})
     AND ({first_node_alias})-[:contained_by{depth}]->({second_node_alias})'''
+    side = 'right'
+    aligned = False
 
 
 class NotLeftAlignedClauseElement(LeftAlignedClauseElement):
@@ -411,6 +438,8 @@ class NotLeftAlignedClauseElement(LeftAlignedClauseElement):
     """
     template = '''({first_node_alias})<-[:precedes]-()-[:contained_by{depth}]->({second_node_alias})
     AND ({first_node_alias})-[:contained_by{depth}]->({second_node_alias})'''
+    side = 'left'
+    aligned = False
 
 
 class ComplexClause(object):

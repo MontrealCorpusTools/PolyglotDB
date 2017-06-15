@@ -61,6 +61,9 @@ class Attribute(object):
             return '{}.{}'.format(self.annotation.type_alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.annotation.alias, key_for_cypher(self.label))
 
+    def for_json(self):
+        return [[x for x in self.annotation.for_json()] + [self.label], self.output_label]
+
     def for_filter(self):
         return self.for_cypher()
 
@@ -298,6 +301,19 @@ class AnnotationAttribute(Attribute):
     def __repr__(self):
         return '<AnnotationAttribute object with \'{}\' type and {} position>'.format(self.type, self.pos)
 
+    def for_json(self):
+        if self.pos == 0:
+            return [self.type]
+        elif self.pos > 0:
+            out = [self.type]
+            for i in range(self.pos):
+                out.append('following')
+        else:
+            out = [self.type]
+            for i in range(self.pos,0):
+                out.append('previous')
+        return out
+
     def for_match(self):
         """ sets 'token_alias' and 'type_alias'  keyword arguments for an annotation """
         kwargs = {}
@@ -429,7 +445,8 @@ class AnnotationAttribute(Attribute):
                     type = False
                 else:
                     raise (
-                    AttributeError('The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
+                        AttributeError(
+                            'The \'{}\' annotation types do not have a \'{}\' property.'.format(self.type, key)))
 
             return Attribute(self, key, type)
 

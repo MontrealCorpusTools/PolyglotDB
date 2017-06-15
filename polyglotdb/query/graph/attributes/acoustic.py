@@ -239,7 +239,7 @@ class IntensityAttribute(AcousticAttribute):
             self.label += '_relative'
             self.output_columns[0] += '_relative'
 
-    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0):
+    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0, padding=0):
         """
         Gets all Intensity from a discourse
 
@@ -265,6 +265,8 @@ class IntensityAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {}
+            begin -= padding
+            end += padding
             results = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative,
                                            relative_time=self.relative_time)
             for line in results:
@@ -285,7 +287,7 @@ class FormantAttribute(AcousticAttribute):
             for i in range(3):
                 self.output_columns[i] += '_relative'
 
-    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0):
+    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0,padding=0):
         """
         Gets all formants from a discourse
 
@@ -310,6 +312,8 @@ class FormantAttribute(AcousticAttribute):
             data = self.cached_data
         else:
             data = {}
+            begin -= padding
+            end += padding
             results = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative,
                                           relative_time=self.relative_time)
             for line in results:

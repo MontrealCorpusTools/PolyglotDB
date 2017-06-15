@@ -34,6 +34,7 @@ from contextlib import redirect_stdout
 
 PADDING = 0.1
 
+
 def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=None):
     """
     Generate segment vectors for each phone, to be used as input to analyze_file_segments.
@@ -61,7 +62,8 @@ def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=No
         print(s)
         for d in discourses:
             # qr = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.id.in_(query))
-            qr = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.type_subset == phone_class)
+            qr = corpus_context.query_graph(corpus_context.phone).filter(
+                corpus_context.phone.type_subset == phone_class)
             qr = qr.filter(corpus_context.phone.discourse.name == d.discourse.name)
             qr = qr.filter(corpus_context.phone.speaker.name == s)
             if qr.count() == 0:
@@ -132,10 +134,14 @@ def analyze_pitch(corpus_context,
     path = None
     if corpus_context.config.pitch_source == 'praat':
         path = corpus_context.config.praat_path
+        kwargs = {'silence_threshold': 0.03,
+                  'voicing_threshold': 0.45, 'octave_cost': 0.01, 'octave_jump_cost': 0.35,
+                  'voiced_unvoiced_cost': 0.14}
     elif corpus_context.config.pitch_source == 'reaper':
         path = corpus_context.config.reaper_path
+        kwargs = None
     pitch_function = generate_pitch_function(corpus_context.config.pitch_source, absolute_min_pitch, absolute_max_pitch,
-                                             signal=True, path=path)
+                                             signal=True, path=path, kwargs=kwargs)
     if algorithm == 'speaker_adjusted':
         speaker_data = {}
         if call_back is not None:
@@ -186,6 +192,7 @@ def analyze_pitch(corpus_context,
         output = analyze_file_segments(v, pitch_function, padding=PADDING, stop_check=stop_check)
         corpus_context.save_pitch_tracks(output, speaker)
 
+
 def analyze_formants(corpus_context,
                      call_back=None,
                      stop_check=None):
@@ -217,6 +224,7 @@ def analyze_formants(corpus_context,
         output = analyze_file_segments(v, formant_function, padding=PADDING, stop_check=stop_check)
         corpus_context.save_formant_tracks(output, speaker)
 
+
 def analyze_formants_vowel_segments(corpus_context,
                                     call_back=None,
                                     stop_check=None,
@@ -234,7 +242,8 @@ def analyze_formants_vowel_segments(corpus_context,
     if vowel_inventory is not None:
         corpus_context.encode_class(vowel_inventory, 'vowel')
     # gets segment mapping of phones that are vowels
-    segment_mapping, discourse_mapping, phone_ids = generate_phone_segments_by_speaker(corpus_context, 'vowel', call_back=call_back)
+    segment_mapping, discourse_mapping, phone_ids = generate_phone_segments_by_speaker(corpus_context, 'vowel',
+                                                                                       call_back=call_back)
     if call_back is not None:
         call_back('Analyzing files...')
     # goes through each phone and: makes a formant function, analyzes the phone, and saves the tracks
@@ -250,9 +259,10 @@ def analyze_formants_vowel_segments(corpus_context,
         output = analyze_file_segments(v, formant_function, padding=None, stop_check=stop_check)
         corpus_context.save_formant_tracks(output, speaker)
 
+
 def analyze_intensity(corpus_context,
-                     call_back=None,
-                     stop_check=None):
+                      call_back=None,
+                      stop_check=None):
     """
     Analyze intensity of an entire utterance using multiprocessing from acousticsim, and save the resulting intensity tracks into the database.
 
@@ -269,7 +279,7 @@ def analyze_intensity(corpus_context,
     if call_back is not None:
         call_back('Analyzing files...')
         call_back(0, num_sound_files)
-    #formant_function = generate_base_formants_function(corpus_context, signal=False, gender=g))
+    # formant_function = generate_base_formants_function(corpus_context, signal=False, gender=g))
     for i, (speaker, v) in enumerate(segment_mapping.items()):
         if corpus_context.hierarchy.has_speaker_property('gender'):
             gen = corpus_context.census[speaker].get('Gender')
@@ -285,6 +295,7 @@ def analyze_intensity(corpus_context,
 
 def make_path_safe(path):
     return path.replace('\\', '/').replace(' ', '%20')
+
 
 def analyze_script(corpus_context,
                    phone_class,
@@ -316,7 +327,8 @@ def analyze_script(corpus_context,
     directory = corpus_context.config.temporary_directory('csv')
     csv_name = 'analyze_script_import_' + result_measurement + '.csv'
     time_section = time.time()
-    segment_mapping, discourse_mapping, phone_ids = generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=call_back)
+    segment_mapping, discourse_mapping, phone_ids = generate_phone_segments_by_speaker(corpus_context, phone_class,
+                                                                                       call_back=call_back)
     print("generate segments took: " + str(time.time() - time_section))
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
@@ -330,7 +342,7 @@ def analyze_script(corpus_context,
             if stop_check is not None and stop_check():
                 break
             if call_back is not None:
-                #call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.filepath))
+                # call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.filepath))
                 call_back(i)
             time_section = time.time()
             output = analyze_file_segments(v, script_function, padding=None, stop_check=stop_check)
@@ -380,12 +392,12 @@ def script_data_from_csv(corpus_context, result_measurement, output_type):
                                         new_property=cypher_set_template.format(name=result_measurement))
     corpus_context.execute_cypher(statement)
     corpus_context.execute_cypher('CREATE INDEX ON :Phone(%s)' % result_measurement)
-    types = {result_measurement : output_type}
+    types = {result_measurement: output_type}
     corpus_context.hierarchy.add_token_properties(corpus_context, 'phone', types.items())
     corpus_context.refresh_hierarchy()
 
 
-def signal_to_praat_script(signal, sr, praat_path=None,time_step=0.01,
+def signal_to_praat_script(signal, sr, praat_path=None, time_step=0.01,
                            begin=None, padding=None, script_path=None, result_measurement=None, arguments=None):
     '''
     Create a sound file for one phone from a signal and sample rate (using acousticsim), and run the praat script on that phone.
@@ -420,6 +432,7 @@ def signal_to_praat_script(signal, sr, praat_path=None,time_step=0.01,
             script_output = None
         return script_output
 
+
 def generate_praat_script_function(praat_path, script_path, result_measurement, arguments=None):
     '''
     Generate a partial function that calls the praat script specified.
@@ -437,7 +450,8 @@ def generate_praat_script_function(praat_path, script_path, result_measurement, 
                              script_path=script_path, result_measurement=result_measurement, arguments=arguments)
     return praat_function
 
-def generate_pitch_function(algorithm, min_pitch, max_pitch, signal=False, path=None):
+
+def generate_pitch_function(algorithm, min_pitch, max_pitch, signal=False, path=None, kwargs=None):
     time_step = 0.01
     if algorithm == 'reaper':
         if signal:
@@ -449,12 +463,14 @@ def generate_pitch_function(algorithm, min_pitch, max_pitch, signal=False, path=
         else:
             raise (AcousticError('Could not find the REAPER executable'))
     elif algorithm == 'praat':
+        if kwargs is None:
+            kwargs = {}
         if signal:
             PraatPitch = PraatPitch_signal
         else:
             PraatPitch = PraatPitch_file
         if path is not None:
-            pitch_function = partial(PraatPitch, praat_path=path)
+            pitch_function = partial(PraatPitch, praat_path=path, **kwargs)
         else:
             raise (AcousticError('Could not find the Praat executable'))
     else:

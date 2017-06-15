@@ -28,7 +28,7 @@ class BaseAnnotation(object):
             the node will be set to item
         """
         self._node = item
-        self._id = item.properties['id']
+        self._id = item['id']
         for x in self._node.labels():
             if x in self.corpus_context.hierarchy:
                 self._type = x
@@ -123,7 +123,7 @@ class LinguisticAnnotation(BaseAnnotation):
     @property
     def properties(self):
         """ Returns sorted untion of node property keys and type_node property keys """
-        return sorted(set(self._node.properties.keys()) | set(self._type_node.properties.keys()))
+        return sorted(set(self._node.keys()) | set(self._type_node.keys()))
 
     def __getattr__(self, key):
         if self.corpus_context is None:
@@ -226,10 +226,10 @@ class LinguisticAnnotation(BaseAnnotation):
                 return self._subannotations[key]
         except KeyError:
             pass
-        if key in self._node.properties:
-            return self._node.properties[key]
-        if key in self._type_node.properties:
-            return self._type_node.properties[key]
+        if key in self._node.keys():
+            return self._node[key]
+        if key in self._type_node.keys():
+            return self._type_node[key]
 
     def update_properties(self, **kwargs):
         """ 
@@ -241,7 +241,7 @@ class LinguisticAnnotation(BaseAnnotation):
             keyword arguments to update properties
         """
         for k, v in kwargs.items():
-            if k in self._type_node.properties:
+            if k in self._type_node.keys():
                 self._type_node.update(**{k: v})
             self._node.update(**{k: v})
         if self._node['begin'] > self._node['end']:
@@ -381,8 +381,8 @@ class SubAnnotation(BaseAnnotation):
             raise (GraphModelError('This object has not been loaded with an id yet.'))
         if key == self._annotation._type:
             return self._annotation
-        if key in self._node.properties:
-            return self._node.properties[key]
+        if key in self._node.keys():
+            return self._node[key]
         if key == 'label':
             return None
         raise (AttributeError)
@@ -409,7 +409,7 @@ class SubAnnotation(BaseAnnotation):
     def node(self, item):
         """ Sets the node to item"""
         self._node = item
-        self._id = item.properties['id']
+        self._id = item['id']
         for x in self._node.labels():
             if x in self.corpus_context.hierarchy.subannotations[self._annotation._type]:
                 self._type = x
@@ -447,8 +447,8 @@ class Speaker(SubAnnotation):
     def __getattr__(self, key):
         if self.corpus_context is None:
             raise (GraphModelError('This object is not bound to a corpus context.'))
-        if key in self._node.properties:
-            return self._node.properties[key]
+        if key in self._node.keys():
+            return self._node[key]
         return None
 
     @property
@@ -467,7 +467,7 @@ class Speaker(SubAnnotation):
             the node will be set to item
         """
         self._node = item
-        self._id = item.properties['name']
+        self._id = item['name']
 
     def load(self, id):
         """ 

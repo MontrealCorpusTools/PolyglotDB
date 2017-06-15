@@ -60,7 +60,6 @@ class ImportContext(StructuredContext):
         import_csvs(self, data, call_back, stop_check)
         self.encode_hierarchy()
         self.hierarchy = self.generate_hierarchy()
-        self.save_variables()
 
     def add_discourse(self, data):
         '''

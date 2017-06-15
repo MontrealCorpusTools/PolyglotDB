@@ -52,8 +52,7 @@ class BaseContext(object):
         if self.corpus_name:
             self.init_sql()
 
-        self.hierarchy = Hierarchy({})
-
+        self.hierarchy = Hierarchy({}, corpus_name=self.corpus_name)
         self.lexicon = Lexicon(self)
         self.census = Census(self)
 
@@ -87,6 +86,7 @@ class BaseContext(object):
         """
         self.engine = create_engine(self.config.sql_connection_string)
         Session.configure(bind=self.engine)
+        print(self.config.db_path)
         if not os.path.exists(self.config.db_path):
             Base.metadata.create_all(self.engine)
 
@@ -180,8 +180,8 @@ class BaseContext(object):
 
     def __enter__(self):
         self.sql_session = Session()
-        # if self.corpus_name:
-        #    self.hierarchy = self.generate_hierarchy()
+        if self.corpus_name:
+            self.hierarchy = self.generate_hierarchy()
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):

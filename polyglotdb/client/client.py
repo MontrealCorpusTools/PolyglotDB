@@ -1,6 +1,8 @@
 import requests
 
 from ..exceptions import ClientError
+from ..structure import Hierarchy
+from ..query.graph import GraphQuery, DiscourseGraphQuery, SpeakerGraphQuery
 
 
 class PGDBClient(object):
@@ -9,6 +11,7 @@ class PGDBClient(object):
         if self.host.endswith('/'):
             self.host = self.host[:-1]
         self.corpus_name = corpus_name
+        self.query_behavior = 'speaker'
 
     def create_database(self, database_name):
         end_point = '/'.join([self.host, 'api', 'database', ''])
@@ -60,7 +63,14 @@ class PGDBClient(object):
         return resp.json()['data']
 
     def run_query(self, query):
-        raise (NotImplementedError)
+        data = query.to_json()
+        print(data)
+        assert 'corpus_name' in data
+        end_point = '/'.join([self.host, 'api', 'query', ''])
+        resp = requests.post(end_point, data=data)
+        if resp.status_code != 200:
+            raise ClientError('Could not run query: {}'.format(resp.text))
+        return resp.json()
 
     def import_corpus(self, name, source_directory, format, database_name):
         end_point = '/'.join([self.host, 'api', 'import_corpus', ''])
@@ -84,18 +94,49 @@ class PGDBClient(object):
         if resp.status_code != 202:
             raise ClientError('Could not stop database: {}'.format(resp.text))
 
-    def get_current_corpus_status(self, name):
-        end_point = '/'.join([self.host, 'api', 'corpus_status', name, ''])
+    def get_current_corpus_status(self, corpus_name):
+        end_point = '/'.join([self.host, 'api', 'corpus_status', corpus_name, ''])
         resp = requests.get(end_point)
         if resp.status_code != 200:
             raise ClientError('Could not get corpus status: {}'.format(resp.text))
         return resp.json()['data']
 
-    def delete_corpus(self, name):
-        end_point = '/'.join([self.host, 'api', 'corpus', name, ''])
+    def delete_corpus(self, corpus_name):
+        end_point = '/'.join([self.host, 'api', 'corpus', corpus_name, ''])
         resp = requests.delete(end_point)
         if resp.status_code != 202:
             raise ClientError('Could not delete corpus: {}'.format(resp.text))
 
     def hierarchy(self, corpus_name):
-        raise (NotImplementedError)
+        end_point = '/'.join([self.host, 'api', 'corpus', corpus_name, 'hierarchy', ''])
+        resp = requests.get(end_point)
+        if resp.status_code != 200:
+            raise ClientError('Could not retrieve corpus hierarchy: {}'.format(resp.text))
+        print(resp.text)
+        h = Hierarchy()
+        h.from_json(resp.json())
+        return h
+
+    def generate_query(self, annotation_type):
+        """
+        Return a Query object for the specified annotation type.
+
+        Parameters
+        ----------
+        annotation_type : AnnotationAttribute
+            The type of annotation to look for in the corpus
+
+        Returns
+        -------
+        GraphQuery
+            Query object
+
+        """
+        if self.query_behavior == 'speaker':
+            cls = SpeakerGraphQuery
+        elif self.query_behavior == 'discourse':
+            cls = DiscourseGraphQuery
+        else:
+            cls = GraphQuery
+        return cls(annotation_type.hierarchy, annotation_type)
+

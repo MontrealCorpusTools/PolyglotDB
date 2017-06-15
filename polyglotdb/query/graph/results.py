@@ -218,6 +218,11 @@ class QueryResults(object):
             raise (GraphQueryError('Only one track attribute can currently be exported to csv.'))
         save_results(self.rows_for_csv(), path, header=self.columns)
 
+    def to_json(self):
+        for line in self:
+            baseline = {k: line[k] for k in self.columns}
+            yield baseline
+
     def __len__(self):
         self._cache_cursor()
         return len(self.cache)
