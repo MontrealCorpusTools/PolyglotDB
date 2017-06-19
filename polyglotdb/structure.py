@@ -1,6 +1,7 @@
 from .exceptions import HierarchyError, GraphQueryError
 from .query.graph.attributes import PauseAnnotation, AnnotationAttribute
 
+
 class Hierarchy(object):
     '''
     Class containing information about how a corpus is structured.
@@ -65,28 +66,30 @@ class Hierarchy(object):
         return set(self._data.keys())
 
     def to_json(self):
-        data = {'_data': self._data,
-                'corpus_name': self.corpus_name,
-                'subannotations': {k: sorted((name, t()) for name, t in v) for k, v in self.subannotations.items()},
-                'subannotation_properties': {k: sorted((name, t()) for name, t in v) for k, v in self.subannotation_properties.items()},
-                'subset_types': {k: sorted((name, t()) for name, t in v) for k, v in self.subset_types.items()},
-                'subset_tokens': {k: sorted((name, t()) for name, t in v) for k, v in self.subset_tokens.items()},
-                'token_properties': {k: sorted((name, t()) for name, t in v) for k, v in self.token_properties.items()},
-                'type_properties': {k: sorted((name, t()) for name, t in v) for k, v in self.type_properties.items()},
-                'speaker_properties': sorted((name, t()) for name, t in self.speaker_properties),
-                'discourse_properties': sorted((name, t()) for name, t in self.discourse_properties)}
+        data = {'_data': self._data}
+        data['corpus_name'] = self.corpus_name,
+        data['subannotations'] = {k: sorted((name, t()) for name, t in v) for k, v in self.subannotations.items()},
+        data['subannotation_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in
+                                     self.subannotation_properties.items()},
+        data['subset_types'] = {k: sorted((name, t()) for name, t in v) for k, v in self.subset_types.items()},
+        data['subset_tokens'] = {k: sorted((name, t()) for name, t in v) for k, v in self.subset_tokens.items()},
+        data['token_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.token_properties.items()},
+        data['type_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.type_properties.items()},
+        data['speaker_properties'] = sorted((name, t()) for name, t in self.speaker_properties),
+        data['discourse_properties'] = sorted((name, t()) for name, t in self.discourse_properties)
         return data
 
     def from_json(self, json):
         self._data = json['_data']
-        self.corpus_name = json['corpus_name']
-        self.subannotations = {k: set((name, type(t)) for name, t in v) for k, v in json['subannotations'].items()}
-        self.subannotation_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['subannotation_properties'].items()}
-        self.subset_types = {k: set((name, type(t)) for name, t in v) for k, v in json['subset_types'].items()}
-        self.subset_tokens = {k: set((name, type(t)) for name, t in v) for k, v in json['subset_tokens'].items()}
-        self.token_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['token_properties'].items()}
-        self.type_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['type_properties'].items()}
-        self.speaker_properties = set((name, type(t)) for name, t in json['speaker_properties'])
+        self.corpus_name = json['corpus_name'][0]
+        self.subannotations = {k: set((name, type(t)) for name, t in v) for k, v in json['subannotations'][0].items()}
+        self.subannotation_properties = {k: set((name, type(t)) for name, t in v) for k, v in
+                                         json['subannotation_properties'][0].items()}
+        self.subset_types = {k: set((name, type(t)) for name, t in v) for k, v in json['subset_types'][0].items()}
+        self.subset_tokens = {k: set((name, type(t)) for name, t in v) for k, v in json['subset_tokens'][0].items()}
+        self.token_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['token_properties'][0].items()}
+        self.type_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['type_properties'][0].items()}
+        self.speaker_properties = set((name, type(t)) for name, t in json['speaker_properties'][0])
         self.discourse_properties = set((name, type(t)) for name, t in json['discourse_properties'])
 
     def add_type_labels(self, corpus_context, annotation_type, labels):

@@ -139,6 +139,14 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         except KeyError:
             pass
 
+    @property
+    def has_syllabics(self):
+        return 'syllabic' in self.hierarchy.subset_types[self.phone_name]
+
+    @property
+    def has_syllables(self):
+        return 'syllable' in self.hierarchy.annotation_types
+
     def encode_syllables(self, algorithm='probabilistic', call_back=None, stop_check=None):
         """
         Encodes syllables to a corpus

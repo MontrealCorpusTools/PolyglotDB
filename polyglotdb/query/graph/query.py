@@ -653,12 +653,12 @@ class GraphQuery(object):
 
     def from_json(self, corpus, data):
         self.corpus = corpus
-        self.to_find = getattr(corpus.hierarchy, data['to_find'])
+        self.to_find = getattr(corpus.hierarchy, data['to_find'][0])
         for f in data['filters']:
             print(f)
             self._criterion.append(Filter(*f).for_polyglot(corpus))
         for c in data['columns']:
-            self._columns.append(Column(*c).for_polyglot(corpus, self.to_find))
+            self._columns.append(Column(*c).for_polyglot(corpus, data['to_find'][0]))
 
 
 class SplitQuery(GraphQuery):

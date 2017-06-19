@@ -4,6 +4,10 @@ from .importable import ImportContext
 
 
 class PauseContext(ImportContext):
+    @property
+    def has_pauses(self):
+        return 'pause' in self.hierarchy.subset_tokens[self.word_name]
+
     def encode_pauses(self, pause_words, call_back=None, stop_check=None):
         """
         Set words to be pauses, as opposed to speech.

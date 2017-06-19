@@ -30,7 +30,7 @@ class Filter(object):
     def for_polyglot(self, corpus_context):
         att = corpus_context
         attribute = self.attribute
-        if isinstance(attribute, tuple):
+        if isinstance(attribute[0], (tuple, list)):
             attribute = attribute[0]
         for a in attribute:
             if a == '':

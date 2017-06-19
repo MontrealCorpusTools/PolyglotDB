@@ -24,6 +24,10 @@ class UtteranceContext(PauseContext):
         except GraphQueryError:
             pass
 
+    @property
+    def has_utterances(self):
+        return 'utterance' in self.hierarchy.annotation_types
+
     def encode_utterances(self, min_pause_length=0.5, min_utterance_length=0,
                           call_back=None, stop_check=None):
         """
