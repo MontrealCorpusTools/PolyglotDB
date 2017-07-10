@@ -2,6 +2,7 @@ import os
 import pytest
 
 from polyglotdb import CorpusContext
+from polyglotdb.exceptions import AnnotationAttributeError
 
 
 def test_encode_positions(acoustic_config):
@@ -26,7 +27,7 @@ def test_encode_positions(acoustic_config):
         g.reset_utterance_position()
 
         q = g.query_graph(g.word)
-        with pytest.raises(AttributeError):
+        with pytest.raises(AnnotationAttributeError):
             g.word.position_in_utterance == 0
 
 
@@ -48,5 +49,5 @@ def test_encode_speech_rate(acoustic_config):
         g.reset_speech_rate()
 
         q = g.query_graph(g.utterance)
-        with pytest.raises(AttributeError):
+        with pytest.raises(AnnotationAttributeError):
             g.utterance.speech_rate == 0

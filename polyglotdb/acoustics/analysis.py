@@ -9,7 +9,7 @@ from functools import partial
 
 from ..sql.models import SoundFile, Discourse
 
-from ..exceptions import GraphQueryError, AcousticError
+from ..exceptions import GraphQueryError, AcousticError, SpeakerAttributeError
 
 from acousticsim.analysis.pitch import (signal_to_pitch as ASPitch_signal, file_to_pitch as ASPitch_file,
                                         signal_to_pitch_praat as PraatPitch_signal,
@@ -57,37 +57,37 @@ def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=No
         time_sp = time.time()
         segments = []
         speaker_has_phone = False
-        discourses = corpus_context.census[s].discourses
-        discourses = list(discourses)
-        print(s)
-        for d in discourses:
+        statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
+                    WHERE s.name = {{speaker_name}}
+                    RETURN d, r'''.format(corpus_name=corpus_context.cypher_safe_name)
+        results = corpus_context.execute_cypher(statement, speaker_name=s)
+
+        for r in results:
+            channel = r['r']['channel']
+            discourse = r['d']['name']
+            vowel_file_path = r['d']['vowel_filepath']
+            consonant_file_path = r['d']['consonant_filepath']
             # qr = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.id.in_(query))
             qr = corpus_context.query_graph(corpus_context.phone).filter(
-                corpus_context.phone.type_subset == phone_class)
-            qr = qr.filter(corpus_context.phone.discourse.name == d.discourse.name)
+                corpus_context.phone.subset == phone_class)
+            qr = qr.filter(corpus_context.phone.discourse.name == discourse)
             qr = qr.filter(corpus_context.phone.speaker.name == s)
             if qr.count() == 0:
                 continue
             phones = qr.all()
             speaker_has_phone = True
-            q = corpus_context.sql_session.query(SoundFile).join(Discourse)
-            q = q.filter(Discourse.name == d.discourse.name)
-            sound_file = q.first()
-            if sound_file is None:
-                print(d.discourse.name)
-            channel = d.channel
             if phones is not None:
                 for ph in phones:
                     if 'vowel' in phone_class:
-                        phone_ids[(sound_file.vowel_filepath, ph.begin, ph.end, channel)] = ph.id
-                        segments.append((sound_file.vowel_filepath, ph.begin, ph.end, channel))
+                        phone_ids[(vowel_file_path, ph.begin, ph.end, channel)] = ph.id
+                        segments.append((vowel_file_path, ph.begin, ph.end, channel))
                     else:
-                        phone_ids[(sound_file.consonant_filepath, ph.begin, ph.end, channel)] = ph.id
-                        segments.append((sound_file.consonant_filepath, ph.begin, ph.end, channel))
+                        phone_ids[(consonant_file_path, ph.begin, ph.end, channel)] = ph.id
+                        segments.append((consonant_file_path, ph.begin, ph.end, channel))
             if phone_class is 'vowel':
-                discourse_mapping[sound_file.discourse.name] = sound_file.consonant_filepath
+                discourse_mapping[discourse] = vowel_file_path
             else:
-                discourse_mapping[sound_file.discourse.name] = sound_file.consonant_filepath
+                discourse_mapping[discourse] = consonant_file_path
         if speaker_has_phone:
             segment_mapping[s] = segments
         print("time for current speaker: " + str(time.time() - time_sp))
@@ -100,24 +100,26 @@ def generate_speaker_segments(corpus_context):
     discourse_mapping = {}
     for s in speakers:
         segments = []
-        discourses = corpus_context.census[s].discourses
-        for d in discourses:
-            q = corpus_context.sql_session.query(SoundFile).join(Discourse)
-            q = q.filter(Discourse.name == d.discourse.name)
-            sound_file = q.first()
-            if sound_file is None:
-                print(d.discourse.name)
-            channel = d.channel
+        statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
+                    WHERE s.name = {{speaker_name}}
+                    RETURN d, r'''.format(corpus_name=corpus_context.cypher_safe_name)
+        results = corpus_context.execute_cypher(statement, speaker_name=s)
+
+        for r in results:
+            channel = r['r']['channel']
+            discourse = r['d']['name']
+            file_path = r['d']['vowel_filepath']
             atype = corpus_context.hierarchy.highest
             prob_utt = getattr(corpus_context, atype)
             q = corpus_context.query_graph(prob_utt)
-            q = q.filter(prob_utt.discourse.name == sound_file.discourse.name)
+            q = q.filter(prob_utt.discourse.name == discourse)
             q = q.filter(prob_utt.speaker.name == s)
             utterances = q.all()
             for u in utterances:
-                segments.append((sound_file.vowel_filepath, u.begin, u.end, channel))
-            discourse_mapping[sound_file.vowel_filepath] = d.discourse.name
+                segments.append((file_path, u.begin, u.end, channel))
+            discourse_mapping[file_path] = discourse
         segment_mapping[s] = segments
+    print(segment_mapping)
     return segment_mapping, discourse_mapping
 
 
@@ -134,14 +136,14 @@ def analyze_pitch(corpus_context,
     path = None
     if corpus_context.config.pitch_source == 'praat':
         path = corpus_context.config.praat_path
-        kwargs = {'silence_threshold': 0.03,
-                  'voicing_threshold': 0.45, 'octave_cost': 0.01, 'octave_jump_cost': 0.35,
-                  'voiced_unvoiced_cost': 0.14}
+        # kwargs = {'silence_threshold': 0.03,
+        #          'voicing_threshold': 0.45, 'octave_cost': 0.01, 'octave_jump_cost': 0.35,
+        #          'voiced_unvoiced_cost': 0.14}
     elif corpus_context.config.pitch_source == 'reaper':
         path = corpus_context.config.reaper_path
-        kwargs = None
+        # kwargs = None
     pitch_function = generate_pitch_function(corpus_context.config.pitch_source, absolute_min_pitch, absolute_max_pitch,
-                                             signal=True, path=path, kwargs=kwargs)
+                                             signal=True, path=path)
     if algorithm == 'speaker_adjusted':
         speaker_data = {}
         if call_back is not None:
@@ -171,12 +173,17 @@ def analyze_pitch(corpus_context,
         if algorithm == 'gendered':
             min_pitch = absolute_min_pitch
             max_pitch = absolute_max_pitch
-            gender = corpus_context.census[speaker].get('Gender')
-            if gender is not None:
-                if gender.lower()[0] == 'f':
-                    min_pitch = 100
-                else:
-                    max_pitch = 400
+            try:
+                q = corpus_context.query_speaker().filter(corpus_context.speaker.name == speaker)
+                q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
+                gender = q.all()[0]['Gender']
+                if gender is not None:
+                    if gender.lower()[0] == 'f':
+                        min_pitch = 100
+                    else:
+                        max_pitch = 400
+            except SpeakerAttributeError:
+                pass
             pitch_function = generate_pitch_function(corpus_context.config.pitch_source, min_pitch, max_pitch,
                                                      signal=True, path=path)
         elif algorithm == 'speaker_adjusted':
@@ -213,12 +220,15 @@ def analyze_formants(corpus_context,
         call_back('Analyzing files...')
         call_back(0, num_sound_files)
     for i, (speaker, v) in enumerate(segment_mapping.items()):
-        if corpus_context.hierarchy.has_speaker_property('gender'):
-            gen = corpus_context.census[speaker].get('Gender')
-            if gen is not None:
-                formant_function = generate_base_formants_function(corpus_context, signal=True, gender=gen)
-            else:
-                formant_function = generate_base_formants_function(corpus_context, signal=True)
+        gender = None
+        try:
+            q = corpus_context.query_speaker().filter(corpus_context.speaker.name == speaker)
+            q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
+            gender = q.all()[0]['Gender']
+        except SpeakerAttributeError:
+            pass
+        if gender is not None:
+            formant_function = generate_base_formants_function(corpus_context, signal=True, gender=gender)
         else:
             formant_function = generate_base_formants_function(corpus_context, signal=True)
         output = analyze_file_segments(v, formant_function, padding=PADDING, stop_check=stop_check)
@@ -248,12 +258,15 @@ def analyze_formants_vowel_segments(corpus_context,
         call_back('Analyzing files...')
     # goes through each phone and: makes a formant function, analyzes the phone, and saves the tracks
     for i, (speaker, v) in enumerate(segment_mapping.items()):
-        if corpus_context.hierarchy.has_speaker_property('gender'):
-            gen = corpus_context.census[speaker].get('Gender')
-            if gen is not None:
-                formant_function = generate_base_formants_function(corpus_context, signal=True, gender=gen)
-            else:
-                formant_function = generate_base_formants_function(corpus_context, signal=True)
+        gender = None
+        try:
+            q = corpus_context.query_speaker().filter(corpus_context.speaker.name == speaker)
+            q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
+            gender = q.all()[0]['Gender']
+        except SpeakerAttributeError:
+            pass
+        if gender is not None:
+            formant_function = generate_base_formants_function(corpus_context, signal=True, gender=gender)
         else:
             formant_function = generate_base_formants_function(corpus_context, signal=True)
         output = analyze_file_segments(v, formant_function, padding=None, stop_check=stop_check)
@@ -281,12 +294,15 @@ def analyze_intensity(corpus_context,
         call_back(0, num_sound_files)
     # formant_function = generate_base_formants_function(corpus_context, signal=False, gender=g))
     for i, (speaker, v) in enumerate(segment_mapping.items()):
-        if corpus_context.hierarchy.has_speaker_property('gender'):
-            gen = corpus_context.census[speaker].get('Gender')
-            if gen is not None:
-                intensity_function = generate_base_intensity_function(corpus_context, signal=True, gender=gen)
-            else:
-                intensity_function = generate_base_intensity_function(corpus_context, signal=True)
+        gender = None
+        try:
+            q = corpus_context.query_speaker().filter(corpus_context.speaker.name == speaker)
+            q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
+            gender = q.all()[0]['Gender']
+        except SpeakerAttributeError:
+            pass
+        if gender is not None:
+            intensity_function = generate_base_intensity_function(corpus_context, signal=True, gender=gender)
         else:
             intensity_function = generate_base_intensity_function(corpus_context, signal=True)
         output = analyze_file_segments(v, intensity_function, padding=PADDING, stop_check=stop_check)

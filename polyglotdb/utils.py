@@ -61,28 +61,6 @@ def add_default_annotations(corpus_context, linguistic_type,
         corpus_context.hierarchy.add_subannotation_type(linguistic_type, t)
 
 
-def update_sound_files(corpus_context, new_directory):
-    corpus_context.sql_session.expire_all()
-    q = corpus_context.sql_session.query(SoundFile)
-    q.delete()
-    q = corpus_context.sql_session.query(Discourse)
-    if q.first() is None:
-        for d in corpus_context.discourses:
-            instance = Discourse(name=d)
-            corpus_context.sql_session.add(instance)
-    for root, subdirs, files in os.walk(new_directory, followlinks=True):
-        for f in files:
-            if not f.lower().endswith('.wav'):
-                continue
-            name, _ = os.path.splitext(f)
-            q = corpus_context.sql_session.query(Discourse)
-            q = q.filter(Discourse.name == name)
-            discourse = q.first()
-            if discourse is None:
-                continue
-            add_discourse_sound_info(corpus_context, name, os.path.join(root, f))
-
-
 gp_language_stops = {'gp_croatian': ['p', 't', 'k', 'b', 'd', 'g'],
                      'gp_french': ['P', 'T', 'K', 'B', 'D', 'G'],
                      'gp_german': ['p', 't', 'k', 'b', 'd', 'g'],

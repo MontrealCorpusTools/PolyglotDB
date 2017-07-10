@@ -2,7 +2,7 @@ import pytest
 
 from polyglotdb import CorpusContext
 
-
+@pytest.mark.xfail #Outdated functionality
 def test_inspect_discourse(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         d = g.inspect_discourse('acoustic_corpus', 0, 5)

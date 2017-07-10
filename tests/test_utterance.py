@@ -4,7 +4,7 @@ import pytest
 
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_textgrid
-from polyglotdb.query.graph.func import Count
+from polyglotdb.query import Count
 
 
 def test_get_utterances(acoustic_config):

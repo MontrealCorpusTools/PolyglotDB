@@ -31,7 +31,6 @@ def test_phone_mean_duration(summarized_config):
 def test_phone_mean_duration_speaker(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("phone mean:")
-        g.encode_utterances()
         res = g.get_measure('duration', 'mean', 'phone', False, 'unknown')
         print(res)
         assert (len(res) == 33)
@@ -43,6 +42,9 @@ def test_phone_mean_duration_speaker(summarized_config):
 
 def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext('directory_buckeye', **graph_db) as g:
+        g.reset()
+        parser = inspect_buckeye(buckeye_test_dir)
+        g.load(parser, buckeye_test_dir)
         res = g.get_measure('duration', 'mean', 'phone')
         print(res)
         assert (len(res) == 17)
@@ -59,7 +61,6 @@ def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
 def test_phone_mean_duration_with_speaker(summarized_config):
     with CorpusContext(summarized_config) as g:
         print("phone mean by speaker:")
-        g.encode_utterances()
         # res =g.phone_mean_duration_with_speaker()
         res = g.get_measure('duration', 'mean', 'phone', True)
         print(res)
@@ -215,6 +216,7 @@ def test_syllable_std_dev(summarized_config):
         print("syllable std dev:")
         res = g.get_measure('duration', 'stdev', 'syllable')
         assert (len(res) == 55)
+        g.reset_syllables()
 
 
 @pytest.mark.xfail
@@ -226,9 +228,12 @@ def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
 
         assert res['they'] == approx(0.11224799999999968, 1e-3)
 
-
+@pytest.mark.xfail
 def test_baseline_word(summarized_config):
     with CorpusContext(summarized_config) as g:
+        g.reset_pauses()
+        g.reset_syllables()
+        g.reset_utterances()
         res = g.get_measure('duration', 'baseline', 'word')
         print(res)
 

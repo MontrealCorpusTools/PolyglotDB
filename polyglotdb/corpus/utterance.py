@@ -1,7 +1,7 @@
 from uuid import uuid1
 
-from ..query.graph import DiscourseGraphQuery
-from ..query.graph.func import Max, Min
+from ..query.annotations import SpeakerGraphQuery
+from ..query.base.func import Max, Min
 from ..exceptions import GraphQueryError
 from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs, \
     utterance_enriched_data_to_csvs, import_utterance_enrichment_csvs
@@ -15,12 +15,10 @@ class UtteranceContext(PauseContext):
         Remove all utterance annotations.
         """
         try:
-            q = DiscourseGraphQuery(self, self.utterance)
+            q = SpeakerGraphQuery(self, self.utterance)
             q.delete()
-            self.hierarchy.annotation_types.remove('utterance')
-            del self.hierarchy['utterance']
+            self.hierarchy.remove_annotation_type('utterance')
             self.encode_hierarchy()
-            self.refresh_hierarchy()
         except GraphQueryError:
             pass
 
@@ -50,10 +48,8 @@ class UtteranceContext(PauseContext):
         """
         self.reset_utterances()
 
-        self.hierarchy[self.word_name] = 'utterance'
-        self.hierarchy['utterance'] = None
+        self.hierarchy.add_annotation_type('utterance', above=self.word_name, below=None)
         self.encode_hierarchy()
-        self.refresh_hierarchy()
 
         discourses = self.discourses
         if call_back is not None:
@@ -109,8 +105,7 @@ class UtteranceContext(PauseContext):
             Time in seconds that is the minimum duration of a stretch of
             speech to count as an utterance
         """
-        d = self.sql_session.query(Discourse).join(SpeaksIn).filter(Discourse.name == discourse).first()
-        speakers = [x.speaker.name for x in set(d.speakers)]
+        speakers = self.get_speakers_in_discourse(discourse)
         word_type = self.word_name
         speaker_utts = {}
         for s in speakers:
@@ -350,7 +345,6 @@ ORDER BY begin'''.format(corpus=self.cypher_safe_name, word_type=word_type)
                                                                                             i, len(split_names), s))
                 self.execute_cypher(statement, split_name=s)
         self.hierarchy.add_token_properties(self, w_type, [('position_in_utterance', float)])
-        self.save_variables()
 
     def reset_utterance_position(self):
         """resets position_in_utterance"""

@@ -27,7 +27,7 @@ def test_find_codas(timed_config):
         assert (codas == expected_freqs)
 
 
-def test_probabilistic_syllabification(acoustic_config, timed_config):
+def test_probabilistic_syllabification(acoustic_config, timed_config, acoustic_syllabics):
     with CorpusContext(timed_config) as c:
         onsets = norm_count_dict(c.find_onsets())
         codas = norm_count_dict(c.find_codas())
@@ -40,6 +40,9 @@ def test_probabilistic_syllabification(acoustic_config, timed_config):
         assert (e == result)
 
     with CorpusContext(acoustic_config) as c:
+        c.reset_class('syllabic')
+        c.encode_syllabic_segments(acoustic_syllabics)
+        assert c.hierarchy.has_type_subset('phone', 'syllabic')
         onsets = norm_count_dict(c.find_onsets())
         codas = norm_count_dict(c.find_codas())
     # nonsyllabic

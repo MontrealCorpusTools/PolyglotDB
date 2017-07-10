@@ -92,10 +92,6 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         """
         self.encode_class(phones, 'syllabic')
 
-    def encode_number_of_syllables(self):
-        """ Encodes the number of syllables """
-        pass
-
     def reset_syllables(self, call_back=None, stop_check=None):
         """ Resets syllables, removes syllable annotation, removes onset, coda, and nucleus labels """
         if call_back is not None:
@@ -128,14 +124,11 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
             if call_back is not None:
                 call_back(num_deleted)
         try:
-            self.hierarchy.annotation_types.remove('syllable')
-            self.hierarchy[self.phone_name] = self.hierarchy['syllable']
+            self.hierarchy.remove_annotation_type('syllable')
             self.hierarchy.remove_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
             self.hierarchy.remove_token_properties(self, self.phone_name, ['syllable_position'])
-            del self.hierarchy['syllable']
             # self.reset_to_old_label()
             self.encode_hierarchy()
-            self.refresh_hierarchy()
         except KeyError:
             pass
 
@@ -184,12 +177,6 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         if call_back is not None:
             call_back(0, len(splits))
 
-        self.hierarchy[self.phone_name] = 'syllable'
-        self.hierarchy['syllable'] = self.word_name
-        self.hierarchy.add_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
-        self.hierarchy.add_token_properties(self, self.phone_name, [('syllable_position', str)])
-        self.encode_hierarchy()
-        self.refresh_hierarchy()
         for i, s in enumerate(splits):
             if stop_check is not None and stop_check():
                 break
@@ -206,6 +193,8 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                           phone_type.end.column_name('ends'),
                           word_type.discourse.name.column_name('discourse'))
             results = q.all()
+            print('look at me', q.cypher())
+            print('length', len(results))
             speaker_boundaries = {s: []}
             speaker_non_syls = {s: []}
             prev_id = None
@@ -305,6 +294,11 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
             call_back('Cleaning up...')
         self.execute_cypher(
             'MATCH (n:{}:syllable) where n.prev_id is not Null REMOVE n.prev_id'.format(self.cypher_safe_name))
+
+        self.hierarchy.add_annotation_type('syllable', above=self.phone_name, below=self.word_name)
+        self.hierarchy.add_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
+        self.hierarchy.add_token_properties(self, self.phone_name, [('syllable_position', str)])
+        self.encode_hierarchy()
         if call_back is not None:
             call_back('Finished!')
             call_back(1, 1)
@@ -348,7 +342,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
         for i, x in enumerate(all_syls.cursors):
             for item in x:
-                syl = item[0].properties['label']
+                syl = item[0]['label']
                 splitsyl = syl.split('.')
                 nucleus = splitsyl[0]
                 for j, seg in enumerate(splitsyl):
@@ -378,7 +372,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         enrich_dict = {}
         for x in all_syls.cursors:
             for item in x:
-                syl = item[0].properties['label']
+                syl = item[0]['label']
                 splitsyl = syl.split('.')
                 nucleus = splitsyl[0]
                 for seg in splitsyl:
@@ -410,4 +404,3 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         self.remove_pattern(regex)
         self.enrich_syllables(enrich_dict)
         self.encode_hierarchy()
-        self.refresh_hierarchy()

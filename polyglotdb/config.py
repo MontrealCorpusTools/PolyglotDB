@@ -65,13 +65,12 @@ class CorpusConfig(object):
         self.corpus_name = corpus_name
         self.acoustic_user = None
         self.acoustic_password = None
-        self.acoustic_host = 'localhost'
-        self.acoustic_port = 8086
+        self.acoustic_http_port = 8086
         self.graph_user = None
         self.graph_password = None
-        self.graph_host = 'localhost'
-        self.graph_port = 7474
-        self.bolt_port = 7687
+        self.host = 'localhost'
+        self.graph_http_port = 7474
+        self.graph_bolt_port = 7687
 
         if data_dir is None:
             data_dir = BASE_DIR
@@ -130,12 +129,12 @@ class CorpusConfig(object):
 
     @property
     def graph_hostname(self):
-        return '{}:{}'.format(self.graph_host, self.graph_port)
+        return '{}:{}'.format(self.host, self.graph_http_port)
 
     @property
     def acoustic_conncetion_kwargs(self):
-        kwargs = {'host': self.acoustic_host,
-                  'port': self.acoustic_port,
+        kwargs = {'host': self.host,
+                  'port': self.acoustic_http_port,
                   'database': self.corpus_name}
         if self.acoustic_user is not None:
             kwargs['username'] = self.acoustic_user
@@ -145,9 +144,9 @@ class CorpusConfig(object):
 
     @property
     def graph_connection_kwargs(self):
-        kwargs = {'host': self.graph_host,
-                  'http_port': int(self.graph_port),
-                  'bolt_port': self.bolt_port,
+        kwargs = {'host': self.host,
+                  'http_port': int(self.graph_http_port),
+                  'bolt_port': self.graph_bolt_port,
                   'bolt': True}
 
         if self.graph_user is not None:

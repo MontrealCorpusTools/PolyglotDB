@@ -1,5 +1,5 @@
 from .exceptions import HierarchyError, GraphQueryError
-from .query.graph.attributes import PauseAnnotation, AnnotationAttribute
+from .query.annotations.attributes import PauseAnnotation, AnnotationNode
 
 
 class Hierarchy(object):
@@ -56,10 +56,25 @@ class Hierarchy(object):
         if key + 's' in self.annotation_types:
             key += 's'  # FIXME
         if key in self.annotation_types:
-            return AnnotationAttribute(key, corpus=self.corpus_name, hierarchy=self)
+            return AnnotationNode(key, corpus=self.corpus_name, hierarchy=self)
         raise (GraphQueryError(
             'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(
                 sorted(self.annotation_types)))))
+
+    def __getstate__(self):
+        return self.to_json()
+
+    def __setstate__(self, state):
+        self.from_json(state)
+
+    def get_depth(self, lower_type, higher_type):
+        depth = 1
+        t = self.get_higher_types(lower_type)
+        for i in t:
+            if i == higher_type:
+                break
+            depth += 1
+        return depth
 
     @property
     def annotation_types(self):
@@ -67,29 +82,29 @@ class Hierarchy(object):
 
     def to_json(self):
         data = {'_data': self._data}
-        data['corpus_name'] = self.corpus_name,
-        data['subannotations'] = {k: sorted((name, t()) for name, t in v) for k, v in self.subannotations.items()},
+        data['corpus_name'] = self.corpus_name
+        data['subannotations'] = {k: sorted(v) for k, v in self.subannotations.items()}
         data['subannotation_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in
-                                     self.subannotation_properties.items()},
-        data['subset_types'] = {k: sorted((name, t()) for name, t in v) for k, v in self.subset_types.items()},
-        data['subset_tokens'] = {k: sorted((name, t()) for name, t in v) for k, v in self.subset_tokens.items()},
-        data['token_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.token_properties.items()},
-        data['type_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.type_properties.items()},
-        data['speaker_properties'] = sorted((name, t()) for name, t in self.speaker_properties),
+                                            self.subannotation_properties.items()}
+        data['subset_types'] = {k: sorted(v) for k, v in self.subset_types.items()}
+        data['subset_tokens'] = {k: sorted(v) for k, v in self.subset_tokens.items()}
+        data['token_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.token_properties.items()}
+        data['type_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.type_properties.items()}
+        data['speaker_properties'] = sorted((name, t()) for name, t in self.speaker_properties)
         data['discourse_properties'] = sorted((name, t()) for name, t in self.discourse_properties)
         return data
 
     def from_json(self, json):
         self._data = json['_data']
-        self.corpus_name = json['corpus_name'][0]
-        self.subannotations = {k: set((name, type(t)) for name, t in v) for k, v in json['subannotations'][0].items()}
+        self.corpus_name = json['corpus_name']
+        self.subannotations = {k: set(v) for k, v in json['subannotations'].items()}
         self.subannotation_properties = {k: set((name, type(t)) for name, t in v) for k, v in
-                                         json['subannotation_properties'][0].items()}
-        self.subset_types = {k: set((name, type(t)) for name, t in v) for k, v in json['subset_types'][0].items()}
-        self.subset_tokens = {k: set((name, type(t)) for name, t in v) for k, v in json['subset_tokens'][0].items()}
-        self.token_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['token_properties'][0].items()}
-        self.type_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['type_properties'][0].items()}
-        self.speaker_properties = set((name, type(t)) for name, t in json['speaker_properties'][0])
+                                         json['subannotation_properties'].items()}
+        self.subset_types = {k: set(v) for k, v in json['subset_types'].items()}
+        self.subset_tokens = {k: set(v) for k, v in json['subset_tokens'].items()}
+        self.token_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['token_properties'].items()}
+        self.type_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['type_properties'].items()}
+        self.speaker_properties = set((name, type(t)) for name, t in json['speaker_properties'])
         self.discourse_properties = set((name, type(t)) for name, t in json['discourse_properties'])
 
     def add_type_labels(self, corpus_context, annotation_type, labels):
@@ -143,6 +158,38 @@ class Hierarchy(object):
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
                                       corpus_name=corpus_context.corpus_name)
         self.subset_tokens[annotation_type] = updated
+
+    def add_annotation_type(self, annotation_type, above=None, below=None):
+        self._data[above] = annotation_type
+        self._data[annotation_type] = below
+        self.token_properties[annotation_type] = {('label', str), ('begin', float), ('end', float)}
+        self.type_properties[annotation_type] = {('label', str)}
+
+    def remove_annotation_type(self, annotation_type):
+        cur_above = self._data[annotation_type]
+        cur_below = [k for k, v in self._data.items() if v == annotation_type][0]
+        del self._data[annotation_type]
+        self._data[cur_below] = cur_above
+        try:
+            del self.token_properties[annotation_type]
+        except KeyError:
+            pass
+        try:
+            del self.type_properties[annotation_type]
+        except KeyError:
+            pass
+        try:
+            del self.subset_types[annotation_type]
+        except KeyError:
+            pass
+        try:
+            del self.subset_tokens[annotation_type]
+        except KeyError:
+            pass
+        if annotation_type in self.subannotations:
+            for s in self.subannotations[annotation_type]:
+                del self.subannotation_properties[s]
+            del self.subannotations
 
     def add_type_properties(self, corpus_context, annotation_type, properties):
         set_template = 'n.{0} = {{{0}}}'
@@ -358,7 +405,6 @@ class Hierarchy(object):
 
     def __setitem__(self, key, value):
         self._data[key] = value
-        self.annotation_types.add(key)
 
     def __delitem__(self, key):
         del self._data[key]
@@ -400,7 +446,6 @@ class Hierarchy(object):
                     self.token_properties[k] = other.token_properties[k]
                 else:
                     self.token_properties[k] = self.token_properties[k] & other.token_properties[k]
-        self.annotation_types.update(self._data.keys())
 
     @property
     def lowest(self):

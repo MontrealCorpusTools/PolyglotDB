@@ -54,14 +54,21 @@ def add_discourse_sound_info(corpus_context, discourse, filepath):
     else:
         shutil.copy(filepath, low_freq_path)
         low_freq_rate = sample_rate
-    d, _ = get_or_create(corpus_context.sql_session, Discourse, name=discourse)
     user_path = os.path.expanduser('~')
-    sf = get_or_create(corpus_context.sql_session, SoundFile, filepath=filepath,
-                       consonant_filepath=consonant_path.replace(user_path, '~'),
-                       vowel_filepath=vowel_path.replace(user_path, '~'),
-                       low_freq_filepath=low_freq_path.replace(user_path, '~'),
-                       duration=duration, sampling_rate=sample_rate,
-                       n_channels=n_channels, discourse=d)
+    statement = '''MATCH (d:Discourse:{corpus_name}) where d.name = {{discourse_name}}
+                    SET d.filepath = {{filepath}},
+                    d.consonant_filepath = {{consonant_filepath}},
+                    d.vowel_filepath = {{vowel_filepath}},
+                    d.low_freq_filepath = {{low_freq_filepath}},
+                    d.duration = {{duration}},
+                    d.sampling_rate = {{sampling_rate}},
+                    d.n_channels = {{n_channels}}'''.format(corpus_name=corpus_context.cypher_safe_name)
+    corpus_context.execute_cypher(statement, filepath=filepath,
+                                  consonant_filepath=consonant_path.replace(user_path, '~'),
+                                  vowel_filepath=vowel_path.replace(user_path, '~'),
+                                  low_freq_filepath=low_freq_path.replace(user_path, '~'),
+                                  duration=duration, sampling_rate=sample_rate,
+                                  n_channels=n_channels, discourse_name=discourse)
 
 
 def setup_audio(corpus_context, data):

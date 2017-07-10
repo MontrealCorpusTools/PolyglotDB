@@ -214,3 +214,23 @@ class HierarchyError(PGError):
 
 class ClientError(PGError):
     pass
+
+
+class NodeAttributeError(GraphQueryError):
+    pass
+
+
+class SpeakerAttributeError(NodeAttributeError):
+    pass
+
+
+class DiscourseAttributeError(NodeAttributeError):
+    pass
+
+
+class AnnotationAttributeError(NodeAttributeError):
+    pass
+
+
+class LexiconAttributeError(NodeAttributeError):
+    pass

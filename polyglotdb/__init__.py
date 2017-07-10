@@ -6,7 +6,7 @@ __version__ = "%d.%d.%d" % __ver_tuple__
 
 __all__ = ['query', 'io', 'sql', 'corpus', 'config', 'exceptions']
 
-import polyglotdb.query.graph as graph
+import polyglotdb.query.annotations as graph
 
 import polyglotdb.io as io
 

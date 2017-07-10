@@ -1,6 +1,7 @@
 import re
 from ..io.importer import feature_data_to_csvs, import_feature_csvs
 from .lexical import LexicalContext
+from ..exceptions import SubsetError
 
 
 class FeaturedContext(LexicalContext):
@@ -15,24 +16,20 @@ class FeaturedContext(LexicalContext):
         label : str
             the label for the class
         """
-        statement = '''MATCH (n:{phone_name}_type:{corpus_name}) where n.label in {{phones}}
-        SET n :{label}'''.format(phone_name=self.phone_name, corpus_name=self.cypher_safe_name,
-                                 label=label)
-
-        self.execute_cypher(statement, phones=phones)
-        self.hierarchy.add_type_labels(self, self.phone_name, [label])
-        self.refresh_hierarchy()
+        phone = getattr(self, self.phone_name)
+        q = self.query_lexicon(phone).filter(phone.label.in_(phones))
+        q.create_subset(label)
 
     def reset_class(self, label):
         """
         resets the class
         """
-        statement = '''MATCH (n:{phone_name}_type:{corpus_name}:{label})
-        REMOVE n:{label}'''.format(phone_name=self.phone_name, corpus_name=self.cypher_safe_name,
-                                   label=label)
-        self.execute_cypher(statement)
-        self.hierarchy.remove_type_labels(self, self.phone_name, [label])
-        self.refresh_hierarchy()
+        phone = getattr(self, self.phone_name)
+        try:
+            q = self.query_lexicon(phone.filter_by_subset(label))
+            q.remove_subset(label)
+        except SubsetError:
+            pass
 
     def encode_features(self, feature_dict):
         """
@@ -45,8 +42,9 @@ class FeaturedContext(LexicalContext):
         """
         phone = getattr(self, self.phone_name)
         for k, v in feature_dict.items():
-            q = self.query_graph(phone).filter(phone.label == k)
-            q.set_type(**v)
+            q = self.query_lexicon(phone).filter(phone.label == k)
+            q.set_properties(**v)
+        self.encode_hierarchy()
 
     def reset_features(self, feature_names):
         """
@@ -59,8 +57,9 @@ class FeaturedContext(LexicalContext):
         """
         phone = getattr(self, self.phone_name)
         q = self.query_graph(phone)
-        q.set_type(**{x: None for x in feature_names})
+        q.set_properties(**{x: None for x in feature_names})
         self.hierarchy.remove_type_properties(self, self.phone_name, feature_names)
+        self.encode_hierarchy()
 
     def enrich_features(self, feature_data, type_data=None):
         """
@@ -76,7 +75,7 @@ class FeaturedContext(LexicalContext):
 
         if type_data is None:
             type_data = {k: type(v) for k, v in next(iter(feature_data.values())).items()}
-        labels = set(self.lexicon.phones)
+        labels = set(self.phones)
         feature_data = {k: v for k, v in feature_data.items() if k in labels}
         self.lexicon.add_properties(self.phone_name, feature_data, type_data)
         feature_data_to_csvs(self, feature_data)
@@ -106,7 +105,7 @@ class FeaturedContext(LexicalContext):
         toAdd = {}
         for c in results.cursors:
             for item in c:
-                phone = item[0].properties['label']
+                phone = item[0]['label']
                 if re.search(pattern, phone) is not None:
                     newphone = re.sub(pattern, "", phone)
                     length = len(phone) - len(newphone)
@@ -124,7 +123,6 @@ class FeaturedContext(LexicalContext):
         self.execute_cypher(type_statement, oldphones=oldphones)
         self.encode_syllabic_segments(newphones)
         self.encode_syllables('maxonset')
-        self.refresh_hierarchy()
 
     def reset_to_old_label(self):
         """
@@ -148,4 +146,3 @@ class FeaturedContext(LexicalContext):
         self.execute_cypher(type_statement)
         self.encode_syllabic_segments(phones)
         self.encode_syllables('maxonset')
-        self.refresh_hierarchy

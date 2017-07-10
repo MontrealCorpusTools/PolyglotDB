@@ -59,7 +59,6 @@ class ImportContext(StructuredContext):
         """ generates hierarchy and saves variables"""
         import_csvs(self, data, call_back, stop_check)
         self.encode_hierarchy()
-        self.hierarchy = self.generate_hierarchy()
 
     def add_discourse(self, data):
         '''
@@ -76,18 +75,30 @@ class ImportContext(StructuredContext):
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
 
-        self.execute_cypher(
-            '''MERGE (n:Discourse:{corpus_name} {{name: {{discourse_name}}}})'''.format(
-                corpus_name=self.cypher_safe_name),
-            discourse_name=data.name)
         for s in data.speakers:
-            self.execute_cypher(
-                '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})'''.format(
-                    corpus_name=self.cypher_safe_name),
-                speaker_name=s)
+            if s in data.speaker_channel_mapping:
+                self.execute_cypher(
+                    '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})
+                    MERGE (d:Discourse:{corpus_name} {{name: {{discourse_name}}}})
+                     MERGE (n)-[r:speaks_in]->(d)
+                    WITH r
+                    SET r.channel = {{channel}}'''.format(
+                        corpus_name=self.cypher_safe_name),
+                    speaker_name=s,
+                    discourse_name=data.name,
+                    channel=data.speaker_channel_mapping[s])
+            else:
+                self.execute_cypher(
+                    '''MERGE (n:Speaker:{corpus_name} {{name: {{speaker_name}}}})
+                    MERGE (d:Discourse:{corpus_name} {{name: {{discourse_name}}}})
+                    MERGE (n)-[r:speaks_in]->(d)
+                    WITH r
+                    SET r.channel = 0'''.format(
+                        corpus_name=self.cypher_safe_name),
+                    speaker_name=s,
+                    discourse_name=data.name)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(self, data)
-        self.update_sql_database(data)
         self.hierarchy.update(data.hierarchy)
         setup_audio(self, data)
 
@@ -231,63 +242,3 @@ class ImportContext(StructuredContext):
         self.finalize_import(data, call_back, parser.stop_check)
         parser.call_back = call_back
         return could_not_parse
-
-    def update_sql_database(self, data):
-        '''
-        Update the SQL database given a discourse's data.  This function
-        adds new words and updates frequencies given occurences in the
-        discourse
-
-        Parameters
-        ----------
-        data : :class:`~polyglotdb.io.helper.DiscourseData`
-            Data for the discourse
-        '''
-        log = logging.getLogger('{}_loading'.format(self.corpus_name))
-        log.info('Beginning to import {} into the SQL database...'.format(data.name))
-        initial_begin = time.time()
-
-        discourse, _ = get_or_create(self.sql_session, Discourse, name=data.name)
-        for s in data.speakers:
-            speaker, _ = get_or_create(self.sql_session, Speaker, name=s)
-            sin = SpeaksIn(speaker=speaker, discourse=discourse)
-            if s in data.speaker_channel_mapping:
-                sin.channel = data.speaker_channel_mapping[s]
-            self.sql_session.add(sin)
-            discourse.speakers.append(sin)
-        phone_cache = defaultdict(set)
-        segment_type = data.segment_type
-        for level in data.annotation_types:
-            if not data[level].is_word:
-                continue
-            log.info('Beginning to import annotations...'.format(level))
-            begin = time.time()
-            for d in data[level]:
-                trans = None
-                if segment_type is not None:
-                    base_sequence = data[segment_type].lookup_range(d.begin, d.end, speaker=d.speaker)
-                    phone_cache[segment_type].update(x.label for x in base_sequence)
-                annotation, created = self.lexicon.get_or_create_annotation(d.label, self.word_name)
-                if created:
-                    for k, v in d.type_properties.items():
-                        if v is None:
-                            continue
-                        prop_type = self.lexicon.get_or_create_property_type(k)
-                        if isinstance(v, (int, float)):
-                            prop, _ = get_or_create(self.sql_session, NumericProperty, annotation=annotation,
-                                                    property_type=prop_type, value=v)
-                        elif isinstance(v, (list, tuple)):
-                            prop, _ = get_or_create(self.sql_session, Property, annotation=annotation,
-                                                    property_type=prop_type, value='.'.join(map(str, v)))
-                        else:
-                            prop, _ = get_or_create(self.sql_session, Property, annotation=annotation,
-                                                    property_type=prop_type, value=v)
-
-            log.info('Finished importing {} annotations!'.format(level))
-            log.debug('Importing {} annotations took: {} seconds.'.format(level, time.time() - begin))
-
-        for level, phones in phone_cache.items():
-            for seg in phones:
-                p, _ = self.lexicon.get_or_create_annotation(seg, self.phone_name)
-        log.info('Finished importing {} to the SQL database!'.format(data.name))
-        log.debug('SQL importing took: {} seconds'.format(time.time() - initial_begin))

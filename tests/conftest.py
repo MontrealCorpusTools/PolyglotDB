@@ -52,6 +52,7 @@ def timit_test_dir(test_dir):
 def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
 
+
 @pytest.fixture(scope='session')
 def praatscript_test_dir(test_dir):
     return os.path.join(test_dir, 'praat_scripts')
@@ -294,28 +295,21 @@ def corpus_data_syllable_morpheme_srur():
 
 
 @pytest.fixture(scope='session')
-def graph_user():
-    return 'neo4j'
+def graph_db(localhost):
+    from polyglotdb.client.client import PGDBClient, ClientError
+    client = PGDBClient(localhost)
 
+    dbs = client.list_databases()
+    for d in dbs:
+        if 'test' in d:
+            client.delete_database(d)
 
-@pytest.fixture(scope='session')
-def graph_pw():
-    return 'test'
-
-
-@pytest.fixture(scope='session')
-def graph_host():
-    return 'localhost'
-
-
-@pytest.fixture(scope='session')
-def graph_port():
-    return 7474
-
-
-@pytest.fixture(scope='session')
-def graph_db(graph_host, graph_port, graph_user, graph_pw):
-    return dict(graph_host=graph_host, graph_port=graph_port)
+    client.create_database('main_test_database')
+    ports = client.get_ports('main_test_database')
+    ports['data_dir'] = client.get_directory('main_test_database')
+    ports['host'] = 'localhost'
+    client.start_database('main_test_database')
+    return ports
 
 
 @pytest.fixture(scope='session')
@@ -411,9 +405,13 @@ def acoustic_config(graph_db, textgrid_test_dir):
 
 
 @pytest.fixture(scope='session')
-def acoustic_utt_config(graph_db, textgrid_test_dir):
-    syllabics = ['ae', 'aa', 'uw', 'ay', 'eh', 'ih', 'aw', 'ey', 'iy',
-                 'uh', 'ah', 'ao', 'er', 'ow']
+def acoustic_syllabics():
+    return ['ae', 'aa', 'uw', 'ay', 'eh', 'ih', 'aw', 'ey', 'iy',
+            'uh', 'ah', 'ao', 'er', 'ow']
+
+
+@pytest.fixture(scope='session')
+def acoustic_utt_config(graph_db, textgrid_test_dir, acoustic_syllabics):
     config = CorpusConfig('acoustic utt', **graph_db)
 
     acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
@@ -424,7 +422,7 @@ def acoustic_utt_config(graph_db, textgrid_test_dir):
 
         c.encode_pauses(['sil'])
         c.encode_utterances(min_pause_length=0)
-        c.encode_syllabic_segments(syllabics)
+        c.encode_syllabic_segments(acoustic_syllabics)
         c.encode_syllables()
 
     config.pitch_algorithm = 'acousticsim'
@@ -504,7 +502,7 @@ def praat_path():
         return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
     else:
         return 'praat'
-    #return 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\praatcon.exe'
+        # return 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\praatcon.exe'
 
 
 @pytest.fixture(scope='session')

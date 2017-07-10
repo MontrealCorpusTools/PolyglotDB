@@ -3,7 +3,8 @@ import time
 from polyglotdb.client.client import PGDBClient, ClientError
 
 
-def test_client_create_database(localhost):
+def test_client_create_database(graph_db, localhost):
+    print(graph_db)
     client = PGDBClient(localhost)
     try:
         client.delete_database('test_database')
@@ -14,6 +15,10 @@ def test_client_create_database(localhost):
     client.create_database('test_database')
     with pytest.raises(ClientError):
         response = client.create_database('test_database')
+
+    ports = client.get_ports('test_database')
+    assert ports == {'graph_http_port': 7404, 'graph_bolt_port': 7406,
+                     'acoustic_http_port': 8403}
 
 
 def test_client_database_list(localhost):
@@ -32,54 +37,56 @@ def test_client_database_status(localhost):
 
 def test_client_corpus_list(localhost):
     client = PGDBClient(localhost)
-    corpora = client.list_corpora()
+    corpora = client.list_corpora('test_database')
     assert corpora == []
 
 
 def test_client_source_directories(localhost):
     client = PGDBClient(localhost)
     choices = client.get_source_choices()
-    assert choices == ['cont']
+    assert 'acoustic' in choices
 
 
 def test_client_import(localhost):
     client = PGDBClient(localhost)
     with pytest.raises(ClientError):
-        client.import_corpus('test', 'cont', 'M', 'test_database')
+        client.import_corpus('test', 'acoustic', 'M', 'test_database')
 
     client.start_database('test_database')
-    time.sleep(10)
-    client.import_corpus('test', 'cont', 'M', 'test_database')
-    while client.get_current_corpus_status('test') == 'busy':
-        time.sleep(10)
+    client.import_corpus('test', 'acoustic', 'M', 'test_database', blocking=True)
+
     client.stop_database('test_database')
     assert client.corpus_status('test') == 'Imported'
-    assert 'test' in client.list_corpora()
-    time.sleep(30)
+    assert 'test' in client.list_corpora('test_database')
 
 
 def test_query_basic(localhost):
     client = PGDBClient(localhost)
     client.start_database('test_database')
-    time.sleep(10)
     hierarchy = client.hierarchy('test')
     q = client.generate_query(hierarchy.phone)
-    q.filter(hierarchy.phone.label == 'B')
+    q.filter(hierarchy.phone.label == 'aa')
     q.columns(hierarchy.phone.label.column_name('phone_name'))
-    results = client.run_query(q)
-    assert all(x['phone_name'] == 'B' for x in results)
+    results = client.run_query(q, blocking=True)
+    assert len(results) > 0
+    assert all(x['phone_name'] == 'aa' for x in results)
 
     client.stop_database('test_database')
-    time.sleep(10)
 
 
 def test_client_delete_corpus(localhost):
     client = PGDBClient(localhost)
     client.start_database('test_database')
-    time.sleep(10)
-    assert 'test' in client.list_corpora()
+    assert 'test' in client.list_corpora('test_database')
     client.delete_corpus('test')
-    assert 'test' not in client.list_corpora()
+    assert 'test' not in client.list_corpora('test_database')
 
     client.stop_database('test_database')
-    time.sleep(10)
+
+
+def test_client_delete_database(localhost):
+    client = PGDBClient(localhost)
+    assert 'test_database' in client.list_databases()
+    client.delete_database('test_database')
+    assert 'test_database' not in client.list_databases()
+

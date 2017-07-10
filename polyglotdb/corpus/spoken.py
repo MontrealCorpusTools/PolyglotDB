@@ -4,6 +4,22 @@ from .audio import AudioContext
 
 
 class SpokenContext(AudioContext):
+    def get_speakers_in_discourse(self,discourse):
+        query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
+                WHERE d.name = {{discourse_name}}
+                RETURN s.name as speaker'''.format(corpus_name=self.cypher_safe_name)
+        results = self.execute_cypher(query, discourse_name = discourse)
+        speakers = [x['speaker'] for x in results]
+        return speakers
+
+    def get_discourses_of_speaker(self,speaker):
+        query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
+                WHERE s.name = {{speaker_name}}
+                RETURN d.name as discourse'''.format(corpus_name=self.cypher_safe_name)
+        results = self.execute_cypher(query, speaker_name = speaker)
+        discourses = [x['discourse'] for x in results]
+        return discourses
+
     def enrich_speakers(self, speaker_data, type_data=None):
         """
         Add properties about speakers to the corpus, allowing them to
@@ -82,6 +98,7 @@ class SpokenContext(AudioContext):
             type_data = {k: type(v) for k, v in next(iter(discourse_data.values())).items()}
 
         discourses = set(self.discourses)
+        print(discourses, discourse_data)
         discourse_data = {k: v for k, v in discourse_data.items() if k in discourses}
         self.census.add_discourse_properties(discourse_data, type_data)
         discourse_data_to_csvs(self, discourse_data)

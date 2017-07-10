@@ -2,7 +2,7 @@ import requests
 
 from ..exceptions import ClientError
 from ..structure import Hierarchy
-from ..query.graph import GraphQuery, DiscourseGraphQuery, SpeakerGraphQuery
+from ..query.annotations import GraphQuery, DiscourseGraphQuery, SpeakerGraphQuery
 
 
 class PGDBClient(object):
@@ -23,19 +23,29 @@ class PGDBClient(object):
     def delete_database(self, database_name):
         end_point = '/'.join([self.host, 'api', 'database', database_name, ''])
         resp = requests.delete(end_point)
-        if resp.status_code != 201:
+        if resp.status_code != 202:
             raise ClientError('Could not delete database.')
 
     def database_status(self, database_name=None):
         if database_name is not None:
             end_point = '/'.join([self.host, 'api', 'database', database_name, ''])
             resp = requests.get(end_point)
-            print(resp.text)
             return resp.json()['data']
         else:
             end_point = '/'.join([self.host, 'api', 'database', ''])
             resp = requests.get(end_point)
             return resp.json()
+
+    def get_directory(self, database_name):
+
+        end_point = '/'.join([self.host, 'api', 'database', database_name, 'directory', ''])
+        resp = requests.get(end_point)
+        return resp.json()['data']
+
+    def get_ports(self, database_name):
+        end_point = '/'.join([self.host, 'api', 'database', database_name, 'ports', ''])
+        resp = requests.get(end_point)
+        return resp.json()
 
     def corpus_status(self, corpus_name=None):
         if corpus_name is not None:
@@ -52,30 +62,32 @@ class PGDBClient(object):
         resp = requests.get(end_point)
         return list(resp.json().keys())
 
-    def list_corpora(self):
-        end_point = '/'.join([self.host, 'api', 'corpus', ''])
+    def list_corpora(self, database):
+        end_point = '/'.join([self.host, 'api', 'database', database, 'corpora', ''])
         resp = requests.get(end_point)
-        return list(resp.json().keys())
+        return list(resp.json())
 
     def get_source_choices(self):
         end_point = '/'.join([self.host, 'api', 'source_directories', ''])
         resp = requests.get(end_point)
         return resp.json()['data']
 
-    def run_query(self, query):
+    def run_query(self, query, blocking=False):
         data = query.to_json()
-        print(data)
+        print('client query data', data)
+        data['blocking'] = blocking
         assert 'corpus_name' in data
-        end_point = '/'.join([self.host, 'api', 'query', ''])
-        resp = requests.post(end_point, data=data)
-        if resp.status_code != 200:
+        end_point = '/'.join([self.host, 'api', 'corpus', data['corpus_name'], 'query', ''])
+        resp = requests.post(end_point, json=data)
+        if resp.status_code not in [200, 202]:
             raise ClientError('Could not run query: {}'.format(resp.text))
+        print(resp.text)
         return resp.json()
 
-    def import_corpus(self, name, source_directory, format, database_name):
+    def import_corpus(self, name, source_directory, format, database_name, blocking=False):
         end_point = '/'.join([self.host, 'api', 'import_corpus', ''])
         data = {'name': name, 'source_directory': source_directory,
-                'format': format, 'database_name': database_name}
+                'format': format, 'database_name': database_name, 'blocking': blocking}
         resp = requests.post(end_point, data=data)
         if resp.status_code != 202:
             raise ClientError('Could not import corpus: {}'.format(resp.text))
@@ -115,6 +127,7 @@ class PGDBClient(object):
         print(resp.text)
         h = Hierarchy()
         h.from_json(resp.json())
+        h.corpus_name = corpus_name
         return h
 
     def generate_query(self, annotation_type):

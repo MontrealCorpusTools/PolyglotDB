@@ -2,7 +2,7 @@ import os
 import pytest
 
 from polyglotdb import CorpusContext
-from polyglotdb.utils import add_default_annotations, update_sound_files
+from polyglotdb.utils import add_default_annotations
 
 
 @pytest.mark.xfail
@@ -38,9 +38,3 @@ def test_add_default_voicing_annotations(acoustic_config):
             assert (len(a.closure) == 1)
             assert (len(a.release) == 1)
 
-
-def test_update_sound_files(acoustic_config, textgrid_test_dir):
-    with CorpusContext(acoustic_config) as c:
-        update_sound_files(c, textgrid_test_dir)
-        expected_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.wav')
-        assert (c.discourse_sound_file('acoustic_corpus').filepath == expected_path)
