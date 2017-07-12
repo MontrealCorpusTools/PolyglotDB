@@ -52,10 +52,6 @@ def timit_test_dir(test_dir):
 def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
 
-@pytest.fixture(scope='session')
-def praatscript_test_dir(test_dir):
-    return os.path.join(test_dir, 'praat_scripts')
-
 
 @pytest.fixture(scope='session')
 def fave_test_dir(textgrid_test_dir):
@@ -504,7 +500,6 @@ def praat_path():
         return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
     else:
         return 'praat'
-    #return 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\praatcon.exe'
 
 
 @pytest.fixture(scope='session')

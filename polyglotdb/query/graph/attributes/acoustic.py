@@ -277,11 +277,11 @@ class FormantAttribute(AcousticAttribute):
     def __init__(self, annotation, relative=False):
         super(FormantAttribute, self).__init__(annotation)
         self.label = 'formants'
-        self.output_columns = ['F1', 'F2', 'F3']
+        self.output_columns = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
         self.relative = relative
         if relative:
             self.label += '_relative'
-            for i in range(3):
+            for i in range(6):
                 self.output_columns[i] += '_relative'
 
     def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0):
@@ -312,7 +312,7 @@ class FormantAttribute(AcousticAttribute):
             results = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative,
                                           relative_time=self.relative_time)
             for line in results:
-                data[line[0]] = {self.output_columns[i]: line[i + 1] for i in range(3)}
+                data[line[0]] = {self.output_columns[i]: line[i + 1] for i in range(6)}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
             self.cached_data = data
         return data

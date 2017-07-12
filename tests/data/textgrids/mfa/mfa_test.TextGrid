@@ -8,6 +8,36 @@ size = 2
 item []: 
     item [1]:
         class = "IntervalTier" 
+        name = "words" 
+        xmin = 0 
+        xmax = 5 
+        intervals: size = 6 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.5359299313286737 
+            text = "ASPIRIN" 
+        intervals [2]:
+            xmin = 0.5359299313286737 
+            xmax = 0.7277498521584862 
+            text = "" 
+        intervals [3]:
+            xmin = 0.7277498521584862 
+            xmax = 1.5463606347329 
+            text = "PLANET" 
+        intervals [4]:
+            xmin = 1.5463606347329 
+            xmax = 2.9389864791485665 
+            text = "" 
+        intervals [5]:
+            xmin = 2.9389864791485665 
+            xmax = 4.29344727410947 
+            text = "JURASSIC" 
+        intervals [6]:
+            xmin = 4.29344727410947 
+            xmax = 5 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
         name = "phones" 
         xmin = 0 
         xmax = 5 
@@ -93,36 +123,6 @@ item []:
             xmax = 4.29344727410947 
             text = "K" 
         intervals [21]:
-            xmin = 4.29344727410947 
-            xmax = 5 
-            text = "" 
-    item [2]:
-        class = "IntervalTier" 
-        name = "words" 
-        xmin = 0 
-        xmax = 5 
-        intervals: size = 6 
-        intervals [1]:
-            xmin = 0 
-            xmax = 0.5359299313286737 
-            text = "ASPIRIN" 
-        intervals [2]:
-            xmin = 0.5359299313286737 
-            xmax = 0.7277498521584862 
-            text = "" 
-        intervals [3]:
-            xmin = 0.7277498521584862 
-            xmax = 1.5463606347329 
-            text = "PLANET" 
-        intervals [4]:
-            xmin = 1.5463606347329 
-            xmax = 2.9389864791485665 
-            text = "" 
-        intervals [5]:
-            xmin = 2.9389864791485665 
-            xmax = 4.29344727410947 
-            text = "JURASSIC" 
-        intervals [6]:
             xmin = 4.29344727410947 
             xmax = 5 
             text = "" 

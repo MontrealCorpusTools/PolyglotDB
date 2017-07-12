@@ -81,7 +81,17 @@ class TimitParser(BaseParser):
         for a in self.annotation_types:
             a.reset()
 
+        word_path = word_path.replace(".wrd", ".wav")
         data.wav_path = find_wav_path(word_path)
+        if data.wav_path == None:
+            word_split = word_path.split("/")
+            filename = word_split[-1]
+            filename = filename.upper()
+            word_path = "/".join(word_split[:-1]) + "/" + filename
+            print(word_path)
+            data.wav_path = find_wav_path(word_path)
+            print(data.wav_path)
+
         return data
 
 

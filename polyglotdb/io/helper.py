@@ -292,8 +292,14 @@ def find_wav_path(path):
     str or None
         Full path of the wav file if it exists or None if it does not
     """
+    wav_path = ""
     name, ext = os.path.splitext(path)
     wav_path = name + '.wav'
+    if ".WAV" in ext:
+        wav_path = name + '.WAV'
+    elif ".wav" in ext:
+        wav_path = name + '.wav'
+    #print("path:",wav_path)
     if os.path.exists(wav_path):
         return wav_path
     return None

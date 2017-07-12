@@ -77,17 +77,22 @@ def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=No
             if phones is not None:
                 for ph in phones:
                     if 'vowel' in phone_class:
-                        phone_ids[(sound_file.vowel_filepath, ph.begin, ph.end, channel)] = ph.id
-                        segments.append((sound_file.vowel_filepath, ph.begin, ph.end, channel))
+                        phone_ids[(sound_file.vowel_filepath, ph.begin, ph.end, channel, ph.label)] = ph.id
+                        segments.append((sound_file.vowel_filepath, ph.begin, ph.end, channel, ph.label))
+                        #phone_ids[(sound_file.vowel_filepath, ph.begin, ph.end, channel)] = ph.id
+                        #segments.append((sound_file.vowel_filepath, ph.begin, ph.end, channel))
                     else:
-                        phone_ids[(sound_file.consonant_filepath, ph.begin, ph.end, channel)] = ph.id
-                        segments.append((sound_file.consonant_filepath, ph.begin, ph.end, channel))
+                        phone_ids[(sound_file.consonant_filepath, ph.begin, ph.end, channel, ph.label)] = ph.id
+                        segments.append((sound_file.consonant_filepath, ph.begin, ph.end, channel, ph.label))
+                        #phone_ids[(sound_file.consonant_filepath, ph.begin, ph.end, channel)] = ph.id
+                        #segments.append((sound_file.consonant_filepath, ph.begin, ph.end, channel))
             if phone_class is 'vowel':
                 discourse_mapping[sound_file.discourse.name] = sound_file.consonant_filepath
             else:
                 discourse_mapping[sound_file.discourse.name] = sound_file.consonant_filepath
         if speaker_has_phone:
             segment_mapping[s] = segments
+        #print("hello")
         print("time for current speaker: " + str(time.time() - time_sp))
     return segment_mapping, discourse_mapping, phone_ids
 
