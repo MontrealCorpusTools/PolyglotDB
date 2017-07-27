@@ -47,7 +47,10 @@ after_success:
 
 after_script:
   - ls -R polyglot-server/test_data
+  - cat polyglot-server/test_data/data/main_test_database/influxdb.log
   - cat polyglot-server/test_data/data/test_database/influxdb.log
+  - cat polyglot-server/test_data/data/main_test_database/influxdb/influxdb.conf
+  - cat polyglot-server/test_data/data/test_database/influxdb/influxdb.conf
   - python bin/pgdb.py stop
 
 cache:
