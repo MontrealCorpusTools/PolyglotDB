@@ -18,7 +18,7 @@ def test_client_create_database(graph_db, localhost):
 
     ports = client.get_ports('test_database')
     assert ports == {'graph_http_port': 7404, 'graph_bolt_port': 7406,
-                     'acoustic_http_port': 8403}
+                     'acoustic_http_port': 8404}
 
 
 def test_client_database_list(localhost):
