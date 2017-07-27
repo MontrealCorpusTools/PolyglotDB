@@ -37,7 +37,6 @@ class SpokenContext(AudioContext):
             type_data = {k: type(v) for k, v in next(iter(speaker_data.values())).items()}
         speakers = set(self.speakers)
         speaker_data = {k: v for k, v in speaker_data.items() if k in speakers}
-        self.census.add_speaker_properties(speaker_data, type_data)
 
         speaker_data_to_csvs(self, speaker_data)
         import_speaker_csvs(self, type_data)
@@ -58,25 +57,6 @@ class SpokenContext(AudioContext):
             the name of the speaker
         """
         return {speaker: {property: data}}
-
-    def enrich_speaker_annotations(self, data, type_data=None):
-        """
-        add properties speaker-specific annotation properties
-
-        Parameters
-        ----------
-        data : dict
-            the data  to add
-        type_data : dict
-            Specifies the type of the data to be added, defaults to None
-        """
-        if type_data is None:
-            type_data = {k: type(v) for x in data.values() for k, y in x.items() for v in y.values()}
-        speakers = set(self.speakers)
-        data = {k: v for k, v in data.items() if k in speakers}
-        self.census.add_speaker_annotation(data)
-        self.hierarchy.add_speaker_properties(self, type_data.items())
-        self.encode_hierarchy()
 
     def reset_speakers(self):
         pass
@@ -100,7 +80,6 @@ class SpokenContext(AudioContext):
         discourses = set(self.discourses)
         print(discourses, discourse_data)
         discourse_data = {k: v for k, v in discourse_data.items() if k in discourses}
-        self.census.add_discourse_properties(discourse_data, type_data)
         discourse_data_to_csvs(self, discourse_data)
         import_discourse_csvs(self, type_data)
         self.hierarchy.add_discourse_properties(self, type_data.items())

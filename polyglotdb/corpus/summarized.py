@@ -2,6 +2,9 @@ from polyglotdb.exceptions import GraphQueryError
 
 from .featured import FeaturedContext
 
+from ..query.base.func import Average
+
+
 class SummarizedContext(FeaturedContext):
     def get_measure(self, data_name, statistic, annotation_type, by_speaker=False, speaker=None):
         """
@@ -60,7 +63,6 @@ class SummarizedContext(FeaturedContext):
             statement = "MATCH (p:{annotation_type}:{corpus_name}) RETURN p.label as {annotation_type}, {measure}({num_prop}{percent}) as {column}".format(
                 corpus_name=self.cypher_safe_name, annotation_type=annotation_type, measure=m, num_prop=num_prop,
                 percent=percent, column=column)
-        print(statement)
         if not baseline:
             result = []
             res = self.execute_cypher(statement)
@@ -102,9 +104,11 @@ class SummarizedContext(FeaturedContext):
         speaker_statement = '''
 MATCH (m:phone:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}) where s.name = '{speaker}'
 with m.{index} as target, avg(m.end-m.begin) as dur 
-with target,dur match (p:phone:{corpus_name}) 
+with target,dur
+match (p:phone:{corpus_name})
 where p.{index} = target set p.average_duration = dur 
-with p as phone  match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
+with p as phone
+match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
 with n,phone with n, n.{index} as target, sum(phone.average_duration) as baseline 
 set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation, \
                                                                                    corpus_name=self.cypher_safe_name,
@@ -115,8 +119,10 @@ MATCH (m:phone:{corpus_name})
 with m.{index} as target, avg(m.end-m.begin) as dur 
 with target,dur match (p:phone:{corpus_name}) 
 where p.{index} = target set p.average_duration = dur 
-with p as phone  match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
-with n,phone with n, n.{index} as target, sum(phone.average_duration) as baseline 
+with p as phone
+match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
+with n,phone
+with n, n.{index} as target, sum(phone.average_duration) as baseline
 set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation, \
                                                                                    corpus_name=self.cypher_safe_name,
                                                                                    index=index)
@@ -148,7 +154,6 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         q = self.query_graph(self.utterance)
         res = q.group_by(self.utterance.speaker.name.column_name('name')).aggregate(
             Average(self.utterance.syllable.rate))
-        print(q.cypher())
         return res
 
     def make_dict(self, data, speaker=False, label=None):
@@ -184,41 +189,6 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
             speakerDict = self.make_speaker_annotations_dict(firstDict, speaker, prop)
             return speakerDict
         return finalDict
-
-    # def encode_measure(self, data_name, statistic, annotation_type, by_speaker = False, speaker = None):
-    #
-    #     """
-    #     encode the data into the graph
-    #
-    #     Parameters
-    #     ----------
-    #     data_name : str
-    #         the aspect to summarize (duration, pitch, formants, etc)
-    #     statistic : str
-    #         how to summarize (mean, stdev, median, etc)
-    #     annotation_type : str
-    #         the annotation to summarize
-    #     by_speaker : boolean
-    #         whether to summarize by speaker or not
-    #     speaker : str
-    #         the specific speaker to encode baseline duration for (only for baseline duration)
-    #     """
-    #
-    #
-    #     res = self.get_measure(data_name, statistic, annotation_type, by_speaker, speaker)
-    #
-    #     dataDict = self.make_dict(res,by_speaker,annotation_type)
-    #     if not by_speaker:
-    #         if annotation_type == 'utterance':
-    #             self.enrich_utterances(dataDict)
-    #         elif annotation_type == 'word':
-    #             self.enrich_lexicon(dataDict)
-    #         elif annotation_type == 'phone':
-    #             self.enrich_features(dataDict)
-    #         elif annotation_type == 'syllable':
-    #             self.enrich_syllables(dataDict)
-    #     elif by_speaker:
-    #         self.enrich_speaker_annotations(dataDict)
 
     def encode_measure(self, property_name, statistic, annotation_type, by_speaker=False):
         if property_name == 'duration':

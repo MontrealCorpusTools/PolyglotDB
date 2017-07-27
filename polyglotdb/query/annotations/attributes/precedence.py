@@ -6,6 +6,7 @@ from ....exceptions import AnnotationAttributeError
 class PrecedenceAnnotation(AnnotationNode):
     non_optional = False
     match_template = '({anchor_alias})-[:precedes]-({token_alias})-[:is_a]->({type_alias})'
+    alias_prefix = ''
 
     def __init__(self, node, pos):
         super(PrecedenceAnnotation, self).__init__(node.node_type, node.corpus, node.hierarchy)

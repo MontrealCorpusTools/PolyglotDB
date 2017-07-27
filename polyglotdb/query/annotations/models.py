@@ -1,7 +1,5 @@
 from uuid import uuid1
 
-from py2neo import Node, Relationship
-
 from polyglotdb.exceptions import GraphModelError
 
 from ..base.helper import key_for_cypher, value_for_cypher
@@ -29,7 +27,7 @@ class BaseAnnotation(object):
         """
         self._node = item
         self._id = item['id']
-        for x in self._node.labels():
+        for x in self._node.labels:
             if x in self.corpus_context.hierarchy:
                 self._type = x
                 break
@@ -242,14 +240,21 @@ class LinguisticAnnotation(BaseAnnotation):
         """
         for k, v in kwargs.items():
             if k in self._type_node.keys():
-                self._type_node.update(**{k: v})
-            self._node.update(**{k: v})
+                self._type_node.properties.update(**{k: v})
+            self._node.properties.update(**{k: v})
         if self._node['begin'] > self._node['end']:
-            self._node.update(begin=self._node['end'], end=self._node['begin'])
+            self._node.properties.update(begin=self._node['end'], end=self._node['begin'])
+        self._unsaved = True
 
     def save(self):
         """ saves the node to the graph"""
-        self.corpus_context.graph.push(self.node)
+        if self._unsaved:
+            props = {k: v for k, v in self.node.items() if k != 'id'}
+            prop_string = ',\n'.join(['n.{} = {}'.format(k, value_for_cypher(v)) for k, v in props.items()])
+            statement = '''MATCH (n:{corpus_name}:{type}) WHERE n.id = {{id}}
+                        SET {prop_string}'''.format(corpus_name=self.corpus_context.cypher_safe_name,
+                                                    type=self._type, prop_string=prop_string)
+            self.corpus_context.execute_cypher(statement, id=self._id)
         for k, v in self._subannotations.items():
             for s in v:
                 s.save()
@@ -331,39 +336,30 @@ class LinguisticAnnotation(BaseAnnotation):
         discourse = self.discourse.name
 
         self.corpus_context.hierarchy.add_subannotation_type(self._type, type)
+        statement = '''MATCH (n:{type}:{corpus} {{id:{{id}}}})
+        CREATE (n)<-[r:annotates]-(sub:{sub_type}:{corpus} {{{props}}})
+        return sub, r'''
+        props = ['{}: {}'.format(key_for_cypher(k), value_for_cypher(v))
+                 for k, v in properties.items()]
+        statement = statement.format(type=self._type, sub_type=type,
+                                     corpus=self.corpus_context.cypher_safe_name, props=', '.join(props))
 
         if transaction is not None:
-            statement = '''MATCH (n:{type}:{corpus}:{discourse} {{id:{{id}}}})
-            CREATE (n)<-[:annotates]-(sub:{sub_type}:{corpus}:{discourse} {{{props}}})'''
-            props = ['{}: {}'.format(key_for_cypher(k), value_for_cypher(v))
-                     for k, v in properties.items()]
-            statement = statement.format(type=self.type, sub_type=type,
-                                         corpus=self.corpus_context.corpus_name,
-                                         discourse=discourse, props=', '.join(props))
             transaction.append(statement, id=self._id)
         else:
-            to_return = []
             sa = SubAnnotation(self.corpus_context)
             sa._annotation = self
-            sa._unsaved = True
             sa._type = type
-            sa.node = Node(type, self.corpus_context.corpus_name,
-                           discourse, **properties)
-            rel = Relationship(sa.node, 'annotates', self.node)
+            res = self.corpus_context.execute_cypher(statement, id=self._id).single()
 
-            if commit:
-                self.corpus_context.graph.create(sa.node)
-                self.corpus_context.graph.create(rel)
-            else:
-                to_return.append(sa.node)
-                to_return.append(rel)
+            sa.node = res['sub']
+            rel = res['r']
 
             if type not in self._subannotations:
                 self._subannotations[type] = []
             self._subannotations[type].append(sa)
             self._subannotations[type].sort(key=lambda x: x.begin)
-            if not commit:
-                return to_return
+            return sa.node, rel
 
 
 class SubAnnotation(BaseAnnotation):
@@ -373,6 +369,7 @@ class SubAnnotation(BaseAnnotation):
         self._id = None
         self._node = None
         self._annotation = None
+        self._unsaved = False
 
     def __getattr__(self, key):
         if self.corpus_context is None:
@@ -396,9 +393,10 @@ class SubAnnotation(BaseAnnotation):
         kwards : dict
             keyword arguments to update properties
         """
-        self._node.update(**kwargs)
+        self._node.properties.update(**kwargs)
         if self._node['begin'] > self._node['end']:
-            self._node.update(begin=self._node['end'], end=self._node['begin'])
+            self._node.properties.update(begin=self._node['end'], end=self._node['begin'])
+        self._unsaved = True
 
     @property
     def node(self):
@@ -410,7 +408,7 @@ class SubAnnotation(BaseAnnotation):
         """ Sets the node to item"""
         self._node = item
         self._id = item['id']
-        for x in self._node.labels():
+        for x in self._node.labels:
             if x in self.corpus_context.hierarchy.subannotations[self._annotation._type]:
                 self._type = x
                 break
@@ -434,7 +432,13 @@ class SubAnnotation(BaseAnnotation):
 
     def save(self):
         """ saves the current node to the graph"""
-        self.corpus_context.graph.push(self._node)
+        if self._unsaved:
+            props = {k: v for k, v in self.node.items() if k != 'id'}
+            prop_string = ',\n'.join(['n.{} = {}'.format(k, value_for_cypher(v)) for k, v in props.items()])
+            statement = '''MATCH (n:{corpus_name}:{type}) WHERE n.id = {{id}}
+                        SET {prop_string}'''.format(corpus_name=self.corpus_context.cypher_safe_name,
+                                                    type=self._type, prop_string=prop_string)
+            self.corpus_context.execute_cypher(statement, id=self._id)
 
 
 class Speaker(SubAnnotation):

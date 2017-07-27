@@ -65,11 +65,11 @@ class StructuredContext(BaseContext):
             if not discourse_properties:
                 for k, v in r['d'].items():
                     discourse_properties.add((k, type(v)))
-            at = list(r['n'].labels())[0]
+            at = list(r['n'].labels)[0]
             data[at] = sup
             sup = at
             if r['subs'] is not None:
-                subs[at] = set([list(x.labels())[0] for x in r['subs']])
+                subs[at] = set([list(x.labels)[0] for x in r['subs']])
             token_subsets[at] = set()
             type_subsets[at] = set()
             token_properties[at] = set([('id', type(''))])

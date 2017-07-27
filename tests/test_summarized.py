@@ -240,7 +240,7 @@ def test_baseline_word(summarized_config):
         assert res['this'] == approx(0.20937191666666685, 1e-3)
         assert (len(res) == 44)
 
-
+@pytest.mark.xfail
 def test_baseline_speaker_word(summarized_config):
     with CorpusContext(summarized_config) as g:
         res = g.get_measure('duration', 'baseline', 'word', False, 'unknown')

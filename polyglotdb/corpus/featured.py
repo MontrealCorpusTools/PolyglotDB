@@ -16,18 +16,20 @@ class FeaturedContext(LexicalContext):
         label : str
             the label for the class
         """
-        phone = getattr(self, self.phone_name)
+        phone = getattr(self, 'lexicon_' + self.phone_name)
         q = self.query_lexicon(phone).filter(phone.label.in_(phones))
         q.create_subset(label)
+        self.encode_hierarchy()
 
     def reset_class(self, label):
         """
         resets the class
         """
-        phone = getattr(self, self.phone_name)
+        phone = getattr(self, 'lexicon_' + self.phone_name)
         try:
             q = self.query_lexicon(phone.filter_by_subset(label))
             q.remove_subset(label)
+            self.encode_hierarchy()
         except SubsetError:
             pass
 
@@ -40,7 +42,7 @@ class FeaturedContext(LexicalContext):
         feature_dict : dict
             features to encode
         """
-        phone = getattr(self, self.phone_name)
+        phone = getattr(self, 'lexicon_' + self.phone_name)
         for k, v in feature_dict.items():
             q = self.query_lexicon(phone).filter(phone.label == k)
             q.set_properties(**v)
@@ -55,8 +57,8 @@ class FeaturedContext(LexicalContext):
         feature_names : list
             list of names of features to remove
         """
-        phone = getattr(self, self.phone_name)
-        q = self.query_graph(phone)
+        phone = getattr(self, 'lexicon_' + self.phone_name)
+        q = self.query_lexicon(phone)
         q.set_properties(**{x: None for x in feature_names})
         self.hierarchy.remove_type_properties(self, self.phone_name, feature_names)
         self.encode_hierarchy()
@@ -77,7 +79,6 @@ class FeaturedContext(LexicalContext):
             type_data = {k: type(v) for k, v in next(iter(feature_data.values())).items()}
         labels = set(self.phones)
         feature_data = {k: v for k, v in feature_data.items() if k in labels}
-        self.lexicon.add_properties(self.phone_name, feature_data, type_data)
         feature_data_to_csvs(self, feature_data)
         import_feature_csvs(self, type_data)
         self.hierarchy.add_type_properties(self, self.phone_name, type_data.items())

@@ -284,6 +284,11 @@ class Node(object):
                 label_string += ':' + ':'.join(map(key_for_cypher, self.subset_labels))
         return '{}{}'.format(self.alias, label_string)
 
+    def filter_by_subset(self, *args):
+        """ adds each item in args to the hierarchy type_labels"""
+        self.subset_labels = sorted(set(self.subset_labels + list(args)))
+        return self
+
     @property
     def with_alias(self):
         return self.alias

@@ -7,10 +7,6 @@ import audioread
 
 from acousticsim.utils import write_wav
 
-from ..sql import get_or_create
-
-from ..sql.models import (SoundFile, Discourse)
-
 
 def resample_audio(filepath, new_filepath, new_sr):
     if os.path.exists(new_filepath):

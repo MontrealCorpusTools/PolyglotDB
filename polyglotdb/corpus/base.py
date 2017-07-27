@@ -5,24 +5,16 @@ import sys
 import time
 from decimal import Decimal
 
-import py2neo
-import sqlalchemy
-from py2neo import Graph
-from py2neo.status import (ClientError, Forbidden,
-                           TransientError, Unauthorized, ConstraintError)
-from sqlalchemy import create_engine
+from neo4j.v1 import GraphDatabase
 
 from ..query.annotations.attributes import AnnotationNode, PauseAnnotation
 from ..query.annotations import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
-from ..query.lexicon import LexiconQuery
+from ..query.lexicon import LexiconQuery, LexiconNode
 from ..query.speaker import SpeakerQuery, SpeakerNode
 from ..config import CorpusConfig
 from ..exceptions import (CorpusConfigError, GraphQueryError,
                           ConnectionError, AuthorizationError, TemporaryConnectionError,
                           NetworkAddressError)
-from ..sql.config import Session
-from ..sql.models import Base, Discourse, Speaker
-from ..sql.query import Lexicon, Census
 from ..structure import Hierarchy
 
 
@@ -49,14 +41,10 @@ class BaseContext(object):
         else:
             self.config = CorpusConfig(*args, **kwargs)
         self.config.init()
-        self.graph = Graph(**self.config.graph_connection_kwargs)
+        self.graph_driver = GraphDatabase.driver(self.config.graph_connection_string)
         self.corpus_name = self.config.corpus_name
-        if self.corpus_name:
-            self.init_sql()
 
         self.hierarchy = Hierarchy({}, corpus_name=self.corpus_name)
-        self.lexicon = Lexicon(self)
-        self.census = Census(self)
 
         self._has_sound_files = None
         self._has_all_sound_files = None
@@ -82,15 +70,6 @@ class BaseContext(object):
         res = list(self.execute_cypher(statement))
         return len(res) > 0
 
-    def init_sql(self):
-        """
-        initializes sql connection
-        """
-        self.engine = create_engine(self.config.sql_connection_string)
-        Session.configure(bind=self.engine)
-        if not os.path.exists(self.config.db_path):
-            Base.metadata.create_all(self.engine)
-
     def execute_cypher(self, statement, **parameters):
         """
         Executes a cypher query
@@ -114,27 +93,11 @@ class BaseContext(object):
             if isinstance(v, Decimal):
                 parameters[k] = float(v)
         try:
-            return self.graph.run(statement, **parameters)
-        except ServiceUnavailable:
-            self.graph = Graph(**self.config.graph_connection_kwargs)
-            return self.graph.run(statement, **parameters)
-
+            with self.graph_driver.session() as session:
+                results = session.run(statement, **parameters)
+            return results
         except Exception as e:
             raise
-        except ClientError:
-            raise
-        except (Unauthorized):
-            raise (AuthorizationError('The specified user and password were not authorized by the server.'))
-        except Forbidden:
-            raise (NetworkAddressError(
-                'The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
-        except (TransientError):
-            raise (TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
-        except ConstraintError as e:
-            pass
-        except Exception:
-            raise
-
     @property
     def cypher_safe_name(self):
         return '`{}`'.format(self.corpus_name)
@@ -163,7 +126,6 @@ class BaseContext(object):
         return [x['speaker'] for x in res]
 
     def __enter__(self):
-        self.sql_session = Session()
         if self.corpus_name:
             if not os.path.exists(self.hierarchy_path):
                 self.hierarchy = self.generate_hierarchy()
@@ -187,17 +149,15 @@ class BaseContext(object):
             self.hierarchy = pickle.load(file=f)
 
     def __exit__(self, exc_type, exc, exc_tb):
+        self.graph_driver.close()
         if exc_type is None:
             # try:
             #    shutil.rmtree(self.config.temp_dir)
             # except:
             #    pass
-            self.sql_session.commit()
             return True
         else:
-            self.sql_session.rollback()
-        self.sql_session.expunge_all()
-        self.sql_session.close()
+            return False
 
     def __getattr__(self, key):
         if key == 'speaker':
@@ -208,6 +168,10 @@ class BaseContext(object):
             key += 's'  # FIXME
         if key in self.hierarchy.annotation_types:
             return AnnotationNode(key, corpus=self.corpus_name, hierarchy=self.hierarchy)
+        if key.startswith('lexicon_'):
+            key = key.split('_')[1]
+            if key in self.hierarchy.annotation_types:
+                return LexiconNode(key, corpus=self.corpus_name, hierarchy=self.hierarchy)
         raise (GraphQueryError(
             'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(
                 sorted(self.hierarchy.annotation_types)))))
@@ -257,7 +221,7 @@ class BaseContext(object):
         if call_back is not None:
             call_back('Resetting database...')
             number = self.execute_cypher(
-                '''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
+                '''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name))['number']
             call_back(0, number)
         num_deleted = 0
         for a in self.hierarchy.annotation_types:
@@ -271,7 +235,7 @@ class BaseContext(object):
                     if stop_check is not None and stop_check():
                         break
                     deleted = self.execute_cypher(delete_statement.format(corpus=self.cypher_safe_name, anno=a),
-                                                  speaker=s).evaluate()
+                                                  speaker=s).single()['deleted_count']
                     num_deleted += deleted
                     if call_back is not None:
                         call_back(num_deleted)
@@ -281,7 +245,7 @@ class BaseContext(object):
                 if stop_check is not None and stop_check():
                     break
                 deleted = self.execute_cypher(
-                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a)).evaluate()
+                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a)).single()['deleted_count']
                 num_deleted += deleted
                 if call_back is not None:
                     call_back(num_deleted)
@@ -294,15 +258,10 @@ class BaseContext(object):
 
     def reset(self, call_back=None, stop_check=None):
         '''
-        Reset the graph and SQL databases for a corpus.
+        Reset the graph databases for a corpus.
         '''
         self.reset_acoustics(call_back, stop_check)
         self.reset_graph(call_back, stop_check)
-        try:
-            Base.metadata.drop_all(self.engine)
-        except sqlalchemy.exc.OperationalError:
-            pass
-        Base.metadata.create_all(self.engine)
 
     def query_graph(self, annotation_type):
         '''

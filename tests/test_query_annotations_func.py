@@ -17,6 +17,7 @@ def test_query_duration_aggregate_average(acoustic_config):
 def test_query_duration_aggregate_average_group_by(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label.in_(['aa', 'ae']))
+        q = q.order_by(g.phone.label)
         results = q.group_by(g.phone.label.column_name('label')).aggregate(Average(g.phone.duration))
 
         assert (len(results) == 2)
@@ -30,6 +31,7 @@ def test_query_duration_aggregate_average_group_by(acoustic_config):
 def test_query_count_group_by(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label.in_(['aa', 'ae']))
+        q = q.order_by(g.phone.label)
         results = q.group_by(g.phone.label.column_name('label')).aggregate(Count())
         assert (len(results) == 2)
         print(results)

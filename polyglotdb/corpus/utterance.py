@@ -5,7 +5,6 @@ from ..query.base.func import Max, Min
 from ..exceptions import GraphQueryError
 from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs, \
     utterance_enriched_data_to_csvs, import_utterance_enrichment_csvs
-from ..sql.models import Discourse, SpeaksIn
 from .pause import PauseContext
 
 

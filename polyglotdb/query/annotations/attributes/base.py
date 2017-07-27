@@ -203,13 +203,11 @@ class AnnotationNode(Node):
     following : :class:`~polyglotdb.graph.attributes.AnnotationAttribute`
         Returns the Annotation of the same type with the following position
     """
-    alias_prefix = ''
     match_template = '''({token_alias})-[:is_a]->({type_alias})'''
     # template = '''({token_alias})'''
     begin_template = '{}_{}_begin'
     end_template = '{}_{}_end'
-    alias_template = '{prefix}node_{t}'
-    rel_type_template = 'r_{t}'
+    alias_template = 'node_{t}'
 
     def __init__(self, node_type, corpus=None, hierarchy=None):
         super(AnnotationNode, self).__init__(node_type, corpus=corpus, hierarchy=hierarchy)
@@ -278,8 +276,7 @@ class AnnotationNode(Node):
     @property
     def alias(self):
         """Returns a cypher formatted string of keys and prefixes"""
-        pre = self.alias_prefix
-        return key_for_cypher(self.alias_template.format(t=self.key, prefix=pre))
+        return key_for_cypher(self.alias_template.format(t=self.key))
 
     @property
     def with_alias(self):
@@ -298,8 +295,6 @@ class AnnotationNode(Node):
         return FollowsClauseElement(self, other_annotation)
 
     def __getattr__(self, key):
-        if key == 'annotation':
-            raise (AttributeError('Annotations do not have annotation attributes.'))
         if key in ['previous', 'following']:
             from .precedence import PreviousAnnotation, FollowingAnnotation
             if key == 'previous':

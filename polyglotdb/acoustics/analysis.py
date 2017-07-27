@@ -7,15 +7,15 @@ import csv
 
 from functools import partial
 
-from ..sql.models import SoundFile, Discourse
-
 from ..exceptions import GraphQueryError, AcousticError, SpeakerAttributeError
 
 from acousticsim.analysis.pitch import (signal_to_pitch as ASPitch_signal, file_to_pitch as ASPitch_file,
                                         signal_to_pitch_praat as PraatPitch_signal,
                                         file_to_pitch_praat as PraatPitch_file,
                                         signal_to_pitch_reaper as ReaperPitch_signal,
-                                        file_to_pitch_reaper as ReaperPitch_file
+                                        file_to_pitch_reaper as ReaperPitch_file,
+                                        signal_to_pitch_and_pulse_reaper as ReaperPitch_signal_pulse,
+                                        file_to_pitch_and_pulse_reaper as ReaperPitch_file_pulse,
                                         )
 from acousticsim.analysis.formants import (signal_to_formants as ASFormants_signal, file_to_formants as ASFormants_file,
                                            signal_to_formants_praat as PraatFormants_signal,
@@ -33,6 +33,51 @@ import io
 from contextlib import redirect_stdout
 
 PADDING = 0.1
+
+
+def analyze_discourse_pitch(corpus_context, discourse, pitch_source='praat', min_pitch=50, max_pitch=500, **kwargs):
+    print(kwargs)
+    segment_mapping = {}
+    discourse_mapping = {}
+    segments = []
+    statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
+                WHERE d.name = {{discourse_name}}
+                RETURN d, s, r'''.format(corpus_name=corpus_context.cypher_safe_name)
+    results = corpus_context.execute_cypher(statement, discourse_name=discourse)
+
+    for r in results:
+        channel = r['r']['channel']
+        speaker = r['s']['name']
+
+        discourse = r['d']['name']
+        file_path = r['d']['vowel_filepath']
+        atype = corpus_context.hierarchy.highest
+        prob_utt = getattr(corpus_context, atype)
+        q = corpus_context.query_graph(prob_utt)
+        q = q.filter(prob_utt.discourse.name == discourse)
+        q = q.filter(prob_utt.speaker.name == speaker)
+        utterances = q.all()
+        for u in utterances:
+            segments.append((file_path, u.begin, u.end, channel))
+
+    path = None
+    if pitch_source == 'praat':
+        path = corpus_context.config.praat_path
+        # kwargs = {'silence_threshold': 0.03,
+        #          'voicing_threshold': 0.45, 'octave_cost': 0.01, 'octave_jump_cost': 0.35,
+        #          'voiced_unvoiced_cost': 0.14}
+    elif pitch_source == 'reaper':
+        path = corpus_context.config.reaper_path
+    pitch_function = generate_pitch_function(pitch_source, min_pitch, max_pitch, signal=True, path=path, pulses=True)
+    print(pitch_function)
+    track = {}
+    pulses = set()
+    output = analyze_file_segments(segments, pitch_function, padding=PADDING)
+    print(output)
+    for v in output.values():
+        track.update(v[0])
+        pulses.update(v[1])
+    return track, sorted(pulses)
 
 
 def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=None):
@@ -211,14 +256,9 @@ def analyze_formants(corpus_context,
     (optional:) call_back: call back function
     (optional:) stop_check: stop check function
     """
-    q = corpus_context.sql_session.query(SoundFile).join(Discourse)
-    sound_files = q.all()
-
-    num_sound_files = len(sound_files)
     segment_mapping, discourse_mapping = generate_speaker_segments(corpus_context)
     if call_back is not None:
         call_back('Analyzing files...')
-        call_back(0, num_sound_files)
     for i, (speaker, v) in enumerate(segment_mapping.items()):
         gender = None
         try:
@@ -284,14 +324,9 @@ def analyze_intensity(corpus_context,
     -- call_back: call back function
     -- stop_check: stop check function
     """
-    q = corpus_context.sql_session.query(SoundFile).join(Discourse)
-    sound_files = q.all()
-
-    num_sound_files = len(sound_files)
     segment_mapping, discourse_mapping = generate_speaker_segments(corpus_context)
     if call_back is not None:
         call_back('Analyzing files...')
-        call_back(0, num_sound_files)
     # formant_function = generate_base_formants_function(corpus_context, signal=False, gender=g))
     for i, (speaker, v) in enumerate(segment_mapping.items()):
         gender = None
@@ -467,13 +502,19 @@ def generate_praat_script_function(praat_path, script_path, result_measurement, 
     return praat_function
 
 
-def generate_pitch_function(algorithm, min_pitch, max_pitch, signal=False, path=None, kwargs=None):
+def generate_pitch_function(algorithm, min_pitch, max_pitch, signal=False, path=None, pulses=False, kwargs=None):
     time_step = 0.01
     if algorithm == 'reaper':
         if signal:
-            ReaperPitch = ReaperPitch_signal
+            if pulses:
+                ReaperPitch = ReaperPitch_signal_pulse
+            else:
+                ReaperPitch = ReaperPitch_signal
         else:
-            ReaperPitch = ReaperPitch_file
+            if pulses:
+                ReaperPitch = ReaperPitch_file_pulse
+            else:
+                ReaperPitch = ReaperPitch_file
         if path is not None:
             pitch_function = partial(ReaperPitch, reaper_path=path)
         else:

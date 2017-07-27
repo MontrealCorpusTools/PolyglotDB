@@ -6,13 +6,9 @@ from .elements import (ContainsClauseElement,
                        RightAlignedClauseElement, LeftAlignedClauseElement,
                        NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
-from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
-                         SubAnnotation as QuerySubAnnotation,
-                         SpeakerAnnotation, DiscourseAnnotation)
+from .attributes import (HierarchicalAnnotation)
 
 from .results import QueryResults
-
-from .cypher import query_to_cypher
 from .profiles.base import Filter, Column
 
 from polyglotdb.exceptions import SubannotationError
@@ -42,15 +38,27 @@ class GraphQuery(BaseQuery):
                    '_set_properties', '_delete', '_limit',
                    '_cache', '_acoustic_columns']
 
+    set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
+    REMOVE {alias}:speech
+    WITH {alias}
+    OPTIONAL MATCH (prec)-[r1:precedes]->({alias})
+        FOREACH (o IN CASE WHEN prec IS NOT NULL THEN [prec] ELSE [] END |
+          CREATE (prec)-[:precedes_pause]->({alias})
+        )
+    DELETE r1
+    WITH {alias}, prec
+    OPTIONAL MATCH ({alias})-[r2:precedes]->(foll)
+        FOREACH (o IN CASE WHEN foll IS NOT NULL THEN [foll] ELSE [] END |
+          CREATE ({alias})-[:precedes_pause]->(foll)
+        )
+    DELETE r2'''
+
     def __init__(self, corpus, to_find, stop_check=None):
         super(GraphQuery, self).__init__(corpus, to_find)
         if stop_check is None:
             stop_check = base_stop_check
         self.stop_check = stop_check
-        self._hidden_columns = []
         self._acoustic_columns = []
-
-        self._delete = False
 
         self._add_subannotations = []
 
@@ -62,8 +70,6 @@ class GraphQuery(BaseQuery):
             ns.update(x for x in c.nodes if isinstance(x, HierarchicalAnnotation))
         for c, _ in self._order_by:
             ns.update(x for x in c.nodes if isinstance(x, HierarchicalAnnotation))
-        for c in self._hidden_columns:
-            ns.update(x for x in c.nodes if type(x) is not tf_type)
         for c in self._acoustic_columns:
             ns.update(x for x in c.nodes if type(x) is not tf_type)
         return ns
@@ -74,13 +80,14 @@ class GraphQuery(BaseQuery):
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
         self._set_properties = {}
 
-    @property
-    def annotation_set(self):
-        """ Returns annotation set """
-        annotation_set = set()
-        for c in self._criterion:
-            annotation_set.update(c.annotations)
-        return annotation_set
+    def _generate_set_properties_return(self):
+        if 'pause' in self._set_properties:
+            kwargs = {'alias': self.to_find.alias,
+                      'type_alias': self.to_find.type_alias}
+
+            return_statement = self.set_pause_template.format(**kwargs)
+            return return_statement
+        return super(GraphQuery, self)._generate_set_properties_return()
 
     def columns(self, *args):
         """
@@ -147,64 +154,13 @@ class GraphQuery(BaseQuery):
         self._criterion.append(NotRightAlignedClauseElement(self.to_find, annotation_type))
         return self
 
-    def cypher(self):
-        """
-        Generates a Cypher statement based on the query.
-        """
-        return query_to_cypher(self)
-
-    def discourses(self, output_name=None):
-        """
-        Add a column to the output for the name of the discourse that
-        the annotations are in.
-
-        Parameters
-        ----------
-        output_name : str, optional
-            Name of the output column, defaults to "discourse"
-        """
-        if output_name is None:
-            output_name = 'discourse'
-        self = self.columns(self.to_find.discourse.name.column_name(output_name))
-        return self
-
     def preload(self, *args):
         from .attributes.path import SubPathAnnotation
         from .attributes.subannotation import SubAnnotation
         for a in args:
-            if isinstance(a, SubPathAnnotation) and not isinstance(a,SubAnnotation):
+            if isinstance(a, SubPathAnnotation) and not isinstance(a, SubAnnotation):
                 a.with_subannotations = True
             self._preload.append(a)
-        return self
-
-    def times(self, begin_name=None, end_name=None):
-        """
-        Add columns for the beginnings and ends of the searched for annotations to
-        the output.
-
-        Parameters
-        ----------
-        begin_name : str, optional
-            Specify the name of the column for beginnings, defaults to
-            "begin"
-        end_name : str, optional
-            Specify the name of the column for ends, defaults to
-            "end"
-        """
-        if begin_name is None:
-            begin_name = 'begin'
-        if end_name is None:
-            end_name = 'end'
-        self = self.columns(self.to_find.begin.column_name(begin_name))
-        self = self.columns(self.to_find.end.column_name(end_name))
-        return self
-
-    def duration(self):
-        """
-        Add a column for the durations of the annotations to the output
-        named "duration".
-        """
-        self.columns(self.to_find.duration.column_name('duration'))
         return self
 
     def all(self):
@@ -253,17 +209,13 @@ class GraphQuery(BaseQuery):
         """
         Set properties of the returned tokens.
         """
-        self._set_labels.append(label)
-
         labels_to_add = []
         if self.to_find.node_type not in self.corpus.hierarchy.subset_tokens or \
                         label not in self.corpus.hierarchy.subset_tokens[self.to_find.node_type]:
             labels_to_add.append(label)
-        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+        super(GraphQuery, self).create_subset(label)
         if labels_to_add:
             self.corpus.hierarchy.add_token_labels(self.corpus, self.to_find.node_type, labels_to_add)
-        self.corpus.encode_hierarchy()
-        self._set_labels = []
 
     def set_properties(self, **kwargs):
         """
@@ -275,32 +227,19 @@ class GraphQuery(BaseQuery):
             if v is None:
                 props_to_remove.append(k)
             else:
-                self._set_properties[k] = v
                 if not self.corpus.hierarchy.has_token_property(self.to_find.node_type, k):
                     props_to_add.append((k, type(kwargs[k])))
-
-        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+        super(GraphQuery, self).set_properties(**kwargs)
         if props_to_add:
             self.corpus.hierarchy.add_token_properties(self.corpus, self.to_find.node_type, props_to_add)
         if props_to_remove:
             self.corpus.hierarchy.remove_token_properties(self.corpus, self.to_find.node_type, props_to_remove)
-        self._set_properties = {}
 
     def remove_subset(self, label):
         """ removes all token labels"""
-        self._remove_labels.append(label)
-        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
-        self.corpus.hierarchy.remove_token_labels(self.corpus, self.to_find.node_type, self._remove_labels)
-        self._remove_labels = []
-
-    def delete(self):
-        """
-        Remove the results of a query from the graph.  CAUTION: this is
-        irreversible.
-        """
-        self._delete = True
-        self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
+        super(GraphQuery, self).remove_subset(label)
+        self.corpus.hierarchy.remove_token_labels(self.corpus, self.to_find.node_type, [label])
 
     def cache(self, *args):
         """

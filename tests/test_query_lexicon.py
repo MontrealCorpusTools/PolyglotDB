@@ -5,9 +5,10 @@ from polyglotdb import CorpusContext
 
 def test_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        q = g.query_lexicon(g.phone).filter(g.phone.label.in_(['aa', 'ih']))
-        q = q.order_by(g.phone.label)
-        q = q.columns(g.phone.label.column_name('phone'))
+        q = g.query_lexicon(g.lexicon_phone).filter(g.lexicon_phone.label.in_(['aa', 'ih']))
+        q = q.order_by(g.lexicon_phone.label)
+        q = q.columns(g.lexicon_phone.label.column_name('phone'))
+        print(q.cypher())
         results = q.all()
         assert len(results) == 2
         assert results[0]['phone'] == 'aa'
@@ -16,12 +17,14 @@ def test_query(acoustic_config):
 
 def test_filter_on_type_subset(acoustic_config):
     with CorpusContext(acoustic_config) as g:
-        q = g.query_lexicon(g.phone).filter(g.phone.label == 'aa')
+        q = g.query_lexicon(g.lexicon_phone).filter(g.lexicon_phone.label == 'aa')
         q.create_subset('+syllabic')
-
-        q = g.query_graph(g.phone.filter_by_subset('+syllabic'))
-        q = q.order_by(g.phone.filter_by_subset('+syllabic').begin.column_name('begin'))
-        q = q.times().duration()
+        phone = g.phone.filter_by_subset('+syllabic')
+        q = g.query_graph(phone)
+        q = q.order_by(phone.begin.column_name('begin'))
+        q = q.columns(phone.begin.column_name('begin'),
+                      phone.end.column_name('end'),
+                      phone.duration.column_name('duration'))
         print(q.cypher())
         results = q.all()
         assert (len(results) == 3)
@@ -38,7 +41,7 @@ def test_filter_on_type_subset(acoustic_config):
 def test_path_on_type_subset(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         syllabics = ['aa', 'ih']
-        q = g.query_lexicon(g.phone).filter(g.phone.label.in_(syllabics))
+        q = g.query_lexicon(g.lexicon_phone).filter(g.lexicon_phone.label.in_(syllabics))
         q.create_subset('syllabic')
 
         print('begin aa.k number of syllabics in word')

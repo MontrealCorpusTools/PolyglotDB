@@ -17,7 +17,7 @@ class BaseQueryResults(object):
         self.corpus = query.corpus
         self.call_back = query.call_back
         self.stop_check = query.stop_check
-        self.cursors = [self.corpus.execute_cypher(query.cypher(), **query.cypher_params())]
+        self.cursors = [self.corpus.execute_cypher(query.cypher(), **query.cypher_params()).records()]
         self.cache = []
         self.evaluated = []
         self.current_ind = 0
@@ -52,7 +52,7 @@ class BaseQueryResults(object):
                 continue
             while True:
                 try:
-                    r = c.next()
+                    r = next(c)
                 except StopIteration:
                     r = None
                 if r is None:
@@ -96,7 +96,7 @@ class BaseQueryResults(object):
                 break
             while True:
                 try:
-                    r = c.next()
+                    r = next(c)
                 except StopIteration:
                     r = None
                 if r is None:

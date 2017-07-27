@@ -6,8 +6,7 @@ from influxdb import InfluxDBClient
 
 from polyglotdb.query.discourse import DiscourseInspector
 from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_formants_vowel_segments, analyze_intensity, \
-    analyze_script
-from ..sql.models import SoundFile, Discourse
+    analyze_script, analyze_discourse_pitch
 from .syllabic import SyllabicContext
 
 from ..acoustics.utils import load_waveform, generate_spectrogram
@@ -77,6 +76,9 @@ class AudioContext(SyllabicContext):
 
     def analyze_pitch(self, stop_check=None, call_back=None):
         analyze_pitch(self, stop_check, call_back)
+
+    def analyze_discourse_pitch(self, discourse, **kwargs):
+        return analyze_discourse_pitch(self, discourse, **kwargs)
 
     def analyze_formants(self, stop_check=None, call_back=None):
         analyze_formants(self, stop_check, call_back)
@@ -158,7 +160,7 @@ class AudioContext(SyllabicContext):
     def discourse_sound_file(self, discourse):
         statement = '''MATCH (d:Discourse:{corpus_name}) WHERE d.name = {{discourse_name}} return d'''.format(
             corpus_name=self.cypher_safe_name)
-        results = self.execute_cypher(statement, discourse_name=discourse)
+        results = self.execute_cypher(statement, discourse_name=discourse).records()
         for r in results:
             d = r['d']
             break
@@ -200,8 +202,14 @@ class AudioContext(SyllabicContext):
         bool
             True if there are any sound files at all, false if there aren't
         """
+
         if self._has_sound_files is None:
-            self._has_sound_files = self.sql_session.query(SoundFile).first() is not None
+            self._has_sound_files = False
+            for d in self.discourses:
+                sf = self.discourse_sound_file(d)
+                if sf['filepath'] is not None:
+                    self._has_sound_files = True
+                    break
         return self._has_sound_files
 
     def get_intensity(self, discourse, begin, end, relative=False, relative_time=False, **kwargs):
@@ -772,7 +780,7 @@ class AudioContext(SyllabicContext):
         if by_phone and by_speaker:
             statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0}) return r.{1} as {1} LIMIT 1'''.format(
                 self.cypher_safe_name, name)
-            results = self.execute_cypher(statement)
+            results = self.execute_cypher(statement).records()
             try:
                 first = next(results)
             except StopIteration:
@@ -783,12 +791,12 @@ class AudioContext(SyllabicContext):
                 statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0})
                 return p.label as phone, s.name as speaker, r.{1}_F1 as F1, r.{1}_F2 as F2, r.{1}_F3 as F3'''.format(
                     self.cypher_safe_name, statistic)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {(x['speaker'], x['phone']): [x['F1'], x['F2'], x['F3']] for x in results}
             else:
                 statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0})
                 return p.label as phone, s.name as speaker, r.{1} as {1}'''.format(self.cypher_safe_name, name)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {(x['speaker'], x['phone']): [x[name]] for x in results}
         elif by_phone:
             if not self.hierarchy.has_type_property('phone', name):
@@ -797,12 +805,12 @@ class AudioContext(SyllabicContext):
                 statement = '''MATCH (p:phone_type:{0})
                 return p.label as phone, p.{1}_F1 as F1, p.{1}_F2 as F2, p.{1}_F3 as F3'''.format(
                     self.cypher_safe_name, statistic)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {x['phone']: [x['F1'], x['F2'], x['F3']] for x in results}
             else:
                 statement = '''MATCH (p:phone_type:{0})
                 return p.label as phone, p.{1} as {1}'''.format(self.cypher_safe_name, name)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {x['phone']: [x[name]] for x in results}
         elif by_speaker:
             if not self.hierarchy.has_speaker_property(name):
@@ -811,12 +819,12 @@ class AudioContext(SyllabicContext):
                 statement = '''MATCH (s:Speaker:{0})
                 return s.name as speaker, s.{1}_F1 as F1, s.{1}_F2 as F2, s.{1}_F3 as F3'''.format(
                     self.cypher_safe_name, statistic)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {x['speaker']: [x['F1'], x['F2'], x['F3']] for x in results}
             else:
                 statement = '''MATCH (s:Speaker:{0})
                 return s.name as speaker, s.{1} as {1}'''.format(self.cypher_safe_name, name)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {x['speaker']: [x[name]] for x in results}
         return results
 

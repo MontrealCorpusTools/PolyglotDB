@@ -61,7 +61,7 @@ def test_add_token_label(subannotation_config):
             q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')
             results = q.all()
 
-        q = c.query_lexicon(c.phone).filter(c.phone.label == 't')
+        q = c.query_lexicon(c.lexicon_phone).filter(c.lexicon_phone.label == 't')
         q.set_properties(tness='such t')
         q.create_subset('t')
         c.encode_hierarchy()

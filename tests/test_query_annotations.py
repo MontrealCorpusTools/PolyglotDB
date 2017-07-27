@@ -64,7 +64,7 @@ def test_order_by(timed_config):
         print(g.hierarchy.type_properties)
         print(g.hierarchy.token_properties)
         q = g.query_graph(g.word).filter(g.word.label == 'are').order_by(
-            g.word.begin.column_name('begin'))  # .times('begin','end')
+            g.word.begin.column_name('begin'))
         prev = 0
         print(q.cypher())
         print(q.all())
@@ -184,43 +184,55 @@ def test_query_columns_contained(timed_config):
 def test_query_alignment(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.filter_left_aligned(g.line).times()
+        q = q.filter_left_aligned(g.line)
         q = q.columns(g.phone.word.label)
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
         print(q.cypher())
         results = q.all()
         assert (len(results) == 1)
         assert (results[0]['begin'] == 0)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.filter(g.phone.begin == g.phone.line.begin).times()
+        q = q.filter(g.phone.begin == g.phone.line.begin)
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
         print(q.cypher())
         results = q.all()
         assert (len(results) == 1)
         assert (results[0]['begin'] == 0)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.filter(g.phone.begin != g.phone.line.begin).times()
+        q = q.filter(g.phone.begin != g.phone.line.begin)
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
         print(q.cypher())
         results = q.all()
         assert (len(results) == 1)
         assert (results[0]['begin'] == 0.8)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 's')
-        q = q.filter_right_aligned(g.line).times()
+        q = q.filter_right_aligned(g.line)
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
         print(q.cypher())
         results = q.all()
         assert (len(results) == 1)
         assert (results[0]['begin'] == 3.5)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 's')
-        q = q.filter(g.phone.end == g.phone.line.end).times()
+        q = q.filter(g.phone.end == g.phone.line.end)
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
         print(q.cypher())
         results = q.all()
         assert (len(results) == 1)
         assert (results[0]['begin'] == 3.5)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 's')
-        q = q.filter(g.phone.end != g.phone.line.end).times()
+        q = q.filter(g.phone.end != g.phone.line.end)
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
         print(q.cypher())
         results = q.all()
         assert (len(results) == 1)
@@ -323,7 +335,9 @@ def test_complex_hierarchy(syllable_morpheme_config):
         assert (len(results) == 2)
 
         q = g.query_graph(g.phone).filter(g.phone.label == 'k')
-        q = q.times().columns(g.phone.following_pause.label)
+        q = q.columns(g.phone.following_pause.label)
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
         results = q.all()
         print(q.cypher())
         assert (len(results) == 2)
@@ -347,7 +361,10 @@ def test_regex_query(timed_config):
 def test_query_duration(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
-        q = q.order_by(g.phone.begin.column_name('begin')).times().duration()
+        q = q.order_by(g.phone.begin)
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'),
+                      g.phone.duration.column_name('duration'))
         print(q.cypher())
         results = q.all()
         assert (len(results) == 3)
@@ -374,7 +391,8 @@ def test_mirrored(acoustic_config):
         q = g.query_graph(g.phone).filter(g.phone.label.in_(obstruents))
         q = q.filter(g.phone.previous.label.in_(vowels))
         q = q.filter(g.phone.following.label == g.phone.previous.label)
-        q = q.times()
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
         print(q.cypher())
 
         results = q.all()
@@ -385,7 +403,8 @@ def test_mirrored(acoustic_config):
         q = q.filter(g.phone.following.label == g.phone.previous.label)
         q = q.filter(g.phone.end == g.phone.word.end)
         # q = q.filter(g.phone.following.begin == g.phone.word.following.begin)
-        q = q.times()
+        q = q.columns(g.phone.begin.column_name('begin'),
+                      g.phone.end.column_name('end'))
 
         print(q.cypher())
 

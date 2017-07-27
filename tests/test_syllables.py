@@ -13,6 +13,7 @@ def test_find_onsets(timed_config):
     expected_freqs = {('k',): 2, tuple(): 3, ('d',): 1, ('t',): 1, ('g',): 1}
     with CorpusContext(timed_config) as c:
         c.encode_syllabic_segments(syllabics)
+        assert c.has_syllabics
         onsets = c.find_onsets()
         assert (set(onsets.keys()) == expected_onsets)
         assert (onsets == expected_freqs)
@@ -42,7 +43,7 @@ def test_probabilistic_syllabification(acoustic_config, timed_config, acoustic_s
     with CorpusContext(acoustic_config) as c:
         c.reset_class('syllabic')
         c.encode_syllabic_segments(acoustic_syllabics)
-        assert c.hierarchy.has_type_subset('phone', 'syllabic')
+        assert c.has_syllabics
         onsets = norm_count_dict(c.find_onsets())
         codas = norm_count_dict(c.find_codas())
     # nonsyllabic
@@ -91,7 +92,9 @@ def test_encode_syllables_acoustic(acoustic_config):
                  'uh', 'ah', 'ao', 'er', 'ow']
     with CorpusContext(acoustic_config) as c:
         c.encode_syllabic_segments(syllabics)
+        assert c.has_syllabics
         c.encode_syllables()
+        assert c.has_syllables
 
         q = c.query_graph(c.phone).filter(c.phone.label == 'dh')
         q = q.filter(c.phone.begin == c.phone.syllable.begin)

@@ -4,8 +4,6 @@ sphinx>=1.3b3
 numpydoc==0.6.0
 librosa==0.4.3
 scipy
-sqlalchemy==1.0.14
-https://github.com/technige/py2neo/archive/v4.zip
 textgrid==1.0
 influxdb==3.0.0
 tqdm==4.11.2

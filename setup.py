@@ -55,18 +55,14 @@ if __name__ == '__main__':
                     'polyglotdb.query.base',
                     'polyglotdb.query.annotations',
                     'polyglotdb.query.annotations.attributes',
-                    'polyglotdb.query.annotations.cypher',
                     'polyglotdb.query.annotations.profiles',
                     'polyglotdb.query.discourse',
                     'polyglotdb.query.speaker',
                     'polyglotdb.query.lexicon',
-                    'polyglotdb.sql',
                     'polyglotdb.syllabification'],
           install_requires=[
-              'sqlalchemy',
               'textgrid',
               'acousticsim',
-              'py2neo',
               'librosa',
               'influxdb'
           ],

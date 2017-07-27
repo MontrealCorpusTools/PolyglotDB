@@ -4,11 +4,6 @@ import time
 import csv
 from collections import defaultdict
 
-from ..sql.models import (Base, Annotation, Property, NumericProperty, SpeaksIn,
-                          AnnotationType, PropertyType, Discourse, Speaker, SoundFile)
-
-from ..sql.helper import get_or_create
-
 from ..acoustics.io import setup_audio
 
 from ..io.importer import (data_to_graph_csvs, import_csvs,

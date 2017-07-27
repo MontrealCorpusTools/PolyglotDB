@@ -26,16 +26,16 @@ class SyllabicContext(UtteranceContext):
 
         """
         statement = '''match (w:{word_name}:{corpus_name})
-where (w)<-[:contained_by*]-()-[:is_a]->(:syllabic)
+where (w)<-[:contained_by*1..2]-()-[:is_a]->(:syllabic)
 with w
 match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:syllabic),
-(n)-[:contained_by*]->(w)
+(n)-[:contained_by*1..2]->(w)
 with w, n
 order by n.begin
 with w,collect(n)[0..1] as coll unwind coll as n
 
-MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*]->(w)
-where not (pn)<-[:precedes]-()-[:contained_by*]->(w)
+MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
+where not (pn)<-[:precedes]-()-[:contained_by*1..2]->(w)
 with w, n,pn
 match p = shortestPath((pn)-[:precedes*0..10]->(n))
 with extract(x in nodes(p)[0..-1]|x.label) as onset
@@ -58,16 +58,16 @@ return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
             A dictionary with coda values as keys and frequency values as values
         """
         statement = '''match (w:{word_name}:{corpus_name})
-where (w)<-[:contained_by*]-()-[:is_a]->(:syllabic)
+where (w)<-[:contained_by*1..2]-()-[:is_a]->(:syllabic)
 with w
 match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:syllabic),
-(n)-[:contained_by*]->(w)
+(n)-[:contained_by*1..2]->(w)
 with w, n
 order by n.begin DESC
 with w,collect(n)[0..1] as coll unwind coll as n
 
-MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*]->(w)
-where not (pn)-[:precedes]->()-[:contained_by*]->(w)
+MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
+where not (pn)-[:precedes]->()-[:contained_by*1..2]->(w)
 with w, n,pn
 match p = shortestPath((n)-[:precedes*0..10]->(pn))
 with extract(x in nodes(p)[1..]|x.label) as coda
@@ -119,7 +119,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher(statement).evaluate()
+            deleted = self.execute_cypher(statement).single()['deleted_count']
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
@@ -319,10 +319,6 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
             # labels = set(self.lexicon.syllables())
             #  syllable_data = {k: v for k,v in syllable_data.items() if k in labels}
-        self.lexicon.add_properties('syllable', syllable_data, type_data)
-        for x in syllable_data.keys():
-            self.lexicon.get_or_create_annotation(x, 'syllable')
-        self.lexicon.add_properties('syllable', syllable_data, type_data)
         syllables_enrichment_data_to_csvs(self, syllable_data)
         import_syllable_enrichment_csvs(self, type_data)
         # self.hierarchy.add_type_labels(self, 'syllable', ['test'])
