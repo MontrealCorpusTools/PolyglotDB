@@ -34,6 +34,7 @@ install:
   - git clone https://github.com/MontrealCorpusTools/polyglot-server.git
   - source activate test-server-environment
   - pip install -r polyglot-server/requirements.txt
+  - python polyglot-server/manage.py makemigrations
   - python polyglot-server/manage.py migrate
 
 # Run test
