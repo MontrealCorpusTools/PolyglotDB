@@ -46,6 +46,7 @@ after_success:
   - coveralls
 
 after_script:
+  - ls -R polyglot-server/test_data
   - cat polyglot-server/test_data/data/test_database/influxdb.log
   - python bin/pgdb.py stop
 
