@@ -46,7 +46,7 @@ after_success:
   - coveralls
 
 after_script:
-  - cat polyglot-server/test_data/test_database/influxdb.log
+  - cat polyglot-server/test_data/data/test_database/influxdb.log
   - python bin/pgdb.py stop
 
 cache:
