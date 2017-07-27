@@ -12,7 +12,7 @@ def readme():
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
-        self.test_args = ['--strict', '--verbose', '--tb=long', 'tests']
+        self.test_args = ['--strict', '--verbose', '--tb=long', 'tests', '-x']
         #if os.environ.get('TRAVIS', False):
         #    self.test_args.insert(0, '--skipacoustics')
         self.test_suite = True
