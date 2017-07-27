@@ -38,7 +38,7 @@ install:
 
 # Run test
 script:
-  - (python polyglot-server/manage.py runserver) & (source activate test-environment && "coverage run --source=polyglotdb setup.py test")
+  - (python polyglot-server/manage.py runserver) & (source activate test-environment && coverage run --source=polyglotdb setup.py test)
 
 # Calculate coverage
 after_success:
