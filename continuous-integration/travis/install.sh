@@ -19,6 +19,21 @@ else
   echo "Miniconda already installed."
 fi
 
+if [ ! -d "$HOME/miniconda/miniconda/envs/test-server-environment" ]; then
+  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  conda create -q -n test-server-environment python=3.5 setuptools atlas numpy pytest scipy
+  source activate test-server-environment
+  which python
+  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb django
+  pip install -q git+https://github.com/mmcauliffe/python-acoustic-similarity.git
+  python setup.py install
+else
+  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  source activate test-server-environment
+  python setup.py install
+  echo "Server already installed."
+fi
+
 if [ ! -d "$HOME/pgdb/data" ]; then
   source activate test-environment
   python bin/pgdb.py install ~/pgdb -q

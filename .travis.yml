@@ -31,13 +31,13 @@ install:
   - pip install -r requirements.txt
   - which python
   - conda list
+  - git clone https://github.com/MontrealCorpusTools/polyglot-server.git
+  - source activate test-server-environment
+  - python polyglot-server/manage.py migrate
 
 # Run test
 script:
-  - cat $HOME/.pgdb/config.ini
-  - python bin/pgdb.py start
-  - sleep 45
-  - "coverage run --source=polyglotdb setup.py test"
+  - (python polyglot-server/manage.py runserver) & (source activate test-environment && "coverage run --source=polyglotdb setup.py test")
 
 # Calculate coverage
 after_success:
