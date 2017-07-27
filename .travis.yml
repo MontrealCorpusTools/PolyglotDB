@@ -35,7 +35,7 @@ install:
   - source activate test-server-environment
   - pip install -r polyglot-server/requirements.txt
   - python polyglot-server/manage.py makemigrations
-  - python polyglot-server/manage.py migrate
+  - python polyglot-server/manage.py migrate --run-syncdb
 
 # Run test
 script:
