@@ -47,17 +47,14 @@ after_success:
 
 after_script:
   - ls -R polyglot-server/test_data
-  - cat polyglot-server/test_data/data/main_test_database/influxdb.log
-  - cat polyglot-server/test_data/data/test_database/influxdb.log
-  - cat polyglot-server/test_data/data/main_test_database/influxdb/influxdb.conf
-  - cat polyglot-server/test_data/data/test_database/influxdb/influxdb.conf
-  - python bin/pgdb.py stop
+  - cat polyglot-server/test_data/data/main_test_database/neo4j.log
+  - cat polyglot-server/test_data/data/test_database/neo4j.log
+  - cat polyglot-server/test_data/data/test_database/neo4j/logs/neo4j.log
+  - cat polyglot-server/test_data/data/test_database/neo4j/logs/debug.log
 
 cache:
   pip: true
   apt: true
   directories:
     - $HOME/miniconda
-    - $HOME/pgdb
-    - $HOME/.pgdb
     - $HOME/tools
