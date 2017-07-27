@@ -10,10 +10,10 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
-  conda create -q -n test-environment python=3.5 setuptools atlas numpy sqlalchemy pytest scipy scikit-learn networkx
+  conda create -q -n test-environment python=3.5 setuptools atlas numpy pytest scipy
   source activate test-environment
   which python
-  pip install -q coveralls coverage py2neo textgrid librosa tqdm influxdb
+  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb
   pip install -q git+https://github.com/mmcauliffe/python-acoustic-similarity.git
 else
   echo "Miniconda already installed."
@@ -30,15 +30,13 @@ fi
 if [ ! -f "$HOME/tools/praat" ]; then
   cd $HOME/downloads
   #FOR WHEN TRAVIS UPDATES TO A NEWER UBUNTU
-  #latestVer=$(curl -s 'http://www.fon.hum.uva.nl/praat/download_linux.html' |
-  # grep -Eo 'praat[0-9]+_linux64\.tar\.gz' | head -1)
+  latestVer=$(curl -s 'http://www.fon.hum.uva.nl/praat/download_linux.html' |
+   grep -Eo 'praat[0-9]+_linux64barren\.tar\.gz' | head -1)
 
   # Download.
-  #curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
-  #tar -zxvf praat-latest.tar.gz
-  wget http://www.fon.hum.uva.nl/praat/old/5412/praat5412_linux64.tar.gz
-  tar -zxvf praat5412_linux64.tar.gz
-  mv praat $HOME/tools/praat
+  curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
+  tar -zxvf praat-latest.tar.gz
+  mv praat_barren $HOME/tools/praat
 else
   echo "Praat already installed."
 fi
