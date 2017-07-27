@@ -10,7 +10,7 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
-  conda create -q -n test-environment python=3.5 setuptools atlas numpy pytest scipy
+  conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION setuptools atlas numpy pytest scipy
   source activate test-environment
   which python
   pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb
@@ -21,7 +21,7 @@ fi
 
 if [ ! -d "$HOME/miniconda/miniconda/envs/test-server-environment" ]; then
   export PATH="$HOME/miniconda/miniconda/bin:$PATH"
-  conda create -q -n test-server-environment python=3.5 setuptools atlas numpy pytest scipy
+  conda create -q -n test-server-environment python=$TRAVIS_PYTHON_VERSION setuptools atlas numpy pytest scipy
   source activate test-server-environment
   which python
   pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb django
