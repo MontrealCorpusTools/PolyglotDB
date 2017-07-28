@@ -61,7 +61,7 @@ if __name__ == '__main__':
                     'polyglotdb.query.lexicon',
                     'polyglotdb.syllabification'],
           install_requires=[
-              'neo4j-driver'
+              'neo4j-driver',
               'textgrid',
               'acousticsim',
               'librosa',
