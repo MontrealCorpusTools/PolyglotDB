@@ -13,7 +13,7 @@ Introduction
 
 .. _Neo4j: http://neo4j.com/
 
-#.. _InfluxDB: http://influxdb.com/
+.. _InfluxDB: http://influxdb.com/
 
 .. _michael.e.mcauliffe@gmail.com: michael.e.mcauliffe@gmail.com
 

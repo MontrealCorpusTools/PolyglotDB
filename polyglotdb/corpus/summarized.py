@@ -262,9 +262,13 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
                 self.encode_measure(property_name, 'mean', 'phone', by_speaker)
                 self.encode_measure(property_name, 'sd', 'phone', by_speaker)
             else:
-                if res[0].get('mean_{}'.format(property_name), None) is None:
+                try:
+                    res[0]['mean_{}'.format(property_name)]
+                except KeyError:
                     self.encode_measure(property_name, 'mean', 'phone', by_speaker)
-                if res[0].get('sd_{}'.format(property_name), None) is None:
+                try:
+                    res[0]['sd_{}'.format(property_name)]
+                except KeyError:
                     self.encode_measure(property_name, 'sd', 'phone', by_speaker)
             if annotation_type == self.phone_name:
                 statement = '''MATCH (p:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})

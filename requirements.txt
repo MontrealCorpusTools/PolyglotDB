@@ -7,4 +7,4 @@ scipy
 textgrid==1.0
 influxdb==3.0.0
 tqdm==4.11.2
-https://github.com/mmcauliffe/python-acoustic-similarity/archive/master.zip
+acousticsim

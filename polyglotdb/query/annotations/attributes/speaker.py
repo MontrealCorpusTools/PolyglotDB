@@ -31,5 +31,6 @@ class SpeakerAnnotation(Node):
 
     def __getattr__(self, key):
         if self.hierarchy is not None and not self.hierarchy.has_speaker_property(key):
-            raise AnnotationAttributeError('Speakers do not have a "{}" property.'.format(key))
+            props = [x[0] for x in self.hierarchy.speaker_properties]
+            raise AnnotationAttributeError('Speakers do not have a "{}" property, available are: .'.format(key, ', '.join(props)))
         return NodeAttribute(self, key)
