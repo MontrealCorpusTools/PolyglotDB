@@ -31,7 +31,7 @@ def save_results(results, path, header=None, mode='w'):
 
     Parameters
     ----------
-    results : dict
+    results : iterable
         the results to write
     path : str
         the path to the save file

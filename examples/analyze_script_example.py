@@ -7,7 +7,7 @@ sys.path.insert(0,base)
 from polyglotdb import CorpusContext
 from polyglotdb.corpus import AudioContext
 from polyglotdb.config import CorpusConfig
-from polyglotdb.query.graph.func import Count
+from polyglotdb.query.annotations.func import Count
 
 from polyglotdb.io import inspect_textgrid
 import polyglotdb.io as aio

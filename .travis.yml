@@ -1,6 +1,6 @@
 language: python
 python:
-  - 3.5
+  - 3.6
 branches:
   only:
     - master
@@ -31,26 +31,23 @@ install:
   - pip install -r requirements.txt
   - which python
   - conda list
+  - git clone https://github.com/MontrealCorpusTools/polyglot-server.git
+  - source activate test-server-environment
+  - pip install -r polyglot-server/requirements.txt
+  - python polyglot-server/manage.py makemigrations
+  - python polyglot-server/manage.py migrate --run-syncdb
 
 # Run test
 script:
-  - cat $HOME/.pgdb/config.ini
-  - python bin/pgdb.py start
-  - sleep 45
-  - "coverage run --source=polyglotdb setup.py test"
+  - (python polyglot-server/manage.py runserver) & (source activate test-environment && coverage run --source=polyglotdb setup.py test)
 
 # Calculate coverage
 after_success:
   - coveralls
-
-after_script:
-  - python bin/pgdb.py stop
 
 cache:
   pip: true
   apt: true
   directories:
     - $HOME/miniconda
-    - $HOME/pgdb
-    - $HOME/.pgdb
     - $HOME/tools

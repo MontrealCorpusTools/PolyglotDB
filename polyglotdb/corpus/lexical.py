@@ -18,7 +18,6 @@ class LexicalContext(SpokenContext):
         """
         if type_data is None:
             type_data = {k: type(v) for k, v in next(iter(lexicon_data.values())).items()}
-        self.lexicon.add_properties(self.word_name, lexicon_data, type_data, case_sensitive=case_sensitive)
         lexicon_data_to_csvs(self, lexicon_data, case_sensitive=case_sensitive)
         import_lexicon_csvs(self, type_data, case_sensitive=case_sensitive)
         self.hierarchy.add_type_properties(self, self.word_name, type_data.items())

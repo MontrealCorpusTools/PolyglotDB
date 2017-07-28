@@ -213,7 +213,7 @@ def subannotations_data_to_csv(corpus_context, type, data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.AnnotatedContext`
         the corpus object
     data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph

@@ -12,7 +12,7 @@ def readme():
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
-        self.test_args = ['--strict', '--verbose', '--tb=long', 'tests']
+        self.test_args = ['--strict', '--verbose', '--tb=long', 'tests', '-x']
         #if os.environ.get('TRAVIS', False):
         #    self.test_args.insert(0, '--skipacoustics')
         self.test_suite = True
@@ -52,21 +52,17 @@ if __name__ == '__main__':
                     'polyglotdb.io.importer',
                     'polyglotdb.io.enrichment',
                     'polyglotdb.query',
-                    'polyglotdb.query.graph',
-                    'polyglotdb.query.graph.attributes',
-                    'polyglotdb.query.graph.cypher',
+                    'polyglotdb.query.base',
+                    'polyglotdb.query.annotations',
+                    'polyglotdb.query.annotations.attributes',
+                    'polyglotdb.query.annotations.profiles',
                     'polyglotdb.query.discourse',
                     'polyglotdb.query.speaker',
-                    'polyglotdb.query.speaker.attributes',
-                    'polyglotdb.query.speaker.cypher',
                     'polyglotdb.query.lexicon',
-                    'polyglotdb.sql',
                     'polyglotdb.syllabification'],
           install_requires=[
-              'sqlalchemy',
               'textgrid',
               'acousticsim',
-              'py2neo',
               'librosa',
               'influxdb'
           ],

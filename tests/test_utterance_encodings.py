@@ -2,10 +2,11 @@ import os
 import pytest
 
 from polyglotdb import CorpusContext
+from polyglotdb.exceptions import AnnotationAttributeError
 
 
-def test_encode_positions(acoustic_config):
-    with CorpusContext(acoustic_config) as g:
+def test_encode_positions(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
         g.encode_utterance_position()
 
         q = g.query_graph(g.word).columns(g.word.label.column_name('label'),
@@ -23,15 +24,16 @@ def test_encode_positions(acoustic_config):
         results = q.all()
         assert (all(x['pos'] == 1 for x in results))
 
+        print('resetting utterance position')
         g.reset_utterance_position()
 
         q = g.query_graph(g.word)
-        with pytest.raises(AttributeError):
+        with pytest.raises(AnnotationAttributeError):
             g.word.position_in_utterance == 0
 
 
-def test_encode_speech_rate(acoustic_config):
-    with CorpusContext(acoustic_config) as g:
+def test_encode_speech_rate(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
         label = 'somethingsomething'
 
         g.encode_class(['dh'], label)
@@ -45,8 +47,9 @@ def test_encode_speech_rate(acoustic_config):
 
         assert (round(results[0]['speech_rate'], 5) == round(4 / (7.541484 - 1.059223), 5))
 
+        print('resetting speech rate')
         g.reset_speech_rate()
 
         q = g.query_graph(g.utterance)
-        with pytest.raises(AttributeError):
+        with pytest.raises(AnnotationAttributeError):
             g.utterance.speech_rate == 0
