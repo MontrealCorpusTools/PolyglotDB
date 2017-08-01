@@ -35,7 +35,8 @@ MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
                 'acousticsim.analysis.formants',
                 'acousticsim.analysis.intensity',
                 'acousticsim.multiprocessing',
-                'acousticsim.main', 'acousticsim.utils', 'acousticsim.analysis.praat',]
+                'acousticsim.main', 'acousticsim.utils', 'acousticsim.analysis.praat',
+                'acousticsim.analysis.helper']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
