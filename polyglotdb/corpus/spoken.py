@@ -1,9 +1,32 @@
 from ..io.importer import (speaker_data_to_csvs, import_speaker_csvs,
                            discourse_data_to_csvs, import_discourse_csvs)
 from .audio import AudioContext
+from ..io.enrichment.spoken import enrich_speakers_from_csv, enrich_discourses_from_csv
 
 
 class SpokenContext(AudioContext):
+    def enrich_speakers_from_csv(self, path):
+        """
+        Enriches speakers from a csv file
+
+        Parameters
+        ----------
+        path : str
+            the path to the csv file
+        """
+        enrich_speakers_from_csv(self, path)
+
+    def enrich_discourses_from_csv(self, path):
+        """
+        Enriches discourses from a csv file
+
+        Parameters
+        ----------
+        path : str
+            the path to the csv file
+        """
+        enrich_discourses_from_csv(self, path)
+
     def get_speakers_in_discourse(self,discourse):
         query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE d.name = {{discourse_name}}

@@ -167,7 +167,7 @@ def test_syllable_mean_duration(summarized_config):
         print("syllable mean:")
         res = g.get_measure('duration', 'mean', 'syllable')
         print(res)
-        assert (len(res) == 55)
+        assert (len(res) == 57)
         for i, r in enumerate(res):
             if r[0] == 'w.er.d.z':
                 break
@@ -203,7 +203,7 @@ def test_syllable_median(summarized_config):
         res = g.get_measure('duration', 'median', 'syllable')
 
         print(res)
-        assert (len(res) == 55)
+        assert (len(res) == 57)
 
 
 def test_syllable_std_dev(summarized_config):
@@ -215,7 +215,7 @@ def test_syllable_std_dev(summarized_config):
 
         print("syllable std dev:")
         res = g.get_measure('duration', 'stdev', 'syllable')
-        assert (len(res) == 55)
+        assert (len(res) == 57)
         g.reset_syllables()
 
 

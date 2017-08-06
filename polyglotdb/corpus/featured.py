@@ -2,9 +2,22 @@ import re
 from ..io.importer import feature_data_to_csvs, import_feature_csvs
 from .lexical import LexicalContext
 from ..exceptions import SubsetError
+from ..io.enrichment.features import enrich_features_from_csv
 
 
 class FeaturedContext(LexicalContext):
+    def enrich_inventory_from_csv(self, path):
+        """
+        Enriches corpus from a csv file
+
+        Parameters
+        ----------
+        path : str
+            the path to the csv file
+        """
+
+        enrich_features_from_csv(self, path)
+
     def encode_class(self, phones, label):
         """
         encodes phone classes

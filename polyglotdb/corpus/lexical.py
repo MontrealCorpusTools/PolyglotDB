@@ -1,4 +1,5 @@
 from ..io.importer import lexicon_data_to_csvs, import_lexicon_csvs
+from ..io.enrichment.lexical import enrich_lexicon_from_csv
 from .spoken import SpokenContext
 
 
@@ -25,3 +26,16 @@ class LexicalContext(SpokenContext):
 
     def reset_lexicon(self):
         pass
+
+    def enrich_lexicon_from_csv(self, path, case_sensitive=False):
+        """
+        Enriches lexicon from a csv file
+
+        Parameters
+        ----------
+        path : str
+            the path to the csv file
+        case_sensitive : boolean
+            Defaults to false
+        """
+        enrich_lexicon_from_csv(self, path, case_sensitive)

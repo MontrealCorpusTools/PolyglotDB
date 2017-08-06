@@ -111,7 +111,7 @@ def test_stress_enrichment(stressed_config):
     with CorpusContext(stressed_config) as c:
         c.encode_syllabic_segments(syllabics)
         c.encode_syllables("maxonset")
-        c.encode_stresstone_to_syllables('stress', '[0-2]$')
+        c.encode_stress_to_syllables(regex='[0-2]$')
 
         assert (c.hierarchy.has_type_property("syllable", "stress"))
 

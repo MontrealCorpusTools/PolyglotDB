@@ -8,7 +8,7 @@ Graph API
 
 Queries
 -------
-.. currentmodule:: polyglotdb.graph.query
+.. currentmodule:: polyglotdb.query.annotations.query
 
 .. autosummary::
    :toctree: generated/
@@ -20,20 +20,20 @@ Queries
 
 Attributes
 ----------
-.. currentmodule:: polyglotdb.graph.attributes
+.. currentmodule:: polyglotdb.query.annotations.attributes.base
 
 .. autosummary::
    :toctree: generated/
    :template: class.rst
 
-   Attribute
+   AnnotationNode
    AnnotationAttribute
 
 .. _graph_clauses_api:
 
 Clause elements
 ---------------
-.. currentmodule:: polyglotdb.graph.elements
+.. currentmodule:: polyglotdb.query.annotations.elements
 
 .. autosummary::
    :toctree: generated/
@@ -54,7 +54,7 @@ Clause elements
 
 Aggregate functions
 -------------------
-.. currentmodule:: polyglotdb.graph.func
+.. currentmodule:: polyglotdb.query.base.func
 
 .. autosummary::
    :toctree: generated/

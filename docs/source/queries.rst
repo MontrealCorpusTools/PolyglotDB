@@ -1,4 +1,4 @@
-.. _graph_queries:
+.. _queries:
 
 ****************
 Querying corpora
@@ -13,9 +13,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   queries_basic.rst
-   queries_aggregates.rst
-   queries_ordering.rst
-   queries_subsets.rst
-   queries_subannotations.rst
-   queries_subpaths.rst
+   queries_annotations.rst
+   queries_lexicon.rst
+   queries_speakers.rst
+   queries_discourse.rst
+   queries_reference.rst

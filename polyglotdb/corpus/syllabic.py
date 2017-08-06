@@ -140,7 +140,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
     def has_syllables(self):
         return 'syllable' in self.hierarchy.annotation_types
 
-    def encode_syllables(self, algorithm='probabilistic', call_back=None, stop_check=None):
+    def encode_syllables(self, algorithm='maxonset', call_back=None, stop_check=None):
         """
         Encodes syllables to a corpus
 
@@ -326,7 +326,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
         self.encode_hierarchy()
 
-    def encode_stress(self, pattern):
+    def _generate_stress_enrichment(self, pattern):
         """
         encode stress based off of CMUDict cues
 
@@ -357,9 +357,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
         return enrich_dict
 
-        # self.enrich_syllables(enrich_dict)
-
-    def encode_tone(self, pattern):
+    def _generate_tone_enrichment(self, pattern):
         """
         encode tone based off of CMUDict cues
         """
@@ -385,18 +383,25 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
                     enrich_dict.update({syl: {'tone': end}})
         return enrich_dict
-        # self.enrich_syllables(enrich_dict)
 
-    def encode_stresstone_to_syllables(self, encode_type, regex):
+    def encode_stress_to_syllables(self, regex=None, clean_phone_label=True):
+        if regex is None:
+            regex = '[0-9]'
 
-        if encode_type == 'stress':
-            if regex == "":
-                enrich_dict = self.encode_stress('[0-9]')
-            else:
-                enrich_dict = self.encode_stress(regex)
-        else:
-            enrich_dict = self.encode_tone(regex)
+        enrich_dict = self._generate_stress_enrichment(regex)
 
-        self.remove_pattern(regex)
+        if clean_phone_label:
+            self.remove_pattern(regex)
+        self.enrich_syllables(enrich_dict)
+        self.encode_hierarchy()
+
+    def encode_tone_to_syllables(self, regex=None, clean_phone_label=True):
+        if regex is None:
+            regex = '[0-9]'
+
+        enrich_dict = self._generate_tone_enrichment(regex)
+
+        if clean_phone_label:
+            self.remove_pattern(regex)
         self.enrich_syllables(enrich_dict)
         self.encode_hierarchy()
