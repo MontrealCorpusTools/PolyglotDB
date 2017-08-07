@@ -53,7 +53,9 @@ for nformants from minformants to maxformants
     #appendInfoLine: ""
 
     segDur = segEnd - segBeg
-    r = ((segEnd - segBeg) * (0.33)) + segBeg
+    #r = ((segEnd - segBeg) * (0.33)) + segBeg
+		r = ((segEnd - segBeg) * (0.33))
+		r = r + segBeg
     r$ = fixed$(r, 3)
     #appendInfoLine: "Measurement time (a third through):"
     #appendInfo: r$

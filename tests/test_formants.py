@@ -20,7 +20,7 @@ from acousticsim.analysis.praat import run_script
 		assert(g.has_formants(g.discourses[0], 'praat'))
 		q = g.query_graph(g.phone).filter(g.phone.label == test_phone_label)
 		q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
-		output_path = '/Users/acoles/Documents/Formants/formant_vowel_data.csv'
+		output_path = '/Users/mlml/Documents/testing/formant_vowel_data.csv'
 		q.to_csv(output_path)
 		results = q.all()
 		assert(len(results) > 0)
@@ -45,9 +45,9 @@ from acousticsim.analysis.praat import run_script
 		# The only tracks disregarded from q.all() should be because they are empty
 		assert(counter == full_tracks)
 
-		#assert False, "dumb assert to make PyTest print my stuff"
-		"""
-		
+		#assert False, "dumb assert to make PyTest print my stuff"""
+
+
 
 def test_refine_formants(acoustic_utt_config, praat_path):
 	with CorpusContext(acoustic_utt_config) as g:
@@ -59,22 +59,36 @@ def test_refine_formants(acoustic_utt_config, praat_path):
 		old_metadata = get_mean_SD(g, old_data)
 		data = refine_formants(corpus_context=g, prototype_data=old_data, prototype_metadata=old_metadata, vowel_inventory=vowel_inventory)
 		assert(g.has_formants(g.discourses[0], 'praat'))
-		#for item in data:
-		#	assert(data[item])
-		assert False, "dumb assert"
-		
+		q = g.query_graph(g.phone).filter(g.phone.label == test_phone_label)
+		q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
+		output_path = '/Users/mlml/Documents/testing/formant_vowel_data.csv'
+		q.to_csv(output_path)
+		results = q.all()
+		assert(len(results) > 0)
 
-"""def test_extract_formants_full(acoustic_utt_config, praat_path):
+		for r in results:
+			assert(r.track)
+
+		#assert False, "dumb assert"""
+
+
+def test_extract_formants_full(acoustic_utt_config, praat_path):
 	with CorpusContext(acoustic_utt_config) as g:
 		test_phone_label = 'ow'
 		g.config.formant_source = 'praat'
 		g.config.praat_path = praat_path
 		vowel_inventory = ['ih','iy','ah','uw','er','ay','aa','ae','eh','ow']
 		print("starting test")
-		data = extract_formants_full(g, vowel_inventory)
-		#for item in data:
-		#	assert(data[item])
-		assert False, "dumb assert"
-		"""
-		
-		
+		prototype_data, metadata, data = extract_formants_full(g, vowel_inventory)
+		assert(g.has_formants(g.discourses[0], 'praat'))
+		q = g.query_graph(g.phone).filter(g.phone.label == test_phone_label)
+		q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
+		output_path = '/Users/mlml/Documents/testing/formant_vowel_data.csv'
+		q.to_csv(output_path)
+		results = q.all()
+		assert(len(results) > 0)
+
+		for r in results:
+			assert(r.track)
+
+		#assert False, "dumb assert

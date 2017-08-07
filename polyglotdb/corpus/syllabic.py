@@ -312,6 +312,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         type_data : dict
             By default None
         """
+
         if type_data is None:
             type_data = {k: type(v) for k, v in next(iter(syllable_data.values())).items()}
 
@@ -344,6 +345,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                 splitsyl = syl.split('.')
                 nucleus = splitsyl[0]
                 for j, seg in enumerate(splitsyl):
+                    print("seg:", seg)
 
                     if re.search(pattern, seg) is not None:
                         nucleus = seg
@@ -399,7 +401,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         else:
             enrich_dict = self.encode_tone(regex)
 
-        self.remove_pattern(regex)
+        #self.remove_pattern(regex)
         self.enrich_syllables(enrich_dict)
         self.encode_hierarchy()
         self.refresh_hierarchy()
