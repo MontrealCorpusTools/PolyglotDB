@@ -28,7 +28,7 @@ def load_config():
                       'bolt_port': 7687,
                       'auth_enabled': 'false'
                       }
-        c['Neo4j_wrapper'] = {'max_heap': 2048}
+        c['Neo4j_wrapper'] = {'max_heap': 4096}
         c['InfluxDB'] = {'http_port': 8086,
                          'udp_port': 8087,
                          'auth_enabled': 'false',

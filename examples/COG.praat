@@ -14,4 +14,5 @@ cog = Get centre of gravity... 'power'
 cog$ = fixed$(cog, 2)
 
 
-echo 'cog$'
+echo cog
+printline 'cog$'
