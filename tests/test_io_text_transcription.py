@@ -52,5 +52,8 @@ def test_load_transcription_morpheme(graph_db, text_transcription_test_dir):
         c.reset()
         c.load(parser, transcription_morphemes_path)
 
-    # assert(c.lexicon['cab'].frequency == 2)
-    assert (str(c.lexicon['cab'].transcription) == 'c.a.b')
+        # assert(c.lexicon['cab'].frequency == 2)
+        q = c.query_lexicon(c.word).columns(c.word.label, c.word.transcription.column_name('transcription'))
+        q = q.filter(c.word.label == 'cab')
+        results = q.all()
+        assert (results[0]['transcription'] == 'c.a.b')

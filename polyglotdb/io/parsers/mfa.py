@@ -24,9 +24,9 @@ class MfaParser(TextgridParser):
         found_word = False
         found_phone = False
         for ti in tg.tiers:
-            if ti.name == 'words':
+            if ti.name.startswith('word'):
                 found_word = True
-            elif ti.name == 'phones':
+            elif ti.name.startswith('phone'):
                 found_phone = True
         return found_word and found_phone
 
@@ -61,9 +61,9 @@ class MfaParser(TextgridParser):
 
         # Parse the tiers
         for i, ti in enumerate(tg.tiers):
-            if ti.name == 'words':
+            if ti.name.startswith('word'):
                 self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
-            elif ti.name == 'phones':
+            elif ti.name.startswith('phone'):
                 self.annotation_types[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
         pg_annotations = self._parse_annotations(types_only)
 

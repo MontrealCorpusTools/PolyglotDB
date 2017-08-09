@@ -96,18 +96,18 @@ def test_load_pronunciation(textgrid_test_dir, graph_db):
         parser.annotation_types[2].type_property = False
         c.load(parser, path)
 
-        q = c.query_graph(c.words).filter(c.words.label == 'probably')
-        q = q.order_by(c.words.begin)
-        q = q.columns(c.words.label,
-                      c.words.dictionaryPron.column_name('dict_pron'),
-                      c.words.actualPron.column_name('act_pron'))
+        q = c.query_graph(c.word).filter(c.word.label == 'probably')
+        q = q.order_by(c.word.begin)
+        q = q.columns(c.word.label,
+                      c.word.dictionaryPron.column_name('dict_pron'),
+                      c.word.actualPron.column_name('act_pron'))
         results = q.all()
         assert (results[0]['dict_pron'] == 'p.r.aa.b.ah.b.l.iy')
         assert (results[0]['act_pron'] == 'p.r.aa.b.ah.b.l.iy')
 
 
 def test_word_transcription(graph_db, textgrid_test_dir):
-    with CorpusContext("discourse_textgrid") as c:
+    with CorpusContext("discourse_textgrid", **graph_db) as c:
         c.reset()
         path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
         parser = inspect_textgrid(path)

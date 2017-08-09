@@ -50,7 +50,7 @@ CONFIG = load_config()
 
 TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
 
-NEO4J_VERSION = '3.0.7'
+NEO4J_VERSION = '3.2.3'
 
 INFLUXDB_VERSION = '1.1.0'
 

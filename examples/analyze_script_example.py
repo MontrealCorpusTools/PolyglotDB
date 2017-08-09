@@ -7,8 +7,8 @@ sys.path.insert(0,base)
 from polyglotdb import CorpusContext
 from polyglotdb.corpus import AudioContext
 from polyglotdb.config import CorpusConfig
-from polyglotdb.query.graph.func import Count
-
+#from polyglotdb.query.graph.func import Count
+from polyglotdb.query.annotations.func import Count
 from polyglotdb.io import inspect_textgrid
 import polyglotdb.io as aio
 
@@ -35,10 +35,9 @@ if __name__ == '__main__':
     with CorpusContext(config) as g:
 
         g.encode_class(['S', 'Z', 'SH', 'ZH'], 'sibilant')  # encode_class method is in featured.py
-        # #g.encode_class(['s', 'z', 'sh', 'zh'], 'sibilant')  # encode_class method is in featured.py
 
         begin = time.time()
-        #g.analyze_script(q, script_path, 'COG', ['1', '2'], stop_check=None, call_back=None)
+
         g.analyze_script('sibilant', script_path, stop_check=None, call_back=None)
         end = time.time()
         print("Analyzing sibilants for acoustic measures took: " + str(end - begin))
@@ -55,4 +54,3 @@ if __name__ == '__main__':
                       c.phone.slope.column_name('slope'), c.phone.spread.column_name('spread'))
         q.to_csv(output_path)
         print("Results for sibilants written to " + output_path)
-        # cog_data is data to be imported into R for sanity check

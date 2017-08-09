@@ -1,7 +1,8 @@
 import pytest
 
 from polyglotdb import CorpusContext
-from polyglotdb.query.graph.func import Sum
+from polyglotdb.query import Sum
+from polyglotdb.exceptions import AnnotationAttributeError
 
 
 def test_basic(subannotation_config):
@@ -26,7 +27,6 @@ def test_basic(subannotation_config):
         assert (round(res[0]['voicing_during_closure'], 2) == 0.04)
 
 
-@pytest.mark.xfail
 def test_filter(subannotation_config):
     with CorpusContext(subannotation_config) as c:
         q = c.query_graph(c.phone)
@@ -38,7 +38,9 @@ def test_filter(subannotation_config):
 def test_add_token_label(subannotation_config):
     with CorpusContext(subannotation_config) as c:
         q = c.query_graph(c.phone).filter(c.phone.label == 'ae')
-        q.set_token('ae', aeness='such ae')
+        q.set_properties(aeness='such ae')
+        q.create_subset('ae')
+        c.encode_hierarchy()
 
         q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')
         results = q.all()
@@ -52,16 +54,19 @@ def test_add_token_label(subannotation_config):
         assert (all(x['label'] != 'ae' for x in results))
 
         q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')
-        q.set_token(aeness=None)
+        q.set_properties(aeness=None)
+        c.encode_hierarchy()
 
-        q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')
-        results = q.all()
-        assert (len(results) == 0)
+        with pytest.raises(AnnotationAttributeError):
+            q = c.query_graph(c.phone).filter(c.phone.aeness == 'such ae')
+            results = q.all()
 
-        q = c.query_graph(c.phone).filter(c.phone.label == 't')
-        q.set_type('t', tness='such t')
+        q = c.query_lexicon(c.lexicon_phone).filter(c.lexicon_phone.label == 't')
+        q.set_properties(tness='such t')
+        q.create_subset('t')
+        c.encode_hierarchy()
 
-        q = c.query_graph(c.phone.subset_type('t'))
+        q = c.query_graph(c.phone.filter_by_subset('t'))
         results = q.all()
         assert (len(results) > 0)
         assert (results[0]['label'] == 't')

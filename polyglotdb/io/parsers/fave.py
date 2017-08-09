@@ -25,9 +25,9 @@ class FaveParser(TextgridParser):
                 found_words[speaker] = False
             if speaker not in found_phones:
                 found_phones[speaker] = False
-            if type == 'word':
+            if type.startswith('word'):
                 found_words[speaker] = True
-            elif type == 'phone':
+            elif type.startswith('phone'):
                 found_phones[speaker] = True
         if len(list(found_words.keys())) == 0:
             return False
@@ -72,7 +72,6 @@ class FaveParser(TextgridParser):
                     n_tiers += 1
                 ind = 0
                 cutoffs = [x / n_channels for x in range(1, n_channels)]
-                print(cutoffs)
                 for ti in tg.tiers:
                     try:
                         speaker, type = ti.name.split(' - ')
@@ -80,9 +79,7 @@ class FaveParser(TextgridParser):
                         continue
                     if speaker in speaker_channel_mapping:
                         continue
-                    print(ind / n_channels)
                     for i, c in enumerate(cutoffs):
-                        print(c)
                         if ind / n_channels < c:
                             speaker_channel_mapping[speaker] = i
                             break
@@ -94,6 +91,8 @@ class FaveParser(TextgridParser):
         for ti in tg.tiers:
             try:
                 speaker, type = ti.name.split(' - ')
+                if type.endswith('s'):
+                    type = type[:-1]
             except ValueError:
                 continue
             if len(ti) == 1 and ti[0].mark.strip() == '':
