@@ -41,12 +41,10 @@ class MfaParser(TextgridParser):
                 speaker, name = ti.name.split('-')
                 speaker = speaker.strip()
                 name = name.strip()
-                print(speaker, name)
                 if name.startswith('word'):
                     found_words[speaker] = True
                 elif name.startswith('word'):
                     found_phones[speaker] = True
-            print(found_words, found_phones)
             found_word = all(found_words.values())
             found_phone = all(found_words.values())
         else:
