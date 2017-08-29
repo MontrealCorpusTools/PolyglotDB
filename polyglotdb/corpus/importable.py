@@ -211,6 +211,8 @@ class ImportContext(StructuredContext):
                 token_headers = information['token_headers']
                 subannotations = information['subannotations']
             except ParseError:
+                print (t)
+                raise
                 continue
             for k, v in information['types'].items():
                 types[k].update(v)
