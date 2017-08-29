@@ -36,22 +36,25 @@ class MfaParser(TextgridParser):
             found_words = {x: False for x in speakers}
             found_phones = {x: False for x in speakers}
             for ti in tg.tiers:
-                if '-' not in ti:
+                if '-' not in ti.name:
                     continue
                 speaker, name = ti.name.split('-')
                 speaker = speaker.strip()
                 name = name.strip()
-                if name.starts_with('word'):
+                print(speaker, name)
+                if name.startswith('word'):
                     found_words[speaker] = True
-                elif name.starts_with('word'):
+                elif name.startswith('word'):
                     found_phones[speaker] = True
+            print(found_words, found_phones)
             found_word = all(found_words.values())
             found_phone = all(found_words.values())
         else:
-            if ti.name.startswith('word'):
-                found_word = True
-            elif ti.name.startswith('phone'):
-                found_phone = True
+            for ti in tg.tiers:
+                if ti.name.startswith('word'):
+                    found_word = True
+                elif ti.name.startswith('phone'):
+                    found_phone = True
         return multiple_speakers, found_word and found_phone
 
     def parse_discourse(self, path, types_only=False):
