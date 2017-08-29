@@ -4,7 +4,7 @@ import pytest
 
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_textgrid
-from polyglotdb.query.graph.func import Count
+from polyglotdb.query import Count
 
 
 def test_get_utterances(acoustic_config):
@@ -162,7 +162,11 @@ def test_encode_utterances(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_pauses(['sil', 'um'])
         g.encode_utterances(min_pause_length=0)
-        q = g.query_graph(g.utterance).times().duration().order_by(g.utterance.begin)
+        q = g.query_graph(g.utterance)
+        q = q.columns(g.utterance.begin.column_name('begin'),
+                      g.utterance.end.column_name('end'),
+                      g.utterance.duration.column_name('duration'))
+        q = q.order_by(g.utterance.begin)
         print(q.cypher())
         results = q.all()
         print(results)
@@ -185,7 +189,11 @@ def test_encode_utterances(acoustic_config):
                                (18.359807, 19.434003), (19.599747, 21.017242),
                                (21.208318, 22.331874), (22.865036, 23.554014),
                                (24.174348, 24.706663), (24.980290, 25.251656)]
-        q = g.query_graph(g.utterance).times().duration().order_by(g.utterance.begin)
+        q = g.query_graph(g.utterance).order_by(g.utterance.begin)
+
+        q = q.columns(g.utterance.begin.column_name('begin'),
+                      g.utterance.end.column_name('end'),
+                      g.utterance.duration.column_name('duration'))
         print(q.cypher())
         results = q.all()
         assert (len(g.query_graph(g.pause).all()) == 11)

@@ -2,8 +2,6 @@ import os
 import sys
 import traceback
 
-from py2neo.packages.httpstream.http import SocketError
-
 
 ## Base exception classes
 
@@ -205,4 +203,34 @@ class SubsetError(PGError):
 
 class AlphabetError(PGError):
     def __init__(self):
-        self.value = "None of these phones appear to be in the corpus alphabet. Please check to make sure the alphabet you are using corresponds to that of the corpus\n\n"
+        self.value = "None of these phones appear to be in the corpus alphabet. " \
+                     "Please check to make sure the alphabet you are using corresponds " \
+                     "to that of the corpus\n\n"
+
+
+class HierarchyError(PGError):
+    pass
+
+
+class ClientError(PGError):
+    pass
+
+
+class NodeAttributeError(GraphQueryError):
+    pass
+
+
+class SpeakerAttributeError(NodeAttributeError):
+    pass
+
+
+class DiscourseAttributeError(NodeAttributeError):
+    pass
+
+
+class AnnotationAttributeError(NodeAttributeError):
+    pass
+
+
+class LexiconAttributeError(NodeAttributeError):
+    pass

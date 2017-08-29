@@ -1,7 +1,7 @@
-from .summarized import SummarizedContext
+from .annotated import AnnotatedContext
 
 
-class CorpusContext(SummarizedContext):
+class CorpusContext(AnnotatedContext):
     """
     Main corpus context, inherits from the more specialized contexts.
 

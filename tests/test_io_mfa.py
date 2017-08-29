@@ -43,10 +43,13 @@ def test_load_mfa(mfa_test_dir, graph_db):
         assert (len(results) == 1)
         assert (results[0]['following'] == 'JURASSIC')
 
-        s = c.census['mfa']
+        q = c.query_speaker().filter(c.speaker.name == 'mfa')
+        q = q.columns(c.speaker.discourses.name.column_name('discourses'))
 
-        assert (len(s.discourses) == 1)
-        assert ([x.discourse.name for x in s.discourses] == ['mfa_test'])
+        s = q.get()
+
+        assert (len(s['discourses']) == 1)
+        assert (s['discourses'] == ['mfa_test'])
 
 
 def test_mismatch_parser(timit_test_dir, graph_db):

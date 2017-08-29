@@ -26,16 +26,16 @@ class SyllabicContext(UtteranceContext):
 
         """
         statement = '''match (w:{word_name}:{corpus_name})
-where (w)<-[:contained_by*]-()-[:is_a]->(:syllabic)
+where (w)<-[:contained_by*1..2]-()-[:is_a]->(:syllabic)
 with w
 match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:syllabic),
-(n)-[:contained_by*]->(w)
+(n)-[:contained_by*1..2]->(w)
 with w, n
 order by n.begin
 with w,collect(n)[0..1] as coll unwind coll as n
 
-MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*]->(w)
-where not (pn)<-[:precedes]-()-[:contained_by*]->(w)
+MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
+where not (pn)<-[:precedes]-()-[:contained_by*1..2]->(w)
 with w, n,pn
 match p = shortestPath((pn)-[:precedes*0..10]->(n))
 with extract(x in nodes(p)[0..-1]|x.label) as onset
@@ -58,16 +58,16 @@ return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
             A dictionary with coda values as keys and frequency values as values
         """
         statement = '''match (w:{word_name}:{corpus_name})
-where (w)<-[:contained_by*]-()-[:is_a]->(:syllabic)
+where (w)<-[:contained_by*1..2]-()-[:is_a]->(:syllabic)
 with w
 match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:syllabic),
-(n)-[:contained_by*]->(w)
+(n)-[:contained_by*1..2]->(w)
 with w, n
 order by n.begin DESC
 with w,collect(n)[0..1] as coll unwind coll as n
 
-MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*]->(w)
-where not (pn)-[:precedes]->()-[:contained_by*]->(w)
+MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
+where not (pn)-[:precedes]->()-[:contained_by*1..2]->(w)
 with w, n,pn
 match p = shortestPath((n)-[:precedes*0..10]->(pn))
 with extract(x in nodes(p)[1..]|x.label) as coda
@@ -92,16 +92,12 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         """
         self.encode_class(phones, 'syllabic')
 
-    def encode_number_of_syllables(self):
-        """ Encodes the number of syllables """
-        pass
-
     def reset_syllables(self, call_back=None, stop_check=None):
         """ Resets syllables, removes syllable annotation, removes onset, coda, and nucleus labels """
         if call_back is not None:
             call_back('Resetting syllables...')
             number = self.execute_cypher(
-                '''MATCH (n:syllable:%s) return count(*) as number ''' % (self.cypher_safe_name)).evaluate()
+                '''MATCH (n:syllable:%s) return count(*) as number ''' % (self.cypher_safe_name)).single()['number']
             call_back(0, number)
         statement = '''MATCH (st:syllable_type:{corpus})
                 WITH st
@@ -123,23 +119,28 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         while deleted > 0:
             if stop_check is not None and stop_check():
                 break
-            deleted = self.execute_cypher(statement).evaluate()
+            deleted = self.execute_cypher(statement).single()['deleted_count']
             num_deleted += deleted
             if call_back is not None:
                 call_back(num_deleted)
         try:
-            self.hierarchy.annotation_types.remove('syllable')
-            self.hierarchy[self.phone_name] = self.hierarchy['syllable']
+            self.hierarchy.remove_annotation_type('syllable')
             self.hierarchy.remove_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
             self.hierarchy.remove_token_properties(self, self.phone_name, ['syllable_position'])
-            del self.hierarchy['syllable']
             # self.reset_to_old_label()
             self.encode_hierarchy()
-            self.refresh_hierarchy()
         except KeyError:
             pass
 
-    def encode_syllables(self, algorithm='probabilistic', call_back=None, stop_check=None):
+    @property
+    def has_syllabics(self):
+        return 'syllabic' in self.hierarchy.subset_types[self.phone_name]
+
+    @property
+    def has_syllables(self):
+        return 'syllable' in self.hierarchy.annotation_types
+
+    def encode_syllables(self, algorithm='maxonset', call_back=None, stop_check=None):
         """
         Encodes syllables to a corpus
 
@@ -176,12 +177,6 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         if call_back is not None:
             call_back(0, len(splits))
 
-        self.hierarchy[self.phone_name] = 'syllable'
-        self.hierarchy['syllable'] = self.word_name
-        self.hierarchy.add_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
-        self.hierarchy.add_token_properties(self, self.phone_name, [('syllable_position', str)])
-        self.encode_hierarchy()
-        self.refresh_hierarchy()
         for i, s in enumerate(splits):
             if stop_check is not None and stop_check():
                 break
@@ -198,6 +193,8 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                           phone_type.end.column_name('ends'),
                           word_type.discourse.name.column_name('discourse'))
             results = q.all()
+            print('look at me', q.cypher())
+            print('length', len(results))
             speaker_boundaries = {s: []}
             speaker_non_syls = {s: []}
             prev_id = None
@@ -297,6 +294,11 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
             call_back('Cleaning up...')
         self.execute_cypher(
             'MATCH (n:{}:syllable) where n.prev_id is not Null REMOVE n.prev_id'.format(self.cypher_safe_name))
+
+        self.hierarchy.add_annotation_type('syllable', above=self.phone_name, below=self.word_name)
+        self.hierarchy.add_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
+        self.hierarchy.add_token_properties(self, self.phone_name, [('syllable_position', str)])
+        self.encode_hierarchy()
         if call_back is not None:
             call_back('Finished!')
             call_back(1, 1)
@@ -317,10 +319,6 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
             # labels = set(self.lexicon.syllables())
             #  syllable_data = {k: v for k,v in syllable_data.items() if k in labels}
-        self.lexicon.add_properties('syllable', syllable_data, type_data)
-        for x in syllable_data.keys():
-            self.lexicon.get_or_create_annotation(x, 'syllable')
-        self.lexicon.add_properties('syllable', syllable_data, type_data)
         syllables_enrichment_data_to_csvs(self, syllable_data)
         import_syllable_enrichment_csvs(self, type_data)
         # self.hierarchy.add_type_labels(self, 'syllable', ['test'])
@@ -328,7 +326,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
         self.encode_hierarchy()
 
-    def encode_stress(self, pattern):
+    def _generate_stress_enrichment(self, pattern):
         """
         encode stress based off of CMUDict cues
 
@@ -340,7 +338,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
         for i, x in enumerate(all_syls.cursors):
             for item in x:
-                syl = item[0].properties['label']
+                syl = item[0]['label']
                 splitsyl = syl.split('.')
                 nucleus = splitsyl[0]
                 for j, seg in enumerate(splitsyl):
@@ -359,9 +357,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
         return enrich_dict
 
-        # self.enrich_syllables(enrich_dict)
-
-    def encode_tone(self, pattern):
+    def _generate_tone_enrichment(self, pattern):
         """
         encode tone based off of CMUDict cues
         """
@@ -370,7 +366,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
         enrich_dict = {}
         for x in all_syls.cursors:
             for item in x:
-                syl = item[0].properties['label']
+                syl = item[0]['label']
                 splitsyl = syl.split('.')
                 nucleus = splitsyl[0]
                 for seg in splitsyl:
@@ -387,19 +383,25 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
                     enrich_dict.update({syl: {'tone': end}})
         return enrich_dict
-        # self.enrich_syllables(enrich_dict)
 
-    def encode_stresstone_to_syllables(self, encode_type, regex):
+    def encode_stress_to_syllables(self, regex=None, clean_phone_label=True):
+        if regex is None:
+            regex = '[0-9]'
 
-        if encode_type == 'stress':
-            if regex == "":
-                enrich_dict = self.encode_stress('[0-9]')
-            else:
-                enrich_dict = self.encode_stress(regex)
-        else:
-            enrich_dict = self.encode_tone(regex)
+        enrich_dict = self._generate_stress_enrichment(regex)
 
-        self.remove_pattern(regex)
+        if clean_phone_label:
+            self.remove_pattern(regex)
         self.enrich_syllables(enrich_dict)
         self.encode_hierarchy()
-        self.refresh_hierarchy()
+
+    def encode_tone_to_syllables(self, regex=None, clean_phone_label=True):
+        if regex is None:
+            regex = '[0-9]'
+
+        enrich_dict = self._generate_tone_enrichment(regex)
+
+        if clean_phone_label:
+            self.remove_pattern(regex)
+        self.enrich_syllables(enrich_dict)
+        self.encode_hierarchy()

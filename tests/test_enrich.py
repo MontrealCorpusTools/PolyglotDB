@@ -36,8 +36,9 @@ def test_lexicon_enrichment(timed_config, csv_test_dir):
         assert (res[0]['part_of_speech'] == 'JJ')
         assert (res[0]['neighborhood_density'] == 14)
 
-        levels = c.lexicon.get_property_levels('part_of_speech')
-        assert (set(levels) == set(['NN', 'VB', 'JJ', 'IN', 'PRP']))
+        # currently unsupported
+        # levels = c.lexicon.get_property_levels('part_of_speech')
+        # assert (set(levels) == set(['NN', 'VB', 'JJ', 'IN', 'PRP']))
 
 
 def test_feature_enrichment(timed_config, csv_test_dir):
@@ -110,7 +111,7 @@ def test_stress_enrichment(stressed_config):
     with CorpusContext(stressed_config) as c:
         c.encode_syllabic_segments(syllabics)
         c.encode_syllables("maxonset")
-        c.encode_stresstone_to_syllables('stress', '[0-2]$')
+        c.encode_stress_to_syllables(regex='[0-2]$')
 
         assert (c.hierarchy.has_type_property("syllable", "stress"))
 

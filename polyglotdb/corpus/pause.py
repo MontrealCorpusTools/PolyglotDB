@@ -1,9 +1,11 @@
-from ..sql.models import Discourse, DiscourseProperty, PropertyType
-from ..sql.helper import get_or_create
 from .importable import ImportContext
 
 
 class PauseContext(ImportContext):
+    @property
+    def has_pauses(self):
+        return 'pause' in self.hierarchy.subset_tokens[self.word_name]
+
     def encode_pauses(self, pause_words, call_back=None, stop_check=None):
         """
         Set words to be pauses, as opposed to speech.
@@ -17,8 +19,10 @@ class PauseContext(ImportContext):
         self.reset_pauses()
         word = getattr(self, self.word_name)
         q = self.query_graph(word)
-        q.call_back = call_back
-        q.stop_check = stop_check
+        if call_back is not None:
+            q.call_back = call_back
+        if stop_check is not None:
+            q.stop_check = stop_check
         if isinstance(pause_words, (list, tuple, set)):
             q = q.filter(word.label.in_(pause_words))
         elif isinstance(pause_words, str):
@@ -39,8 +43,6 @@ class PauseContext(ImportContext):
                                                    word_type=self.word_name)
 
         self.execute_cypher(statement)
-        self.hierarchy.annotation_types.add('pause')
-        self.hierarchy.subset_tokens[self.word_name].add('pause')
 
         statement = '''MATCH (w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
             with d, max(w.end) as speech_end, min(w.begin) as speech_begin
@@ -50,32 +52,14 @@ class PauseContext(ImportContext):
                                word_type=self.word_name)
 
         results = self.execute_cypher(statement)
-        sbpt, _ = get_or_create(self.sql_session,
-                                PropertyType, label='speech_begin')
-        sept, _ = get_or_create(self.sql_session,
-                                PropertyType, label='speech_end')
-        for d in results:
-            discourse = self.sql_session.query(Discourse).filter(Discourse.name == d['d']['name']).first()
-            prop, _ = get_or_create(self.sql_session, DiscourseProperty, discourse=discourse, property_type=sbpt,
-                                    value=str(d['d']['speech_begin']))
-            prop, _ = get_or_create(self.sql_session, DiscourseProperty, discourse=discourse, property_type=sept,
-                                    value=str(d['d']['speech_end']))
+        self.hierarchy.add_token_labels(self, self.word_name, ['pause'])
         self.hierarchy.add_discourse_properties(self, [('speech_begin', float), ('speech_end', float)])
         self.encode_hierarchy()
-        self.refresh_hierarchy()
 
     def reset_pauses(self):
         """
         Revert all words marked as pauses to regular words marked as speech
         """
-        ptid = self.sql_session.query(PropertyType.id).filter(PropertyType.label == 'speech_begin').first()
-        if ptid is not None:
-            ptid = ptid[0]
-            self.sql_session.query(DiscourseProperty).filter(DiscourseProperty.property_type_id == ptid).delete()
-        ptid = self.sql_session.query(PropertyType.id).filter(PropertyType.label == 'speech_end').first()
-        if ptid is not None:
-            ptid = ptid[0]
-            self.sql_session.query(DiscourseProperty).filter(DiscourseProperty.property_type_id == ptid).delete()
         statement = '''MATCH (n:{corpus}:{word_type}:speech)-[r:precedes]->(m:{corpus}:{word_type}:speech)
         WHERE (n)-[:precedes_pause]->()
         DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
@@ -94,6 +78,5 @@ class PauseContext(ImportContext):
             self.hierarchy.annotation_types.remove('pause')
             self.hierarchy.subset_tokens[self.word_name].remove('pause')
             self.encode_hierarchy()
-            self.refresh_hierarchy()
         except KeyError:
             pass
