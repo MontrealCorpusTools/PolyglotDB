@@ -33,5 +33,9 @@ To install from source (primarily for development):
 
 #. Clone or download the Git repository (https://github.com/MontrealCorpusTools/PolyglotDB).
 #. Navigate to the directory via command line and install the dependencies via :code:`pip install -r requirements.txt`
-#. Install PolyglotDB via :code:`python setup.py install`
+#. Install PolyglotDB via :code:`python setup.py install` followed by :code:`python bin/pgdb.py install /path/to/where/you/want/data/to/be/stored`, or :code:`python bin/pgdb.py install` to save data in the default directory.
+#. (If on Windows, you may need to navigate to .pgdb/neo4j/ (where .pgdb is the name of your data storage directory if you renamed it during installation), and then run :code:`bin/neo4j.bat install-service` in order to get neo4j to work properly. If you do this, you'll also need to run :code:`bin/neo4j.bat uninstall-service` before you uninstall.)
 
+Once you have installed PolyglotDB, to start it navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py start`. Likewise, you can close PolyglotDB by running :code:`python bin/pgdb.py stop`. 
+
+To uninstall, navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py uninstall`.

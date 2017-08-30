@@ -15,7 +15,7 @@ DEFAULT_DATA_DIR = os.path.join(CONFIG_DIR, 'data')
 
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.ini')
 
-CONFIG_CHANGED = False
+CONFIG_CHANGED = True
 
 
 def load_config():

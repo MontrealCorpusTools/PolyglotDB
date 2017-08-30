@@ -7,7 +7,6 @@ from influxdb import InfluxDBClient
 from polyglotdb.query.discourse import DiscourseInspector
 from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_formants_vowel_segments, analyze_intensity, \
     analyze_script, analyze_discourse_pitch
-from ..sql.models import SoundFile, Discourse
 from .syllabic import SyllabicContext
 
 from ..acoustics.utils import load_waveform, generate_spectrogram

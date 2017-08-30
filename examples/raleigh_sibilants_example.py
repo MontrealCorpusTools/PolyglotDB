@@ -110,6 +110,7 @@ def analysis():
         # export to CSV all the measures taken by the script, along with a variety of data about each phone
         print("querying")
         qr = c.query_graph(c.phone).filter(c.phone.type_subset == 'sibilant')
+        #qr = c.query_graph(c.phone).filter(c.phone.subset == 'sibilant')
         # this exports data for all sibilants
         qr = qr.columns(c.phone.speaker.name.column_name('speaker'), c.phone.discourse.name.column_name('discourse'),
                       c.phone.id.column_name('phone_id'), c.phone.label.column_name('phone_label'),
