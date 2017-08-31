@@ -10,13 +10,28 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
-  conda create -q -n test-environment python=3.5 setuptools atlas numpy sqlalchemy pytest scipy scikit-learn networkx
+  conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION setuptools atlas numpy pytest scipy
   source activate test-environment
   which python
-  pip install -q coveralls coverage py2neo textgrid librosa tqdm influxdb
+  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb
   pip install -q git+https://github.com/mmcauliffe/python-acoustic-similarity.git
 else
   echo "Miniconda already installed."
+fi
+
+if [ ! -d "$HOME/miniconda/miniconda/envs/test-server-environment" ]; then
+  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  conda create -q -n test-server-environment python=$TRAVIS_PYTHON_VERSION setuptools atlas numpy pytest scipy
+  source activate test-server-environment
+  which python
+  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb django
+  pip install -q git+https://github.com/mmcauliffe/python-acoustic-similarity.git
+  python setup.py install
+else
+  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  source activate test-server-environment
+  python setup.py install
+  echo "Server already installed."
 fi
 
 if [ ! -d "$HOME/pgdb/data" ]; then
@@ -30,15 +45,13 @@ fi
 if [ ! -f "$HOME/tools/praat" ]; then
   cd $HOME/downloads
   #FOR WHEN TRAVIS UPDATES TO A NEWER UBUNTU
-  #latestVer=$(curl -s 'http://www.fon.hum.uva.nl/praat/download_linux.html' |
-  # grep -Eo 'praat[0-9]+_linux64\.tar\.gz' | head -1)
+  latestVer=$(curl -s 'http://www.fon.hum.uva.nl/praat/download_linux.html' |
+   grep -Eo 'praat[0-9]+_linux64barren\.tar\.gz' | head -1)
 
   # Download.
-  #curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
-  #tar -zxvf praat-latest.tar.gz
-  wget http://www.fon.hum.uva.nl/praat/old/5412/praat5412_linux64.tar.gz
-  tar -zxvf praat5412_linux64.tar.gz
-  mv praat $HOME/tools/praat
+  curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
+  tar -zxvf praat-latest.tar.gz
+  mv praat_barren $HOME/tools/praat
 else
   echo "Praat already installed."
 fi

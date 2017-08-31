@@ -7,9 +7,11 @@ from decimal import Decimal
 from influxdb import InfluxDBClient
 
 from polyglotdb.query.discourse import DiscourseInspector
-from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_intensity
-from ..sql.models import SoundFile, Discourse
+from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_formants_vowel_segments, analyze_intensity, \
+    analyze_script, analyze_discourse_pitch
 from .syllabic import SyllabicContext
+
+from ..acoustics.utils import load_waveform, generate_spectrogram
 
 
 def sanitize_formants(value):
@@ -31,7 +33,7 @@ def sanitize_formants(value):
         f3 = value['F3']
     if f3 is None:
         f3 = 0
-    return f1, f2, f3
+    return float(f1), float(f2), float(f3)
 
 
 def generate_filter_string(discourse, begin, end, num_points, kwargs):
@@ -90,24 +92,35 @@ class AudioContext(SyllabicContext):
     def load_audio(self, discourse, file_type):
         sound_file = self.discourse_sound_file(discourse)
         if file_type == 'consonant':
-            path = os.path.expanduser(sound_file.consonant_filepath)
+            path = os.path.expanduser(sound_file.consonant_file_path)
         elif file_type == 'vowel':
-            path = os.path.expanduser(sound_file.vowel_filepath)
+            path = os.path.expanduser(sound_file.vowel_file_path)
         elif file_type == 'low_freq':
-            path = os.path.expanduser(sound_file.low_freq_filepath)
+            path = os.path.expanduser(sound_file.low_freq_file_path)
         else:
-            path = os.path.expanduser(sound_file.filepath)
+            path = os.path.expanduser(sound_file.file_path)
         signal, sr = librosa.load(path, sr=None)
         return signal, sr
 
     def analyze_pitch(self, stop_check=None, call_back=None):
         analyze_pitch(self, stop_check, call_back)
 
+    def analyze_discourse_pitch(self, discourse, **kwargs):
+        return analyze_discourse_pitch(self, discourse, **kwargs)
+
     def analyze_formants(self, stop_check=None, call_back=None):
         analyze_formants(self, stop_check, call_back)
 
+    def analyze_formants_vowel_segments(self, stop_check=None, call_back=None, vowel_inventory=None):
+        analyze_formants_vowel_segments(self, stop_check, call_back, vowel_inventory)
+
     def analyze_intensity(self, stop_check=None, call_back=None):
         analyze_intensity(self, stop_check, call_back)
+
+    def analyze_script(self, phone_class, script_path, result_measurement, arguments=None, stop_check=None,
+                       call_back=None):
+        analyze_script(self, phone_class, script_path, result_measurement, arguments=arguments, stop_check=stop_check,
+                       call_back=call_back)
 
     def genders(self):
         res = self.execute_cypher(
@@ -150,30 +163,38 @@ class AudioContext(SyllabicContext):
         """
         return DiscourseInspector(self, discourse, begin, end)
 
-    def discourse_sound_file(self, discourse):
-        """
-        Gets the sound file object for the discourse
+    def load_waveform(self, discourse, file_type='consonant'):
+        sf = self.discourse_sound_file(discourse)
+        if file_type == 'consonant':
+            file_path = sf['consonant_file_path']
+        elif file_type == 'vowel':
+            file_path = sf['vowel_file_path']
+        elif file_type == 'low_freq':
+            file_path = sf['low_freq_file_path']
+        else:
+            file_path = sf['file_path']
+        return load_waveform(file_path)
 
-        Parameters
-        ----------
-        discourse : str
-            Name of the discourse
-
-        Returns
-        -------
-        :class:`~polyglotdb.sql.models.SoundFile`
-            the first soundfile
-        """
-        q = self.sql_session.query(SoundFile).join(SoundFile.discourse)
-        q = q.filter(Discourse.name == discourse)
-        sound_file = q.first()
-        return sound_file
+    def generate_spectrogram(self, discourse, file_type='consonant'):
+        signal, sr = self.load_waveform(discourse, file_type)
+        return generate_spectrogram(signal, sr)
 
     def discourse_audio_directory(self, discourse):
         """
         Return the directory for the stored audio files for a discourse
         """
         return os.path.join(self.config.audio_dir, discourse)
+
+    def discourse_sound_file(self, discourse):
+        statement = '''MATCH (d:Discourse:{corpus_name}) WHERE d.name = {{discourse_name}} return d'''.format(
+            corpus_name=self.cypher_safe_name)
+        results = self.execute_cypher(statement, discourse_name=discourse).records()
+        for r in results:
+            d = r['d']
+            break
+        else:
+            raise Exception('Could not find discourse {}'.format(discourse))
+        return d
 
     def has_all_sound_files(self):
         """
@@ -192,7 +213,7 @@ class AudioContext(SyllabicContext):
             sf = self.discourse_sound_file(d)
             if sf is None:
                 break
-            if not os.path.exists(sf.filepath):
+            if not os.path.exists(sf.file_path):
                 break
         else:
             self._has_all_sound_files = True
@@ -209,8 +230,14 @@ class AudioContext(SyllabicContext):
         bool
             True if there are any sound files at all, false if there aren't
         """
+
         if self._has_sound_files is None:
-            self._has_sound_files = self.sql_session.query(SoundFile).first() is not None
+            self._has_sound_files = False
+            for d in self.discourses:
+                sf = self.discourse_sound_file(d)
+                if sf['file_path'] is not None:
+                    self._has_sound_files = True
+                    break
         return self._has_sound_files
 
     def get_intensity(self, discourse, begin, end, relative=False, relative_time=False, **kwargs):
@@ -376,20 +403,27 @@ class AudioContext(SyllabicContext):
                 print(seg)
                 continue
             file_path, begin, end, channel = seg[:4]
-            discourse = self.sql_session.query(Discourse).join(SoundFile).filter(
-                SoundFile.vowel_filepath == file_path).first()
-            discourse = discourse.name
+            res = self.execute_cypher(
+                'MATCH (d:Discourse:{corpus_name}) where d.vowel_file_path = {{file_path}} RETURN d.name as name'.format(
+                    corpus_name=self.cypher_safe_name), file_path=file_path)
+            for r in res:
+                discourse = r['name']
             phone_type = getattr(self, self.phone_name)
             min_time = min(track.keys())
             max_time = max(track.keys())
-            if len(seg) == 4:
+            if len(seg) > 4:# Assume we have phone info included
+                set_label = seg[4]
+            else:
+                set_label = None
                 q = self.query_graph(phone_type).filter(phone_type.discourse.name == discourse)
                 q = q.filter(phone_type.end >= min_time).filter(phone_type.begin <= max_time)
                 q = q.columns(phone_type.label.column_name('label'),
                               phone_type.begin.column_name('begin'),
                               phone_type.end.column_name('end')).order_by(phone_type.begin)
                 phones = [(x['label'], x['begin'], x['end']) for x in q.all()]
-                for time_point, value in track.items():
+                print(phones)
+            for time_point, value in track.items():
+                if set_label is None:
                     label = None
                     for i, p in enumerate(phones):
                         if p[1] > time_point:
@@ -399,10 +433,10 @@ class AudioContext(SyllabicContext):
                             break
                     else:
                         label = None
-                    if label is None:
-                        continue
-                else:   # Assume we have phone info included
-                    label = seg[4]
+                else:
+                    label = set_label
+                if label is None:
+                    continue
                 t_dict = {'speaker': speaker, 'discourse': discourse, 'channel': channel, 'source': source}
                 fields = {'phone': label}
                 if measurement == 'formants':
@@ -427,6 +461,7 @@ class AudioContext(SyllabicContext):
                     if value <= 0:
                         continue
                     fields['F0'] = value
+                    print(fields)
                 elif measurement == 'intensity':
                     try:
                         value = float(value['Intensity'])
@@ -474,7 +509,7 @@ class AudioContext(SyllabicContext):
         if isinstance(sound_file, str):
             kwargs['discourse'] = sound_file
         else:
-            kwargs['discourse'] = sound_file.discourse.name
+            kwargs['discourse'] = sound_file['name']
         tag_dict.update(kwargs)
         phone_type = getattr(self, self.phone_name)
         min_time = min(track.keys())
@@ -579,6 +614,12 @@ class AudioContext(SyllabicContext):
     def save_pitch_tracks(self, tracks, speaker):
         self._save_measurement_tracks('pitch', tracks, speaker)
 
+    def save_formant_tracks(self, tracks, speaker):
+        self._save_measurement_tracks('formants', tracks, speaker)
+
+    def save_intensity_tracks(self, tracks, speaker):
+        self._save_measurement_tracks('intensity', tracks, speaker)
+
     def save_intensity(self, sound_file, intensity_track, **kwargs):
         """
         Save a pitch track for a sound file
@@ -659,7 +700,7 @@ class AudioContext(SyllabicContext):
             raise (ValueError('Acoustic measure must be one of: pitch, formants, or intensity.'))
         if by_speaker and by_phone:
             results = []
-            for p in self.lexicon.phones:
+            for p in self.phones:
                 query = '''select {} from "{}"
                                 where "phone" = '{}' and "source" = '{}' group by "speaker";'''.format(
                     ', '.join(measures), acoustic_measure, p, source)
@@ -693,7 +734,7 @@ class AudioContext(SyllabicContext):
                                                                                 measure=acoustic_measure)
         elif by_phone:
             results = []
-            for p in self.lexicon.phones:
+            for p in self.phones:
                 query = '''select {} from "{}"
                                 where "phone" = '{}' and "source" = '{}';'''.format(', '.join(measures),
                                                                                     acoustic_measure, p, source)
@@ -776,7 +817,7 @@ class AudioContext(SyllabicContext):
         if by_phone and by_speaker:
             statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0}) return r.{1} as {1} LIMIT 1'''.format(
                 self.cypher_safe_name, name)
-            results = self.execute_cypher(statement)
+            results = self.execute_cypher(statement).records()
             try:
                 first = next(results)
             except StopIteration:
@@ -787,12 +828,12 @@ class AudioContext(SyllabicContext):
                 statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0})
                 return p.label as phone, s.name as speaker, r.{1}_F1 as F1, r.{1}_F2 as F2, r.{1}_F3 as F3'''.format(
                     self.cypher_safe_name, statistic)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {(x['speaker'], x['phone']): [x['F1'], x['F2'], x['F3']] for x in results}
             else:
                 statement = '''MATCH (p:phone_type:{0})-[r:spoken_by]->(s:Speaker:{0})
                 return p.label as phone, s.name as speaker, r.{1} as {1}'''.format(self.cypher_safe_name, name)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {(x['speaker'], x['phone']): [x[name]] for x in results}
         elif by_phone:
             if not self.hierarchy.has_type_property('phone', name):
@@ -801,12 +842,12 @@ class AudioContext(SyllabicContext):
                 statement = '''MATCH (p:phone_type:{0})
                 return p.label as phone, p.{1}_F1 as F1, p.{1}_F2 as F2, p.{1}_F3 as F3'''.format(
                     self.cypher_safe_name, statistic)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {x['phone']: [x['F1'], x['F2'], x['F3']] for x in results}
             else:
                 statement = '''MATCH (p:phone_type:{0})
                 return p.label as phone, p.{1} as {1}'''.format(self.cypher_safe_name, name)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {x['phone']: [x[name]] for x in results}
         elif by_speaker:
             if not self.hierarchy.has_speaker_property(name):
@@ -815,12 +856,12 @@ class AudioContext(SyllabicContext):
                 statement = '''MATCH (s:Speaker:{0})
                 return s.name as speaker, s.{1}_F1 as F1, s.{1}_F2 as F2, s.{1}_F3 as F3'''.format(
                     self.cypher_safe_name, statistic)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {x['speaker']: [x['F1'], x['F2'], x['F3']] for x in results}
             else:
                 statement = '''MATCH (s:Speaker:{0})
                 return s.name as speaker, s.{1} as {1}'''.format(self.cypher_safe_name, name)
-                results = self.execute_cypher(statement)
+                results = self.execute_cypher(statement).records()
                 results = {x['speaker']: [x[name]] for x in results}
         return results
 
@@ -831,7 +872,7 @@ class AudioContext(SyllabicContext):
         phone_type = getattr(self, self.phone_name)
 
         summary_data = {}
-        for p in self.lexicon.phones:
+        for p in self.phones:
             if by_speaker:
                 query = '''select mean("F0"), stddev("F0") from "pitch" where "phone" = '{}' and "source" = '{}' group by "speaker";'''.format(
                     p, source)
@@ -881,7 +922,7 @@ class AudioContext(SyllabicContext):
         phone_type = getattr(self, self.phone_name)
 
         summary_data = {}
-        for p in self.lexicon.phones:
+        for p in self.phones:
             if by_speaker:
                 query = '''select mean("Intensity"), stddev("Intensity") from "intensity" where "phone" = '{}' and "source" = '{}' group by "speaker";'''.format(
                     p, source)
@@ -931,7 +972,7 @@ class AudioContext(SyllabicContext):
         phone_type = getattr(self, self.phone_name)
 
         summary_data = {}
-        for p in self.lexicon.phones:
+        for p in self.phones:
             if by_speaker:
                 query = '''select mean("F1"), stddev("F1"), mean("F2"), stddev("F2"), mean("F3"), stddev("F3") from "formants" where "phone" = '{}' and "source" = '{}' group by "speaker";'''.format(
                     p, source)

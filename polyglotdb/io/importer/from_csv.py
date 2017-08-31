@@ -90,87 +90,101 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
         call_back('Importing data...')
         call_back(0, len(speakers) * len(annotation_types))
         cur = 0
-    for i, s in enumerate(speakers):
-        if call_back is not None:
-            call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), s))
-        for at in annotation_types:
-            if stop_check is not None and stop_check():
-                return
+    statements = []
+
+    def unique_function(tx, at):
+        tx.run('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
+
+    def prop_index(tx, at, prop):
+        tx.run('CREATE INDEX ON :%s(%s)' % (at, prop))
+
+    def label_index(tx, at):
+        tx.run('CREATE INDEX ON :%s(label_insensitive)' % at)
+
+    def begin_index(tx, at):
+        tx.run('CREATE INDEX ON :%s(begin)' % (at,))
+
+    def end_index(tx, at):
+        tx.run('CREATE INDEX ON :%s(end)' % (at,))
+
+    with corpus_context.graph_driver.session() as session:
+        for i, s in enumerate(speakers):
             if call_back is not None:
-                call_back(cur)
-                cur += 1
-            path = os.path.join(directory, '{}_{}.csv'.format(s, at))
-            rel_path = 'file:///{}'.format(make_path_safe(path))
+                call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), s))
+            for at in annotation_types:
+                if stop_check is not None and stop_check():
+                    return
+                if call_back is not None:
+                    call_back(cur)
+                    cur += 1
+                path = os.path.join(directory, '{}_{}.csv'.format(s, at))
+                rel_path = 'file:///{}'.format(make_path_safe(path))
 
-            corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
+                session.write_transaction(unique_function, at)
 
-            properties = []
+                properties = []
 
-            for x in data[at].token_property_keys:
-                properties.append(prop_temp.format(name=x))
-                corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (at, x))
-            if 'label' in data[at].token_property_keys:
-                properties.append('label_insensitive: lower(csvLine.label)')
-                corpus_context.execute_cypher('CREATE INDEX ON :%s(label_insensitive)' % at)
-            st = data[at].supertype
-            if properties:
-                token_prop_string = ', ' + ', '.join(properties)
-            else:
-                token_prop_string = ''
-            if st is not None:
-                rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
-        LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-        MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
-        (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-        (s:Speaker:{corpus_name} {{name: csvLine.speaker}})
-        CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                    end: toFloat(csvLine.end){token_property_string} }}),
-                                    (t)-[:is_a]->(n),
-                                    (t)-[:contained_by]->(super),
-                                    (t)-[:spoken_in]->(d),
-                                    (t)-[:spoken_by]->(s)
-        WITH t, csvLine
-        MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
-        CREATE (p)-[:precedes]->(t)
-        '''
-                kwargs = {'path': rel_path, 'annotation_type': at,
-                          'token_property_string': token_prop_string,
-                          'corpus_name': corpus_context.cypher_safe_name,
-                          'stype': st}
-            else:
+                for x in data[at].token_property_keys:
+                    properties.append(prop_temp.format(name=x))
+                    session.write_transaction(prop_index, at, x)
+                if 'label' in data[at].token_property_keys:
+                    properties.append('label_insensitive: lower(csvLine.label)')
+                    session.write_transaction(label_index, at)
+                st = data[at].supertype
+                if properties:
+                    token_prop_string = ', ' + ', '.join(properties)
+                else:
+                    token_prop_string = ''
+                if st is not None:
+                    rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
+            LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+            MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
+            (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
+            (s:Speaker:{corpus_name} {{name: csvLine.speaker}})
+            CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                                        end: toFloat(csvLine.end){token_property_string} }}),
+                                        (t)-[:is_a]->(n),
+                                        (t)-[:contained_by]->(super),
+                                        (t)-[:spoken_in]->(d),
+                                        (t)-[:spoken_by]->(s)
+            WITH t, csvLine
+            MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+            CREATE (p)-[:precedes]->(t)
+            '''
+                    kwargs = {'path': rel_path, 'annotation_type': at,
+                              'token_property_string': token_prop_string,
+                              'corpus_name': corpus_context.cypher_safe_name,
+                              'stype': st}
+                else:
 
-                rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
-        LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-        MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
-        (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-        (s:Speaker:{corpus_name} {{ name: csvLine.speaker}})
-        CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                    end: toFloat(csvLine.end){token_property_string} }}),
-                                    (t)-[:is_a]->(n),
-                                    (t)-[:spoken_in]->(d),
-                                    (t)-[:spoken_by]->(s)
-        WITH t, csvLine
-        MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
-        CREATE (p)-[:precedes]->(t)
-        '''
-                kwargs = {'path': rel_path, 'annotation_type': at,
-                          'token_property_string': token_prop_string,
-                          'corpus_name': corpus_context.cypher_safe_name}
-            statement = rel_import_statement.format(**kwargs)
-            log.info('Loading {} relationships...'.format(at))
-            begin = time.time()
-            try:
-                corpus_context.execute_cypher(statement)
-                corpus_context.execute_cypher('CREATE INDEX ON :%s(begin)' % (at,))
-                corpus_context.execute_cypher('CREATE INDEX ON :%s(end)' % (at,))
-            except:
-                raise
-                # finally:
-                #    with open(path, 'w'):
-                #        pass
-                # os.remove(path) # FIXME Neo4j 2.3 does not release files
-            log.info('Finished loading {} relationships!'.format(at))
-            log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
+                    rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
+            LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+            MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
+            (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
+            (s:Speaker:{corpus_name} {{ name: csvLine.speaker}})
+            CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                                        end: toFloat(csvLine.end){token_property_string} }}),
+                                        (t)-[:is_a]->(n),
+                                        (t)-[:spoken_in]->(d),
+                                        (t)-[:spoken_by]->(s)
+            WITH t, csvLine
+            MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+            CREATE (p)-[:precedes]->(t)
+            '''
+                    kwargs = {'path': rel_path, 'annotation_type': at,
+                              'token_property_string': token_prop_string,
+                              'corpus_name': corpus_context.cypher_safe_name}
+                statement = rel_import_statement.format(**kwargs)
+                statements.append(statement)
+                log.info('Loading {} relationships...'.format(at))
+                begin = time.time()
+                session.write_transaction(begin_index, at)
+                session.write_transaction(end_index, at)
+                log.info('Finished loading {} relationships!'.format(at))
+                log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
+
+    for s in statements:
+        corpus_context.execute_cypher(s)
 
     log.info('Finished importing {} into the graph database!'.format(data.name))
     log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
@@ -712,7 +726,7 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.AnnotatedContext`
         the corpus to load into
     type : str
         the file name of the csv

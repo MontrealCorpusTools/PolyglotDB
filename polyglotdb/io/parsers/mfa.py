@@ -24,40 +24,37 @@ class MfaParser(TextgridParser):
         self.speaker_parser = DirectorySpeakerParser()
 
     def _is_valid(self, tg):
-        result = "invalid"
-         # (1) Checks for words ; phones format
-        if tg.tiers[0].name == "word" and tg.tiers[1].name == "phone" and len(tg.tiers) == 2:
-            result = "one_speaker"
-        # (2) Checks for Speaker1 - words; Speaker1 - phones; Speaker2 - words; Speaker2 - phones format
+        found_word = False
+        found_phone = False
+        invalid = True
+        multiple_speakers = False
+        for ti in tg.tiers:
+            if '-' in ti.name:
+                multiple_speakers = True
+                break
+        if multiple_speakers:
+            speakers = {x.name.split('-')[0].strip() for x in tg.tiers}
+            found_words = {x: False for x in speakers}
+            found_phones = {x: False for x in speakers}
+            for ti in tg.tiers:
+                if '-' not in ti.name:
+                    continue
+                speaker, name = ti.name.split('-')
+                speaker = speaker.strip()
+                name = name.strip()
+                if name.startswith('word'):
+                    found_words[speaker] = True
+                elif name.startswith('word'):
+                    found_phones[speaker] = True
+            found_word = all(found_words.values())
+            found_phone = all(found_words.values())
         else:
-            if len(tg.tiers) % 2 == 0:  # Get into pairs and check each pair
-                pairs = []
-                pair = []
-                for index, ti in enumerate(tg.tiers):
-                    if index % 2 == 0:
-                        pair = []
-                        pair.append(ti.name)
-                    else:
-                        pair.append(ti.name)
-                        pairs.append(pair)
-                for pair in pairs:
-                    if " - " in pair[0] and " - " in pair[1]:
-                        item1 = pair[0].split(" - ")
-                        item2 = pair[1].split(" - ")
-                        if item1[0] == item2[0]:
-                            if item1[1] == "word" and item2[1] == "phone":
-                                result = "multiple_speakers"
-                            else:
-                                break
-                        else:
-                            break
-                    else:
-                        break
-            #else:
-            #    break
-
-        return result
-
+            for ti in tg.tiers:
+                if ti.name.startswith('word'):
+                    found_word = True
+                elif ti.name.startswith('phone'):
+                    found_phone = True
+        return multiple_speakers, found_word and found_phone
 
     def parse_discourse(self, path, types_only=False):
         '''
@@ -76,19 +73,14 @@ class MfaParser(TextgridParser):
         tg = TextGrid()
         tg.read(path)
 
-        # Turns "words" into "word" and "phones" into "phone", to be consistent with other code
-        for ti in tg.tiers:
-            if "words" in ti.name:
-                ti.name = ti.name.replace("words", "word")
-            elif "phones" in ti.name:
-                ti.name = ti.name.replace("phones", "phone")
+        multiple_speakers, is_valid = self._is_valid(tg)
 
-        if self._is_valid(tg) == "invalid":
+        if not is_valid:
             raise (TextGridError('This file cannot be parsed by the MFA parser.'))
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         # Format 1
-        if self._is_valid(tg) == "one_speaker":
+        if not multiple_speakers:
             if self.speaker_parser is not None:
                 speaker = self.speaker_parser.parse_path(path)
             else:
@@ -100,9 +92,9 @@ class MfaParser(TextgridParser):
 
             # Parse the tiers
             for i, ti in enumerate(tg.tiers):
-                if ti.name == 'words':
+                if ti.name.startswith('word'):
                     self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
-                elif ti.name == 'phones':
+                elif ti.name.startswith('phone'):
                     self.annotation_types[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             pg_annotations = self._parse_annotations(types_only)
 
@@ -110,11 +102,8 @@ class MfaParser(TextgridParser):
             for a in self.annotation_types:
                 a.reset()
 
-            data.wav_path = find_wav_path(path)
-            return data
-
         # Format 2
-        elif self._is_valid(tg) == "multiple_speakers":
+        else:
             dummy = self.annotation_types
             self.annotation_types = []
             wav_path = find_wav_path(path)
@@ -132,7 +121,6 @@ class MfaParser(TextgridParser):
                         n_tiers += 1
                     ind = 0
                     cutoffs = [x / n_channels for x in range(1, n_channels)]
-                    #print(cutoffs)
                     for ti in tg.tiers:
                         try:
                             speaker, type = ti.name.split(' - ')
@@ -140,9 +128,7 @@ class MfaParser(TextgridParser):
                             continue
                         if speaker in speaker_channel_mapping:
                             continue
-                        #print(ind / n_channels)
                         for i, c in enumerate(cutoffs):
-                            #print(c)
                             if ind / n_channels < c:
                                 speaker_channel_mapping[speaker] = i
                                 break
@@ -166,8 +152,8 @@ class MfaParser(TextgridParser):
 
             data = DiscourseData(name, pg_annotations, self.hierarchy)
             data.speaker_channel_mapping = speaker_channel_mapping
-            data.wav_path = wav_path
 
             self.annotation_types = dummy
 
-            return data
+        data.wav_path = find_wav_path(path)
+        return data

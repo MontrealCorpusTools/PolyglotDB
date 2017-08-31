@@ -13,9 +13,9 @@ from polyglotdb.exceptions import DelimiterError
 from polyglotdb import CorpusContext
 
 
-def test_to_csv(graph_db, export_test_dir):
+def test_to_csv(acoustic_utt_config, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export.csv')
-    with CorpusContext('acoustic', **graph_db) as g:
+    with CorpusContext(acoustic_utt_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.columns(g.phone.label.column_name('label'),
                       g.phone.duration.column_name('duration'),
@@ -42,7 +42,7 @@ def test_to_csv(graph_db, export_test_dir):
             assert line[1:] == pytest.approx(expected[i][1:], 1e-3)
             i += 1
 
-    with CorpusContext('acoustic', **graph_db) as g:
+    with CorpusContext(acoustic_utt_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.columns(g.phone.label,
                       g.phone.duration,

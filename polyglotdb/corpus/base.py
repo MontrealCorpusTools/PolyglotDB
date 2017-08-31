@@ -2,24 +2,20 @@ import os
 import pickle
 import shutil
 import sys
+import time
 from decimal import Decimal
 
-import py2neo
-import sqlalchemy
-from py2neo import Graph
-from py2neo.database.status import (ClientError, Forbidden,
-                                    TransientError, Unauthorized, ConstraintError)
-from sqlalchemy import create_engine
+from neo4j.v1 import GraphDatabase
 
-from ..query.graph.attributes import AnnotationAttribute, PauseAnnotation
-from ..query.graph import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
+from ..query.annotations.attributes import AnnotationNode, PauseAnnotation
+from ..query.annotations import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
+from ..query.lexicon import LexiconQuery, LexiconNode
+from ..query.speaker import SpeakerQuery, SpeakerNode
+from ..query.discourse import DiscourseQuery, DiscourseNode
 from ..config import CorpusConfig
 from ..exceptions import (CorpusConfigError, GraphQueryError,
                           ConnectionError, AuthorizationError, TemporaryConnectionError,
                           NetworkAddressError)
-from ..sql.config import Session
-from ..sql.models import Base, Discourse, Speaker
-from ..sql.query import Lexicon, Census
 from ..structure import Hierarchy
 
 
@@ -46,15 +42,10 @@ class BaseContext(object):
         else:
             self.config = CorpusConfig(*args, **kwargs)
         self.config.init()
-        self.graph = Graph(**self.config.graph_connection_kwargs)
+        self.graph_driver = GraphDatabase.driver(self.config.graph_connection_string)
         self.corpus_name = self.config.corpus_name
-        if self.corpus_name:
-            self.init_sql()
 
-        self.hierarchy = Hierarchy({})
-
-        self.lexicon = Lexicon(self)
-        self.census = Census(self)
+        self.hierarchy = Hierarchy({}, corpus_name=self.corpus_name)
 
         self._has_sound_files = None
         self._has_all_sound_files = None
@@ -80,33 +71,6 @@ class BaseContext(object):
         res = list(self.execute_cypher(statement))
         return len(res) > 0
 
-    def load_variables(self):
-        """
-        Loads variables into Hierarchy
-        """
-        try:
-            with open(os.path.join(self.config.data_dir, 'variables'), 'rb') as f:
-                var = pickle.load(f)
-            self.hierarchy = var['hierarchy']
-        except FileNotFoundError:
-            if self.corpus_name:
-                self.hierarchy = self.generate_hierarchy()
-                self.save_variables()
-
-    def save_variables(self):
-        """ saves variables to hierarchy"""
-        with open(os.path.join(self.config.data_dir, 'variables'), 'wb') as f:
-            pickle.dump({'hierarchy': self.hierarchy}, f)
-
-    def init_sql(self):
-        """
-        initializes sql connection
-        """
-        self.engine = create_engine(self.config.sql_connection_string)
-        Session.configure(bind=self.engine)
-        if not os.path.exists(self.config.db_path):
-            Base.metadata.create_all(self.engine)
-
     def execute_cypher(self, statement, **parameters):
         """
         Executes a cypher query
@@ -125,28 +89,16 @@ class BaseContext(object):
         raises error
 
         """
+        from neo4j.exceptions import ServiceUnavailable
         for k, v in parameters.items():
             if isinstance(v, Decimal):
                 parameters[k] = float(v)
         try:
-            return self.graph.run(statement, **parameters)
-        except (py2neo.packages.httpstream.http.SocketError,
-                py2neo.packages.neo4j.v1.exceptions.ProtocolError) as e:
-            raise (ConnectionError('PolyglotDB could not connect to the server specified: {}'.format(str(e))))
-        except ClientError:
+            with self.graph_driver.session() as session:
+                results = session.run(statement, **parameters)
+            return results
+        except Exception as e:
             raise
-        except (Unauthorized):
-            raise (AuthorizationError('The specified user and password were not authorized by the server.'))
-        except Forbidden:
-            raise (NetworkAddressError(
-                'The server specified could not be found.  Please double check the server address for typos or check your internet connection.'))
-        except (TransientError):
-            raise (TemporaryConnectionError('The server is (likely) temporarily unavailable.'))
-        except ConstraintError as e:
-            pass
-        except Exception:
-            raise
-
     @property
     def cypher_safe_name(self):
         return '`{}`'.format(self.corpus_name)
@@ -156,21 +108,9 @@ class BaseContext(object):
         '''
         Return a list of all discourses in the corpus.
         '''
-        try:
-            q = self.sql_session.query(Discourse).all()
-            if not len(q):
-                res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(
-                    corpus_name=self.cypher_safe_name))
-                discourses = []
-                for d in res:
-                    instance = Discourse(name=d['discourse'])
-                    self.sql_session.add(instance)
-                    discourses.append(d['discourse'])
-                self.sql_session.flush()
-                return discourses
-            return [x.name for x in q]
-        except AttributeError as error:
-            raise (RuntimeError("AttributeError: " + str(error), sys.exc_info()[2]))
+        res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(
+            corpus_name=self.cypher_safe_name))
+        return [x['discourse'] for x in res]
 
     @property
     def speakers(self):
@@ -182,47 +122,59 @@ class BaseContext(object):
         names : list
             all the speaker names
         """
-        q = self.sql_session.query(Speaker).order_by(Speaker.name).all()
-        if not len(q):
-            res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(
-                corpus_name=self.cypher_safe_name))
-
-            speakers = []
-            for s in res:
-                instance = Speaker(name=s['speaker'])
-                self.sql_session.add(instance)
-                speakers.append(s['speaker'])
-            self.sql_session.flush()
-            return sorted(speakers)
-        return [x.name for x in q]
+        res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(
+            corpus_name=self.cypher_safe_name))
+        return [x['speaker'] for x in res]
 
     def __enter__(self):
-        self.sql_session = Session()
-        self.load_variables()
-        # if self.corpus_name:
-        #    self.hierarchy = self.generate_hierarchy()
+        if self.corpus_name:
+            if not os.path.exists(self.hierarchy_path):
+                self.hierarchy = self.generate_hierarchy()
+                self.cache_hierarchy()
+            else:
+                self.load_hierarchy()
         return self
 
+    @property
+    def hierarchy_path(self):
+        return os.path.join(self.config.base_dir, 'hierarchy')
+
+    def cache_hierarchy(self):
+        import pickle
+        with open(self.hierarchy_path, 'wb') as f:
+            pickle.dump(obj=self.hierarchy, file=f)
+
+    def load_hierarchy(self):
+        import pickle
+        with open(self.hierarchy_path, 'rb') as f:
+            self.hierarchy = pickle.load(file=f)
+
     def __exit__(self, exc_type, exc, exc_tb):
+        self.graph_driver.close()
         if exc_type is None:
             # try:
             #    shutil.rmtree(self.config.temp_dir)
             # except:
             #    pass
-            self.sql_session.commit()
             return True
         else:
-            self.sql_session.rollback()
-        self.sql_session.expunge_all()
-        self.sql_session.close()
+            return False
 
     def __getattr__(self, key):
+        if key == 'speaker':
+            return SpeakerNode(corpus=self.corpus_name, hierarchy=self.hierarchy)
+        if key == 'discourse':
+            return DiscourseNode(corpus=self.corpus_name, hierarchy=self.hierarchy)
         if key == 'pause':
-            return PauseAnnotation(corpus=self.corpus_name)
+            return PauseAnnotation(corpus=self.corpus_name, hierarchy=self.hierarchy)
         if key + 's' in self.hierarchy.annotation_types:
             key += 's'  # FIXME
         if key in self.hierarchy.annotation_types:
-            return AnnotationAttribute(key, corpus=self.corpus_name, hierarchy=self.hierarchy)
+            return AnnotationNode(key, corpus=self.corpus_name, hierarchy=self.hierarchy)
+        if key.startswith('lexicon_'):
+            key = key.split('_')[1]
+            if key in self.hierarchy.annotation_types:
+                return LexiconNode(key, corpus=self.corpus_name, hierarchy=self.hierarchy)
         raise (GraphQueryError(
             'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(
                 sorted(self.hierarchy.annotation_types)))))
@@ -272,7 +224,7 @@ class BaseContext(object):
         if call_back is not None:
             call_back('Resetting database...')
             number = self.execute_cypher(
-                '''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name)).evaluate()
+                '''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name))['number']
             call_back(0, number)
         num_deleted = 0
         for a in self.hierarchy.annotation_types:
@@ -286,7 +238,7 @@ class BaseContext(object):
                     if stop_check is not None and stop_check():
                         break
                     deleted = self.execute_cypher(delete_statement.format(corpus=self.cypher_safe_name, anno=a),
-                                                  speaker=s).evaluate()
+                                                  speaker=s).single()['deleted_count']
                     num_deleted += deleted
                     if call_back is not None:
                         call_back(num_deleted)
@@ -296,7 +248,7 @@ class BaseContext(object):
                 if stop_check is not None and stop_check():
                     break
                 deleted = self.execute_cypher(
-                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a)).evaluate()
+                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a)).single()['deleted_count']
                 num_deleted += deleted
                 if call_back is not None:
                     call_back(num_deleted)
@@ -309,15 +261,10 @@ class BaseContext(object):
 
     def reset(self, call_back=None, stop_check=None):
         '''
-        Reset the graph and SQL databases for a corpus.
+        Reset the graph databases for a corpus.
         '''
         self.reset_acoustics(call_back, stop_check)
         self.reset_graph(call_back, stop_check)
-        try:
-            Base.metadata.drop_all(self.engine)
-        except sqlalchemy.exc.OperationalError:
-            pass
-        Base.metadata.create_all(self.engine)
 
     def query_graph(self, annotation_type):
         '''
@@ -325,7 +272,7 @@ class BaseContext(object):
 
         Parameters
         ----------
-        annotation_type : str
+        annotation_type : :class:`polyglotdb.query.attributes.AnnotationNode`
             The type of annotation to look for in the corpus
 
         Returns
@@ -334,8 +281,8 @@ class BaseContext(object):
             Query object
 
         '''
-        if annotation_type.type not in self.hierarchy.annotation_types \
-                and annotation_type.type != 'pause':  # FIXME make more general
+        if annotation_type.node_type not in self.hierarchy.annotation_types \
+                and annotation_type.node_type != 'pause':  # FIXME make more general
             raise (GraphQueryError(
                 'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(
                     annotation_type.name, ', '.join(sorted(self.hierarchy.annotation_types)))))
@@ -346,6 +293,55 @@ class BaseContext(object):
         else:
             cls = GraphQuery
         return cls(self, annotation_type)
+
+    def query_lexicon(self, annotation_type):
+        '''
+        Return a Query object for the specified annotation type.
+
+        Parameters
+        ----------
+        annotation_type : :class:`polyglotdb.query.attributes.AnnotationNode`
+            The type of annotation to look for in the corpus
+
+        Returns
+        -------
+        GraphQuery
+            Query object
+
+        '''
+        if annotation_type.node_type not in self.hierarchy.annotation_types \
+                and annotation_type.node_type != 'pause':  # FIXME make more general
+            raise (GraphQueryError(
+                'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(
+                    annotation_type.node_type, ', '.join(sorted(self.hierarchy.annotation_types)))))
+        return LexiconQuery(self, annotation_type)
+
+    def query_discourses(self):
+        """
+        query for an individual speaker's property
+
+        Parameters
+        ----------
+        name : str
+            the speaker's name
+        property : str
+            the name of the property
+        """
+        return DiscourseQuery(self)
+
+    def query_speakers(self):
+        """
+        query for an individual speaker's property
+
+        Parameters
+        ----------
+        name : str
+            the speaker's name
+        property : str
+            the name of the property
+        """
+        return SpeakerQuery(self)
+
 
     @property
     def annotation_types(self):
@@ -371,7 +367,7 @@ class BaseContext(object):
         '''
         self.execute_cypher('''MATCH (n:{}:{})-[r]->() DELETE n, r'''.format(self.cypher_safe_name, name))
 
-    def discourse(self, name, annotations=None):
+    def discourse_annotations(self, name, annotations=None):
         '''
         Get all words spoken in a discourse.
 
@@ -387,17 +383,16 @@ class BaseContext(object):
         q = q.order_by(w.begin)
         return q.all()
 
-    def query_speaker(self, name, property):
-        """
-        query for an individual speaker's property
+    @property
+    def phones(self):
+        statement = '''MATCH (p:{phone_name}_type:{corpus_name}) return p.label as label'''.format(
+            phone_name=self.phone_name, corpus_name=self.cypher_safe_name)
+        results = self.execute_cypher(statement)
+        return [r['label'] for r in results]
 
-        Parameters
-        ----------
-        name : str
-            the speaker's name
-        property : str
-            the name of the property
-        """
-        res = self.census.get_speaker_annotations(property, name)
-
-        return res
+    @property
+    def words(self):
+        statement = '''MATCH (p:{word_name}_type:{corpus_name}) return p.label as label'''.format(
+            word_name=self.word_name, corpus_name=self.cypher_safe_name)
+        results = self.execute_cypher(statement)
+        return [r['label'] for r in results]

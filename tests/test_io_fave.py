@@ -52,15 +52,21 @@ def test_load_fave(fave_test_dir, graph_db):
         assert (len(results) == 2)
         assert (results[0]['following'] == 'KNOW')
 
-        interviewer = c.census['Interviewer']
+        q = c.query_speakers().filter(c.speaker.name == 'Interviewer')
+        q = q.columns(c.speaker.discourses.name.column_name('discourses'))
 
-        assert (len(interviewer.discourses) == 2)
-        assert (sorted(x.discourse.name for x in interviewer.discourses) == ['fave_test', 'fave_test2'])
+        interviewer = q.get()
 
-        s = c.census['Gary Salvi']
+        assert (len(interviewer['discourses']) == 2)
+        assert (sorted(interviewer['discourses']) == ['fave_test', 'fave_test2'])
 
-        assert (len(s.discourses) == 1)
-        assert ([x.discourse.name for x in s.discourses] == ['fave_test'])
+        q = c.query_speakers().filter(c.speaker.name == 'Gary Salvi')
+        q = q.columns(c.speaker.discourses.name.column_name('discourses'))
+
+        s = q.get()
+
+        assert (len(s['discourses']) == 1)
+        assert (s['discourses'] == ['fave_test'])
 
 
 def test_load_fave_stereo(fave_test_dir, graph_db):
@@ -69,12 +75,20 @@ def test_load_fave_stereo(fave_test_dir, graph_db):
         parser = inspect_fave(fave_test_dir)
         c.load(parser, fave_test_dir)
 
-        s = c.census['Speaker 1']
+        q = c.query_speakers().filter(c.speaker.name == 'Speaker 1')
+        q = q.columns(c.speaker.discourses.name.column_name('discourses'),
+                      c.speaker.discourses.channel.column_name('channels'))
 
-        assert (len(s.discourses) == 1)
-        assert ([x.channel for x in s.discourses] == [0])
+        s = q.get()
 
-        s = c.census['Speaker 2']
+        assert (len(s['channels']) == 1)
+        assert (s['channels'] == [0])
 
-        assert (len(s.discourses) == 1)
-        assert ([x.channel for x in s.discourses] == [1])
+        q = c.query_speakers().filter(c.speaker.name == 'Speaker 2')
+        q = q.columns(c.speaker.discourses.name.column_name('discourses'),
+                      c.speaker.discourses.channel.column_name('channels'))
+
+        s = q.get()
+
+        assert (len(s['channels']) == 1)
+        assert (s['channels'] == [1])

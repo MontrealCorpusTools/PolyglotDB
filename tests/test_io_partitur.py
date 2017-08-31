@@ -36,6 +36,10 @@ def test_load_partitur(partitur_test_dir, graph_db):
 
         assert (results[0]['following'] == 'möchte')
 
-        s = c.census['alz']
-        assert (len(s.discourses) == 1)
-        assert ([x.discourse.name for x in s.discourses] == ['partitur_test'])
+        q = c.query_speakers().filter(c.speaker.name == 'alz')
+        q = q.columns(c.speaker.discourses.name.column_name('discourses'))
+
+        s = q.get()
+
+        assert (len(s['discourses']) == 1)
+        assert (s['discourses'] == ['partitur_test'])

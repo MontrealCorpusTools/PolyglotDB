@@ -8,10 +8,14 @@ Contents:
    :maxdepth: 2
 
    introduction.rst
-   installation.rst
-   importing.rst
-   graph_queries.rst
+   getting_started.rst
+   client.rst
+   import.rst
+   enrichment.rst
+   acoustics.rst
+   queries.rst
    io.rst
+   concepts.rst
    apireference.rst
 
 
