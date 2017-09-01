@@ -29,16 +29,8 @@ import re
 import polyglotdb.io as pgio
 
 from polyglotdb import CorpusContext
-from polyglotdb.config import CorpusConfig
-from polyglotdb.io.parsers import FilenameSpeakerParser
-from polyglotdb.io.enrichment import enrich_speakers_from_csv, enrich_lexicon_from_csv
 
-from polyglotdb.acoustics.formant import analyze_formants_refinement, get_mean_SD, refine_formants
-from polyglotdb.acoustics.analysis import generate_phone_segments_by_speaker
-
-from acousticsim.analysis.praat import run_script
-
-from polyglotdb.utils import get_corpora_list
+from polyglotdb.acoustics.formants.refined import analyze_formants_refinement
 
 # Logging set up
 
