@@ -43,7 +43,7 @@ def test_load_mfa(mfa_test_dir, graph_db):
         assert (len(results) == 1)
         assert (results[0]['following'] == 'JURASSIC')
 
-        q = c.query_speaker().filter(c.speaker.name == 'mfa')
+        q = c.query_speakers().filter(c.speaker.name == 'mfa')
         q = q.columns(c.speaker.discourses.name.column_name('discourses'))
 
         s = q.get()

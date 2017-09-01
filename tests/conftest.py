@@ -502,7 +502,6 @@ def praat_path():
         return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
     else:
         return 'praat'
-        # return 'C:\\Users\\samih\\Documents\\0_SPADE_labwork\\praatcon.exe'
 
 
 @pytest.fixture(scope='session')

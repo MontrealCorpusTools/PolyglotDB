@@ -11,6 +11,7 @@ from ..query.annotations.attributes import AnnotationNode, PauseAnnotation
 from ..query.annotations import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
 from ..query.lexicon import LexiconQuery, LexiconNode
 from ..query.speaker import SpeakerQuery, SpeakerNode
+from ..query.discourse import DiscourseQuery, DiscourseNode
 from ..config import CorpusConfig
 from ..exceptions import (CorpusConfigError, GraphQueryError,
                           ConnectionError, AuthorizationError, TemporaryConnectionError,
@@ -162,6 +163,8 @@ class BaseContext(object):
     def __getattr__(self, key):
         if key == 'speaker':
             return SpeakerNode(corpus=self.corpus_name, hierarchy=self.hierarchy)
+        if key == 'discourse':
+            return DiscourseNode(corpus=self.corpus_name, hierarchy=self.hierarchy)
         if key == 'pause':
             return PauseAnnotation(corpus=self.corpus_name, hierarchy=self.hierarchy)
         if key + 's' in self.hierarchy.annotation_types:
@@ -313,6 +316,33 @@ class BaseContext(object):
                     annotation_type.node_type, ', '.join(sorted(self.hierarchy.annotation_types)))))
         return LexiconQuery(self, annotation_type)
 
+    def query_discourses(self):
+        """
+        query for an individual speaker's property
+
+        Parameters
+        ----------
+        name : str
+            the speaker's name
+        property : str
+            the name of the property
+        """
+        return DiscourseQuery(self)
+
+    def query_speakers(self):
+        """
+        query for an individual speaker's property
+
+        Parameters
+        ----------
+        name : str
+            the speaker's name
+        property : str
+            the name of the property
+        """
+        return SpeakerQuery(self)
+
+
     @property
     def annotation_types(self):
         return self.hierarchy.annotation_types
@@ -337,7 +367,7 @@ class BaseContext(object):
         '''
         self.execute_cypher('''MATCH (n:{}:{})-[r]->() DELETE n, r'''.format(self.cypher_safe_name, name))
 
-    def discourse(self, name, annotations=None):
+    def discourse_annotations(self, name, annotations=None):
         '''
         Get all words spoken in a discourse.
 
@@ -366,16 +396,3 @@ class BaseContext(object):
             word_name=self.word_name, corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(statement)
         return [r['label'] for r in results]
-
-    def query_speaker(self):
-        """
-        query for an individual speaker's property
-
-        Parameters
-        ----------
-        name : str
-            the speaker's name
-        property : str
-            the name of the property
-        """
-        return SpeakerQuery(self)

@@ -48,7 +48,7 @@ class Hierarchy(object):
         self.type_properties = {}
 
         self.speaker_properties = {('name', str)}
-        self.discourse_properties = {('name', str)}
+        self.discourse_properties = {('name', str), ('file_path', str), ('low_freq_file_path', str), ('vowel_file_path', str), ('consonant_file_path', str), ('duration', float), ('sampling_rate', int), ('num_channels', int)}
 
     def __getattr__(self, key):
         if key == 'pause':

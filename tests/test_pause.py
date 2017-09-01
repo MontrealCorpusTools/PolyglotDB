@@ -4,20 +4,20 @@ from polyglotdb import CorpusContext
 def test_encode_pause(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.reset_pauses()
-        discourse = g.discourse('acoustic_corpus')
+        discourse = g.discourse_annotations('acoustic_corpus')
         g.encode_pauses(['sil'])
         q = g.query_graph(g.pause)
         print(q.cypher())
         assert (len(q.all()) == 11)
 
-        paused = g.discourse('acoustic_corpus')
+        paused = g.discourse_annotations('acoustic_corpus')
         expected = [x for x in discourse if x.label != 'sil']
         for i, d in enumerate(expected):
             print(d.label, paused[i].label)
             assert (d.label == paused[i].label)
 
         g.reset_pauses()
-        new_discourse = g.discourse('acoustic_corpus')
+        new_discourse = g.discourse_annotations('acoustic_corpus')
         for i, d in enumerate(discourse):
             assert (d.label == new_discourse[i].label)
 
@@ -26,14 +26,14 @@ def test_encode_pause(acoustic_config):
         print(q.cypher())
         assert (len(q.all()) == 14)
 
-        paused = g.discourse('acoustic_corpus')
+        paused = g.discourse_annotations('acoustic_corpus')
         expected = [x for x in discourse if x.label not in ['sil', 'um', 'uh']]
         for i, d in enumerate(expected):
             print(d.label, paused[i].label)
             assert (d.label == paused[i].label)
 
         g.reset_pauses()
-        new_discourse = g.discourse('acoustic_corpus')
+        new_discourse = g.discourse_annotations('acoustic_corpus')
         print(discourse)
         print(new_discourse)
         for i, d in enumerate(discourse):

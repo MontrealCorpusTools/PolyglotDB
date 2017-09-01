@@ -50,7 +50,7 @@ def analyze_discourse_pitch(corpus_context, discourse, pitch_source='praat', min
         speaker = r['s']['name']
 
         discourse = r['d']['name']
-        file_path = r['d']['vowel_filepath']
+        file_path = r['d']['vowel_file_path']
         atype = corpus_context.hierarchy.highest
         prob_utt = getattr(corpus_context, atype)
         q = corpus_context.query_graph(prob_utt)
@@ -110,8 +110,8 @@ def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=No
         for r in results:
             channel = r['r']['channel']
             discourse = r['d']['name']
-            vowel_file_path = r['d']['vowel_filepath']
-            consonant_file_path = r['d']['consonant_filepath']
+            vowel_file_path = r['d']['vowel_file_path']
+            consonant_file_path = r['d']['consonant_file_path']
             # qr = corpus_context.query_graph(corpus_context.phone).filter(corpus_context.phone.id.in_(query))
             qr = corpus_context.query_graph(corpus_context.phone).filter(
                 corpus_context.phone.subset == phone_class)
@@ -124,11 +124,11 @@ def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=No
             if phones is not None:
                 for ph in phones:
                     if 'vowel' in phone_class:
-                        phone_ids[(vowel_file_path, ph.begin, ph.end, channel)] = ph.id
-                        segments.append((vowel_file_path, ph.begin, ph.end, channel))
+                        phone_ids[(vowel_file_path, ph.begin, ph.end, channel, ph.label)] = ph.id
+                        segments.append((vowel_file_path, ph.begin, ph.end, channel, ph.label))
                     else:
-                        phone_ids[(consonant_file_path, ph.begin, ph.end, channel)] = ph.id
-                        segments.append((consonant_file_path, ph.begin, ph.end, channel))
+                        phone_ids[(consonant_file_path, ph.begin, ph.end, channel, ph.label)] = ph.id
+                        segments.append((consonant_file_path, ph.begin, ph.end, channel, ph.label))
             if phone_class is 'vowel':
                 discourse_mapping[discourse] = vowel_file_path
             else:
@@ -153,7 +153,7 @@ def generate_speaker_segments(corpus_context):
         for r in results:
             channel = r['r']['channel']
             discourse = r['d']['name']
-            file_path = r['d']['vowel_filepath']
+            file_path = r['d']['vowel_file_path']
             atype = corpus_context.hierarchy.highest
             prob_utt = getattr(corpus_context, atype)
             q = corpus_context.query_graph(prob_utt)
@@ -219,7 +219,7 @@ def analyze_pitch(corpus_context,
             min_pitch = absolute_min_pitch
             max_pitch = absolute_max_pitch
             try:
-                q = corpus_context.query_speaker().filter(corpus_context.speaker.name == speaker)
+                q = corpus_context.query_speakers().filter(corpus_context.speaker.name == speaker)
                 q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
                 gender = q.all()[0]['Gender']
                 if gender is not None:
@@ -262,7 +262,7 @@ def analyze_formants(corpus_context,
     for i, (speaker, v) in enumerate(segment_mapping.items()):
         gender = None
         try:
-            q = corpus_context.query_speaker().filter(corpus_context.speaker.name == speaker)
+            q = corpus_context.query_speakers().filter(corpus_context.speaker.name == speaker)
             q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
             gender = q.all()[0]['Gender']
         except SpeakerAttributeError:
@@ -300,7 +300,7 @@ def analyze_formants_vowel_segments(corpus_context,
     for i, (speaker, v) in enumerate(segment_mapping.items()):
         gender = None
         try:
-            q = corpus_context.query_speaker().filter(corpus_context.speaker.name == speaker)
+            q = corpus_context.query_speakers().filter(corpus_context.speaker.name == speaker)
             q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
             gender = q.all()[0]['Gender']
         except SpeakerAttributeError:
@@ -331,7 +331,7 @@ def analyze_intensity(corpus_context,
     for i, (speaker, v) in enumerate(segment_mapping.items()):
         gender = None
         try:
-            q = corpus_context.query_speaker().filter(corpus_context.speaker.name == speaker)
+            q = corpus_context.query_speakers().filter(corpus_context.speaker.name == speaker)
             q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
             gender = q.all()[0]['Gender']
         except SpeakerAttributeError:
@@ -393,7 +393,7 @@ def analyze_script(corpus_context,
             if stop_check is not None and stop_check():
                 break
             if call_back is not None:
-                # call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.filepath))
+                # call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.file_path))
                 call_back(i)
             time_section = time.time()
             output = analyze_file_segments(v, script_function, padding=None, stop_check=stop_check)
@@ -402,7 +402,7 @@ def analyze_script(corpus_context,
             print("time analyzing segments: " + str(time.time() - time_section))
 
             for vector in output.keys():
-                filepath, begin, end, channel = vector
+                file_path, begin, end, channel = vector[:4]
                 row = {}
                 row['id'] = phone_ids[vector]
                 row['begin'] = begin

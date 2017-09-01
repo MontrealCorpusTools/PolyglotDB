@@ -36,7 +36,7 @@ def test_load_partitur(partitur_test_dir, graph_db):
 
         assert (results[0]['following'] == 'möchte')
 
-        q = c.query_speaker().filter(c.speaker.name == 'alz')
+        q = c.query_speakers().filter(c.speaker.name == 'alz')
         q = q.columns(c.speaker.discourses.name.column_name('discourses'))
 
         s = q.get()

@@ -52,7 +52,7 @@ def test_load_fave(fave_test_dir, graph_db):
         assert (len(results) == 2)
         assert (results[0]['following'] == 'KNOW')
 
-        q = c.query_speaker().filter(c.speaker.name == 'Interviewer')
+        q = c.query_speakers().filter(c.speaker.name == 'Interviewer')
         q = q.columns(c.speaker.discourses.name.column_name('discourses'))
 
         interviewer = q.get()
@@ -60,7 +60,7 @@ def test_load_fave(fave_test_dir, graph_db):
         assert (len(interviewer['discourses']) == 2)
         assert (sorted(interviewer['discourses']) == ['fave_test', 'fave_test2'])
 
-        q = c.query_speaker().filter(c.speaker.name == 'Gary Salvi')
+        q = c.query_speakers().filter(c.speaker.name == 'Gary Salvi')
         q = q.columns(c.speaker.discourses.name.column_name('discourses'))
 
         s = q.get()
@@ -75,7 +75,7 @@ def test_load_fave_stereo(fave_test_dir, graph_db):
         parser = inspect_fave(fave_test_dir)
         c.load(parser, fave_test_dir)
 
-        q = c.query_speaker().filter(c.speaker.name == 'Speaker 1')
+        q = c.query_speakers().filter(c.speaker.name == 'Speaker 1')
         q = q.columns(c.speaker.discourses.name.column_name('discourses'),
                       c.speaker.discourses.channel.column_name('channels'))
 
@@ -84,7 +84,7 @@ def test_load_fave_stereo(fave_test_dir, graph_db):
         assert (len(s['channels']) == 1)
         assert (s['channels'] == [0])
 
-        q = c.query_speaker().filter(c.speaker.name == 'Speaker 2')
+        q = c.query_speakers().filter(c.speaker.name == 'Speaker 2')
         q = q.columns(c.speaker.discourses.name.column_name('discourses'),
                       c.speaker.discourses.channel.column_name('channels'))
 

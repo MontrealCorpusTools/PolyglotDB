@@ -1,4 +1,6 @@
 import os
+import re
+import librosa
 from datetime import datetime
 from decimal import Decimal
 
@@ -31,7 +33,7 @@ def sanitize_formants(value):
         f3 = value['F3']
     if f3 is None:
         f3 = 0
-    return f1, f2, f3
+    return float(f1), float(f2), float(f3)
 
 
 def generate_filter_string(discourse, begin, end, num_points, kwargs):
@@ -58,13 +60,26 @@ def to_nano(seconds):
     return int(seconds * Decimal('1e9'))
 
 
+def s_to_ms(seconds):
+    if not isinstance(seconds, Decimal):
+        seconds = Decimal(seconds).quantize(Decimal('0.001'))
+    return int(seconds * Decimal('1e3'))
+
+
 def to_seconds(time_string):
     try:
         d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%S.%fZ')
+        s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
     except:
-        d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%SZ')
+        try:
+            d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%SZ')
+            s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
+        except:
+            m = re.search('T(\d{2}):(\d{2}):(\d+)\.(\d+)?', time_string)
+            p = m.groups()
 
-    s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
+            s = 60 * 60 * int(p[0]) + 60 * int(p[1]) + int(p[2]) + int(p[3][:6]) / 1e6
+
     s = Decimal(s).quantize(Decimal('0.001'))
     return s
 
@@ -73,6 +88,19 @@ class AudioContext(SyllabicContext):
     """
     Class that contains methods for dealing with audio files for corpora
     """
+
+    def load_audio(self, discourse, file_type):
+        sound_file = self.discourse_sound_file(discourse)
+        if file_type == 'consonant':
+            path = os.path.expanduser(sound_file.consonant_file_path)
+        elif file_type == 'vowel':
+            path = os.path.expanduser(sound_file.vowel_file_path)
+        elif file_type == 'low_freq':
+            path = os.path.expanduser(sound_file.low_freq_file_path)
+        else:
+            path = os.path.expanduser(sound_file.file_path)
+        signal, sr = librosa.load(path, sr=None)
+        return signal, sr
 
     def analyze_pitch(self, stop_check=None, call_back=None):
         analyze_pitch(self, stop_check, call_back)
@@ -138,13 +166,13 @@ class AudioContext(SyllabicContext):
     def load_waveform(self, discourse, file_type='consonant'):
         sf = self.discourse_sound_file(discourse)
         if file_type == 'consonant':
-            file_path = sf['consonant_filepath']
+            file_path = sf['consonant_file_path']
         elif file_type == 'vowel':
-            file_path = sf['vowel_filepath']
+            file_path = sf['vowel_file_path']
         elif file_type == 'low_freq':
-            file_path = sf['low_freq_filepath']
+            file_path = sf['low_freq_file_path']
         else:
-            file_path = sf['filepath']
+            file_path = sf['file_path']
         return load_waveform(file_path)
 
     def generate_spectrogram(self, discourse, file_type='consonant'):
@@ -185,7 +213,7 @@ class AudioContext(SyllabicContext):
             sf = self.discourse_sound_file(d)
             if sf is None:
                 break
-            if not os.path.exists(sf.filepath):
+            if not os.path.exists(sf.file_path):
                 break
         else:
             self._has_all_sound_files = True
@@ -207,7 +235,7 @@ class AudioContext(SyllabicContext):
             self._has_sound_files = False
             for d in self.discourses:
                 sf = self.discourse_sound_file(d)
-                if sf['filepath'] is not None:
+                if sf['file_path'] is not None:
                     self._has_sound_files = True
                     break
         return self._has_sound_files
@@ -292,9 +320,9 @@ class AudioContext(SyllabicContext):
         num_points = kwargs.pop('num_points', 0)
         filter_string = generate_filter_string(discourse, begin, end, num_points, kwargs)
         client = self.acoustic_client()
-        formant_names = ["F1", "F2", "F3"]
+        formant_names = ["F1", "F2", "F3", "B1", "B2", "B3"]
         if relative:
-            for i in range(3):
+            for i in range(6):
                 formant_names[i] += '_relativized'
         if num_points:
             columns = ', '.join('mean("{}")'.format(x) for x in formant_names)
@@ -374,31 +402,39 @@ class AudioContext(SyllabicContext):
             if not len(track.keys()):
                 print(seg)
                 continue
-            file_path, begin, end, channel = seg
+            file_path, begin, end, channel = seg[:4]
             res = self.execute_cypher(
-                'MATCH (d:Discourse:{corpus_name}) where d.vowel_filepath = {{filepath}} RETURN d.name as name'.format(
-                    corpus_name=self.cypher_safe_name), filepath=file_path)
+                'MATCH (d:Discourse:{corpus_name}) where d.vowel_file_path = {{file_path}} RETURN d.name as name'.format(
+                    corpus_name=self.cypher_safe_name), file_path=file_path)
             for r in res:
                 discourse = r['name']
             phone_type = getattr(self, self.phone_name)
             min_time = min(track.keys())
             max_time = max(track.keys())
-            q = self.query_graph(phone_type).filter(phone_type.discourse.name == discourse)
-            q = q.filter(phone_type.end >= min_time).filter(phone_type.begin <= max_time)
-            q = q.columns(phone_type.label.column_name('label'),
-                          phone_type.begin.column_name('begin'),
-                          phone_type.end.column_name('end')).order_by(phone_type.begin)
-            phones = [(x['label'], x['begin'], x['end']) for x in q.all()]
+            if len(seg) > 4:# Assume we have phone info included
+                set_label = seg[4]
+            else:
+                set_label = None
+                q = self.query_graph(phone_type).filter(phone_type.discourse.name == discourse)
+                q = q.filter(phone_type.end >= min_time).filter(phone_type.begin <= max_time)
+                q = q.columns(phone_type.label.column_name('label'),
+                              phone_type.begin.column_name('begin'),
+                              phone_type.end.column_name('end')).order_by(phone_type.begin)
+                phones = [(x['label'], x['begin'], x['end']) for x in q.all()]
+                print(phones)
             for time_point, value in track.items():
-                label = None
-                for i, p in enumerate(phones):
-                    if p[1] > time_point:
-                        break
-                    label = p[0]
-                    if i == len(phones) - 1:
-                        break
-                else:
+                if set_label is None:
                     label = None
+                    for i, p in enumerate(phones):
+                        if p[1] > time_point:
+                            break
+                        label = p[0]
+                        if i == len(phones) - 1:
+                            break
+                    else:
+                        label = None
+                else:
+                    label = set_label
                 if label is None:
                     continue
                 t_dict = {'speaker': speaker, 'discourse': discourse, 'channel': channel, 'source': source}
@@ -425,6 +461,7 @@ class AudioContext(SyllabicContext):
                     if value <= 0:
                         continue
                     fields['F0'] = value
+                    print(fields)
                 elif measurement == 'intensity':
                     try:
                         value = float(value['Intensity'])
@@ -439,11 +476,11 @@ class AudioContext(SyllabicContext):
                     fields['Intensity'] = value
                 d = {'measurement': measurement,
                      'tags': t_dict,
-                     'time': to_nano(time_point),
+                     'time': s_to_ms(time_point),
                      'fields': fields
                      }
                 data.append(d)
-        self.acoustic_client().write_points(data, batch_size=1000)
+        self.acoustic_client().write_points(data, batch_size=1000, time_precision='ms')
 
     def _save_measurement(self, sound_file, track, measurement, **kwargs):
         if not len(track.keys()):
@@ -559,9 +596,6 @@ class AudioContext(SyllabicContext):
         """
         self._save_measurement(sound_file, formant_track, 'formants', **kwargs)
 
-    def save_formant_tracks(self, tracks, speaker):
-        self._save_measurement_tracks('formants', tracks, speaker)
-
     def save_pitch(self, sound_file, pitch_track, **kwargs):
         """
         Save a pitch track for a sound file
@@ -580,6 +614,12 @@ class AudioContext(SyllabicContext):
     def save_pitch_tracks(self, tracks, speaker):
         self._save_measurement_tracks('pitch', tracks, speaker)
 
+    def save_formant_tracks(self, tracks, speaker):
+        self._save_measurement_tracks('formants', tracks, speaker)
+
+    def save_intensity_tracks(self, tracks, speaker):
+        self._save_measurement_tracks('intensity', tracks, speaker)
+
     def save_intensity(self, sound_file, intensity_track, **kwargs):
         """
         Save a pitch track for a sound file
@@ -594,9 +634,6 @@ class AudioContext(SyllabicContext):
             Tags to save for acoustic measurements
         """
         self._save_measurement(sound_file, intensity_track, 'intensity', **kwargs)
-
-    def save_intensity_tracks(self, tracks, speaker):
-        self._save_measurement_tracks('intensity', tracks, speaker)
 
     def has_formants(self, discourse, source=None):
         """

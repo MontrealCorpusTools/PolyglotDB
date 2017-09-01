@@ -78,7 +78,7 @@ class UtteranceContext(PauseContext):
         if stop_check is not None and stop_check():
             return
         if call_back is not None:
-            #call_back(i + 1)
+            call_back(i + 1)
             call_back('Finished!')
 
     def get_utterance_ids(self, discourse,
