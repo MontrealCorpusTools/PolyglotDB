@@ -83,16 +83,24 @@ def analyze_discourse_pitch(corpus_context, discourse, pitch_source='praat', min
 def generate_phone_segments_by_speaker(corpus_context, phone_class, call_back=None):
     """
     Generate segment vectors for each phone, to be used as input to analyze_file_segments.
-    
-    Arguments:
-    -- corpus_context: corpus context to use
-    -- phone_class: the phone class to generate segments for
-    (optional:) call_back: call back function
-    
-    Returns: 
-    -- a mapping from speaker to a list of phone vectors belonging to that speaker, 
-    -- a mapping from discourse name to the sound file path for that discourse,
-    -- a mapping from the phone vector to the phone id
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        corpus context to use
+    phone_class : string
+        the phone class to generate segments for
+    call_back : function
+        call back function, optional
+
+    Returns
+    ----------
+    segment_mapping : dict
+        a mapping from speaker to a list of phone vectors belonging to that speaker 
+    discourse_mapping : dict
+        a mapping from discourse name to the sound file path for that discourse
+    phone_ids : dict
+        a mapping from the phone vector to the phone id
     """
     speakers = corpus_context.speakers
     segment_mapping = {}
@@ -244,17 +252,20 @@ def analyze_pitch(corpus_context,
         output = analyze_file_segments(v, pitch_function, padding=PADDING, stop_check=stop_check)
         corpus_context.save_pitch_tracks(output, speaker)
 
-
 def analyze_formants(corpus_context,
                      call_back=None,
                      stop_check=None):
     """
-    Analyze formants of an entire utterance using multiprocessing from acousticsim, and save the resulting formant tracks into the database.
+    Analyze formants of an entire utterance, and save the resulting formant tracks into the database.
     
-    Arguments:
-    -- corpus_context: corpus context to use
-    (optional:) call_back: call back function
-    (optional:) stop_check: stop check function
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        corpus context to use
+    call_back : function
+        call back function, optional
+    stop_check : function
+        stop check function, optional
     """
     segment_mapping, discourse_mapping = generate_speaker_segments(corpus_context)
     if call_back is not None:
@@ -282,11 +293,17 @@ def analyze_formants_vowel_segments(corpus_context,
     """
     Analyze formants of individual vowels, and save the resulting formant tracks into the database for each phone.
 
-    Arguments:
-    -- corpus_context: corpus context to use
-    -- call_back: call back function
-    (optional:) stop_check: stop check function
-    (optional:) vowel_inventory: list of vowels used to encode a class 'vowel': if not used, it's assumed that 'vowel' is already a phone class
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        corpus context to use
+    call_back : function
+        call back function, optional
+    stop_check : function
+        stop check function, optional
+    vowel_inventory : list of strings
+        list of vowels used to encode a class 'vowel', optional. 
+        if not used, it's assumed that 'vowel' is already a phone class
     """
     # encodes vowel inventory into a phone class if it's specified
     if vowel_inventory is not None:
@@ -294,6 +311,7 @@ def analyze_formants_vowel_segments(corpus_context,
     # gets segment mapping of phones that are vowels
     segment_mapping, discourse_mapping, phone_ids = generate_phone_segments_by_speaker(corpus_context, 'vowel',
                                                                                        call_back=call_back)
+
     if call_back is not None:
         call_back('Analyzing files...')
     # goes through each phone and: makes a formant function, analyzes the phone, and saves the tracks
@@ -314,20 +332,24 @@ def analyze_formants_vowel_segments(corpus_context,
 
 
 def analyze_intensity(corpus_context,
-                      call_back=None,
-                      stop_check=None):
+                     call_back=None,
+                     stop_check=None):
     """
-    Analyze intensity of an entire utterance using multiprocessing from acousticsim, and save the resulting intensity tracks into the database.
+    Analyze intensity of an entire utterance, and save the resulting intensity tracks into the database.
 
-    Arguments:
-    -- corpus_context: corpus context to use
-    -- call_back: call back function
-    -- stop_check: stop check function
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        corpus context to use
+    call_back : function
+        call back function, optional
+    stop_check : function
+        stop check function, optional
     """
     segment_mapping, discourse_mapping = generate_speaker_segments(corpus_context)
     if call_back is not None:
         call_back('Analyzing files...')
-    # formant_function = generate_base_formants_function(corpus_context, signal=False, gender=g))
+    #formant_function = generate_base_formants_function(corpus_context, signal=False, gender=g))
     for i, (speaker, v) in enumerate(segment_mapping.items()):
         gender = None
         try:
@@ -347,36 +369,45 @@ def analyze_intensity(corpus_context,
 def make_path_safe(path):
     return path.replace('\\', '/').replace(' ', '%20')
 
-
 def analyze_script(corpus_context,
                    phone_class,
                    script_path,
-                   result_measurement,
                    arguments=None,
                    call_back=None,
                    stop_check=None):
-    '''
+    """
     Perform acoustic analysis of phones using an input praat script.
+    
+    Saves the measurement results from the praat script into the database under the same names as the Praat output columns
     Praat script requirements: 
         -the only input is the full path to the soundfile containing (only) the phone
-        -the script prints the output to the Praat Info window
+        -the script prints the output to the Praat Info window in two rows (i.e. two lines).
+            -the first row is a space-separated list of measurement names: these are the names that will be saved into the database
+            -the second row is a space-separated list of the value for each measurement
     
-    Arguments:
-    -- corpus_context: corpus context to use
-    -- phone_class: an already encoded phone class, on which the analysis will be run
-    -- script_path: path to the praat script
-    -- result_measurement: name to be used in the database for the measurement generated by the praat script
-    (optional:) arguments: a list containing any arguments to the praat script (currently not working)
-    (optional:) call_back: call back function
-    (optional:) stop_check: stop check function
-    
-    Result: saves the measurement results from the praat script into the database in a column with the same name as result_measurement.
-    '''
-    output_type = None
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        corpus context to use
+    phone_class : string
+        the name of an already encoded phone class, on which the analysis will be run
+    script_path : string
+        full path to the praat script
+    arguments : list
+        a list containing any arguments to the praat script (currently not working)
+    call_back : function
+        call back function, optional
+    stop_check : function
+        stop check function, optional
+    """
+    print("analyzing sibilants")
     if call_back is not None:
         call_back('Analyzing phones...')
     directory = corpus_context.config.temporary_directory('csv')
-    csv_name = 'analyze_script_import_' + result_measurement + '.csv'
+    csv_name = 'analyze_script_import.csv'
+    needs_header = True
+    output_types = {}
+    header = ['id', 'begin', 'end']
     time_section = time.time()
     segment_mapping, discourse_mapping, phone_ids = generate_phone_segments_by_speaker(corpus_context, phone_class,
                                                                                        call_back=call_back)
@@ -384,11 +415,8 @@ def analyze_script(corpus_context,
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
     praat_path = corpus_context.config.praat_path
-    script_function = generate_praat_script_function(praat_path, script_path, result_measurement, arguments=arguments)
+    script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
     with open(os.path.join(directory, csv_name), 'w', newline='') as f:
-        header = ['id', 'begin', 'end', result_measurement]
-        writer = csv.DictWriter(f, header, delimiter=',')
-        writer.writeheader()
         for i, (speaker, v) in enumerate(segment_mapping.items()):
             if stop_check is not None and stop_check():
                 break
@@ -402,26 +430,40 @@ def analyze_script(corpus_context,
             print("time analyzing segments: " + str(time.time() - time_section))
 
             for vector in output.keys():
-                file_path, begin, end, channel = vector[:4]
+                output_dict = output[vector]
+                if needs_header is True:
+                    for measurement in output_dict:
+                        header.append(measurement)
+                    writer = csv.DictWriter(f, header, delimiter=',')
+                    writer.writeheader()
+                    needs_header = False
+                filepath, begin, end, channel = vector[:4]
                 row = {}
                 row['id'] = phone_ids[vector]
                 row['begin'] = begin
                 row['end'] = end
-                row[result_measurement] = output[vector]
+                for measurement in output_dict:
+                    if measurement in header:
+                        row[measurement] = output_dict[measurement]
+                        if measurement not in output_types:
+                            output_types[measurement] = type(output_dict[measurement]).__name__
                 writer.writerow(row)
-                output_type = type(output[vector]).__name__
-    script_data_from_csv(corpus_context, result_measurement, output_type)
-
+    for measurement in output_types:
+        script_data_from_csv(corpus_context, measurement, output_types[measurement])
 
 def script_data_from_csv(corpus_context, result_measurement, output_type):
-    '''
-    Save data from a csv file into the database.
-    
-    Arguments:
-    -- corpus_context: corpus context
-    -- result_measurement: measurement label
-    -- output_type: type of the result being saved
-    '''
+    """
+    Save acoustic data from one column of a csv file into the database.
+
+    Parameters
+    ----------
+    corpus_context : CorpusContext
+        corpus context
+    result_measurement : string
+        measurement label (label of the column)
+    output_type : string 
+        type of the measurement being saved
+    """
     if output_type == 'int':
         cypher_set_template = 'n.{name} = toInt(csvLine.{name})'
     elif output_type == 'bool':
@@ -431,7 +473,7 @@ def script_data_from_csv(corpus_context, result_measurement, output_type):
     else:
         cypher_set_template = 'n.{name} = csvLine.{name}'
     directory = corpus_context.config.temporary_directory('csv')
-    csv_name = 'analyze_script_import_' + result_measurement + '.csv'
+    csv_name = 'analyze_script_import.csv'
     path = os.path.join(directory, csv_name)
     feat_path = 'file:///{}'.format(make_path_safe(path))
     import_statement = '''CYPHER planner=rule
@@ -449,57 +491,109 @@ def script_data_from_csv(corpus_context, result_measurement, output_type):
 
 
 def signal_to_praat_script(signal, sr, praat_path=None, time_step=0.01,
-                           begin=None, padding=None, script_path=None, result_measurement=None, arguments=None):
-    '''
-    Create a sound file for one phone from a signal and sample rate (using acousticsim), and run the praat script on that phone.
+                           begin=None, padding=None, script_path=None, arguments=None):
+    """
+    Create a sound file for one phone from a signal and sample rate, and run the praat script on that phone.
     
-    Arguments:
-    -- signal: input from acousticsim multiprocessing, used to get phone wavfile
-    -- sr: input from acousticsim multiprocessing, used to get phone wavfile
-    -- praat_path: path to praat
-    -- time_step: parameter that can be used by acousticsim for multiprocessing?
-    -- begin: parameter that can be used by acousticsim for multiprocessing?
-    -- padding: time padding around segment: must be None or 0 for phone analysis to work!
-    -- script_path: path to the praat script
-    -- result_measurement: measurement label
-    (optional:) arguments: a list containing any arguments to the praat script (currently not used)
+    Parameters
+    ----------
+    signal
+        input from acousticsim multiprocessing, used to get phone wavfile
+    sr
+        sampling rate. input from acousticsim multiprocessing, used to get phone wavfile
+    praat_path : string
+        full path to praat
+    time_step
+        parameter that is used by acousticsim, is input by acousticsim (not the user)
+    begin
+        parameter that is used by acousticsim, is input by acousticsim (not the user)
+    padding : int
+        time padding around segment: must be None or 0 for phone analysis to work!
+    script_path : string
+        path to the praat script to be run
+    arguments : list
+        a list containing any arguments to the praat script, optional (currently not implemented)
     
-    Returns:
-    -- output from Praat script on the file
-    '''
+    Returns
+    ----------
+    script_output : dict
+        dictionary of measurement : value, based on the columns output by the Praat script
+    """
     with ASTemporaryWavFile(signal, sr) as wav_path:
         if praat_path is None:
             praat_path = 'praat'
             if sys.platform == 'win32':
                 praat_path += 'con.exe'
-        script_output = run_script(praat_path, script_path, wav_path).strip()
-        if script_output.replace('.', '').isnumeric():
-            if '.' in script_output:
-                script_output = float(script_output)
-            else:
-                script_output = int(script_output)
-        else:
-            print('Praat output: ' + script_output)
-            script_output = None
+        script_output = run_script(praat_path, script_path, wav_path)
+        script_output = parse_script_output(script_output)
         return script_output
 
-
-def generate_praat_script_function(praat_path, script_path, result_measurement, arguments=None):
-    '''
+def generate_praat_script_function(praat_path, script_path, arguments=None):
+    """
     Generate a partial function that calls the praat script specified.
     (used as input to analyze_file_segments)
     
-    Arguments:
-    -- praat_path: path to praat/praatcon
-    -- script_path: path to the script
-    -- result_measurement: measurement label
-    (optional:) arguments: a list containing any arguments to the praat script (not currently used)
-    :return: the partial function
-    '''
+    Parameters
+    ----------
+    praat_path : string
+        full path to praat/praatcon
+    script_path: string
+        full path to the script
+    arguments : list
+        a list containing any arguments to the praat script, optional (currently not implemented)
+    
+    Returns
+    ----------
+    praat_function : partial 
+        the partial function which applies the Praat script to a phone and returns the script output
+    """
     praat_function = partial(signal_to_praat_script,
                              praat_path=praat_path,
-                             script_path=script_path, result_measurement=result_measurement, arguments=arguments)
+                             script_path=script_path, arguments=arguments)
     return praat_function
+
+def parse_script_output(script_output):
+    """
+    Parse the output from Praat into a dictionary of acoustic measurements. 
+    See docstring of analyze_script for formatting requirements.
+    Prints the Praat script output if it doesn't fit the specified format (usually because the Praat script crashed), and returns None in that case
+
+    Parameters
+    ----------
+    script_output : string
+        output from Praat. (This is what appears in the Info window when using the Praat GUI)
+
+    Returns
+    ----------
+    output : dict
+        dictionary of measurement : value, based on the columns output by the Praat script
+    """
+    headers = []
+    output = {}
+    unexpectedInput = False
+    for line in script_output.split('\n'):
+        if line.strip() is not "" and line.strip() is not "." and "Warning" not in line and "warning" not in line:
+            values = line.strip().split(" ")
+            if headers == []:
+                headers = values
+            else:
+                for (measurement, value) in zip(headers, values):
+                    if value.replace('.', '').strip('-').isnumeric():
+                        if '.' in value:
+                            value = float(value)
+                        else:
+                            value = int(value)
+                    elif value.lower() == 'true':
+                        value = True
+                    elif value.lower() == 'false':
+                        value = False
+                    else:
+                        unexpectedInput = True
+                        value = None
+                    output[measurement] = value
+    if unexpectedInput == True:
+        print('Praat output: ' + script_output)
+    return output
 
 
 def generate_pitch_function(algorithm, min_pitch, max_pitch, signal=False, path=None, pulses=False, kwargs=None):

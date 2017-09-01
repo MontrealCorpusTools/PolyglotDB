@@ -130,6 +130,16 @@ class CorpusConfig(object):
         if self.acoustic_password is not None:
             kwargs['password'] = self.acoustic_password
         return kwargs
+        # old version (add acoustic_host='localhost' above):
+        # kwargs = {'host': self.acoustic_host,
+        #           'port': self.acoustic_http_port,
+        #           'database': self.corpus_name}
+        # if self.acoustic_user is not None:
+        #     kwargs['username'] = self.acoustic_user
+        # if self.acoustic_password is not None:
+        #     kwargs['password'] = self.acoustic_password
+        # return kwargs
+
 
     @property
     def graph_connection_string(self):

@@ -52,6 +52,10 @@ def timit_test_dir(test_dir):
 def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
 
+@pytest.fixture(scope='session')
+def praatscript_test_dir(test_dir):
+    return os.path.join(test_dir, 'praat_scripts')
+
 
 @pytest.fixture(scope='session')
 def praatscript_test_dir(test_dir):
