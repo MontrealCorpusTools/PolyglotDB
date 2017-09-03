@@ -7,6 +7,8 @@ from scipy.signal import gaussian
 from librosa.core.spectrum import stft
 
 
+PADDING = 0.1
+
 def load_waveform(file_path):
     signal, sr = librosa.load(file_path, sr=None)
 
@@ -45,3 +47,7 @@ def generate_spectrogram(signal, sr, color_scale='log'):
     data = np.abs(data)
     data = 20 * np.log10(data) if color_scale == 'log' else data
     return data, time_step, freq_step
+
+
+def make_path_safe(path):
+    return path.replace('\\', '/').replace(' ', '%20')

@@ -17,4 +17,4 @@ Interacting with a corpus
 
 Notes from Michael to Michael:
 
-*. Make jupyter notebook for interacting with a test corpus
+- Make jupyter notebook for interacting with a test corpus

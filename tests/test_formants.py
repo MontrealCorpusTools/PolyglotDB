@@ -4,8 +4,9 @@ from decimal import Decimal
 import pytest
 
 from polyglotdb import CorpusContext
-from polyglotdb.acoustics.formant import analyze_formants_initial_pass, get_mean_SD, refine_formants, \
-    analyze_formants_refinement, save_refined_formant_data
+from polyglotdb.acoustics.formants.base import analyze_formants_initial_pass
+from polyglotdb.acoustics.formants.refined import get_mean_SD, refine_formants, \
+    analyze_formants_refinement, save_formant_point_data
 
 def test_refine_formants(acoustic_utt_config, praat_path, export_test_dir):
     output_path = os.path.join(export_test_dir, 'formant_vowel_data.csv')
@@ -18,7 +19,7 @@ def test_refine_formants(acoustic_utt_config, praat_path, export_test_dir):
         old_metadata = get_mean_SD(old_data)
         data = refine_formants(corpus_context=g, prototype_metadata=old_metadata,
                                vowel_inventory=vowel_inventory)
-        save_refined_formant_data(g, data)
+        save_formant_point_data(g, data)
         assert(g.hierarchy.has_token_property('phone','F1'))
         q = g.query_graph(g.phone).filter(g.phone.label == test_phone_label)
         q = q.columns(g.phone.begin, g.phone.end, g.phone.F1.column_name('F1'))

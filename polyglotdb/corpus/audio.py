@@ -7,7 +7,7 @@ from decimal import Decimal
 from influxdb import InfluxDBClient
 
 from polyglotdb.query.discourse import DiscourseInspector
-from ..acoustics.analysis import analyze_pitch, analyze_formants, analyze_formants_vowel_segments, analyze_intensity, \
+from ..acoustics import analyze_pitch, analyze_formants, analyze_formants_vowel_segments, analyze_intensity, \
     analyze_script, analyze_discourse_pitch
 from .syllabic import SyllabicContext
 
@@ -409,8 +409,8 @@ class AudioContext(SyllabicContext):
             phone_type = getattr(self, self.phone_name)
             min_time = min(track.keys())
             max_time = max(track.keys())
-            if len(seg) > 4:# Assume we have phone info included
-                set_label = seg[4]
+            if seg['annotation_type'] == 'phone':
+                set_label = seg['label']
             else:
                 set_label = None
                 q = self.query_graph(phone_type).filter(phone_type.discourse.name == discourse)
@@ -419,7 +419,6 @@ class AudioContext(SyllabicContext):
                               phone_type.begin.column_name('begin'),
                               phone_type.end.column_name('end')).order_by(phone_type.begin)
                 phones = [(x['label'], x['begin'], x['end']) for x in q.all()]
-                print(phones)
             for time_point, value in track.items():
                 if set_label is None:
                     label = None
