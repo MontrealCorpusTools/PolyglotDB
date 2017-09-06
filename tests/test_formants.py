@@ -5,7 +5,7 @@ import pytest
 
 from polyglotdb import CorpusContext
 from polyglotdb.acoustics.formants.base import analyze_formants_initial_pass
-from polyglotdb.acoustics.formants.refined import get_mean_SD, refine_formants, \
+from polyglotdb.acoustics.formants.refined import get_mean_SD, \
     analyze_formants_refinement, save_formant_point_data
 
 def test_refine_formants(acoustic_utt_config, praat_path, export_test_dir):
@@ -17,9 +17,7 @@ def test_refine_formants(acoustic_utt_config, praat_path, export_test_dir):
         vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
         old_data = analyze_formants_initial_pass(corpus_context=g, vowel_inventory=vowel_inventory)
         old_metadata = get_mean_SD(old_data)
-        data = refine_formants(corpus_context=g, prototype_metadata=old_metadata,
-                               vowel_inventory=vowel_inventory)
-        save_formant_point_data(g, data)
+        save_formant_point_data(g, old_data)
         assert(g.hierarchy.has_token_property('phone','F1'))
         q = g.query_graph(g.phone).filter(g.phone.label == test_phone_label)
         q = q.columns(g.phone.begin, g.phone.end, g.phone.F1.column_name('F1'))

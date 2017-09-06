@@ -414,7 +414,7 @@ def save_formant_point_data(corpus_context, data, num_formants = False):
                             '{}_formants.csv'.format(seg['speaker']))
         with open(path, 'a', newline='', encoding='utf8') as f:
             writer = csv.DictWriter(f, header, delimiter=',')
-            row = dict(id=seg['id'], **best_track)
+            row = dict(id=seg['id'], **{k: v for k,v in best_track.items() if k in header})
             writer.writerow(row)
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
     int_set_template = 'n.{name} = toInt(csvLine.{name})'

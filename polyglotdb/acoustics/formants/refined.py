@@ -60,7 +60,7 @@ def analyze_formants_refinement(corpus_context, vowel_inventory, duration_thresh
             print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
             for s, data in output.items():
                 best_track = data[default_formant]
-                best_data[s] = {k: best_track[i] for i, k in enumerate(columns)}
+                best_data[s] = {k: best_track[k] for j, k in enumerate(columns)}
             continue
         selected_tracks = {}
         for s, data in output.items():
