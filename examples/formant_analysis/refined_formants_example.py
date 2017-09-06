@@ -1,15 +1,17 @@
+import sys
+import os
+
 # =============== USER CONFIGURATION ===============
-polyglotdb_path = "/Users/mlml/Documents/GitHub/PolyglotDB"
+polyglotdb_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 corpus_name = "smallest_raleigh"
-# corpus_name = "VTRSubset"
-corpus_dir = "/Users/mlml/Documents/smallest_raleigh"
+corpus_dir = r"/mnt/e/temp/raleigh/smallest_raleigh"
 textgrid_format = "FAVE"
 vowel_inventory = ['ER0', 'IH2', 'EH1', 'AE0', 'UH1', 'AY2', 'AW2', 'UW1', 'OY2', 'OY1', 'AO0', 'AH2', 'ER1', 'AW1',
                    'OW0', 'IY1', 'IY2', 'UW0', 'AA1', 'EY0', 'AE1', 'AA0', 'OW1', 'AW0', 'AO1', 'AO2', 'IH0', 'ER2',
                    'UW2', 'IY0', 'AE2', 'AH0', 'AH1', 'UH2', 'EH2', 'UH0', 'EY1', 'AY0', 'AY1', 'EH0', 'EY2', 'AA2',
                    'OW2', 'IH1']
-# vowel_inventory = ['iy', 'ih', 'eh', 'ey', 'ae', 'aa', 'aw', 'ay', 'ah', 'ao', 'oy', 'ow', 'uh', 'uw', 'ux', 'er', 'ax', 'ix', 'axr', 'ax-h']
-output_dir = "/Users/mlml/Documents/output/smallest_raleigh"
+stressed_vowels = [x for x in vowel_inventory if x.endswith('1')]
+output_dir = os.path.join(polyglotdb_path, 'examples', "formant_analysis")
 reset = True  # Setting to True will cause the corpus to re-import
 
 duration_threshold = 0.05
@@ -17,30 +19,17 @@ nIterations = 1
 # ==================================================
 
 
-import sys
-import time
 
 sys.path.insert(0, polyglotdb_path)
-import os
 
-import logging
 import re
+import time
 
 import polyglotdb.io as pgio
 
 from polyglotdb import CorpusContext
-
+from polyglotdb.utils import ensure_local_database_running
 from polyglotdb.acoustics.formants.refined import analyze_formants_refinement
-
-# Logging set up
-
-fileh = logging.FileHandler('loading.log', 'a')
-logger = logging.getLogger('three-dimensions')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(fileh)
-
-graph_db = ({'graph_host': 'localhost', 'graph_port': 7474,
-             'graph_user': 'neo4j', 'graph_password': 'test'})
 
 
 def call_back(*args):
@@ -49,9 +38,9 @@ def call_back(*args):
         print(' '.join(args))
 
 
-def loading():  # Initial import of corpus to PolyglotDB
-    with CorpusContext(corpus_name, **graph_db) as c:
-        print ("Loading...")
+def loading(config):  # Initial import of corpus to PolyglotDB
+    with CorpusContext(corpus_name, **config) as c:
+        print("Loading...")
         c.reset()
 
         if textgrid_format == "buckeye":
@@ -74,57 +63,60 @@ def loading():  # Initial import of corpus to PolyglotDB
         parser.call_back = call_back
         # beg = time.time()
         c.load(parser, corpus_dir)
-    # end = time.time()
-    # time = end-beg
-    # logger.info('Loading took: ' + str(time))
+        # end = time.time()
+        # time = end-beg
+        # logger.info('Loading took: ' + str(time))
 
 
-def enrichment():  # Add primary stress encoding
-    with CorpusContext(corpus_name) as c:
+def enrichment(config):  # Add primary stress encoding
+    with CorpusContext(corpus_name, **config) as c:
         if not 'syllable' in c.annotation_types:
             begin = time.time()
             c.encode_syllabic_segments(vowel_inventory)
             c.encode_syllables('maxonset', call_back=call_back)
-            logger.info('Syllable enrichment took: {}'.format(time.time() - begin))
+            print('Syllable enrichment took: {}'.format(time.time() - begin))
 
         if re.search(r"\d", vowel_inventory[0]):  # If stress is included in the vowels
             print("here")
-            c.encode_stresstone_to_syllables("stress", "[0-9]")
+            c.encode_stress_to_syllables("[0-9]", clean_phone_label=False)
             print("encoded stress")
 
 
-def formants():  # Analyze formants and bandwidths
-    with CorpusContext(corpus_name) as c:
+def formants(config):  # Analyze formants and bandwidths
+    with CorpusContext(corpus_name, **config) as c:
         beg = time.time()
-        metadata = analyze_formants_refinement(c, vowel_inventory, duration_threshold=duration_threshold,
-                                                          num_iterations=nIterations)
+        metadata = analyze_formants_refinement(c, stressed_vowels, duration_threshold=duration_threshold,
+                                               num_iterations=nIterations)
         end = time.time()
-        logger.info('Analyzing formants took: {}'.format(end - beg))
+        print('Analyzing formants took: {}'.format(end - beg))
 
 
-def analysis():  # Gets information into a csv
-    with CorpusContext(corpus_name) as c:
+def analysis(config):  # Gets information into a csv
+    with CorpusContext(corpus_name, **config) as c:
         beg = time.time()
         csv_name = "formant_tracks_full.txt"
         csv_path = os.path.join(output_dir, csv_name)
-        q = c.query_graph(c.phone)
+        q = c.query_graph(c.phone).filter(c.phone.label.in_(stressed_vowels))
 
         # q = c.query_graph(c.phone).filter(c.phone.syllable.stress=="1")	# Only primary stress (not working though, figure this out)
 
-        q = q.columns(c.phone.begin, c.phone.end, c.phone.label, c.phone.formants.track)
+        q = q.columns(c.phone.speaker.name.column_name('speaker'), c.phone.discourse.name.column_name('discourse'),
+                      c.phone.id.column_name('phone_id'), c.phone.label.column_name('phone_label'),
+                      c.phone.begin.column_name('begin'), c.phone.end.column_name('end'),
+                      c.phone.following.label.column_name('following_phone'),
+                      c.phone.previous.label.column_name('previous_phone'), c.phone.word.label.column_name('word'),
+                      c.phone.F1.column_name('F1'), c.phone.F2.column_name('F2'), c.phone.F3.column_name('F3'),
+                      c.phone.B1.column_name('B1'), c.phone.B2.column_name('B2'), c.phone.B3.column_name('B3'))
         q.to_csv(csv_path)
         end = time.time()
-        logger.info('Query took: {}'.format(end - beg))
+        print('Query took: {}'.format(end - beg))
 
 
 if __name__ == '__main__':
-    logger.info('Begin processing: {}'.format(corpus_name))
     print('Processing...')
-    try:
+    with ensure_local_database_running('database') as config:
         if reset:
-            loading()
-            enrichment()
-        formants()
-        analysis()
-    except:
-        raise
+            loading(config)
+            enrichment(config)
+        formants(config)
+        analysis(config)

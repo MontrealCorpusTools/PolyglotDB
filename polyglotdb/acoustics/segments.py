@@ -66,6 +66,9 @@ class SegmentMapping(object):
     def __init__(self):
         self.segments = []
 
+    def __len__(self):
+        return len(self.segments)
+
     def add_segment(self, **kwargs):
         self.segments.append(Segment(**kwargs))
 

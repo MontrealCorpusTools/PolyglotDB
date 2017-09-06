@@ -193,8 +193,6 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                           phone_type.end.column_name('ends'),
                           word_type.discourse.name.column_name('discourse'))
             results = q.all()
-            print('look at me', q.cypher())
-            print('length', len(results))
             speaker_boundaries = {s: []}
             speaker_non_syls = {s: []}
             prev_id = None
@@ -343,8 +341,6 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                 splitsyl = syl.split('.')
                 nucleus = splitsyl[0]
                 for j, seg in enumerate(splitsyl):
-                    print("seg:", seg)
-
                     if re.search(pattern, seg) is not None:
                         nucleus = seg
 

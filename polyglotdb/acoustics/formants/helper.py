@@ -399,8 +399,10 @@ def get_mahalanobis(prototype, observation, inverse_covariance):
     return distance
 
 
-def save_formant_point_data(corpus_context, data):
+def save_formant_point_data(corpus_context, data, num_formants = False):
     header = ['id', 'F1', 'F2', 'F3', 'B1', 'B2', 'B3']
+    if num_formants:
+        header += ['num_formants']
     for s in corpus_context.speakers:
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_formants.csv'.format(s))
@@ -415,11 +417,13 @@ def save_formant_point_data(corpus_context, data):
             row = dict(id=seg['id'], **best_track)
             writer.writerow(row)
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
+    int_set_template = 'n.{name} = toInt(csvLine.{name})'
     properties = []
     for h in header:
-        if h == 'id':
-            continue
-        properties.append(float_set_template.format(name=h))
+        if h == 'num_formants':
+            properties.append(int_set_template.format(name=h))
+        elif h != 'id':
+            properties.append(float_set_template.format(name=h))
     properties = ',\n'.join(properties)
 
     for s in corpus_context.speakers:
