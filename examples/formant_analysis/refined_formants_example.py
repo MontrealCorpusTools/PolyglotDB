@@ -94,7 +94,7 @@ def formants(config):  # Analyze formants and bandwidths
 def analysis(config):  # Gets information into a csv
     with CorpusContext(corpus_name, **config) as c:
         beg = time.time()
-        csv_name = "formant_tracks_full.txt"
+        csv_name = "formant_tracks_full.csv"
         csv_path = os.path.join(output_dir, csv_name)
         q = c.query_graph(c.phone).filter(c.phone.label.in_(stressed_vowels))
 
