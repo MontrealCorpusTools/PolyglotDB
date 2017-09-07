@@ -1,47 +1,44 @@
 form Variables
 	sentence filename
+	real begin
+	real end
+	integer channel
 	real timestep
 	real windowlen
-    real minformants
-	real maxformants
-	real ceiling
+    integer minformants
+	integer maxformants
+	integer ceiling
 	real padding
 endform
 
-    #echo 'filename$'
-    #echo 'timestep'
-    #echo 'windowlen'
-    #echo 'minformants'
-    #echo 'maxformants'
-    #echo 'ceiling'
-#writeInfoLine: "Looking at: "
-#appendInfoLine: 'filename$'
+Open long sound file... 'filename$'
 
-final_output$ = ""
+duration = Get total duration
+
+seg_begin = begin - padding
+if seg_begin < 0
+    seg_begin = 0
+endif
+
+seg_end = end + padding
+if seg_end > duration
+    seg_end = duration
+endif
+
+Extract part... seg_begin seg_end 1
+channel = channel + 1
+Extract one channel... channel
+
+Rename... segment_of_interest
 
 #Measure a third of the way through
-segBeg = Get start time
-    segBeg = segBeg + padding
-#appendInfoLine: "Start time:"
-#appendInfo: segBeg
-#appendInfoLine: ""
 
-segEnd = Get end time
-    segEnd = segEnd - padding
-#appendInfoLine: "End time:"
-#appendInfo: segEnd
-#appendInfoLine: ""
-
-segDur = segEnd - segBeg
-#r = ((segEnd - segBeg) * (0.33)) + segBeg
-    r = ((segEnd - segBeg) * (0.33))
-    r = r + segBeg
+segDur = end - begin
+r = segDur * (0.33)
+r = r + begin
 r$ = fixed$(r, 3)
-#appendInfoLine: "Measurement time (a third through):"
-#appendInfo: r$
-#appendInfoLine: ""
-Read from file... 'filename$'
-Rename... segment_of_interest
+
+final_output$ = ""
 
 for nformants from minformants to maxformants
     #echo 'Measuring with'
@@ -51,9 +48,7 @@ for nformants from minformants to maxformants
     #appendInfo: 'nformants'
     #appendInfoLine: ""
     selectObject: "Sound segment_of_interest"
-
     To Formant (burg)... 'timestep' 'nformants' 'ceiling' 'windowlen' 50
-    frames = Get number of frames
 
 
     output$ = "time"

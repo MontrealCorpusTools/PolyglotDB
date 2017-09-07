@@ -204,6 +204,61 @@ def signal_to_multiple_formants_point_praat(signal, sr, praat_path=None, min_for
     return to_return
 
 
+def segment_to_multiple_formants_point_praat(file_path, begin, end, channel, praat_path=None, min_formants=4, max_formants=7,
+                                            max_freq=5000,
+                                            time_step=0.01, win_len=0.025,
+                                            padding=None):
+    """Wrapper to call Praat and fix the time points before returning.
+
+    Parameters
+    ----------
+    signal : boolean
+        Contains signal information.
+    sr : float
+        Contains sample rate information.
+    praat_path : string
+        Contains information about the Praat path if specialized.
+    min_formants: int
+        The minimum number of formants to measure with on subsequent passes (default is 4).
+    max_formants : int
+        The maximum number of formants to measure with on subsequent passes (default is 7).
+    max_freq : int
+        The cutoff frequency for measurement in Praat (default is 5000).
+    time_step : float
+        The time step for measurement in Praat (default is 0.01).
+    win_len :
+        The window length for measurement in praat (default is 0.025).
+    begin : float
+        Extra parameter for setting the beginning time.
+    padding : float
+        Extra parameter for setting the padding around the segment.
+
+    Returns
+    -------
+    dict
+        Output from call to Praat
+    """
+    if praat_path is None:
+        praat_path = 'praat'
+        if sys.platform == 'win32':
+            praat_path += 'con.exe'
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    script = os.path.join(script_dir, 'multiple_formants_bandwidth_segment.praat')
+    listing = run_script(praat_path, script, file_path, begin, end, channel, time_step,
+                         win_len, min_formants, max_formants, max_freq, padding)
+
+    listing_list = listing.split("\n\n")
+    output_list = []
+    to_return = {}
+    for item in listing_list:
+        output = read_praat_out(item)
+        item = list(output.values())[0]
+
+        to_return[track_nformants(item)] = item
+    return to_return
+
 def file_to_multiple_formants_point_praat(file_path, praat_path=None, min_formants=4, max_formants=7,
                                           max_freq=5000,
                                           time_step=0.01, win_len=0.025, padding=None):
@@ -316,13 +371,13 @@ def generate_variable_formants_point_function(corpus_context, min_formants, max_
         if getattr(corpus_context.config, 'praat_path', None) is None:
             raise (AcousticError('Could not find the Praat executable'))
         if signal:
-            PraatFormants = signal_to_multiple_formants_point_praat
+            PraatFormants = segment_to_multiple_formants_point_praat
         else:
             PraatFormants = file_to_multiple_formants_point_praat
         formant_function = partial(PraatFormants,
                                    praat_path=corpus_context.config.praat_path,
                                    max_freq=max_freq, min_formants=min_formants, max_formants=max_formants, win_len=0.025,
-                                   time_step=0.01)
+                                   time_step=0.01, padding=0.1)
     return formant_function
 
 

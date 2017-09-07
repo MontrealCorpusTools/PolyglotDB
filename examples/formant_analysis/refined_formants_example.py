@@ -3,8 +3,8 @@ import os
 
 # =============== USER CONFIGURATION ===============
 polyglotdb_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-corpus_name = "smallest_raleigh"
-corpus_dir = r"/mnt/e/temp/raleigh/smallest_raleigh"
+corpus_name = "small_raleigh"
+corpus_dir = r"/mnt/e/temp/raleigh/small_raleigh"
 textgrid_format = "FAVE"
 vowel_inventory = ['ER0', 'IH2', 'EH1', 'AE0', 'UH1', 'AY2', 'AW2', 'UW1', 'OY2', 'OY1', 'AO0', 'AH2', 'ER1', 'AW1',
                    'OW0', 'IY1', 'IY2', 'UW0', 'AA1', 'EY0', 'AE1', 'AA0', 'OW1', 'AW0', 'AO1', 'AO2', 'IH0', 'ER2',

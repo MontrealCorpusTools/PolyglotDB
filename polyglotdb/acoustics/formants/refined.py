@@ -54,7 +54,7 @@ def analyze_formants_refinement(corpus_context, vowel_inventory, duration_thresh
     for i, (vowel, seg) in enumerate(segment_mapping.grouped_mapping('label').items()):
 
         output = analyze_file_segments(seg, formant_function, padding=0.1,
-                                       stop_check=stop_check)  # Analyze the phone
+                                       stop_check=stop_check, signal=False)  # Analyze the phone
 
         if len(seg) < 6:
             print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
