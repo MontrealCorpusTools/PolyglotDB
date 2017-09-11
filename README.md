@@ -4,6 +4,7 @@ PolyglotDB
 [![Build Status](https://travis-ci.org/MontrealCorpusTools/PolyglotDB.svg?branch=master)](https://travis-ci.org/MontrealCorpusTools/PolyglotDB)
 [![Coverage Status](https://coveralls.io/repos/MontrealCorpusTools/PolyglotDB/badge.svg?branch=master&service=github)](https://coveralls.io/github/MontrealCorpusTools/PolyglotDB?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/polyglotdb/badge/?version=latest)](http://polyglotdb.readthedocs.org/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/polyglotdb.svg)](https://badge.fury.io/py/polyglotdb)
 
 
 PolyglotDB is a Python package for storing and querying large speech corpora.  It constructs various kinds of database,
