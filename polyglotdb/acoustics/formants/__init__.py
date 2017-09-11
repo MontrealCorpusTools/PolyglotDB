@@ -1,4 +1,4 @@
 
-from .base import analyze_formants_initial_pass, analyze_formants, analyze_formants_vowel_segments
+from .base import analyze_formant_points, analyze_formant_tracks, analyze_vowel_formant_tracks
 
-from .refined import analyze_formants_refinement
+from .refined import analyze_formant_points_refinement

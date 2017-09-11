@@ -1,6 +1,6 @@
 
 
-from .formants import analyze_formants_initial_pass, analyze_formants_refinement, analyze_formants, analyze_formants_vowel_segments
+from .formants import analyze_formant_points, analyze_formant_points_refinement, analyze_formant_tracks, analyze_vowel_formant_tracks
 
 from .pitch import analyze_pitch, analyze_discourse_pitch
 

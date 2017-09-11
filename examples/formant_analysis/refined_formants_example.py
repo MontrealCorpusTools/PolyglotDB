@@ -29,7 +29,7 @@ import polyglotdb.io as pgio
 
 from polyglotdb import CorpusContext
 from polyglotdb.utils import ensure_local_database_running
-from polyglotdb.acoustics.formants.refined import analyze_formants_refinement
+from polyglotdb.acoustics.formants.refined import analyze_formant_points_refinement
 
 
 def call_back(*args):
@@ -85,7 +85,7 @@ def enrichment(config):  # Add primary stress encoding
 def formants(config):  # Analyze formants and bandwidths
     with CorpusContext(corpus_name, **config) as c:
         beg = time.time()
-        metadata = analyze_formants_refinement(c, stressed_vowels, duration_threshold=duration_threshold,
+        metadata = analyze_formant_points_refinement(c, stressed_vowels, duration_threshold=duration_threshold,
                                                num_iterations=nIterations)
         end = time.time()
         print('Analyzing formants took: {}'.format(end - beg))

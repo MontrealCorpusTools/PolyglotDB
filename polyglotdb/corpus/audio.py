@@ -7,7 +7,7 @@ from decimal import Decimal
 from influxdb import InfluxDBClient
 
 from polyglotdb.query.discourse import DiscourseInspector
-from ..acoustics import analyze_pitch, analyze_formants, analyze_formants_vowel_segments, analyze_intensity, \
+from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_vowel_formant_tracks, analyze_intensity, \
     analyze_script, analyze_discourse_pitch
 from .syllabic import SyllabicContext
 
@@ -108,11 +108,11 @@ class AudioContext(SyllabicContext):
     def analyze_discourse_pitch(self, discourse, **kwargs):
         return analyze_discourse_pitch(self, discourse, **kwargs)
 
-    def analyze_formants(self, stop_check=None, call_back=None):
-        analyze_formants(self, stop_check, call_back)
+    def analyze_formant_tracks(self, stop_check=None, call_back=None):
+        analyze_formant_tracks(self, stop_check, call_back)
 
-    def analyze_formants_vowel_segments(self, stop_check=None, call_back=None, vowel_inventory=None):
-        analyze_formants_vowel_segments(self, stop_check, call_back, vowel_inventory)
+    def analyze_vowel_formant_tracks(self, stop_check=None, call_back=None, vowel_inventory=None):
+        analyze_vowel_formant_tracks(self, stop_check, call_back, vowel_inventory)
 
     def analyze_intensity(self, stop_check=None, call_back=None):
         analyze_intensity(self, stop_check, call_back)

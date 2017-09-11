@@ -9,8 +9,8 @@ from ...exceptions import SpeakerAttributeError
 from ..utils import PADDING
 
 
-def analyze_formants_initial_pass(corpus_context, call_back=None, stop_check=None, vowel_inventory=None,
-                                  duration_threshold=None):
+def analyze_formant_points(corpus_context, call_back=None, stop_check=None, vowel_inventory=None,
+                           duration_threshold=None):
     """First pass of the algorithm; generates prototypes.
 
     Parameters
@@ -49,9 +49,7 @@ def analyze_formants_initial_pass(corpus_context, call_back=None, stop_check=Non
     return output
 
 
-def analyze_formants(corpus_context,
-                     call_back=None,
-                     stop_check=None):
+def analyze_formant_tracks(corpus_context, call_back=None, stop_check=None):
     """
     Analyze formants of an entire utterance, and save the resulting formant tracks into the database.
 
@@ -83,7 +81,7 @@ def analyze_formants(corpus_context,
         corpus_context.save_formant_tracks(output, speaker)
 
 
-def analyze_formants_vowel_segments(corpus_context,
+def analyze_vowel_formant_tracks(corpus_context,
                                     call_back=None,
                                     stop_check=None,
                                     vowel_inventory=None):

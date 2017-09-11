@@ -7,4 +7,4 @@ scipy
 textgrid==1.0
 influxdb==3.0.0
 tqdm==4.11.2
-acousticsim
+acousticsim>=0.1.8

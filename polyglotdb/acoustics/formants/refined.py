@@ -1,4 +1,3 @@
-
 import math
 import numpy as np
 
@@ -7,13 +6,9 @@ from acousticsim.main import analyze_file_segments
 from ..segments import generate_vowel_segments
 from .helper import generate_variable_formants_point_function, get_mahalanobis, get_mean_SD, save_formant_point_data
 
-from .base import analyze_formants_initial_pass
 
-
-
-
-def analyze_formants_refinement(corpus_context, vowel_inventory, duration_threshold=0, num_iterations=1, call_back=None,
-                    stop_check=None):
+def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_threshold=0, num_iterations=1, call_back=None,
+                                stop_check=None):
     """Extracts F1, F2, F3 and B1, B2, B3.
 
     Parameters
@@ -90,7 +85,6 @@ def analyze_formants_refinement(corpus_context, vowel_inventory, duration_thresh
             prototype_metadata = get_mean_SD(selected_tracks)
             prev_prototype_metadata = prototype_metadata
             best_prototype_metadata.update(prototype_metadata)
-
 
     save_formant_point_data(corpus_context, best_data, num_formants=True)
     corpus_context.cache_hierarchy()
