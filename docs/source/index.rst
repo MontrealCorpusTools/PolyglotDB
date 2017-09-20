@@ -9,7 +9,7 @@ Contents:
 
    introduction.rst
    getting_started.rst
-   client.rst
+   usage.rst
    import.rst
    enrichment.rst
    acoustics.rst

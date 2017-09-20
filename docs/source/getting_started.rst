@@ -37,6 +37,8 @@ To install from source (primarily for development):
 #. Navigate to the directory via command line and install the dependencies via :code:`pip install -r requirements.txt`
 #. Install PolyglotDB via :code:`python setup.py install`
 
+.. _local_setup:
+
 Set up local database
 ---------------------
 
