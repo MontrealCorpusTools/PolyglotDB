@@ -99,6 +99,7 @@ class BaseContext(object):
             return results
         except Exception as e:
             raise
+
     @property
     def cypher_safe_name(self):
         return '`{}`'.format(self.corpus_name)

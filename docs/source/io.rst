@@ -157,7 +157,7 @@ Loading of discourses is done via a CorpusContext's ``load`` function:
 
    parser = pgio.inspect_textgrid('/path/to/textgrid.TextGrid')
 
-   with CorpusContext(corpus_name = 'my_corpus', **graph_db_login) as c:
+   with CorpusContext(config) as c:
        c.load(parser, '/path/to/textgrid.TextGrid')
 
 Alternatively, ``load_discourse`` can be used with the same arguments.
@@ -177,7 +177,7 @@ called as well:
 
    parser = pgio.inspect_textgrid('/path/to/textgrids')
 
-   with CorpusContext(corpus_name = 'my_corpus', **graph_db_login) as c:
+   with CorpusContext(config) as c:
        c.load_directory(parser, '/path/to/textgrids')
 
 Exporters

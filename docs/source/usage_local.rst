@@ -12,8 +12,7 @@ a locally running polyglot server instance.
 pgdb.py utility
 ---------------
 
-This utility provides a basic way to
-install/start/stop all of the required databases in a Polyglot database (see
+This utility provides a basic way to install/start/stop all of the required databases in a Polyglot database (see
 :ref:`local_setup` for more details on setting up a Polyglot instance this way).
 
 When using this set up the following ports are used (and are relevant for later connecting with the corpus):
@@ -35,7 +34,7 @@ When using this set up the following ports are used (and are relevant for later 
 If any of those ports are in use by other programs (they're also the default ports for the respective database software),
 then the Polyglot instance will not be able to start.
 
-Once :code:`pgdb.py start` has executed, the local neo4j instance can be seen at :code:`http://localhost:7474/`
+Once :code:`pgdb.py start` has executed, the local Neo4j instance can be seen at :code:`http://localhost:7474/`
 
 Connecting from a script
 ````````````````````````
@@ -56,6 +55,10 @@ CorpusContext objects (or CorpusConfig objects):
     with CorpusContext(config) as c:
         pass # replace with some task, i.e., import, enrichment, or query
 
+
+The utility function :code:`ensure_local_database_running` will return the above parameters if it does not detect a Polyglot server
+running, so the code below will work as well (the database name is ignored because only one database can be run through the
+:code:`pgdb.py` utility script.
 
 .. _local_polyglot_server:
 
