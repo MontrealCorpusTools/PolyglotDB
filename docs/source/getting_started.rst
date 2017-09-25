@@ -2,9 +2,9 @@
 
 .. _installation:
 
-************
-Installation
-************
+***************
+Getting started
+***************
 
 .. _prerequisites:
 
@@ -27,15 +27,18 @@ Installation
 
 To install via pip:
 
-```
-pip install polyglotdb
-```
+``pip install polyglotdb``
 
 To install from source (primarily for development):
 
 #. Clone or download the Git repository (https://github.com/MontrealCorpusTools/PolyglotDB).
 #. Navigate to the directory via command line and install the dependencies via :code:`pip install -r requirements.txt`
 #. Install PolyglotDB via :code:`python setup.py install`
+
+.. note::
+
+   The use of ``sudo`` is not recommended for installation.  Ideally your Python installation should be managed by either
+   Anaconda or Homebrew (for Macs).
 
 .. _local_setup:
 
@@ -45,11 +48,43 @@ Set up local database
 Please be aware that this way to set up a database is not recommended.  See the `Polyglot server`_ for a more fully featured
 solution.
 
-If you do not have access to a Polyglot-server, or just want a lightweight version of the server instead, you can use a utility script:
+If you do not have access to a Polyglot-server, or just want a lightweight version of the server instead, you can use a utility script.
 
-#. From the source directory , run :code:`python bin/pgdb.py install /path/to/where/you/want/data/to/be/stored`, or :code:`python bin/pgdb.py install` to save data in the default directory.
-#. If running from Windows, you'll have to enter in the above commands in an Administrator command prompt, as Neo4j will be installed as a Windows service.
+Mac
+```
 
-Once you have installed PolyglotDB, to start it navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py start`. Likewise, you can close PolyglotDB by running :code:`python bin/pgdb.py stop`. 
+1. Ensure that Homebrew is installed.
+2. From the source directory , run :code:`python bin/pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
+   :code:`python bin/pgdb.py install` to save data in the default directory.
 
-To uninstall, navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py uninstall`.
+.. warning::
+
+   Do not use ``sudo`` with this command on Macs, as it will lead to permissions issues later on.
+
+Once you have installed PolyglotDB, to start it navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py start`.
+Likewise, you can close PolyglotDB by running :code:`python bin/pgdb.py stop`.
+
+To uninstall, navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py uninstall`
+
+Windows
+```````
+
+1. Start an Administrator command prompt (right click on cmd.exe and select "Run as administrator"), as Neo4j will be installed as a Windows service.
+2. From the source directory , run :code:`python bin/pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
+   :code:`python bin/pgdb.py install` to save data in the default directory.
+
+To start the database, you likewise have to use an administrator command prompt before entering the commands :code:`python bin/pgdb.py start`
+or :code:`python bin/pgdb.py stop`.
+
+To uninstall, navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py uninstall` (also requires an administrator command prompt).
+
+Linux
+`````
+
+From the source directory , run :code:`python bin/pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
+:code:`python bin/pgdb.py install` to save data in the default directory.
+
+Once you have installed PolyglotDB, to start it navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py start`.
+Likewise, you can close PolyglotDB by running :code:`python bin/pgdb.py stop`.
+
+To uninstall, navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py uninstall`
