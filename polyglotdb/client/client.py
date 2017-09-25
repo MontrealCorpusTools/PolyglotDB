@@ -1,5 +1,7 @@
 import requests
 
+from requests.exceptions import ConnectionError
+
 from ..exceptions import ClientError
 from ..structure import Hierarchy
 from ..query.annotations import GraphQuery, DiscourseGraphQuery, SpeakerGraphQuery

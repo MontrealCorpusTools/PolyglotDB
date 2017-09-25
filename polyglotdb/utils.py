@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import sys
 from . import CorpusContext
-from .client.client import PGDBClient, ClientError
+from .client.client import PGDBClient, ClientError, ConnectionError
 
 
 def get_corpora_list(config):
@@ -17,11 +17,11 @@ def ensure_local_database_running(database_name):
 
     try:
         response = client.create_database(database_name)
-    except ClientError:
+    except (ClientError, ConnectionError):
         pass
     try:
         client.start_database(database_name)
-    except ClientError:
+    except (ClientError, ConnectionError):
         pass
 
     try:
@@ -29,7 +29,7 @@ def ensure_local_database_running(database_name):
         db_info['data_dir'] = client.get_directory(database_name)
         db_info['host'] = 'localhost'
         pgdb = False
-    except ClientError:
+    except ConnectionError:
         print('Warning: no Polyglot server available locally, using default ports.')
         db_info = {'graph_http_port': 7474, 'graph_bolt_port': 7687,
                    'acoustic_http_port': 8086, 'host': 'localhost'}
