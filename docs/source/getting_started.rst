@@ -54,37 +54,37 @@ Mac
 ```
 
 1. Ensure that Homebrew is installed.
-2. From the source directory , run :code:`python bin/pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
-   :code:`python bin/pgdb.py install` to save data in the default directory.
+2. Once PolyglotDB is installed, run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
+   :code:`pgdb.py install` to save data in the default directory.
 
 .. warning::
 
    Do not use ``sudo`` with this command on Macs, as it will lead to permissions issues later on.
 
-Once you have installed PolyglotDB, to start it navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py start`.
-Likewise, you can close PolyglotDB by running :code:`python bin/pgdb.py stop`.
+Once you have installed PolyglotDB, to start it run :code:`pgdb.py start`.
+Likewise, you can close PolyglotDB by running :code:`pgdb.py stop`.
 
-To uninstall, navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py uninstall`
+To uninstall, run :code:`pgdb.py uninstall`
 
 Windows
 ```````
 
 1. Start an Administrator command prompt (right click on cmd.exe and select "Run as administrator"), as Neo4j will be installed as a Windows service.
-2. From the source directory , run :code:`python bin/pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
-   :code:`python bin/pgdb.py install` to save data in the default directory.
+2. Run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
+   :code:`pgdb.py install` to save data in the default directory.
 
-To start the database, you likewise have to use an administrator command prompt before entering the commands :code:`python bin/pgdb.py start`
-or :code:`python bin/pgdb.py stop`.
+To start the database, you likewise have to use an administrator command prompt before entering the commands :code:`pgdb.py start`
+or :code:`pgdb.py stop`.
 
-To uninstall, navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py uninstall` (also requires an administrator command prompt).
+To uninstall, run :code:`pgdb.py uninstall` (also requires an administrator command prompt).
 
 Linux
 `````
 
-From the source directory , run :code:`python bin/pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
-:code:`python bin/pgdb.py install` to save data in the default directory.
+Once installed, run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
+:code:`pgdb.py install` to save data in the default directory.
 
-Once you have installed PolyglotDB, to start it navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py start`.
-Likewise, you can close PolyglotDB by running :code:`python bin/pgdb.py stop`.
+Once you have installed PolyglotDB, to start it run :code:`pgdb.py start`.
+Likewise, you can close PolyglotDB by running :code:`pgdb.py stop`.
 
-To uninstall, navigate to the PolyglotDB directory and type :code:`python bin/pgdb.py uninstall`
+To uninstall, navigate to the PolyglotDB directory and type :code:`pgdb.py uninstall`
