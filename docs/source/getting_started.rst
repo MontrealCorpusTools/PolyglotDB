@@ -54,7 +54,8 @@ Mac
 ```
 
 1. Ensure that Homebrew is installed.
-2. Once PolyglotDB is installed, run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
+2. Ensure Java 8 is installed (``brew cask install java``)
+3. Once PolyglotDB is installed, run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
    :code:`pgdb.py install` to save data in the default directory.
 
 .. warning::
@@ -69,8 +70,9 @@ To uninstall, run :code:`pgdb.py uninstall`
 Windows
 ```````
 
-1. Start an Administrator command prompt (right click on cmd.exe and select "Run as administrator"), as Neo4j will be installed as a Windows service.
-2. Run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
+1. Ensure Java is installed (https://www.java.com/) and on the path (``java --version`` works in the command prompt)
+2. Start an Administrator command prompt (right click on cmd.exe and select "Run as administrator"), as Neo4j will be installed as a Windows service.
+3. Run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
    :code:`pgdb.py install` to save data in the default directory.
 
 To start the database, you likewise have to use an administrator command prompt before entering the commands :code:`pgdb.py start`
@@ -80,6 +82,14 @@ To uninstall, run :code:`pgdb.py uninstall` (also requires an administrator comm
 
 Linux
 `````
+
+Ensure Java 8 is installed. On Ubuntu:
+
+.. code-block:: bash
+
+   sudo add-apt-repository ppa:webupd8team/java
+   sudo apt-get update
+   sudo apt-get install oracle-java8-installer
 
 Once installed, run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
 :code:`pgdb.py install` to save data in the default directory.
