@@ -17,6 +17,7 @@ Contents:
    io.rst
    concepts.rst
    apireference.rst
+   changelog.rst
 
 
 
