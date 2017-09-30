@@ -123,6 +123,7 @@ class ImportContext(StructuredContext):
         could_not_parse : list
             list of files that it could not parse
         """
+
         if os.path.isdir(path):
             print("loading {} with {}".format(path, parser))
             could_not_parse = self.load_directory(parser, path)

@@ -154,7 +154,7 @@ def analyze_script(corpus_context,
     stop_check : callable
         stop check function, optional
     """
-    print("analyzing sibilants")
+    #print("analyzing sibilants")
     if call_back is not None:
         call_back('Analyzing phones...')
     directory = corpus_context.config.temporary_directory('csv')
@@ -180,7 +180,7 @@ def analyze_script(corpus_context,
             output = analyze_file_segments(v, script_function, padding=None, stop_check=stop_check)
             if call_back is not None:
                 call_back("time analyzing segments: " + str(time.time() - time_section))
-            print("time analyzing segments: " + str(time.time() - time_section))
+            #print("time analyzing segments: " + str(time.time() - time_section))
 
             for seg in output.keys():
                 output_dict = output[seg]

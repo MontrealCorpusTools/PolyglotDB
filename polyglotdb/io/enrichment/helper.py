@@ -52,6 +52,8 @@ def parse_file(path, labels=None, case_sensitive=True):
     """
     with open(path, 'r', encoding='utf-8-sig') as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read())
+        if dialect.delimiter == '-':
+            dialect.delimiter = ','
         csvfile.seek(0)
         reader = csv.DictReader(csvfile, dialect=dialect)
         header = reader.fieldnames

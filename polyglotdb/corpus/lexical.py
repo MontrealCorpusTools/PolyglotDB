@@ -19,6 +19,10 @@ class LexicalContext(SpokenContext):
         """
         if type_data is None:
             type_data = {k: type(v) for k, v in next(iter(lexicon_data.values())).items()}
+        removed = [x for x in type_data.keys() if self.hierarchy.has_type_property(self.word_name, x)]
+        type_data = {k: v for k,v in type_data.items() if k not in removed}
+        if not type_data:
+            return
         lexicon_data_to_csvs(self, lexicon_data, case_sensitive=case_sensitive)
         import_lexicon_csvs(self, type_data, case_sensitive=case_sensitive)
         self.hierarchy.add_type_properties(self, self.word_name, type_data.items())

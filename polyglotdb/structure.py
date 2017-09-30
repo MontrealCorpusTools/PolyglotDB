@@ -67,6 +67,9 @@ class Hierarchy(object):
     def __setstate__(self, state):
         self.from_json(state)
 
+    def __str__(self):
+        return str(self.to_json())
+
     def get_depth(self, lower_type, higher_type):
         depth = 1
         t = self.get_higher_types(lower_type)
@@ -446,6 +449,8 @@ class Hierarchy(object):
                     self.token_properties[k] = other.token_properties[k]
                 else:
                     self.token_properties[k] = self.token_properties[k] & other.token_properties[k]
+            self.speaker_properties.update(other.speaker_properties)
+            self.discourse_properties.update(other.discourse_properties)
 
     @property
     def lowest(self):

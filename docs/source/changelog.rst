@@ -3,6 +3,13 @@
 Changelog
 =========
 
+0.0.6
+-----
+
+- Fixed hierarchy caching bug
+- Change behavior to ignore already encoded fields during lexical enrichment
+- Change hierarchy caching to use json dumps rather than pickle
+
 0.0.5
 -----
 

@@ -141,14 +141,15 @@ class BaseContext(object):
         return os.path.join(self.config.base_dir, 'hierarchy')
 
     def cache_hierarchy(self):
-        import pickle
-        with open(self.hierarchy_path, 'wb') as f:
-            pickle.dump(obj=self.hierarchy, file=f)
+        import json
+        with open(self.hierarchy_path, 'w', encoding='utf8') as f:
+            json.dump(self.hierarchy.to_json(), f)
 
     def load_hierarchy(self):
-        import pickle
-        with open(self.hierarchy_path, 'rb') as f:
-            self.hierarchy = pickle.load(file=f)
+        import json
+        with open(self.hierarchy_path, 'r', encoding='utf8') as f:
+            self.hierarchy = Hierarchy(corpus_name=self.corpus_name)
+            self.hierarchy.from_json(json.load(f))
 
     def __exit__(self, exc_type, exc, exc_tb):
         self.graph_driver.close()
@@ -258,7 +259,8 @@ class BaseContext(object):
         self.execute_cypher('''MATCH (n:{}:Discourse) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.reset_hierarchy()
         self.execute_cypher('''MATCH (n:Corpus) where n.name = {corpus_name} DELETE n ''', corpus_name=self.corpus_name)
-        self.hierarchy = Hierarchy({})
+        self.hierarchy = Hierarchy(corpus_name=self.corpus_name)
+        self.cache_hierarchy()
 
     def reset(self, call_back=None, stop_check=None):
         '''
