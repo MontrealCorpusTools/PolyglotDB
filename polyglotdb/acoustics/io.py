@@ -1,11 +1,13 @@
 import os
 import subprocess
 import shutil
-
+import csv
 import librosa
 import audioread
 
 from acousticsim.utils import write_wav
+
+from ..io.importer.from_csv import make_path_safe
 
 
 def resample_audio(filepath, new_filepath, new_sr):
@@ -71,3 +73,62 @@ def setup_audio(corpus_context, data):
     if data.wav_path is None or not os.path.exists(data.wav_path):
         return
     add_discourse_sound_info(corpus_context, data.name, data.wav_path)
+
+
+def point_measures_to_csv(corpus_context, data, header):
+    if header[0] != 'id':
+        header.insert(0, 'id')
+    for s in corpus_context.speakers:
+        path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                            '{}_point_measures.csv'.format(s))
+        with open(path, 'w', newline='', encoding='utf8') as f:
+            writer = csv.DictWriter(f, header, delimiter=',')
+            writer.writeheader()
+    for seg, seg_data in data.items():
+        path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                            '{}_point_measures.csv'.format(seg['speaker']))
+        with open(path, 'a', newline='', encoding='utf8') as f:
+            writer = csv.DictWriter(f, header, delimiter=',')
+            row = dict(id=seg['id'], **{k: v for k, v in seg_data.items() if k in header and k != 'id'})
+            writer.writerow(row)
+
+
+def point_measures_from_csv(corpus_context, header_info):
+    float_set_template = 'n.{name} = toFloat(csvLine.{name})'
+    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
+    string_set_template = 'n.{name} = csvLine.{name}'
+    properties = []
+    for h, t in header_info.items():
+        if t == int:
+            properties.append(int_set_template.format(name=h))
+        elif t == float:
+            properties.append(float_set_template.format(name=h))
+        elif t == bool:
+            properties.append(bool_set_template.format(name=h))
+        else:
+            properties.append(string_set_template.format(name=h))
+    properties = ',\n'.join(properties)
+
+    for s in corpus_context.speakers:
+        path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                            '{}_point_measures.csv'.format(s))
+        import_path = 'file:///{}'.format(make_path_safe(path))
+        import_statement = '''CYPHER planner=rule
+                USING PERIODIC COMMIT 2000
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (n:{phone_type}:{corpus_name}) where n.id = csvLine.id
+                SET {new_properties}'''
+
+        statement = import_statement.format(path=import_path,
+                                            corpus_name=corpus_context.cypher_safe_name,
+                                            phone_type=corpus_context.phone_name,
+                                            new_properties=properties)
+        corpus_context.execute_cypher(statement)
+    for h in header_info.keys():
+        if h == 'id':
+            continue
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name, h))
+    corpus_context.hierarchy.add_token_properties(corpus_context, corpus_context.phone_name,
+                                                  [(h, t) for h, t in header_info.items() if h != 'id'])
+    corpus_context.encode_hierarchy()

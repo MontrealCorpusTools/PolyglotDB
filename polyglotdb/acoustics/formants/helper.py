@@ -15,7 +15,7 @@ from acousticsim.analysis.formants import (signal_to_formants as ASFormants_sign
 
 from ...exceptions import AcousticError
 
-from ...io.importer.from_csv import make_path_safe
+from ..io import point_measures_from_csv, point_measures_to_csv
 
 
 def sanitize_bandwidths(value):
@@ -458,50 +458,17 @@ def save_formant_point_data(corpus_context, data, num_formants = False):
     header = ['id', 'F1', 'F2', 'F3', 'B1', 'B2', 'B3']
     if num_formants:
         header += ['num_formants']
-    for s in corpus_context.speakers:
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_formants.csv'.format(s))
-        with open(path, 'w', newline='', encoding='utf8') as f:
-            writer = csv.DictWriter(f, header, delimiter=',')
-            writer.writeheader()
-    for seg, best_track in data.items():
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_formants.csv'.format(seg['speaker']))
-        with open(path, 'a', newline='', encoding='utf8') as f:
-            writer = csv.DictWriter(f, header, delimiter=',')
-            row = dict(id=seg['id'], **{k: v for k,v in best_track.items() if k in header})
-            writer.writerow(row)
-    float_set_template = 'n.{name} = toFloat(csvLine.{name})'
-    int_set_template = 'n.{name} = toInt(csvLine.{name})'
-    properties = []
-    for h in header:
-        if h == 'num_formants':
-            properties.append(int_set_template.format(name=h))
-        elif h != 'id':
-            properties.append(float_set_template.format(name=h))
-    properties = ',\n'.join(properties)
-
-    for s in corpus_context.speakers:
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_formants.csv'.format(s))
-        import_path = 'file:///{}'.format(make_path_safe(path))
-        import_statement = '''CYPHER planner=rule
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-            MATCH (n:{phone_type}:{corpus_name}) where n.id = csvLine.id
-            SET {new_properties}'''
-
-        statement = import_statement.format(path=import_path,
-                                            corpus_name=corpus_context.cypher_safe_name,
-                                            phone_type=corpus_context.phone_name,
-                                            new_properties=properties)
-        corpus_context.execute_cypher(statement)
+    point_measures_to_csv(corpus_context, data, header)
+    header_info = {}
     for h in header:
         if h == 'id':
             continue
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name, h))
-    corpus_context.hierarchy.add_token_properties(corpus_context, corpus_context.phone_name,
-                                                  [(h, float) for h in header if h != 'id'])
+        if h != 'num_formants':
+            header_info[h] = float
+        else:
+            header_info[h] = int
+    point_measures_from_csv(corpus_context, header_info)
+
 
 
 def generate_base_formants_function(corpus_context, signal=False, gender=None):

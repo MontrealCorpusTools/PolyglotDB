@@ -1,17 +1,16 @@
 import sys
-import os
 import time
-import csv
 
 from functools import partial
 
-from acousticsim.analysis.helper import ASTemporaryWavFile, fix_time_points
+from acousticsim.analysis.helper import ASTemporaryWavFile
 from acousticsim.analysis.praat import run_script, read_praat_out
 from acousticsim.main import analyze_file_segments
 
 from .segments import generate_segments
 
-from .utils import make_path_safe
+
+from .io import point_measures_to_csv, point_measures_from_csv
 
 
 def signal_to_praat_script(signal, sr, praat_path=None, time_step=0.01,
@@ -164,81 +163,16 @@ def analyze_script(corpus_context,
     header = ['id', 'begin', 'end']
     time_section = time.time()
     segment_mapping = generate_segments(corpus_context, corpus_context.phone_name, phone_class, file_type='consonant')
-    segment_mapping = segment_mapping.grouped_mapping('speaker')
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
     praat_path = corpus_context.config.praat_path
     script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
-    with open(os.path.join(directory, csv_name), 'w', newline='') as f:
-        for i, (speaker, v) in enumerate(segment_mapping.items()):
-            if stop_check is not None and stop_check():
-                break
-            if call_back is not None:
-                # call_back('Analyzing file {} of {} ({})...'.format(i, num_sound_files, sf.file_path))
-                call_back(i)
-            time_section = time.time()
-            output = analyze_file_segments(v, script_function, padding=None, stop_check=stop_check)
-            if call_back is not None:
-                call_back("time analyzing segments: " + str(time.time() - time_section))
-            #print("time analyzing segments: " + str(time.time() - time_section))
+    time_section = time.time()
+    output = analyze_file_segments(segment_mapping.segments, script_function, padding=None, stop_check=stop_check)
+    if call_back is not None:
+        call_back("time analyzing segments: " + str(time.time() - time_section))
+    header = sorted(output.values()[0].keys())
+    header_info = {h: float for h in header}
+    point_measures_to_csv(corpus_context, output, header)
+    point_measures_from_csv(corpus_context, header_info)
 
-            for seg in output.keys():
-                output_dict = output[seg]
-                if needs_header is True:
-                    for measurement in output_dict:
-                        header.append(measurement)
-                    writer = csv.DictWriter(f, header, delimiter=',')
-                    writer.writeheader()
-                    needs_header = False
-                filepath, begin, end, channel = seg[:4]
-                row = {}
-                row['id'] = seg['id']
-                row['begin'] = begin
-                row['end'] = end
-                for measurement in output_dict:
-                    if measurement in header:
-                        row[measurement] = output_dict[measurement]
-                        if measurement not in output_types:
-                            output_types[measurement] = type(output_dict[measurement]).__name__
-                writer.writerow(row)
-    for measurement in output_types:
-        script_data_from_csv(corpus_context, measurement, output_types[measurement])
-
-
-def script_data_from_csv(corpus_context, result_measurement, output_type):
-    """
-    Save acoustic data from one column of a csv file into the database.
-
-    Parameters
-    ----------
-    corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
-        corpus context
-    result_measurement : str
-        measurement label (label of the column)
-    output_type : str
-        type of the measurement being saved
-    """
-    if output_type == 'int':
-        cypher_set_template = 'n.{name} = toInt(csvLine.{name})'
-    elif output_type == 'bool':
-        cypher_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
-    elif output_type == 'float':
-        cypher_set_template = 'n.{name} = toFloat(csvLine.{name})'
-    else:
-        cypher_set_template = 'n.{name} = csvLine.{name}'
-    directory = corpus_context.config.temporary_directory('csv')
-    csv_name = 'analyze_script_import.csv'
-    path = os.path.join(directory, csv_name)
-    feat_path = 'file:///{}'.format(make_path_safe(path))
-    import_statement = '''CYPHER planner=rule
-        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-        MATCH (n:phone:{corpus_name}) where n.id = csvLine.id
-        SET {new_property}'''
-    statement = import_statement.format(path=feat_path,
-                                        corpus_name=corpus_context.cypher_safe_name,
-                                        new_property=cypher_set_template.format(name=result_measurement))
-    corpus_context.execute_cypher(statement)
-    corpus_context.execute_cypher('CREATE INDEX ON :Phone(%s)' % result_measurement)
-    types = {result_measurement: output_type}
-    corpus_context.hierarchy.add_token_properties(corpus_context, 'phone', types.items())
-    corpus_context.refresh_hierarchy()
