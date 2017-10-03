@@ -59,10 +59,10 @@ class PrecedenceClauseElement(AnnotationClauseElement):
         return True
 
     def involves(self, annotation):
-        from .attributes import PathAnnotation
+        from .attributes import SubPathAnnotation
         to_match = 'alias'
-        if isinstance(annotation, PathAnnotation):
-            to_match = 'path_alias'
+        if isinstance(annotation, SubPathAnnotation):
+            to_match = 'collection_alias'
         if getattr(self.node, to_match, None) == getattr(annotation, to_match):
             return True
         return False
@@ -228,14 +228,18 @@ class AlignmentClauseElement(AnnotationClauseElement):
         return True
 
     def involves(self, annotation):
-        from .attributes import PathAnnotation
+        from .attributes import SubPathAnnotation
+        from ...exceptions import AnnotationAttributeError
         to_match = 'alias'
-        if isinstance(annotation, PathAnnotation):
-            to_match = 'path_alias'
-        if getattr(self.first, to_match, None) == getattr(annotation, to_match):
-            return True
-        if getattr(self.second, to_match, None) == getattr(annotation, to_match):
-            return True
+        if isinstance(annotation, SubPathAnnotation):
+            to_match = 'collection_alias'
+        try:
+            if getattr(self.first, to_match, None) == getattr(annotation, to_match):
+                return True
+            if getattr(self.second, to_match, None) == getattr(annotation, to_match):
+                return True
+        except AnnotationAttributeError:
+            pass
         return False
 
 

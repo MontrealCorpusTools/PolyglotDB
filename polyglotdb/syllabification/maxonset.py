@@ -4,10 +4,10 @@ def split_ons_coda_maxonset(string, onsets):
 
     Parameters
     ----------
-    string : list
+    string : iterable
         the phones to search through
-    onsets : list
-        a list of possible onsets
+    onsets : iterable
+        an iterable of possible onsets
 
     Returns
     -------
@@ -31,10 +31,10 @@ def split_nonsyllabic_maxonset(string, onsets):
 
     Parameters
     ----------
-    string : list
+    string : iterable
         the phones to search through
-    onsets : list
-        a list of possible onsets
+    onsets : iterable
+        an iterable of possible onsets
 
     Returns
     -------

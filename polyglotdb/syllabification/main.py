@@ -9,8 +9,8 @@ def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
 
     Parameters
     ----------
-    phones : list
-        a list of phones in the corpus
+    phones : iterable
+        an iterable of phones in the corpus
     syllabics : list
         a list of syllabic segments
     onsets : list
@@ -34,7 +34,8 @@ def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
             split = split_nonsyllabic_prob(phones, onsets, codas)
         elif algorithm == 'maxonset':
             split = split_nonsyllabic_maxonset(phones, onsets)
-
+        else:
+            split=None
         label = '.'.join(phones)
         row = {'id': cur_id, 'prev_id': prev_id,
                'onset_id': phones[0],
@@ -59,6 +60,8 @@ def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
                 split = split_ons_coda_prob(cons_string, onsets, codas)
             elif algorithm == 'maxonset':
                 split = split_ons_coda_maxonset(cons_string, onsets)
+            else:
+                split = None
             if split is None:
                 cur_ons_id = None
                 begin_ind = i
@@ -78,6 +81,8 @@ def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
                 split = split_ons_coda_prob(cons_string, onsets, codas)
             elif algorithm == 'maxonset':
                 split = split_ons_coda_maxonset(cons_string, onsets)
+            else:
+                split = None
             if split is None:
                 cur_coda_id = None
                 end_ind = i

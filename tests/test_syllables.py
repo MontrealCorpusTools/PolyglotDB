@@ -1,5 +1,3 @@
-import pytest
-
 from polyglotdb import CorpusContext
 
 from polyglotdb.syllabification.probabilistic import split_ons_coda_prob, split_nonsyllabic_prob, norm_count_dict
@@ -9,7 +7,7 @@ from polyglotdb.syllabification.main import syllabify
 
 def test_find_onsets(timed_config):
     syllabics = ['ae', 'aa', 'uw', 'ay', 'eh']
-    expected_onsets = set([('k',), tuple(), ('d',), ('t',), ('g',)])
+    expected_onsets = {('k',), tuple(), ('d',), ('t',), ('g',)}
     expected_freqs = {('k',): 2, tuple(): 3, ('d',): 1, ('t',): 1, ('g',): 1}
     with CorpusContext(timed_config) as c:
         c.encode_syllabic_segments(syllabics)
@@ -20,7 +18,7 @@ def test_find_onsets(timed_config):
 
 
 def test_find_codas(timed_config):
-    expected_codas = set([('t', 's'), ('r',), ('t',), ('g', 'z'), tuple(), ('s',)])
+    expected_codas = {('t', 's'), ('r',), ('t',), ('g', 'z'), tuple(), ('s',)}
     expected_freqs = {('t', 's'): 1, tuple(): 2, ('r',): 2, ('t',): 1, ('g', 'z'): 1, ('s',): 1}
     with CorpusContext(timed_config) as c:
         codas = c.find_codas()
@@ -54,7 +52,7 @@ def test_probabilistic_syllabification(acoustic_config, timed_config, acoustic_s
         assert (e == result)
 
 
-def test_maxonset_syllabification(acoustic_config, timed_config):
+def test_maxonset_syllabification(timed_config):
     with CorpusContext(timed_config) as c:
         onsets = set(c.find_onsets().keys())
 
@@ -73,7 +71,7 @@ def test_maxonset_syllabification(acoustic_config, timed_config):
         assert (e == result)
 
 
-def test_syllabify(acoustic_config, timed_config):
+def test_syllabify():
     expected = {('n', 'ay', 'iy', 'v'): [{'label': 'n.ay'}, {'label': 'iy.v'}],
                 ('l', 'ow', 'w', 'er'): [{'label': 'l.ow'}, {'label': 'w.er'}]}
     s = ['ay', 'iy', 'ow', 'er']
@@ -104,4 +102,13 @@ def test_encode_syllables_acoustic(acoustic_config):
         results = q.all()
         assert (len(results) == 5)
 
-        # c.reset_syllables()
+        q = c.query_graph(c.syllable)
+        q = q.columns(c.syllable.phone.filter_by_subset('onset').label.column_name('onset'),
+                      c.syllable.phone.filter_by_subset('nucleus').label.column_name('nucleus'),
+                      c.syllable.phone.filter_by_subset('coda').label.column_name('coda'))
+        for r in q.all():
+            assert (all(x not in syllabics for x in r['onset']))
+            assert (all(x in syllabics for x in r['nucleus']))
+            assert (all(x not in syllabics for x in r['coda']))
+
+            # c.reset_syllables()

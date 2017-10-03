@@ -280,8 +280,7 @@ class Node(object):
         if self.corpus is not None:
             label_string += ':{}'.format(key_for_cypher(self.corpus))
         if self.subset_labels:
-            if self.subset_labels:
-                label_string += ':' + ':'.join(map(key_for_cypher, self.subset_labels))
+            label_string += ':' + ':'.join(map(key_for_cypher, self.subset_labels))
         return '{}{}'.format(self.alias, label_string)
 
     def filter_by_subset(self, *args):
@@ -396,8 +395,12 @@ class CollectionNode(object):
 
     @property
     def def_collection_alias(self):
-        return '{}:{}:{}'.format(self.collection_alias, self.collected_node.node_type,
-                                 key_for_cypher(self.collected_node.corpus))
+        label_string = ':{}'.format(self.collected_node.node_type)
+        if self.corpus is not None:
+            label_string += ':{}'.format(key_for_cypher(self.collected_node.corpus))
+        if self.collected_node.subset_labels:
+            label_string += ':' + ':'.join(map(key_for_cypher, self.collected_node.subset_labels))
+        return '{}{}'.format(self.collection_alias, label_string)
 
     @property
     def collection_alias(self):

@@ -37,12 +37,12 @@ def split_ons_coda_prob(string, onsets, codas):
 
     Parameters
     ----------
-    string : list
+    string : iterable
         the phones to search through
-    onsets : list
-        a list of possible onsets
-    codas : list
-        a list of possible codas
+    onsets : iterable
+        an iterable of possible onsets
+    codas : iterable
+        an iterable of possible codas
 
     Returns
     -------
@@ -77,12 +77,12 @@ def split_nonsyllabic_prob(string, onsets, codas):
 
     Parameters
     ----------
-    string : list
+    string : iterable
         the phones to search through
-    onsets : list
-        a list of possible onsets
-    codas : list
-        a list of possible codas
+    onsets : iterable
+        an iterable of possible onsets
+    codas : iterable
+        an iterable of possible codas
 
     Returns
     -------

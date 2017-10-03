@@ -112,6 +112,18 @@ class SubPathAnnotation(AnnotationCollectionNode):
         return '{}:{}'.format(self.collection_type_alias, label_string)
 
     @property
+    def def_collection_alias(self):
+        label_string = ':{}'.format(self.collected_node.node_type)
+        if self.corpus is not None:
+            label_string += ':{}'.format(key_for_cypher(self.collected_node.corpus))
+        if self.collected_node.subset_labels:
+            subset_token_labels = [x for x in self.collected_node.subset_labels if
+                                  self.hierarchy.has_token_subset(self.collected_node.node_type, x)]
+            if subset_token_labels:
+                label_string += ':' + ':'.join(map(key_for_cypher, subset_token_labels))
+        return '{}{}'.format(self.collection_alias, label_string)
+
+    @property
     def collection_type_alias(self):
         a = 'type_' + self.collection_alias
         a = a.replace('`', '')
