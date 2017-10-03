@@ -13,7 +13,7 @@ Getting elements
 :code:`c.phone`
 :code:`c.lexicon_phone`
 :code:`c.speaker`
-
+:code:`c.discourse`
 
 Attributes
 ==========
