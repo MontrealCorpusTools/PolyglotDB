@@ -26,7 +26,7 @@ class PyTest(TestCommand):
 
 if __name__ == '__main__':
     setup(name='polyglotdb',
-          version='0.0.6',
+          version='0.0.7',
           description='',
           long_description=readme(),
           classifiers=[
@@ -49,6 +49,7 @@ if __name__ == '__main__':
                     'polyglotdb.acoustics.pitch',
                     'polyglotdb.client',
                     'polyglotdb.corpus',
+                    'polyglotdb.databases',
                     'polyglotdb.io',
                     'polyglotdb.io.types',
                     'polyglotdb.io.parsers',
@@ -65,6 +66,7 @@ if __name__ == '__main__':
                     'polyglotdb.query.speaker',
                     'polyglotdb.query.lexicon',
                     'polyglotdb.syllabification'],
+          package_data={'polyglotdb.databases': ['*.conf']},
           install_requires=[
               'neo4j-driver',
               'textgrid',
@@ -73,7 +75,7 @@ if __name__ == '__main__':
               'influxdb',
               'tqdm'
           ],
-          scripts=['bin/pgdb.py'],
+          scripts=['bin/pgdb'],
           cmdclass={'test': PyTest},
           extras_require={
               'testing': ['pytest'],

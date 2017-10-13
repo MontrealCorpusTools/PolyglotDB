@@ -3,6 +3,12 @@
 Changelog
 =========
 
+0.0.7
+-----
+
+- Fixed a path issue with the pgdb script for templates
+- Fixed an issue where pgdb was not interpreted in Python
+
 0.0.6
 -----
 

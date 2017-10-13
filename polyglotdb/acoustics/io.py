@@ -114,7 +114,7 @@ def point_measures_from_csv(corpus_context, header_info):
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_point_measures.csv'.format(s))
         import_path = 'file:///{}'.format(make_path_safe(path))
-        import_statement = '''CYPHER planner=rule
+        import_statement = '''
                 USING PERIODIC COMMIT 2000
                 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
                 MATCH (n:{phone_type}:{corpus_name}) where n.id = csvLine.id

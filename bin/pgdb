@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import argparse
@@ -134,12 +136,8 @@ def download_influxdb(data_directory, overwrite=False):
 
 
 def configure_neo4j(data_directory):
+    from polyglotdb.databases.config import neo4j_template_path
     neo4j_conf_path = os.path.join(data_directory, 'neo4j', 'conf', 'neo4j.conf')
-    if hasattr(sys, 'frozen'):
-        base_pgdb_dir = os.path.dirname(sys.executable)
-    else:
-        base_pgdb_dir = os.path.dirname(os.path.abspath(__file__))
-    neo4j_template_path = os.path.join(base_pgdb_dir, 'neo4j.conf')
     with open(neo4j_template_path, 'r') as f:
         template = f.read()
 
@@ -154,17 +152,14 @@ def make_influxdb_safe(string):
 
 
 def configure_influxdb(data_directory):
+    from polyglotdb.databases.config import influxdb_template_path
     os.makedirs(os.path.join(data_directory, 'influxdb'), exist_ok=True)
-    neo4j_conf_path = os.path.join(data_directory, 'influxdb', 'influxdb.conf')
-    if hasattr(sys, 'frozen'):
-        base_pgdb_dir = os.path.dirname(sys.executable)
-    else:
-        base_pgdb_dir = os.path.dirname(os.path.abspath(__file__))
-    influxdb_template_path = os.path.join(base_pgdb_dir, 'influxdb.conf')
+    influxdb_conf_path = os.path.join(data_directory, 'influxdb', 'influxdb.conf')
+
     with open(influxdb_template_path, 'r') as f:
         template = f.read()
 
-    with open(neo4j_conf_path, 'w') as f:
+    with open(influxdb_conf_path, 'w') as f:
         f.write(template.format(**{k: make_influxdb_safe(v) for k, v in CONFIG['InfluxDB'].items()}))
 
 
