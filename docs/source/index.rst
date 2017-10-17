@@ -1,4 +1,6 @@
 
+.. _`the PolyglotDB wiki`: https://github.com/MontrealCorpusTools/PolyglotDB/wiki
+
 Welcome to PolyglotDB's documentation!
 ======================================
 
@@ -17,7 +19,8 @@ Contents:
    io.rst
    concepts.rst
    apireference.rst
-   changelog.rst
+
+See `the PolyglotDB wiki`_ for the changelog.
 
 
 

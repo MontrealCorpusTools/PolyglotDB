@@ -26,7 +26,7 @@ class PyTest(TestCommand):
 
 if __name__ == '__main__':
     setup(name='polyglotdb',
-          version='0.1.0',
+          version='0.1.1',
           description='',
           long_description=readme(),
           classifiers=[
@@ -66,7 +66,8 @@ if __name__ == '__main__':
                     'polyglotdb.query.speaker',
                     'polyglotdb.query.lexicon',
                     'polyglotdb.syllabification'],
-          package_data={'polyglotdb.databases': ['*.conf']},
+          package_data={'polyglotdb.databases': ['*.conf'],
+                        'polyglotdb.acoustics.formants': ['*.praat']},
           install_requires=[
               'neo4j-driver',
               'textgrid',
