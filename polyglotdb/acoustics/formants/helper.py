@@ -104,7 +104,7 @@ def generate_variable_formants_point_function(corpus_context, min_formants, max_
     max_freq = 5500
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    script = os.path.join(script_dir, 'multiple_formants_bandwidth_segment.praat')
+    script = os.path.join(script_dir, 'multiple_num_formants.praat')
     formant_function = PraatAnalysisFunction(script, praat_path=corpus_context.config.praat_path,
                                              arguments=[0.01, 0.025, min_formants, max_formants, max_freq])
     formant_function._function._output_parse_function = parse_multiple_formant_output
