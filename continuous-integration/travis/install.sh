@@ -13,8 +13,7 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION setuptools atlas numpy pytest scipy
   source activate test-environment
   which python
-  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb
-  pip install -q git+https://github.com/mmcauliffe/python-acoustic-similarity.git
+  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb conch_sounds
   python setup.py install
 else
   echo "Miniconda already installed."
@@ -25,8 +24,7 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-server-environment" ]; then
   conda create -q -n test-server-environment python=$TRAVIS_PYTHON_VERSION setuptools atlas numpy pytest scipy
   source activate test-server-environment
   which python
-  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb django
-  pip install -q git+https://github.com/mmcauliffe/python-acoustic-similarity.git
+  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb django conch_sounds
   python setup.py install
 else
   export PATH="$HOME/miniconda/miniconda/bin:$PATH"
