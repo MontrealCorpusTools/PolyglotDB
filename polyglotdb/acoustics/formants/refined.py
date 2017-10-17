@@ -72,7 +72,8 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
                 best_distance = math.inf
                 best_track = 0
                 for number, point in data.items():
-                    point = [point[x] for x in columns]
+                    point = [point[x] if point[x] else 0 for x in columns]
+
                     distance = get_mahalanobis(prototype_means, point, inverse_covariance)
                     if distance < best_distance:  # Update "best" measures when new best distance is found
                         best_distance = distance

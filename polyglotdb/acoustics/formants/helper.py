@@ -78,7 +78,6 @@ def parse_multiple_formant_output(output):
     to_return = {}
     for item in listing_list:
         output = parse_point_script_output(item)
-        print(output)
 
         to_return[track_nformants(output)] = output
     return to_return
