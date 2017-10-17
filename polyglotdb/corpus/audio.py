@@ -400,7 +400,7 @@ class AudioContext(SyllabicContext):
             if not len(track.keys()):
                 print(seg)
                 continue
-            file_path, begin, end, channel = seg[:4]
+            file_path, begin, end, channel = seg.file_path, seg.begin, seg.end, seg.channel
             res = self.execute_cypher(
                 'MATCH (d:Discourse:{corpus_name}) where d.vowel_file_path = {{file_path}} RETURN d.name as name'.format(
                     corpus_name=self.cypher_safe_name), file_path=file_path)
@@ -446,6 +446,8 @@ class AudioContext(SyllabicContext):
                         fields['F3'] = F3
                 elif measurement == 'pitch':
                     try:
+                        if value['F0'] is None:
+                            continue
                         value = float(value['F0'])
                     except TypeError:
                         try:
@@ -461,6 +463,8 @@ class AudioContext(SyllabicContext):
                     print(fields)
                 elif measurement == 'intensity':
                     try:
+                        if value['Intensity'] is None:
+                            continue
                         value = float(value['Intensity'])
                     except TypeError:
                         try:

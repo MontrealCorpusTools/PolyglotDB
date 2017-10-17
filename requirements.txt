@@ -1,10 +1,7 @@
 neo4j-driver
-pytest==3.0.7
-sphinx>=1.3b3
-numpydoc==0.6.0
-librosa==0.4.3
+librosa
 scipy
-textgrid==1.0
-influxdb==3.0.0
+textgrid
+influxdb
 tqdm
-acousticsim>=0.1.8
+conch_sounds

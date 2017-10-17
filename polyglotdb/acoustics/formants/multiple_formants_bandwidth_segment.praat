@@ -3,12 +3,12 @@ form Variables
 	real begin
 	real end
 	integer channel
+	real padding
 	real timestep
 	real windowlen
     integer minformants
 	integer maxformants
 	integer ceiling
-	real padding
 endform
 
 Open long sound file... 'filename$'
@@ -41,55 +41,40 @@ r$ = fixed$(r, 3)
 final_output$ = ""
 
 for nformants from minformants to maxformants
-    #echo 'Measuring with'
-    #echo 'nformants'
-    #echo 'formants.'
-    #appendInfoLine: "Measuring with this many nformants: "
-    #appendInfo: 'nformants'
-    #appendInfoLine: ""
     selectObject: "Sound segment_of_interest"
     To Formant (burg)... 'timestep' 'nformants' 'ceiling' 'windowlen' 50
 
 
-    output$ = "time"
+    output$ = ""
 
     for i from 1 to nformants
     	formNum$ = string$(i)
-    	output$ = output$ + tab$ + "F" + formNum$ + tab$ + "B" + formNum$
+    	output$ = output$ + "F" + formNum$ + tab$ + "B" + formNum$
+        if i <> nformants
+            output$ = output$ + tab$
+        endif
     endfor
     output$ = output$ + newline$
 
 
-    output$ = output$ + r$
+    output$ = output$
 
     for j from 1 to nformants
-        #appendInfoLine: "Getting F"
-        #appendInfo: 'j'
-        #appendInfoLine: ""
         formant = Get value at time... 'j' 'r' Hertz Linear
         formant$ = fixed$(formant, 2)
-        if formant = undefined
-            #echo "formant error"
-            #formant$ = "undef"
-        endif
+
         bw = Get bandwidth at time... 'j' 'r' Hertz Linear
         bw$ = fixed$(bw, 2)
-        if bw = undefined
-            #echo "bandwidth error"
-            #bw$ = "undef"
+
+        output$ = output$ + formant$ + tab$ + bw$
+
+        if i <> nformants
+            output$ = output$ + tab$
         endif
-        output$ = output$ + tab$ + formant$ + tab$ + bw$
-        #appendInfoLine: "End of loop, finishing nformants "
-        #appendInfo: 'j'
-        #appendInfoLine: ""
     endfor
 
     output$ = output$ + newline$
     final_output$ = final_output$ + newline$ + output$
-    #echo 'output$'
-    #appendInfoLine: 'output$'
-    #echo 'final_output$'
 endfor
 
-#final_output$ = "hello world"
 echo 'final_output$'

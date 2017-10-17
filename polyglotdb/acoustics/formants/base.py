@@ -1,8 +1,8 @@
-from acousticsim.main import analyze_file_segments
+from conch import analyze_segments
 
 from ..segments import generate_vowel_segments, generate_utterance_segments
 
-from .helper import generate_base_formants_point_function, generate_base_formants_function
+from .helper import generate_formants_point_function, generate_base_formants_function
 
 from ...exceptions import SpeakerAttributeError
 
@@ -38,14 +38,14 @@ def analyze_formant_points(corpus_context, call_back=None, stop_check=None, vowe
 
     # Gets segment mapping of phones that are vowels
 
-    segment_mapping = generate_vowel_segments(corpus_context, duration_threshold=duration_threshold)
+    segment_mapping = generate_vowel_segments(corpus_context, duration_threshold=duration_threshold, padding=.25)
 
     if call_back is not None:
         call_back('Analyzing files...')
 
-    formant_function = generate_base_formants_point_function(corpus_context, signal=True)  # Make formant function
-    output = analyze_file_segments(segment_mapping, formant_function, padding=.25,
-                                   stop_check=stop_check)  # Analyze the phone
+    formant_function = generate_formants_point_function(corpus_context)  # Make formant function
+    output = analyze_segments(segment_mapping, formant_function,
+                              stop_check=stop_check)  # Analyze the phone
     return output
 
 
@@ -62,7 +62,7 @@ def analyze_formant_tracks(corpus_context, call_back=None, stop_check=None):
     stop_check : callable
         stop check function, optional
     """
-    segment_mapping = generate_utterance_segments(corpus_context).grouped_mapping('speaker')
+    segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING).grouped_mapping('speaker')
     if call_back is not None:
         call_back('Analyzing files...')
     for i, (speaker, v) in enumerate(segment_mapping.items()):
@@ -74,17 +74,17 @@ def analyze_formant_tracks(corpus_context, call_back=None, stop_check=None):
         except SpeakerAttributeError:
             pass
         if gender is not None:
-            formant_function = generate_base_formants_function(corpus_context, signal=True, gender=gender)
+            formant_function = generate_base_formants_function(corpus_context, gender=gender)
         else:
-            formant_function = generate_base_formants_function(corpus_context, signal=True)
-        output = analyze_file_segments(v, formant_function, padding=PADDING, stop_check=stop_check)
+            formant_function = generate_base_formants_function(corpus_context)
+        output = analyze_segments(v, formant_function, stop_check=stop_check)
         corpus_context.save_formant_tracks(output, speaker)
 
 
 def analyze_vowel_formant_tracks(corpus_context,
-                                    call_back=None,
-                                    stop_check=None,
-                                    vowel_inventory=None):
+                                 call_back=None,
+                                 stop_check=None,
+                                 vowel_inventory=None):
     """
     Analyze formants of individual vowels, and save the resulting formant tracks into the database for each phone.
 
@@ -104,7 +104,7 @@ def analyze_vowel_formant_tracks(corpus_context,
     if vowel_inventory is not None:
         corpus_context.encode_class(vowel_inventory, 'vowel')
     # gets segment mapping of phones that are vowels
-    segment_mapping = generate_vowel_segments(corpus_context).grouped_mapping('speaker')
+    segment_mapping = generate_vowel_segments(corpus_context, padding=None).grouped_mapping('speaker')
 
     if call_back is not None:
         call_back('Analyzing files...')
@@ -118,8 +118,8 @@ def analyze_vowel_formant_tracks(corpus_context,
         except SpeakerAttributeError:
             pass
         if gender is not None:
-            formant_function = generate_base_formants_function(corpus_context, signal=True, gender=gender)
+            formant_function = generate_base_formants_function(corpus_context, gender=gender)
         else:
-            formant_function = generate_base_formants_function(corpus_context, signal=True)
-        output = analyze_file_segments(v, formant_function, padding=None, stop_check=stop_check)
+            formant_function = generate_base_formants_function(corpus_context)
+        output = analyze_segments(v, formant_function, stop_check=stop_check)
         corpus_context.save_formant_tracks(output, speaker)

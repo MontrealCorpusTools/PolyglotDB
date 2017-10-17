@@ -1,6 +1,7 @@
 import math
 
-from acousticsim.main import analyze_file_segments
+from conch import analyze_segments
+from conch.analysis.segments import SegmentMapping
 
 from .helper import generate_pitch_function
 from ..segments import generate_utterance_segments
@@ -16,7 +17,7 @@ def analyze_discourse_pitch(corpus_context, discourse, pitch_source='praat', min
                 WHERE d.name = {{discourse_name}}
                 RETURN d, s, r'''.format(corpus_name=corpus_context.cypher_safe_name)
     results = corpus_context.execute_cypher(statement, discourse_name=discourse)
-
+    segment_mapping = SegmentMapping()
     for r in results:
         channel = r['r']['channel']
         speaker = r['s']['name']
@@ -30,7 +31,7 @@ def analyze_discourse_pitch(corpus_context, discourse, pitch_source='praat', min
         q = q.filter(prob_utt.speaker.name == speaker)
         utterances = q.all()
         for u in utterances:
-            segments.append((file_path, u.begin, u.end, channel))
+            segment_mapping.add_file_segment(file_path, u.begin, u.end, channel, padding=PADDING)
 
     path = None
     if pitch_source == 'praat':
@@ -40,11 +41,10 @@ def analyze_discourse_pitch(corpus_context, discourse, pitch_source='praat', min
         #          'voiced_unvoiced_cost': 0.14}
     elif pitch_source == 'reaper':
         path = corpus_context.config.reaper_path
-    pitch_function = generate_pitch_function(pitch_source, min_pitch, max_pitch, signal=True, path=path, pulses=True)
-    print(pitch_function)
+    pitch_function = generate_pitch_function(pitch_source, min_pitch, max_pitch, path=path, pulses=True)
     track = {}
     pulses = set()
-    output = analyze_file_segments(segments, pitch_function, padding=PADDING)
+    output = analyze_segments(segments, pitch_function)
     print(output)
     for v in output.values():
         track.update(v[0])
@@ -59,7 +59,7 @@ def analyze_pitch(corpus_context,
     absolute_max_pitch = 480
     if not 'utterance' in corpus_context.hierarchy:
         raise (Exception('Must encode utterances before pitch can be analyzed'))
-    segment_mapping = generate_utterance_segments(corpus_context).grouped_mapping('speaker')
+    segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING).grouped_mapping('speaker')
     num_speakers = len(segment_mapping)
     algorithm = corpus_context.config.pitch_algorithm
     path = None
@@ -72,7 +72,7 @@ def analyze_pitch(corpus_context,
         path = corpus_context.config.reaper_path
         # kwargs = None
     pitch_function = generate_pitch_function(corpus_context.config.pitch_source, absolute_min_pitch, absolute_max_pitch,
-                                             signal=True, path=path)
+                                             path=path)
     if algorithm == 'speaker_adjusted':
         speaker_data = {}
         if call_back is not None:
@@ -80,7 +80,7 @@ def analyze_pitch(corpus_context,
         for i, (k, v) in enumerate(segment_mapping.items()):
             if call_back is not None:
                 call_back('Analyzing speaker {} ({} of {})'.format(k, i, num_speakers))
-            output = analyze_file_segments(v, pitch_function, padding=PADDING, stop_check=stop_check)
+            output = analyze_segments(v, pitch_function, stop_check=stop_check)
 
             sum_pitch = 0
             sum_square_pitch = 0
@@ -88,7 +88,8 @@ def analyze_pitch(corpus_context,
             for seg, track in output.items():
                 for t, v in track.items():
                     v = v['F0']
-                    if v > 0:  # only voiced frames
+
+                    if v is not None and v > 0:  # only voiced frames
 
                         n += 1
                         sum_pitch += v
@@ -113,7 +114,7 @@ def analyze_pitch(corpus_context,
             except SpeakerAttributeError:
                 pass
             pitch_function = generate_pitch_function(corpus_context.config.pitch_source, min_pitch, max_pitch,
-                                                     signal=True, path=path)
+                                                     path=path)
         elif algorithm == 'speaker_adjusted':
             mean_pitch, sd_pitch = speaker_data[speaker]
             min_pitch = int(mean_pitch - 3 * sd_pitch)
@@ -123,6 +124,6 @@ def analyze_pitch(corpus_context,
             if max_pitch > absolute_max_pitch:
                 max_pitch = absolute_max_pitch
             pitch_function = generate_pitch_function(corpus_context.config.pitch_source, min_pitch, max_pitch,
-                                                     signal=True, path=path)
-        output = analyze_file_segments(v, pitch_function, padding=PADDING, stop_check=stop_check)
+                                                     path=path)
+        output = analyze_segments(v, pitch_function, stop_check=stop_check)
         corpus_context.save_pitch_tracks(output, speaker)

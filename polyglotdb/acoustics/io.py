@@ -5,7 +5,7 @@ import csv
 import librosa
 import audioread
 
-from acousticsim.utils import write_wav
+from conch.utils import write_wav
 
 from ..io.importer.from_csv import make_path_safe
 

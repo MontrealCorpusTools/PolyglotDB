@@ -29,14 +29,14 @@ MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
                 'numpy', 'resampy', 'audioread',
                 'scipy', 'scipy.signal', 'scipy.io',
                 'librosa', 'librosa.core.spectrum', 'neo4j.v1',
-                'acousticsim',
-                'acousticsim.analysis',
-                'acousticsim.analysis.pitch',
-                'acousticsim.analysis.formants',
-                'acousticsim.analysis.intensity',
-                'acousticsim.multiprocessing',
-                'acousticsim.main', 'acousticsim.utils', 'acousticsim.analysis.praat',
-                'acousticsim.analysis.helper']
+                'conch',
+                'conch.analysis',
+                'conch.analysis.pitch',
+                'conch.analysis.formants',
+                'conch.analysis.intensity',
+                'conch.multiprocessing',
+                'conch.main', 'conch.utils'
+                'conch.analysis.helper']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()

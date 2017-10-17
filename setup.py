@@ -26,7 +26,7 @@ class PyTest(TestCommand):
 
 if __name__ == '__main__':
     setup(name='polyglotdb',
-          version='0.0.7',
+          version='0.1.0',
           description='',
           long_description=readme(),
           classifiers=[
@@ -70,7 +70,7 @@ if __name__ == '__main__':
           install_requires=[
               'neo4j-driver',
               'textgrid',
-              'acousticsim',
+              'conch_sounds',
               'librosa',
               'influxdb',
               'tqdm'
