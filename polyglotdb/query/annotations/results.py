@@ -133,10 +133,10 @@ class QueryResults(BaseQueryResults):
             else:
                 yield baseline
 
-    def to_csv(self, path):
+    def to_csv(self, path, mode='w'):
         if self.num_tracks > 1:
             raise (GraphQueryError('Only one track attribute can currently be exported to csv.'))
-        super(QueryResults, self).to_csv(path)
+        super(QueryResults, self).to_csv(path, mode=mode)
 
 
 class AnnotationRecord(BaseRecord):
