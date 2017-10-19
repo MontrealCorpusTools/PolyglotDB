@@ -1,6 +1,3 @@
-
-
-
 class BaseRecord(object):
     def __init__(self, result):
         self.columns = result.keys()
@@ -111,9 +108,9 @@ class BaseQueryResults(object):
         for line in self:
             yield {k: line[k] for k in header}
 
-    def to_csv(self, path):
+    def to_csv(self, path, mode='w'):
         from ...io import save_results
-        save_results(self.rows_for_csv(), path, header=self.columns)
+        save_results(self.rows_for_csv(), path, header=self.columns, mode=mode)
 
     def to_json(self):
         for line in self:

@@ -353,6 +353,16 @@ class SplitQuery(GraphQuery):
                 results.add_results(q)
         return results
 
+    def to_csv(self, path):
+        for i, q in enumerate(self.split_queries()):
+            if i == 0:
+                mode = 'w'
+            else:
+                mode = 'a'
+            r = q.all()
+
+            r.to_csv(path, mode=mode)
+
     def delete(self):
         """ deletes the query """
         for q in self.split_queries():
