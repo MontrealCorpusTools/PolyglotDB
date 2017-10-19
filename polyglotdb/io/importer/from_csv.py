@@ -109,8 +109,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
 
     with corpus_context.graph_driver.session() as session:
         for i, s in enumerate(speakers):
-            if call_back is not None:
-                call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), s))
+            speaker_statements = []
             for at in annotation_types:
                 if stop_check is not None and stop_check():
                     return
@@ -136,7 +135,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                 else:
                     token_prop_string = ''
                 if st is not None:
-                    rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
+                    rel_import_statement = '''USING PERIODIC COMMIT 4000
             LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
             MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
             (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
@@ -157,7 +156,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                               'stype': st}
                 else:
 
-                    rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
+                    rel_import_statement = '''USING PERIODIC COMMIT 4000
             LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
             MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
             (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
@@ -175,16 +174,20 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                               'token_property_string': token_prop_string,
                               'corpus_name': corpus_context.cypher_safe_name}
                 statement = rel_import_statement.format(**kwargs)
-                statements.append(statement)
-                log.info('Loading {} relationships...'.format(at))
+                speaker_statements.append(statement)
                 begin = time.time()
                 session.write_transaction(begin_index, at)
                 session.write_transaction(end_index, at)
-                log.info('Finished loading {} relationships!'.format(at))
-                log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
+            statements.append(speaker_statements)
 
-    for s in statements:
-        corpus_context.execute_cypher(s)
+    for i, speaker_statements in enumerate(statements):
+        if call_back is not None:
+            call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), speakers[i]))
+        for s in speaker_statements:
+            log.info('Loading {} relationships...'.format(at))
+            corpus_context.execute_cypher(s)
+            log.info('Finished loading {} relationships!'.format(at))
+            log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
 
     log.info('Finished importing {} into the graph database!'.format(data.name))
     log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))

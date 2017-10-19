@@ -317,9 +317,14 @@ class SplitQuery(GraphQuery):
                         if c.attribute.node == splitter_annotation and \
                                         c.attribute.label == 'name':
                             add_filter = False
-                            if c.value != x:
-                                skip = True
-                                break
+                            if isinstance(c.value, (list, tuple, set)):
+                                if x not in c.value:
+                                    skip = True
+                                    break
+                            else:
+                                if c.value != x:
+                                    skip = True
+                                    break
                     except AttributeError:
                         pass
                 if skip:

@@ -15,7 +15,9 @@ def enrich_speakers_from_csv(corpus_context, path):
     path : str
         the path to the csv file
     """
-    data, type_data = parse_file(path)
+    data, type_data = parse_file(path, labels=corpus_context.speakers)
+    if not data:
+        return
     corpus_context.enrich_speakers(data, type_data)
 
 
