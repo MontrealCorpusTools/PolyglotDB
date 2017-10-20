@@ -135,7 +135,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                 else:
                     token_prop_string = ''
                 if st is not None:
-                    rel_import_statement = '''USING PERIODIC COMMIT 4000
+                    rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
             LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
             MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
             (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
@@ -156,7 +156,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                               'stype': st}
                 else:
 
-                    rel_import_statement = '''USING PERIODIC COMMIT 4000
+                    rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
             LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
             MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
             (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),

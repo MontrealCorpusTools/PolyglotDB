@@ -277,7 +277,7 @@ class GraphQuery(BaseQuery):
 class SplitQuery(GraphQuery):
     splitter = ''
 
-    def base_query(self):
+    def base_query(self, filters=None):
         """ sets up base query
 
         Returns
@@ -290,6 +290,8 @@ class SplitQuery(GraphQuery):
             if isinstance(getattr(self, p), list):
                 for x in getattr(self, p):
                     getattr(q, p).append(x)
+            elif p == '_criterion' and filters is not None:
+                setattr(q, p, copy.deepcopy(filters))
             else:
                 setattr(q, p, copy.deepcopy(getattr(self, p)))
         return q
@@ -302,35 +304,31 @@ class SplitQuery(GraphQuery):
         splitter_names = sorted(getattr(self.corpus, self.splitter))
         if self.call_back is not None:
             self.call_back(0, len(splitter_names))
+        selection = []
+        reg_filters = []
+        for c in self._criterion:
+            try:
+                if c.attribute.node == splitter_annotation and \
+                                c.attribute.label == 'name':
+                    if isinstance(c.value, (list, tuple, set)):
+                        selection.extend(c.value)
+                    else:
+                        selection.append(c.value)
+                else:
+                    reg_filters.append(c)
+            except AttributeError:
+                reg_filters.append(c)
+
         for i, x in enumerate(splitter_names):
             if self.call_back is not None:
                 self.call_back(i)
                 self.call_back('Querying {} {} of {} ({})...'.format(attribute_name, i, len(splitter_names), x))
-            base = self.base_query()
+            base = self.base_query(reg_filters)
             al = base.required_nodes()
             al.update(base.optional_nodes())
-            add_filter = True
-            if splitter_annotation in al:
-                skip = False
-                for c in base._criterion:
-                    try:
-                        if c.attribute.node == splitter_annotation and \
-                                        c.attribute.label == 'name':
-                            add_filter = False
-                            if isinstance(c.value, (list, tuple, set)):
-                                if x not in c.value:
-                                    skip = True
-                                    break
-                            else:
-                                if c.value != x:
-                                    skip = True
-                                    break
-                    except AttributeError:
-                        pass
-                if skip:
-                    continue
-            if add_filter:
-                base = base.filter(splitter_attribute == x)
+            if selection and x not in selection:
+                continue
+            base = base.filter(splitter_attribute == x)
             yield base
 
     def set_pause(self):
