@@ -111,7 +111,6 @@ def test_encode_syllables_acoustic(acoustic_config):
             assert (all(x in syllabics for x in r['nucleus']))
             assert (all(x not in syllabics for x in r['coda']))
 
-            # c.reset_syllables()
 
 def test_encode_stress_from_word_property(acoustic_utt_config, stress_pattern_file):
     with CorpusContext(acoustic_utt_config) as c:

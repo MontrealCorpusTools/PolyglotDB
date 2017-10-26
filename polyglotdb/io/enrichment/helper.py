@@ -19,6 +19,8 @@ def parse_string(value):
     -------
     boolean, None, float, original value
     """
+    if value is None:
+        return None
     value = value.strip()
     if value.lower() == 'true':
         return True
