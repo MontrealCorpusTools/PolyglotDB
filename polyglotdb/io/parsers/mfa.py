@@ -142,6 +142,10 @@ class MfaParser(TextgridParser):
                     speaker, type = ti.name.split(' - ')
                 except ValueError:
                     continue
+                if type.startswith('word'):
+                    type = 'word'
+                elif type.startswith('phone'):
+                    type = 'phone'
                 if len(ti) == 1 and ti[0].mark.strip() == '':
                     continue
                 at = OrthographyTier(type, type)
@@ -149,7 +153,6 @@ class MfaParser(TextgridParser):
                 at.add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
                 self.annotation_types.append(at)
             pg_annotations = self._parse_annotations(types_only)
-
             data = DiscourseData(name, pg_annotations, self.hierarchy)
             data.speaker_channel_mapping = speaker_channel_mapping
 

@@ -207,6 +207,8 @@ class ImportContext(StructuredContext):
             path = os.path.join(root, filename)
             try:
                 information = parser.parse_information(path, self.corpus_name)
+                if not information['type_headers']:
+                    raise ParseError('There was an issue using this parser to parse the file {}.'.format(path))
                 speakers.update(information['speakers'])
                 type_headers = information['type_headers']
                 token_headers = information['token_headers']
