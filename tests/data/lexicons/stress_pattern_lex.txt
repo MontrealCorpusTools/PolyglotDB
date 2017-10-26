@@ -1,0 +1,6 @@
+word,stress_pattern
+acoustic,0-1-0
+corpus,1-0
+on,0
+intensity,0-1-0-0
+words,1

@@ -27,7 +27,10 @@ def parse_string(value):
     if value.lower() in ['none', 'null', 'na']:
         return None
     try:
-        v = float(value)
+        if '.' in value:
+            v = float(value)
+        else:
+            v = int(value)
         return v
     except ValueError:
         return value

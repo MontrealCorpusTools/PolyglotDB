@@ -45,6 +45,8 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                 file_path = r['d']['low_freq_file_path']
             else:
                 file_path = r['d']['consonant_file_path']
+            if file_path is None:
+                continue
             at = getattr(corpus_context, annotation_type)
             qr = corpus_context.query_graph(at)
             if subset is not None:

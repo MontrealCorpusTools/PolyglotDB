@@ -8,6 +8,8 @@ class BaseRecord(object):
             return self.values[self.columns.index(key)]
         raise KeyError('{} not in columns {}'.format(key, self.columns))
 
+    def __str__(self):
+        return ', '.join('{}: {}'.format(k, v) for k, v in zip(self.columns, self.values))
 
 class BaseQueryResults(object):
     def __init__(self, query):
@@ -30,6 +32,9 @@ class BaseQueryResults(object):
             self._to_find = query.to_find.alias
             self._to_find_type = query.to_find.type_alias
             self.columns = None
+
+    def __str__(self):
+        return '\n'.join(str(x) for x in self)
 
     def __getitem__(self, key):
         if key < 0:

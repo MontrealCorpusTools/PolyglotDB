@@ -112,3 +112,25 @@ def test_encode_syllables_acoustic(acoustic_config):
             assert (all(x not in syllabics for x in r['coda']))
 
             # c.reset_syllables()
+
+def test_encode_stress_from_word_property(acoustic_utt_config, stress_pattern_file):
+    with CorpusContext(acoustic_utt_config) as c:
+        c.enrich_lexicon_from_csv(stress_pattern_file)
+        c.encode_stress_from_word_property('stress_pattern')
+        q = c.query_graph(c.syllable)
+        q = q.filter(c.syllable.stress == '1')
+        q = q.columns(c.syllable.label.column_name('syllable'),
+                      c.syllable.word.label.column_name('word'))
+        results = q.all()
+        print(q.all())
+        assert len(results) == 8
+        for r in q.all():
+            assert r['word'] in ['words', 'acoustic', 'intensity', 'corpus']
+            if r['word'] == 'words':
+                assert r['syllable'] == 'w.er.d.z'
+            elif r['word'] == 'acoustic':
+                assert r['syllable'] == 'k.uw'
+            elif r['word'] == 'intensity':
+                assert r['syllable'] == 't.eh.n'
+            elif r['word'] == 'corpus':
+                assert r['syllable'] == 'k.er.p'

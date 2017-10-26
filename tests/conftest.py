@@ -540,3 +540,8 @@ def reaper_path():
 @pytest.fixture(scope='session')
 def localhost():
     return 'http://localhost:8000'
+
+
+@pytest.fixture(scope='session')
+def stress_pattern_file(test_dir):
+    return os.path.join(test_dir, 'lexicons', 'stress_pattern_lex.txt')

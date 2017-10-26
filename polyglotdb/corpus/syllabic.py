@@ -403,3 +403,25 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
             self.remove_pattern(regex)
         self.enrich_syllables(enrich_dict)
         self.encode_hierarchy()
+
+    def encode_stress_from_word_property(self, word_property_name):
+        if 'syllable' not in self.annotation_types:
+            raise Exception('Syllables have not been encoded.')
+        if not self.hierarchy.has_type_property(self.word_name, word_property_name):
+            raise Exception('Word types do not have a property {}.'.format(word_property_name))
+        if not self.hierarchy.has_type_property(self.word_name, 'num_syllables'):
+            self.encode_count('word', 'syllable', 'num_syllables')
+        if not self.hierarchy.has_type_property('syllable', 'position_in_word'):
+            self.encode_position('word', 'syllable', 'position_in_word')
+
+        for s in self.speakers:
+            statement = '''MATCH (s:syllable:{corpus_name})-[:spoken_by]->(speaker:Speaker:{corpus_name}),
+                        (s)-[:contained_by]->(w:word:{corpus_name})-[:is_a]->(wt:word_type:{corpus_name})
+                        WHERE speaker.name = $speaker_name
+                        AND wt.{word_property_name} is not null
+                        WITH s, w, split(wt.{word_property_name}, '-') as stresses
+                        WHERE length(stresses) = w.num_syllables
+                        SET s.stress = stresses[s.position_in_word-1]'''.format(
+                corpus_name=self.cypher_safe_name, word_property_name=word_property_name)
+            self.execute_cypher(statement, speaker_name=s)
+        self.hierarchy.add_token_properties(self, 'syllable', [('stress', str)])
