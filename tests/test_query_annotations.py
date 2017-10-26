@@ -6,6 +6,45 @@ from polyglotdb.query.base.complex import or_, and_
 from polyglotdb.utils import get_corpora_list
 
 
+def test_speaker_split_queries(overlapped_config):
+    with CorpusContext(overlapped_config) as g:
+        q = g.query_graph(g.word).filter(g.word.label == 'this')
+
+        results = q.all()
+        assert len(results) == 4
+
+        q = g.query_graph(g.word).filter(g.word.label == 'this')
+        q = q.filter(g.word.speaker.name == 'Speaker 1')
+        q = q.columns(g.word.speaker.name.column_name('speaker_name'))
+
+        results = q.all()
+        assert len(results) == 2
+        assert all(x['speaker_name'] == 'Speaker 1' for x in results)
+
+        q = g.query_graph(g.word).filter(g.word.label == 'this')
+        q = q.filter(g.word.speaker.name.in_('Speaker 1'))
+        q = q.columns(g.word.speaker.name.column_name('speaker_name'))
+
+        results = q.all()
+        assert len(results) == 2
+        assert all(x['speaker_name'] == 'Speaker 1' for x in results)
+
+        q = g.query_graph(g.word).filter(g.word.label == 'this')
+        q = q.filter(g.word.speaker.name != 'Speaker 1')
+        q = q.columns(g.word.speaker.name.column_name('speaker_name'))
+        results = q.all()
+        assert len(results) == 2
+        assert all(x['speaker_name'] == 'Speaker 2' for x in results)
+
+        q = g.query_graph(g.word).filter(g.word.label == 'this')
+        q = q.filter(g.word.speaker.name.not_in_('Speaker 1'))
+        q = q.columns(g.word.speaker.name.column_name('speaker_name'))
+
+        results = q.all()
+        assert len(results) == 2
+        assert all(x['speaker_name'] == 'Speaker 2' for x in results)
+
+
 def test_basic_query(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')

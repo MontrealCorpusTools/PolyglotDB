@@ -287,17 +287,18 @@ class SplitQuery(GraphQuery):
         """
         q = GraphQuery(self.corpus, self.to_find)
         for p in q._parameters:
-            if isinstance(getattr(self, p), list):
+            if p == '_criterion' and filters is not None:
+                setattr(q, p, filters)
+            elif isinstance(getattr(self, p), list):
                 for x in getattr(self, p):
                     getattr(q, p).append(x)
-            elif p == '_criterion' and filters is not None:
-                setattr(q, p, copy.deepcopy(filters))
             else:
                 setattr(q, p, copy.deepcopy(getattr(self, p)))
         return q
 
     def split_queries(self):
         """ splits a query into multiple queries """
+        from .elements import BaseNotEqualClauseElement, BaseNotInClauseElement
         attribute_name = self.splitter[:-1]  # remove 's', fixme maybe?
         splitter_annotation = getattr(self.to_find, attribute_name)
         splitter_attribute = getattr(splitter_annotation, 'name')
@@ -305,6 +306,7 @@ class SplitQuery(GraphQuery):
         if self.call_back is not None:
             self.call_back(0, len(splitter_names))
         selection = []
+        include = True
         reg_filters = []
         for c in self._criterion:
             try:
@@ -314,20 +316,26 @@ class SplitQuery(GraphQuery):
                         selection.extend(c.value)
                     else:
                         selection.append(c.value)
+                    if isinstance(c, (BaseNotEqualClauseElement, BaseNotInClauseElement)):
+                        include = False
                 else:
                     reg_filters.append(c)
             except AttributeError:
                 reg_filters.append(c)
 
         for i, x in enumerate(splitter_names):
+            if selection:
+                if include and x not in selection:
+                    continue
+                if not include and x in selection:
+                    continue
             if self.call_back is not None:
                 self.call_back(i)
                 self.call_back('Querying {} {} of {} ({})...'.format(attribute_name, i, len(splitter_names), x))
+
             base = self.base_query(reg_filters)
             al = base.required_nodes()
             al.update(base.optional_nodes())
-            if selection and x not in selection:
-                continue
             base = base.filter(splitter_attribute == x)
             yield base
 

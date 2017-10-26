@@ -52,6 +52,7 @@ def timit_test_dir(test_dir):
 def textgrid_test_dir(test_dir):
     return os.path.join(test_dir, 'textgrids')
 
+
 @pytest.fixture(scope='session')
 def praatscript_test_dir(test_dir):
     return os.path.join(test_dir, 'praat_scripts')
@@ -422,6 +423,26 @@ def acoustic_utt_config(graph_db, textgrid_test_dir, acoustic_syllabics):
     with CorpusContext(config) as c:
         c.reset()
         parser = inspect_textgrid(acoustic_path)
+        c.load(parser, acoustic_path)
+
+        c.encode_pauses(['sil'])
+        c.encode_utterances(min_pause_length=0)
+        c.encode_syllabic_segments(acoustic_syllabics)
+        c.encode_syllables()
+
+    config.pitch_algorithm = 'acousticsim'
+    config.formant_source = 'acousticsim'
+    return config
+
+
+@pytest.fixture(scope='session')
+def overlapped_config(graph_db, textgrid_test_dir, acoustic_syllabics):
+    config = CorpusConfig('overlapped', **graph_db)
+
+    acoustic_path = os.path.join(textgrid_test_dir, 'overlapped_speech')
+    with CorpusContext(config) as c:
+        c.reset()
+        parser = inspect_mfa(acoustic_path)
         c.load(parser, acoustic_path)
 
         c.encode_pauses(['sil'])
