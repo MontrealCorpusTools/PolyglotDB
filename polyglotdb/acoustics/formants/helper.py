@@ -167,7 +167,7 @@ def get_mean_SD(data):
                     value['B2'],
                     value['B3']
                 ]
-                observation_list.append(observation)
+                observation_list.append([x if x else 0 for x in observation])
 
         f1_mean, f2_mean, f3_mean = mean(x[0] for x in observation_list), mean(x[1] for x in observation_list), mean(
             x[2] for x in observation_list)
