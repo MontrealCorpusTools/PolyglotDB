@@ -425,3 +425,4 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                 corpus_name=self.cypher_safe_name, word_property_name=word_property_name)
             self.execute_cypher(statement, speaker_name=s)
         self.hierarchy.add_token_properties(self, 'syllable', [('stress', str)])
+        self.encode_hierarchy()

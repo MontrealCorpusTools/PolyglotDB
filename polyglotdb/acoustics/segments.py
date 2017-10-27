@@ -2,7 +2,7 @@ from conch.analysis.segments import SegmentMapping
 
 
 def generate_segments(corpus_context, annotation_type='utterance', subset=None, file_type='vowel',
-                      duration_threshold=None, padding=None):
+                      duration_threshold=0.001, padding=None):
     """
     Generate segment vectors for an annotation type, to be used as input to analyze_file_segments.
 
@@ -46,6 +46,7 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
             else:
                 file_path = r['d']['consonant_file_path']
             if file_path is None:
+                print("Skipping discourse {} because no wav file exists.".format(discourse))
                 continue
             at = getattr(corpus_context, annotation_type)
             qr = corpus_context.query_graph(at)
@@ -59,6 +60,8 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
             if annotations is not None:
                 for a in annotations:
                     if duration_threshold is not None and a.end - a.begin < duration_threshold:
+                        continue
+                    if a.begin == a.end: # Skip zero duration segments if they exist
                         continue
                     segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label,
                                                      id=a.id, discourse=discourse, channel=channel, speaker=s,
