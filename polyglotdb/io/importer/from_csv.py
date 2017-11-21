@@ -579,7 +579,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                             '{}_syllable.csv'.format(s))
         csv_path = 'file:///{}'.format(make_path_safe(path))
 
-        statement = '''CYPHER planner=rule USING PERIODIC COMMIT 500
+        statement = '''CYPHER planner=rule USING PERIODIC COMMIT 3000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
         MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
         ON CREATE SET s_type.label = csvLine.label
@@ -672,7 +672,7 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                             '{}_nonsyl.csv'.format(s))
         csv_path = 'file:///{}'.format(make_path_safe(path))
 
-        statement = '''CYPHER planner=rule USING PERIODIC COMMIT 500
+        statement = '''CYPHER planner=rule USING PERIODIC COMMIT 3000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
         MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
         ON CREATE SET s_type.label = csvLine.label

@@ -42,17 +42,17 @@ class MfaParser(TextgridParser):
                 speaker, name = ti.name.split('-')
                 speaker = speaker.strip()
                 name = name.strip()
-                if name.startswith('word'):
+                if name.lower().startswith('word'):
                     found_words[speaker] = True
-                elif name.startswith('word'):
+                elif name.lower().startswith('phone'):
                     found_phones[speaker] = True
             found_word = all(found_words.values())
             found_phone = all(found_words.values())
         else:
             for ti in tg.tiers:
-                if ti.name.startswith('word'):
+                if ti.name.lower().startswith('word'):
                     found_word = True
-                elif ti.name.startswith('phone'):
+                elif ti.name.lower().startswith('phone'):
                     found_phone = True
         return multiple_speakers, found_word and found_phone
 
@@ -76,7 +76,7 @@ class MfaParser(TextgridParser):
         multiple_speakers, is_valid = self._is_valid(tg)
 
         if not is_valid:
-            raise (TextGridError('This file cannot be parsed by the MFA parser.'))
+            raise (TextGridError('This file ({}) cannot be parsed by the MFA parser.'.format(path)))
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         # Format 1
@@ -92,9 +92,9 @@ class MfaParser(TextgridParser):
 
             # Parse the tiers
             for i, ti in enumerate(tg.tiers):
-                if ti.name.startswith('word'):
+                if ti.name.lower().startswith('word'):
                     self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
-                elif ti.name.startswith('phone'):
+                elif ti.name.lower().startswith('phone'):
                     self.annotation_types[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             pg_annotations = self._parse_annotations(types_only)
 
@@ -142,9 +142,9 @@ class MfaParser(TextgridParser):
                     speaker, type = ti.name.split(' - ')
                 except ValueError:
                     continue
-                if type.startswith('word'):
+                if type.lower().startswith('word'):
                     type = 'word'
-                elif type.startswith('phone'):
+                elif type.lower().startswith('phone'):
                     type = 'phone'
                 if len(ti) == 1 and ti[0].mark.strip() == '':
                     continue

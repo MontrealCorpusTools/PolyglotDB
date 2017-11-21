@@ -209,6 +209,7 @@ class StructuredContext(BaseContext):
 
         q.cache(higher.position.column_name(name))
         self.hierarchy.add_token_properties(self, lower_annotation_type, [(name, float)])
+        self.encode_hierarchy()
 
     def encode_rate(self, higher_annotation_type, lower_annotation_type, name, subset=None):
         """
@@ -234,6 +235,7 @@ class StructuredContext(BaseContext):
         q.cache(lower.rate.column_name(name))
 
         self.hierarchy.add_token_properties(self, higher_annotation_type, [(name, float)])
+        self.encode_hierarchy()
 
     def encode_count(self, higher_annotation_type, lower_annotation_type, name, subset=None):
         """
@@ -259,6 +261,7 @@ class StructuredContext(BaseContext):
         q.cache(lower.count.column_name(name))
 
         self.hierarchy.add_token_properties(self, higher_annotation_type, [(name, float)])
+        self.encode_hierarchy()
 
     def reset_property(self, annotation_type, name):
         """
@@ -274,3 +277,4 @@ class StructuredContext(BaseContext):
         q = self.query_graph(getattr(self, annotation_type))
         q.set_properties(**{name: None})
         self.hierarchy.remove_token_properties(self, annotation_type, [name])
+        self.encode_hierarchy()
