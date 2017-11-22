@@ -117,8 +117,10 @@ class AudioContext(SyllabicContext):
     def analyze_intensity(self, stop_check=None, call_back=None):
         analyze_intensity(self, stop_check, call_back)
 
-    def analyze_script(self, phone_class, script_path, arguments=None, stop_check=None, call_back=None):
-        analyze_script(self, phone_class, script_path, arguments=arguments, stop_check=stop_check, call_back=call_back)
+    def analyze_script(self, phone_class, script_path, duration_threshold=0.01, arguments=None, stop_check=None,
+                       call_back=None):
+        analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold, arguments=arguments,
+                       stop_check=stop_check, call_back=call_back)
 
     def genders(self):
         res = self.execute_cypher(

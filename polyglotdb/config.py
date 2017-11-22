@@ -75,14 +75,19 @@ class CorpusConfig(object):
         if data_dir is None:
             data_dir = BASE_DIR
         self.base_dir = os.path.join(data_dir, self.corpus_name)
+        os.makedirs(self.base_dir, exist_ok=True)
 
         self.log_level = logging.DEBUG
 
         self.log_dir = os.path.join(self.base_dir, 'logs')
+        os.makedirs(self.log_dir, exist_ok=True)
 
         self.temp_dir = os.path.join(self.base_dir, 'temp')
+        os.makedirs(self.temp_dir, exist_ok=True)
         self.data_dir = os.path.join(self.base_dir, 'data')
+        os.makedirs(self.data_dir, exist_ok=True)
         self.audio_dir = os.path.join(self.data_dir, 'audio')
+        os.makedirs(self.audio_dir, exist_ok=True)
 
         self.engine = 'sqlite'
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
