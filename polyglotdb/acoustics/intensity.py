@@ -8,6 +8,7 @@ from .utils import PADDING
 
 
 def analyze_intensity(corpus_context,
+                      source='praat',
                       call_back=None,
                       stop_check=None):
     """
@@ -39,11 +40,7 @@ def analyze_intensity(corpus_context,
 
 
 def generate_base_intensity_function(corpus_context):
-    algorithm = corpus_context.config.intensity_source
-    if algorithm == 'praat':
-        if getattr(corpus_context.config, 'praat_path', None) is None:
-            raise (AcousticError('Could not find the Praat executable'))
-        intensity_function = PraatSegmentIntensityTrackFunction(praat_path=corpus_context.config.praat_path, time_step=0.01)
-    else:
-        raise (NotImplementedError('Only function for intensity currently implemented is Praat.'))
+    if getattr(corpus_context.config, 'praat_path', None) is None:
+        raise (AcousticError('Could not find the Praat executable'))
+    intensity_function = PraatSegmentIntensityTrackFunction(praat_path=corpus_context.config.praat_path, time_step=0.01)
     return intensity_function

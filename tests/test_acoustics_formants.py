@@ -17,10 +17,10 @@ acoustic = pytest.mark.skipif(
 @acoustic
 def test_analyze_formants_basic_praat(acoustic_utt_config, praat_path, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_source = 'praat'
+        g.reset_acoustics()
         g.config.praat_path = praat_path
         g.analyze_formant_tracks()
-        assert (g.has_formants(g.discourses[0], 'praat'))
+        assert (g.has_formants(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
         results = q.all()
@@ -33,11 +33,11 @@ def test_analyze_formants_basic_praat(acoustic_utt_config, praat_path, results_t
 
 def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_source = 'praat'
+        g.reset_acoustics()
         g.config.praat_path = praat_path
         vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
         g.analyze_vowel_formant_tracks(vowel_inventory=vowel_inventory)
-        assert (g.has_formants(g.discourses[0], 'praat'))
+        assert (g.has_formants(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
         results = q.all()
@@ -53,13 +53,13 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
 @acoustic
 def test_analyze_formants_gendered_praat(acoustic_utt_config, praat_path, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_source = 'praat'
+        g.reset_acoustics()
         gender_dict = {'gender': 'male'}
         g.hierarchy.add_speaker_properties(g, gender_dict.items())
         assert (g.hierarchy.has_speaker_property('gender'))
         g.config.praat_path = praat_path
         g.analyze_formant_tracks()
-        assert (g.has_formants(g.discourses[0], 'praat'))
+        assert (g.has_formants(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
         results = q.all()
@@ -72,7 +72,7 @@ def test_analyze_formants_gendered_praat(acoustic_utt_config, praat_path, result
 
 def test_query_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_source = 'dummy'
+        g.reset_acoustics()
         expected_formants = {Decimal('4.23'): {'F1': 501, 'F2': 1500, 'F3': 2500},
                              Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2500},
                              Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
@@ -97,7 +97,6 @@ def test_query_formants(acoustic_utt_config):
 
 def test_query_aggregate_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.formant_source = 'dummy'
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -123,7 +122,6 @@ def test_refine_formants(acoustic_utt_config, praat_path, export_test_dir):
     output_path = os.path.join(export_test_dir, 'formant_vowel_data.csv')
     with CorpusContext(acoustic_utt_config) as g:
         test_phone_label = 'ow'
-        g.config.formant_source = 'praat'
         g.config.praat_path = praat_path
         vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
         old_data = analyze_formant_points(corpus_context=g, vowel_inventory=vowel_inventory)
@@ -146,7 +144,6 @@ def test_extract_formants_full(acoustic_utt_config, praat_path, export_test_dir)
     output_path = os.path.join(export_test_dir, 'full_formant_vowel_data.csv')
     with CorpusContext(acoustic_utt_config) as g:
         test_phone_label = 'ow'
-        g.config.formant_source = 'praat'
         g.config.praat_path = praat_path
         vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
         print("starting test")

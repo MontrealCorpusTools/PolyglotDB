@@ -92,11 +92,8 @@ class CorpusConfig(object):
         self.engine = 'sqlite'
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
 
-        self.pitch_source = 'reaper'
         self.pitch_algorithm = 'speaker_adjusted'
-        self.formant_source = 'praat'
         self.formant_algorithm = 'fave'
-        self.intensity_source = 'praat'
         self.time_sampling = 0.01
 
         for k, v in kwargs.items():

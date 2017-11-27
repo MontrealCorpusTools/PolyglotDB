@@ -1,11 +1,11 @@
 from conch.analysis.pitch import ReaperPitchTrackFunction, PraatSegmentPitchTrackFunction, PitchTrackFunction
 
 
-def generate_pitch_function(algorithm, min_pitch, max_pitch, path=None, pulses=False, kwargs=None):
+def generate_pitch_function(algorithm, min_pitch, max_pitch, path=None, with_pulses=False, kwargs=None):
     time_step = 0.01
     if algorithm == 'reaper':
         pitch_function = ReaperPitchTrackFunction(reaper_path=path, min_pitch=min_pitch, max_pitch=max_pitch,
-                                                  with_pulses=pulses, time_step=time_step)
+                                                  with_pulses=with_pulses, time_step=time_step)
     elif algorithm == 'praat':
         if kwargs is None:
             kwargs = {}

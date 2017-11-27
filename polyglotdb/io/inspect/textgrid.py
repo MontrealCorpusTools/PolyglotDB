@@ -103,9 +103,9 @@ def average_duration(tier):
     """
 
     if isinstance(tier, IntervalTier):
-        return sum(x.maxTime - x.minTime for x in tier) / len(tier)
+        return sum(float(x.maxTime) - float(x.minTime) for x in tier) / len(tier)
     else:
-        return tier.maxTime / len(tier)
+        return float(tier.maxTime) / len(tier)
 
 
 def averageLabelLen(tier):

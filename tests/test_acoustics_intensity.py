@@ -13,7 +13,6 @@ acoustic = pytest.mark.skipif(
 
 def test_query_intensity(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.intensity_source = 'dummy'
         expected_intensity = {Decimal('4.23'): {'Intensity': 98},
                               Decimal('4.24'): {'Intensity': 100},
                               Decimal('4.25'): {'Intensity': 99},
@@ -37,10 +36,9 @@ def test_query_intensity(acoustic_utt_config):
 @acoustic
 def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.intensity_source = 'praat'
         g.config.praat_path = praat_path
         g.analyze_intensity()
-        assert (g.has_intensity(g.discourses[0], 'praat'))
+        assert (g.has_intensity(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.intensity.track)
         results = q.all()

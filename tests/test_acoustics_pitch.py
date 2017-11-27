@@ -12,13 +12,29 @@ acoustic = pytest.mark.skipif(
 
 
 @acoustic
+def test_analyze_discourse_pitch(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        track = g.analyze_discourse_pitch('acoustic_corpus', pitch_source='praat', min_pitch=80, max_pitch=90)
+        assert track
+
+@acoustic
+def test_save_new_pitch_track(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        track = g.analyze_discourse_pitch('acoustic_corpus', pitch_source='praat', min_pitch=80, max_pitch=90)
+        print(track)
+        for x in track:
+            x['F0'] = 100
+        g.update_pitch_track(track)
+
+
+@acoustic
 def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'praat'
+        g.reset_acoustics()
         g.config.praat_path = praat_path
         g.config.pitch_algorithm = 'basic'
         g.analyze_pitch()
-        assert (g.has_pitch(g.discourses[0], 'praat'))
+        assert (g.has_pitch(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.pitch.track)
         print(q.cypher())
@@ -31,7 +47,6 @@ def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
 @acoustic
 def test_track_mean_query(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'praat'
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track, g.phone.pitch.mean)
         results = q.all()
@@ -47,7 +62,6 @@ def test_track_mean_query(acoustic_utt_config):
 @acoustic
 def test_track_following_mean_query(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'praat'
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track,
                       g.phone.following.pitch.mean.column_name('following_phone_pitch_mean'))
@@ -64,7 +78,6 @@ def test_track_following_mean_query(acoustic_utt_config):
 @acoustic
 def test_track_hierarchical_mean_query(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'praat'
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track,
                       g.phone.word.pitch.mean.column_name('word_pitch_mean'))
@@ -81,7 +94,6 @@ def test_track_hierarchical_mean_query(acoustic_utt_config):
 @acoustic
 def test_track_hierarchical_following_mean_query(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'praat'
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track,
                       g.phone.word.pitch.mean.column_name('word_pitch_mean'),
@@ -100,7 +112,6 @@ def test_track_hierarchical_following_mean_query(acoustic_utt_config):
 @acoustic
 def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'praat'
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.label, g.phone.pitch.track,
                       g.phone.syllable.following.pitch.mean.column_name('following_syllable_pitch_mean'),
@@ -128,35 +139,35 @@ def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_te
 @acoustic
 def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'reaper'
+        g.reset_acoustics()
         g.config.reaper_path = reaper_path
         g.config.pitch_algorithm = 'basic'
-        g.analyze_pitch()
-
-
-@acoustic
-def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
-    with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'praat'
-        g.config.praat_path = praat_path
-        g.config.pitch_algorithm = 'gendered'
-        g.analyze_pitch()
+        g.analyze_pitch(source='reaper')
 
 
 @acoustic
 def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
-        g.config.pitch_source = 'praat'
+        g.config.praat_path = praat_path
+        g.config.pitch_algorithm = 'gendered'
+        g.analyze_pitch(source = 'praat')
+
+
+@acoustic
+def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.reset_acoustics()
         g.config.praat_path = praat_path
         g.config.pitch_algorithm = 'speaker_adjusted'
-        g.analyze_pitch()
+        g.analyze_pitch(source = 'praat')
         assert (g.has_pitch('acoustic_corpus'))
 
 
 def test_query_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'dummy'
+        g.reset_acoustics()
         expected_pitch = {Decimal('4.23'): {'F0': 98},
                           Decimal('4.24'): {'F0': 100},
                           Decimal('4.25'): {'F0': 99},
@@ -179,7 +190,6 @@ def test_query_pitch(acoustic_utt_config):
 
 def test_query_aggregate_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'dummy'
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
@@ -195,7 +205,6 @@ def test_query_aggregate_pitch(acoustic_utt_config):
 
 def test_export_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        g.config.pitch_source = 'dummy'
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
