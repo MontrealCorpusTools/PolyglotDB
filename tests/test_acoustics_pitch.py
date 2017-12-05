@@ -14,17 +14,33 @@ acoustic = pytest.mark.skipif(
 @acoustic
 def test_analyze_discourse_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        track = g.analyze_discourse_pitch('acoustic_corpus', pitch_source='praat', min_pitch=80, max_pitch=90)
-        assert track
+
+        r = g.query_graph(g.utterance).all()
+        assert(len(r))
+        for u in r:
+            track = g.analyze_utterance_pitch(u, pitch_source='praat', min_pitch=80, max_pitch=90)
+            assert track
 
 @acoustic
 def test_save_new_pitch_track(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        track = g.analyze_discourse_pitch('acoustic_corpus', pitch_source='praat', min_pitch=80, max_pitch=90)
-        print(track)
-        for x in track:
-            x['F0'] = 100
-        g.update_pitch_track(track)
+        g.reset_acoustics()
+        g.analyze_pitch('praat')
+        r = g.query_graph(g.utterance).all()
+        assert(len(r))
+        for u in r:
+            print(u.id)
+            track = g.analyze_utterance_pitch(u, pitch_source='praat')
+            print(len(track))
+            for x in track:
+                x['F0'] = 100
+            g.update_utterance_pitch_track(u, track)
+        q = g.query_graph(g.utterance).columns(g.utterance.id,g.utterance.pitch.track)
+        for r in q.all():
+            print(r)
+            print(len(r.track))
+            for t,p in r.track.items():
+                assert p == {'F0':100}
 
 
 @acoustic

@@ -3,14 +3,16 @@ from conch.analysis.pitch import ReaperPitchTrackFunction, PraatSegmentPitchTrac
 
 def generate_pitch_function(algorithm, min_pitch, max_pitch, path=None, with_pulses=False, kwargs=None):
     time_step = 0.01
+    print(algorithm, with_pulses)
     if algorithm == 'reaper':
+        print('HIIIIIII')
         pitch_function = ReaperPitchTrackFunction(reaper_path=path, min_pitch=min_pitch, max_pitch=max_pitch,
                                                   with_pulses=with_pulses, time_step=time_step)
     elif algorithm == 'praat':
         if kwargs is None:
             kwargs = {}
         pitch_function = PraatSegmentPitchTrackFunction(praat_path=path, min_pitch=min_pitch, max_pitch=max_pitch,
-                                                 time_step=time_step, **kwargs)
+                                                 time_step=time_step, with_pulses=with_pulses, **kwargs)
     else:
         pitch_function = PitchTrackFunction(min_pitch=min_pitch, max_pitch=max_pitch, time_step=time_step)
     return pitch_function

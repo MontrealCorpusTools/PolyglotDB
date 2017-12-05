@@ -8,7 +8,7 @@ from influxdb import InfluxDBClient
 
 from polyglotdb.query.discourse import DiscourseInspector
 from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_vowel_formant_tracks, analyze_intensity, \
-    analyze_script, analyze_discourse_pitch, update_pitch_track
+    analyze_script, analyze_utterance_pitch, update_utterance_pitch_track
 from .syllabic import SyllabicContext
 
 from ..acoustics.utils import load_waveform, generate_spectrogram
@@ -105,11 +105,11 @@ class AudioContext(SyllabicContext):
     def analyze_pitch(self, source='praat', stop_check=None, call_back=None):
         analyze_pitch(self, source, stop_check, call_back)
 
-    def analyze_discourse_pitch(self, discourse, source='praat', **kwargs):
-        return analyze_discourse_pitch(self, discourse, source, **kwargs)
+    def analyze_utterance_pitch(self, utterance, source='praat', **kwargs):
+        return analyze_utterance_pitch(self, utterance, source, **kwargs)
 
-    def update_pitch_track(self, new_track):
-        update_pitch_track(self, new_track)
+    def update_utterance_pitch_track(self, utterance, new_track):
+        update_utterance_pitch_track(self, utterance, new_track)
 
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None):
         analyze_formant_tracks(self, source, stop_check, call_back)
@@ -166,7 +166,7 @@ class AudioContext(SyllabicContext):
         """
         return DiscourseInspector(self, discourse, begin, end)
 
-    def load_waveform(self, discourse, file_type='consonant'):
+    def load_waveform(self, discourse, file_type='consonant', begin=None, end=None):
         sf = self.discourse_sound_file(discourse)
         if file_type == 'consonant':
             file_path = sf['consonant_file_path']
@@ -176,10 +176,10 @@ class AudioContext(SyllabicContext):
             file_path = sf['low_freq_file_path']
         else:
             file_path = sf['file_path']
-        return load_waveform(file_path)
+        return load_waveform(file_path, begin, end)
 
-    def generate_spectrogram(self, discourse, file_type='consonant'):
-        signal, sr = self.load_waveform(discourse, file_type)
+    def generate_spectrogram(self, discourse, file_type='consonant', begin=None, end=None):
+        signal, sr = self.load_waveform(discourse, file_type, begin, end)
         return generate_spectrogram(signal, sr)
 
     def discourse_audio_directory(self, discourse):
@@ -453,7 +453,6 @@ class AudioContext(SyllabicContext):
                     if value <= 0:
                         continue
                     fields['F0'] = value
-                    print(fields)
                 elif measurement == 'intensity':
                     try:
                         if value['Intensity'] is None:
@@ -653,7 +652,6 @@ class AudioContext(SyllabicContext):
         return True
 
     def encode_acoustic_statistic(self, acoustic_measure, statistic, by_phone=True, by_speaker=False):
-        print('hello')
         if not by_speaker and not by_phone:
             raise (Exception('Please specify either by_phone, by_speaker or both.'))
         client = self.acoustic_client()
@@ -773,7 +771,6 @@ class AudioContext(SyllabicContext):
                                                                                     statistic=statistic,
                                                                                     measure=acoustic_measure)
                 self.hierarchy.add_speaker_properties(self, [('{}_{}'.format(statistic, acoustic_measure), float)])
-        print(results)
         self.execute_cypher(statement, data=results)
         self.encode_hierarchy()
 
@@ -835,25 +832,34 @@ class AudioContext(SyllabicContext):
                 results = {x['speaker']: [x[name]] for x in results}
         return results
 
-    def relativize_pitch(self, by_speaker=True):
+    def relativize_pitch(self, by_speaker=True, by_phone=False):
+        if not by_speaker and not by_phone:
+            raise Exception('Relativization must be by phone, speaker, or both.')
         client = self.acoustic_client()
         phone_type = getattr(self, self.phone_name)
 
         summary_data = {}
-        for p in self.phones:
-            if by_speaker:
-                query = '''select mean("F0"), stddev("F0") from "pitch" where "phone" = '{}' group by "speaker";'''.format(p)
-                result = client.query(query)
-                for k, v in result.items():
-                    v = list(v)
-                    summary_data[(k[1]['speaker'], p)] = v[0]['mean'], v[0]['stddev']
+        if by_phone:
+            for p in self.phones:
+                if by_speaker:
+                    query = '''select mean("F0"), stddev("F0") from "pitch" where "phone" = '{}' group by "speaker";'''.format(p)
+                    result = client.query(query)
+                    for k, v in result.items():
+                        v = list(v)
+                        summary_data[(k[1]['speaker'], p)] = v[0]['mean'], v[0]['stddev']
 
-            else:
-                query = '''select mean("F0"), stddev("F0") from "pitch" where "phone" = '{}';'''.format(p)
-                result = client.query(query)
-                for k, v in result.items():
-                    v = list(v)
-                    summary_data[p] = v[0]['mean'], v[0]['stddev']
+                else:
+                    query = '''select mean("F0"), stddev("F0") from "pitch" where "phone" = '{}';'''.format(p)
+                    result = client.query(query)
+                    for k, v in result.items():
+                        v = list(v)
+                        summary_data[p] = v[0]['mean'], v[0]['stddev']
+        else:
+            query = '''select mean("F0"), stddev("F0") from "pitch" where "phone" != '' group by "speaker";'''
+            result = client.query(query)
+            for k, v in result.items():
+                v = list(v)
+                summary_data[k[1]['speaker']] = v[0]['mean'], v[0]['stddev']
 
         all_query = '''select * from "pitch"
                         where "phone" != '' and "speaker" != '';'''
@@ -862,10 +868,12 @@ class AudioContext(SyllabicContext):
         for _, r in all_results.items():
             for t_dict in r:
                 phone = t_dict.pop('phone')
-                if by_speaker:
+                if by_speaker and by_phone:
                     mean_f0, sd_f0 = summary_data[(t_dict['speaker'], phone)]
-                else:
+                elif by_phone and not by_speaker:
                     mean_f0, sd_f0 = summary_data[phone]
+                elif by_speaker:
+                    mean_f0, sd_f0 = summary_data[t_dict['speaker']]
                 if sd_f0 is None:
                     continue
                 pitch = t_dict.pop('F0')

@@ -6,11 +6,16 @@ import numpy as np
 from scipy.signal import gaussian
 from librosa.core.spectrum import stft
 
-
 PADDING = 0.1
 
-def load_waveform(file_path):
-    signal, sr = librosa.load(file_path, sr=None)
+
+def load_waveform(file_path, begin=None, end=None):
+    if begin is None:
+        begin = 0.0
+    duration=None
+    if end is not None:
+        duration = end - begin
+    signal, sr = librosa.load(file_path, sr=None, offset=begin, duration=duration)
 
     signal = lfilter([1., -0.95], 1, signal, axis=0)
     return signal, sr

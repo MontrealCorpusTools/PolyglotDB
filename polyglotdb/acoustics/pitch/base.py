@@ -10,39 +10,32 @@ from ...exceptions import SpeakerAttributeError
 from ..utils import PADDING
 
 
-def analyze_discourse_pitch(corpus_context, discourse, source='praat', min_pitch=50, max_pitch=500, with_pulses=False, **kwargs):
-    print(kwargs)
+def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch=50, max_pitch=500, with_pulses=False,
+                            **kwargs):
+    if isinstance(utterance, str):
+        utterance_id = utterance
+    else:
+        utterance_id = utterance.id
     padding = kwargs.pop('padding', None)
     if padding is None:
         padding = PADDING
-    statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
-                WHERE d.name = {{discourse_name}}
-                RETURN d, s, r'''.format(corpus_name=corpus_context.cypher_safe_name)
-    results = corpus_context.execute_cypher(statement, discourse_name=discourse)
+    utt_type = corpus_context.hierarchy.highest
+    statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name}),
+                (u:{utt_type}:{corpus_name})-[:spoken_by]->(s),
+                (u)-[:spoken_in]->(d)
+                WHERE u.id = {{utterance_id}}
+                RETURN u, d, r'''.format(corpus_name=corpus_context.cypher_safe_name, utt_type=utt_type)
+    results = corpus_context.execute_cypher(statement, utterance_id=utterance_id)
     segment_mapping = SegmentMapping()
-    segment_to_speaker = {}
     for r in results:
         channel = r['r']['channel']
-        speaker = r['s']['name']
-
-        discourse = r['d']['name']
         file_path = r['d']['vowel_file_path']
-        atype = corpus_context.hierarchy.highest
-        prob_utt = getattr(corpus_context, atype)
-        q = corpus_context.query_graph(prob_utt)
-        q = q.filter(prob_utt.discourse.name == discourse)
-        q = q.filter(prob_utt.speaker.name == speaker)
-        utterances = q.all()
-        for u in utterances:
-            segment_mapping.add_file_segment(file_path, u.begin, u.end, channel, padding=padding)
-            segment_to_speaker[segment_mapping[-1]] = speaker
-    print(segment_mapping.segments)
+        u = r['u']
+        segment_mapping.add_file_segment(file_path, u['begin'], u['end'], channel, padding=padding)
+
     path = None
     if source == 'praat':
         path = corpus_context.config.praat_path
-        # kwargs = {'silence_threshold': 0.03,
-        #          'voicing_threshold': 0.45, 'octave_cost': 0.01, 'octave_jump_cost': 0.35,
-        #          'voiced_unvoiced_cost': 0.14}
     elif source == 'reaper':
         path = corpus_context.config.reaper_path
     pitch_function = generate_pitch_function(source, min_pitch, max_pitch, path=path, with_pulses=with_pulses)
@@ -50,19 +43,83 @@ def analyze_discourse_pitch(corpus_context, discourse, source='praat', min_pitch
     pulses = []
     for seg in segment_mapping:
         output = pitch_function(seg)
-        if pulses:
+        if with_pulses:
+            print(output)
             output, p = output
             pulses.extend(p)
 
         for k, v in output.items():
-            track.append({'time': k, 'F0':v['F0'], 'speaker':segment_to_speaker[seg], 'channel':seg.channel, 'discourse':discourse})
+            track.append({'time': k, 'F0': v['F0']})
     track = sorted(track, key=lambda x: x['time'])
-    if pulses:
+    if with_pulses:
         return track, sorted(pulses)
     return track
 
-def update_pitch_track(corpus_context, new_track):
-    pass
+
+def update_utterance_pitch_track(corpus_context, utterance, new_track):
+    from ...corpus.audio import s_to_ms, to_nano
+    if isinstance(utterance, str):
+        utterance_id = utterance
+    else:
+        utterance_id = utterance.id
+    utt_type = corpus_context.hierarchy.highest
+    phone_type = corpus_context.hierarchy.lowest
+    statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name}),
+                (u:{utt_type}:{corpus_name})-[:spoken_by]->(s),
+                (u)-[:spoken_in]->(d),
+                (p:{phone_type}:{corpus_name})-[:contained_by*]->(u)
+                WHERE u.id = {{utterance_id}}
+                RETURN u, d, r, s, collect(p) as p'''.format(corpus_name=corpus_context.cypher_safe_name,
+                                                             utt_type=utt_type, phone_type=phone_type)
+    results = corpus_context.execute_cypher(statement, utterance_id=utterance_id)
+
+    for r in results:
+        channel = r['r']['channel']
+        discourse = r['d']['name']
+        speaker = r['s']['name']
+        u = r['u']
+        phones = r['p']
+    query = '''DELETE from "pitch"
+                    where "discourse" = '{}' 
+                    and "speaker" = '{}' 
+                    and "time" >= {} 
+                    and "time" <= {};'''.format(discourse, speaker, to_nano(u['begin']), to_nano(u['end']))
+    client = corpus_context.acoustic_client()
+    result = client.query(query)
+    data = []
+    for data_point in new_track:
+        speaker, discourse, channel = speaker, discourse, channel
+        time_point, value = data_point['time'], data_point['F0']
+        t_dict = {'speaker': speaker, 'discourse': discourse, 'channel': channel}
+        label = None
+        for i, p in enumerate(phones):
+            if p['begin'] > time_point:
+                break
+            label = p['label']
+            if i == len(phones) - 1:
+                break
+        else:
+            label = None
+        if label is None:
+            continue
+        fields = {'phone': label}
+        try:
+            if value is None:
+                continue
+            value = float(value)
+        except TypeError:
+            continue
+        if value <= 0:
+            continue
+        fields['F0'] = value
+        d = {'measurement': 'pitch',
+             'tags': t_dict,
+             'time': s_to_ms(time_point),
+             'fields': fields
+             }
+        data.append(d)
+    client.write_points(data, batch_size=1000, time_precision='ms')
+
 
 def analyze_pitch(corpus_context,
                   source='praat',
