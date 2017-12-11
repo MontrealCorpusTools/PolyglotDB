@@ -44,7 +44,6 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
     for seg in segment_mapping:
         output = pitch_function(seg)
         if with_pulses:
-            print(output)
             output, p = output
             pulses.extend(p)
 
@@ -92,7 +91,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
         time_point, value = data_point['time'], data_point['F0']
         t_dict = {'speaker': speaker, 'discourse': discourse, 'channel': channel}
         label = None
-        for i, p in enumerate(phones):
+        for i, p in enumerate(sorted(phones, key = lambda x: x['begin'])):
             if p['begin'] > time_point:
                 break
             label = p['label']
