@@ -12,8 +12,9 @@ acoustic = pytest.mark.skipif(
 
 
 @acoustic
-def test_analyze_discourse_pitch(acoustic_utt_config):
+def test_analyze_discourse_pitch(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
+        g.config.praat_path = praat_path
 
         r = g.query_graph(g.utterance).all()
         assert(len(r))
@@ -22,8 +23,9 @@ def test_analyze_discourse_pitch(acoustic_utt_config):
             assert track
 
 @acoustic
-def test_save_new_pitch_track(acoustic_utt_config):
+def test_save_new_pitch_track(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
+        g.config.praat_path = praat_path
         g.reset_acoustics()
         g.analyze_pitch('praat')
         r = g.query_graph(g.utterance).all()
