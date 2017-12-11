@@ -74,7 +74,7 @@ def analyze_script(corpus_context,
     header = ['id', 'begin', 'end']
     time_section = time.time()
     segment_mapping = generate_segments(corpus_context, corpus_context.phone_name, phone_class, file_type='consonant',
-                                        padding=None, duration_threshold=duration_threshold)
+                                        padding=0, duration_threshold=duration_threshold)
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
     praat_path = corpus_context.config.praat_path

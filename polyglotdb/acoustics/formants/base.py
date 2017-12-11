@@ -104,7 +104,7 @@ def analyze_vowel_formant_tracks(corpus_context, source='praat',
     if vowel_inventory is not None:
         corpus_context.encode_class(vowel_inventory, 'vowel')
     # gets segment mapping of phones that are vowels
-    segment_mapping = generate_vowel_segments(corpus_context, padding=None).grouped_mapping('speaker')
+    segment_mapping = generate_vowel_segments(corpus_context, padding=0).grouped_mapping('speaker')
 
     if call_back is not None:
         call_back('Analyzing files...')

@@ -2,7 +2,7 @@ from conch.analysis.segments import SegmentMapping
 
 
 def generate_segments(corpus_context, annotation_type='utterance', subset=None, file_type='vowel',
-                      duration_threshold=0.001, padding=None):
+                      duration_threshold=0.001, padding=0):
     """
     Generate segment vectors for an annotation type, to be used as input to analyze_file_segments.
 
@@ -69,7 +69,7 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
     return segment_mapping
 
 
-def generate_vowel_segments(corpus_context, duration_threshold=None, padding=None):
+def generate_vowel_segments(corpus_context, duration_threshold=None, padding=0):
     """
     Generate segment vectors for each vowel, to be used as input to analyze_file_segments.
 
@@ -89,7 +89,7 @@ def generate_vowel_segments(corpus_context, duration_threshold=None, padding=Non
                              file_type='vowel', duration_threshold=duration_threshold, padding=padding)
 
 
-def generate_utterance_segments(corpus_context, file_type='vowel', duration_threshold=None, padding=None):
+def generate_utterance_segments(corpus_context, file_type='vowel', duration_threshold=None, padding=0):
     """
     Generate segment vectors for each utterance, to be used as input to analyze_file_segments.
 

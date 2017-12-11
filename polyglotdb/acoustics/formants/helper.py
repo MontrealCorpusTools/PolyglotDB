@@ -223,7 +223,7 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
     point_measures_from_csv(corpus_context, header_info)
 
 
-def generate_base_formants_function(corpus_context, gender=None, source = 'praat'):
+def generate_base_formants_function(corpus_context, gender=None, source='praat'):
     max_freq = 5500
     if gender == 'M':
         max_freq = 5000
