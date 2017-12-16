@@ -199,6 +199,23 @@ class AudioContext(SyllabicContext):
             raise Exception('Could not find discourse {}'.format(discourse))
         return d
 
+    def utterance_sound_file(self, utterance_id, type='consonant'):
+        q = self.query_graph(self.utterance).filter(self.utterance.id == utterance_id).columns(
+            self.utterance.begin.column_name('begin'),
+            self.utterance.end.column_name('end'),
+            self.utterance.discourse.name.column_name('discourse'),
+            self.utterance.pitch.track)
+        utterance_info = q.all()[0]
+        path = os.path.join(self.discourse_audio_directory(utterance_info['discourse']),
+                            '{}_{}.wav'.format(utterance_id, type))
+        if os.path.exists(path):
+            return path
+        fname = self.discourse_sound_file(utterance_info['discourse'])["consonant_file_path"]
+        data, sr = librosa.load(fname, sr=None, offset=utterance_info['begin'],
+                                duration=utterance_info['end'] - utterance_info['begin'])
+        librosa.output.write_wav(path, data, sr)
+        return path
+
     def has_all_sound_files(self):
         """
         Check whether all discourses have a sound file
@@ -707,7 +724,7 @@ class AudioContext(SyllabicContext):
             for p in self.phones:
                 query = '''select {} from "{}"
                                 where "phone" = '{}';'''.format(', '.join(measures),
-                                                                                    acoustic_measure, p)
+                                                                acoustic_measure, p)
 
                 result = client.query(query)
 
@@ -842,7 +859,8 @@ class AudioContext(SyllabicContext):
         if by_phone:
             for p in self.phones:
                 if by_speaker:
-                    query = '''select mean("F0"), stddev("F0") from "pitch" where "phone" = '{}' group by "speaker";'''.format(p)
+                    query = '''select mean("F0"), stddev("F0") from "pitch" where "phone" = '{}' group by "speaker";'''.format(
+                        p)
                     result = client.query(query)
                     for k, v in result.items():
                         v = list(v)

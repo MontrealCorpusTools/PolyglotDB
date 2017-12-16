@@ -1,4 +1,4 @@
-from csv import DictWriter
+import csv
 
 
 def make_safe(value, delimiter):
@@ -42,16 +42,27 @@ def save_results(results, path, header=None, mode='w'):
     """
     if header is None:
         header = results.columns
-    with open(path, mode, encoding='utf8', newline='') as f:
-        writer = DictWriter(f, header)
+    if isinstance(path, str):
+        with open(path, mode, encoding='utf8', newline='') as f:
+            writer = csv.DictWriter(f, header)
+            if mode != 'a':
+                writer.writeheader()
+            for line in results:
+                try:
+                    line = {k: make_safe(line[k], '/') for k in header}
+                except KeyError:
+                    continue
+                writer.writerow(line)
+    elif isinstance(path, csv.writer):
         if mode != 'a':
-            writer.writeheader()
+            path.writerow(header)
         for line in results:
             try:
-                line = {k: make_safe(line[k], '/') for k in header}
+                line = [make_safe(line[k], '/') for k in header]
             except KeyError:
                 continue
-            writer.writerow(line)
+            path.writerow(line)
+
 
 
 def export_corpus_csv(corpus, path,
