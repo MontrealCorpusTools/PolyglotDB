@@ -25,15 +25,18 @@ def test_client_create_database(graph_db, localhost):
 def test_client_database_list(localhost):
     client = PGDBClient(localhost)
     dbs = client.list_databases()
-    assert 'test_database' in dbs
+    assert 'test_database' in [ x['name'] for x in dbs]
 
 
 def test_client_database_status(localhost):
     client = PGDBClient(localhost)
     statuses = client.database_status()
-    assert statuses['test_database'] == 'Stopped'
+    print(statuses)
+    for s in statuses:
+        if s['name'] == 'test_database':
+            assert s['status'] == 'Stopped'
     status = client.database_status('test_database')
-    assert status == 'Stopped'
+    assert status['status'] == 'Stopped'
 
 
 def test_client_corpus_list(localhost):
@@ -57,8 +60,8 @@ def test_client_import(localhost):
     client.import_corpus('test', 'acoustic', 'M', 'test_database', blocking=True)
 
     client.stop_database('test_database')
-    assert client.corpus_status('test') == 'Imported'
-    assert 'test' in client.list_corpora('test_database')
+    assert client.corpus_status('test')['status'] == 'Imported'
+    assert 'test' in [x['name'] for x in client.list_corpora('test_database')]
 
 
 def test_query_basic(localhost):
@@ -78,16 +81,16 @@ def test_query_basic(localhost):
 def test_client_delete_corpus(localhost):
     client = PGDBClient(localhost)
     client.start_database('test_database')
-    assert 'test' in client.list_corpora('test_database')
+    assert 'test' in [x['name'] for x in client.list_corpora('test_database')]
     client.delete_corpus('test')
-    assert 'test' not in client.list_corpora('test_database')
+    assert 'test' not in [x['name'] for x in client.list_corpora('test_database')]
 
     client.stop_database('test_database')
 
 
 def test_client_delete_database(localhost):
     client = PGDBClient(localhost)
-    assert 'test_database' in client.list_databases()
+    assert 'test_database' in [x['name'] for x in client.list_databases()]
     client.delete_database('test_database')
-    assert 'test_database' not in client.list_databases()
+    assert 'test_database' not in [x['name'] for x in client.list_databases()]
 

@@ -12,8 +12,10 @@ def get_corpora_list(config):
 
 
 @contextmanager
-def ensure_local_database_running(database_name):
-    client = PGDBClient('http://localhost:8000')
+def ensure_local_database_running(database_name, host=None):
+    if host is None:
+        host = 'http://localhost:8000'
+    client = PGDBClient(host)
 
     try:
         response = client.create_database(database_name)

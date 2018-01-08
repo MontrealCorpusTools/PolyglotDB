@@ -97,6 +97,9 @@ class StructuredContext(BaseContext):
         h.corpus_name = self.corpus_name
         return h
 
+    def query_metadata(self, attribute):
+        pass
+
     def refresh_hierarchy(self):
         """
         Updates the hierarchy

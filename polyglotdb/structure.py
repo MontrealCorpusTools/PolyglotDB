@@ -52,7 +52,7 @@ class Hierarchy(object):
 
     def __getattr__(self, key):
         if key == 'pause':
-            return PauseAnnotation(corpus=self.corpus_name)
+            return PauseAnnotation(corpus=self.corpus_name, hierarchy=self)
         if key + 's' in self.annotation_types:
             key += 's'  # FIXME
         if key in self.annotation_types:

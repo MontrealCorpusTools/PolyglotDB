@@ -306,8 +306,8 @@ def graph_db(localhost):
 
     dbs = client.list_databases()
     for d in dbs:
-        if d in ['main_test_database']:
-            client.delete_database(d)
+        if d['name'] == 'main_test_database':
+            client.delete_database(d['name'])
 
     client.create_database('main_test_database')
     ports = client.get_ports('main_test_database')
