@@ -98,7 +98,8 @@ class StructuredContext(BaseContext):
         return h
 
     def query_metadata(self, attribute):
-        pass
+        q = self.query_graph(attribute.annotation).group_by(attribute).count()
+        return
 
     def refresh_hierarchy(self):
         """

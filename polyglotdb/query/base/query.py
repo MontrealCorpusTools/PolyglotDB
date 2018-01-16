@@ -15,7 +15,7 @@ class BaseQuery(object):
 
     aggregate_template = '''RETURN {aggregates}{order_by}'''
 
-    distinct_template = '''RETURN {columns}{order_by}{limit}'''
+    distinct_template = '''RETURN {columns}{order_by}{offset}{limit}'''
 
     set_label_template = '''{alias} {value}'''
 
@@ -43,6 +43,7 @@ class BaseQuery(object):
         self._set_properties = {}
 
         self._limit = None
+        self._offset = None
         self.call_back = None
         self.stop_check = None
 
@@ -76,6 +77,10 @@ class BaseQuery(object):
         are the id of the token and the label of the type.
         """
         self._columns = []
+        return self
+
+    def offset(self, number):
+        self._offset = number
         return self
 
     def filter(self, *args):
@@ -391,7 +396,8 @@ class BaseQuery(object):
 
     def _generate_distinct_return(self):
         kwargs = {'order_by': self._generate_order_by(),
-                  'limit': self._generate_limit()}
+                  'limit': self._generate_limit(),
+                  'offset': self._generate_offset()}
         properties = []
         for c in self._columns + self._hidden_columns:
             properties.append(c.aliased_for_output())
@@ -405,6 +411,11 @@ class BaseQuery(object):
     def _generate_limit(self):
         if self._limit is not None:
             return '\nLIMIT {}'.format(self._limit)
+        return ''
+
+    def _generate_offset(self):
+        if self._offset is not None:
+            return '\nSKIP {}'.format(self._offset)
         return ''
 
     def _generate_order_by(self):

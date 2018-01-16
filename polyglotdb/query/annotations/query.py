@@ -30,13 +30,13 @@ class GraphQuery(BaseQuery):
     ----------
     corpus : :class:`~polyglotdb.corpus.CorpusContext`
         The corpus to query
-    to_find : str
+    to_find : :class:`~polyglotdb.query.annotations.attributes.AnnotationNode`
         Name of the annotation type to search for
     """
     _parameters = ['_criterion', '_columns', '_order_by', '_aggregate',
                    '_preload', '_set_labels', '_remove_labels',
                    '_set_properties', '_delete', '_limit',
-                   '_cache', '_acoustic_columns']
+                   '_cache', '_acoustic_columns', '_offset']
 
     set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
     REMOVE {alias}:speech
@@ -206,9 +206,6 @@ class GraphQuery(BaseQuery):
         return QueryResults(self)
 
     def create_subset(self, label):
-        """
-        Set properties of the returned tokens.
-        """
         labels_to_add = []
         if self.to_find.node_type not in self.corpus.hierarchy.subset_tokens or \
                         label not in self.corpus.hierarchy.subset_tokens[self.to_find.node_type]:
@@ -218,9 +215,6 @@ class GraphQuery(BaseQuery):
             self.corpus.hierarchy.add_token_labels(self.corpus, self.to_find.node_type, labels_to_add)
 
     def set_properties(self, **kwargs):
-        """
-        Set properties of the returned tokens.
-        """
         props_to_remove = []
         props_to_add = []
         for k, v in kwargs.items():
@@ -236,15 +230,10 @@ class GraphQuery(BaseQuery):
             self.corpus.hierarchy.remove_token_properties(self.corpus, self.to_find.node_type, props_to_remove)
 
     def remove_subset(self, label):
-        """ removes all token labels"""
-
         super(GraphQuery, self).remove_subset(label)
         self.corpus.hierarchy.remove_token_labels(self.corpus, self.to_find.node_type, [label])
 
     def cache(self, *args):
-        """
-
-        """
         self._cache.extend(args)
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
@@ -268,7 +257,6 @@ class GraphQuery(BaseQuery):
         self.corpus = corpus
         self.to_find = getattr(corpus.hierarchy, data['to_find'])
         for f in data['filters']:
-            print(f)
             self._criterion.append(Filter(*f).for_polyglot(corpus))
         for c in data['columns']:
             self._columns.append(Column(*c).for_polyglot(corpus, data['to_find']))
@@ -348,16 +336,19 @@ class SplitQuery(GraphQuery):
 
     def all(self):
         """ returns all results from a query """
-        results = None
-        for q in self.split_queries():
-            if self.stop_check():
-                return
-            if results is None:
-                r = q.all()
-                results = r
-            else:
-                results.add_results(q)
-        return results
+        if self._offset is not None or self._limit is not None:
+            return self.base_query().all()
+        else:
+            results = None
+            for q in self.split_queries():
+                if self.stop_check():
+                    return
+                if results is None:
+                    r = q.all()
+                    results = r
+                else:
+                    results.add_results(q)
+            return results
 
     def to_csv(self, path):
         for i, q in enumerate(self.split_queries()):

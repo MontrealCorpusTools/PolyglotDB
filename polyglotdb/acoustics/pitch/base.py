@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 
 from conch import analyze_segments
 from conch.analysis.segments import SegmentMapping
@@ -61,6 +62,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
         utterance_id = utterance
     else:
         utterance_id = utterance.id
+    today = datetime.today()
     utt_type = corpus_context.hierarchy.highest
     phone_type = corpus_context.hierarchy.lowest
     statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name}),
@@ -68,9 +70,10 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
                 (u)-[:spoken_in]->(d),
                 (p:{phone_type}:{corpus_name})-[:contained_by*]->(u)
                 WHERE u.id = {{utterance_id}}
+                SET u.pitch_last_edited = {{date}}
                 RETURN u, d, r, s, collect(p) as p'''.format(corpus_name=corpus_context.cypher_safe_name,
                                                              utt_type=utt_type, phone_type=phone_type)
-    results = corpus_context.execute_cypher(statement, utterance_id=utterance_id)
+    results = corpus_context.execute_cypher(statement, utterance_id=utterance_id, date=today.timestamp())
 
     for r in results:
         channel = r['r']['channel']
@@ -91,7 +94,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
         time_point, value = data_point['time'], data_point['F0']
         t_dict = {'speaker': speaker, 'discourse': discourse, 'channel': channel}
         label = None
-        for i, p in enumerate(sorted(phones, key = lambda x: x['begin'])):
+        for i, p in enumerate(sorted(phones, key=lambda x: x['begin'])):
             if p['begin'] > time_point:
                 break
             label = p['label']
@@ -124,6 +127,19 @@ def analyze_pitch(corpus_context,
                   source='praat',
                   call_back=None,
                   stop_check=None):
+    """
+
+    Parameters
+    ----------
+    corpus_context : :class:`~polyglotdb.CorpusContext`
+    source
+    call_back
+    stop_check
+
+    Returns
+    -------
+
+    """
     absolute_min_pitch = 55
     absolute_max_pitch = 480
     if not 'utterance' in corpus_context.hierarchy:
@@ -196,3 +212,6 @@ def analyze_pitch(corpus_context,
                                                      path=path)
         output = analyze_segments(v, pitch_function, stop_check=stop_check)
         corpus_context.save_pitch_tracks(output, speaker)
+        corpus_context.hierarchy.add_token_properties(corpus_context, 'utterance', [('pitch_last_edited', int)])
+        today = datetime.today()
+        corpus_context.query_graph(corpus_context.utterance).set_properties(pitch_last_edited=today.timestamp())
