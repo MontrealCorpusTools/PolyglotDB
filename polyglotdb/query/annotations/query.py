@@ -36,7 +36,7 @@ class GraphQuery(BaseQuery):
     _parameters = ['_criterion', '_columns', '_order_by', '_aggregate',
                    '_preload', '_set_labels', '_remove_labels',
                    '_set_properties', '_delete', '_limit',
-                   '_cache', '_acoustic_columns', '_offset']
+                   '_cache', '_acoustic_columns', '_offset', '_preload_acoustics']
 
     set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
     REMOVE {alias}:speech
@@ -59,6 +59,7 @@ class GraphQuery(BaseQuery):
             stop_check = base_stop_check
         self.stop_check = stop_check
         self._acoustic_columns = []
+        self._preload_acoustics = []
 
         self._add_subannotations = []
 
@@ -161,6 +162,10 @@ class GraphQuery(BaseQuery):
             if isinstance(a, SubPathAnnotation) and not isinstance(a, SubAnnotation):
                 a.with_subannotations = True
             self._preload.append(a)
+        return self
+
+    def preload_acoustics(self, *args):
+        self._preload_acoustics.extend(args)
         return self
 
     def all(self):

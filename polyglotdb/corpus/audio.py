@@ -9,6 +9,7 @@ from influxdb import InfluxDBClient
 from polyglotdb.query.discourse import DiscourseInspector
 from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_vowel_formant_tracks, analyze_intensity, \
     analyze_script, analyze_utterance_pitch, update_utterance_pitch_track
+from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
 
 from ..acoustics.utils import load_waveform, generate_spectrogram
@@ -36,11 +37,13 @@ def sanitize_formants(value):
     return float(f1), float(f2), float(f3)
 
 
-def generate_filter_string(discourse, begin, end, num_points, kwargs):
+def generate_filter_string(discourse, begin, end, channel, num_points, kwargs):
     extra_filters = ['''"{}" = '{}' '''.format(k, v) for k, v in kwargs.items()]
     filter_string = '''WHERE "discourse" = '{}'
                             AND "time" >= {}
-                            AND "time" <= {}'''
+                            AND "time" <= {}
+                            AND "channel" = '{}'
+                            '''
     if extra_filters:
         filter_string += '\nAND {}'.format('\nAND '.join(extra_filters))
     if num_points:
@@ -50,7 +53,7 @@ def generate_filter_string(discourse, begin, end, num_points, kwargs):
         end += time_step / 2
         time_step *= 1000
         filter_string += '\ngroup by time({}ms) fill(null)'.format(int(time_step))
-    filter_string = filter_string.format(discourse, to_nano(begin), to_nano(end))
+    filter_string = filter_string.format(discourse, to_nano(begin), to_nano(end), channel)
     return filter_string
 
 
@@ -354,7 +357,7 @@ class AudioContext(SyllabicContext):
             listing.append(tuple([s] + [r[x] for x in formant_names]))
         return listing
 
-    def get_pitch(self, discourse, begin, end, relative=False, relative_time=False, **kwargs):
+    def get_pitch(self, discourse, begin, end, channel, relative=False, relative_time=False, **kwargs):
         """
         Get pitch for a given discourse and time range
 
@@ -366,6 +369,8 @@ class AudioContext(SyllabicContext):
             Beginning of time range
         end : float
             End of time range
+        channel : int
+            Channel of track
         relative : bool
             Flag for retrieving relative pitch instead of absolute pitch
         relative_time : bool
@@ -381,7 +386,7 @@ class AudioContext(SyllabicContext):
         begin = Decimal(begin).quantize(Decimal('0.001'))
         end = Decimal(end).quantize(Decimal('0.001'))
         num_points = kwargs.pop('num_points', 0)
-        filter_string = generate_filter_string(discourse, begin, end, num_points, kwargs)
+        filter_string = generate_filter_string(discourse, begin, end, channel, num_points, kwargs)
         client = self.acoustic_client()
         F0_name = "F0"
         if relative:
@@ -393,14 +398,17 @@ class AudioContext(SyllabicContext):
             columns = '"time", "{}"'.format(F0_name)
         query = '''select {} from "pitch"
                         {};'''.format(columns, filter_string)
+        print(query)
         result = client.query(query)
-        listing = []
+        track = Track()
         for r in result.get_points('pitch'):
             s = to_seconds(r['time'])
             if relative_time:
                 s = (s - begin) / (end - begin)
-            listing.append((s, r[F0_name]))
-        return listing
+            p = TimePoint(s)
+            p.add_value(F0_name, r[F0_name] )
+            track.add(p)
+        return track
 
     def _save_measurement_tracks(self, measurement, tracks, speaker):
         if measurement not in ['formants', 'pitch', 'intensity']:

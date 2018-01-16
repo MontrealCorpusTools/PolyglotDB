@@ -12,7 +12,7 @@ from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
 from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 
 
-def hydrate_model(r, to_find, to_find_type, to_preload, corpus):
+def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, corpus):
     a = LinguisticAnnotation(corpus)
     a.node = r[to_find]
     a.type_node = r[to_find_type]
@@ -61,6 +61,8 @@ def hydrate_model(r, to_find, to_find_type, to_preload, corpus):
                     pa._subannotations[sa._type].append(sa)
                 subbed.append(pa)
             a._subs[pre.collected_node.node_type] = subbed
+    for pre in to_preload_acoustics:
+        a._load_track(pre)
     return a
 
 
@@ -83,10 +85,13 @@ class QueryResults(BaseQueryResults):
             results = self.corpus.execute_cypher(statement)
             for r in results:
                 self.speaker_discourse_channels[r['speaker'], r['discourse']] = r['channel']
+        if self.models:
+            self._preload_acoustics = query._preload_acoustics
+
 
     def _sanitize_record(self, r):
         if self.models:
-            r = hydrate_model(r, self._to_find, self._to_find_type, self._preload, self.corpus)
+            r = hydrate_model(r, self._to_find, self._to_find_type, self._preload, self._preload_acoustics, self.corpus)
         else:
             r = AnnotationRecord(r)
             cache = {}

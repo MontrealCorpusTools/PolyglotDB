@@ -76,6 +76,7 @@ class LinguisticAnnotation(BaseAnnotation):
         self._subs = {}
         self._speaker = None
         self._discourse = None
+        self._tracks = {}
 
         self._preloaded = False
 
@@ -122,6 +123,19 @@ class LinguisticAnnotation(BaseAnnotation):
     def properties(self):
         """ Returns sorted untion of node property keys and type_node property keys """
         return sorted(set(self._node.keys()) | set(self._type_node.keys()))
+
+    def _load_track(self, type):
+        print(self.discourse.name, self.begin, self.end, self.channel)
+        if type == 'pitch':
+            results = self.corpus_context.get_pitch(self.discourse.name, self.begin, self.end, self.channel)
+
+        self._tracks[type] = results
+
+    @property
+    def pitch_track(self):
+        if 'pitch' not in self._tracks:
+            self._load_track('pitch')
+        return self._tracks['pitch']
 
     def __getattr__(self, key):
         if self.corpus_context is None:
@@ -276,10 +290,13 @@ class LinguisticAnnotation(BaseAnnotation):
 
     @property
     def channel(self):
-        speaker = self.corpus_context.census[self.speaker.name]
-        for x in speaker.discourses:
-            if x.discourse.name == self.discourse.name:
-                return x.channel
+        statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
+        WHERE s.name = {{speaker_name}} and d.name = {{discourse_name}}
+        RETURN r.channel as channel'''.format(corpus_name=self.corpus_context.cypher_safe_name)
+        results = self.corpus_context.execute_cypher(statement, speaker_name=self.speaker.name,
+                                                     discourse_name=self.discourse.name)
+        for r in results:
+            return r['channel']
         return None
 
     @property
