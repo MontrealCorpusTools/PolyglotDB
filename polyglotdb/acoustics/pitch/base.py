@@ -62,7 +62,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
         utterance_id = utterance
     else:
         utterance_id = utterance.id
-    today = datetime.today()
+    today = datetime.utcnow()
     utt_type = corpus_context.hierarchy.highest
     phone_type = corpus_context.hierarchy.lowest
     statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name}),
@@ -213,5 +213,6 @@ def analyze_pitch(corpus_context,
         output = analyze_segments(v, pitch_function, stop_check=stop_check)
         corpus_context.save_pitch_tracks(output, speaker)
         corpus_context.hierarchy.add_token_properties(corpus_context, 'utterance', [('pitch_last_edited', int)])
-        today = datetime.today()
+        corpus_context.encode_hierarchy()
+        today = datetime.utcnow()
         corpus_context.query_graph(corpus_context.utterance).set_properties(pitch_last_edited=today.timestamp())
