@@ -93,7 +93,7 @@ class AggregationAttribute(AcousticAttribute):
         data = self.attribute.hydrate(corpus, discourse, begin, end, channel)
         agg_data = {}
         for i, c in enumerate(self.output_columns):
-            gen = [x[self.attribute.output_columns[i]] for x in data.values() if self.attribute.output_columns[i] in x]
+            gen = [x[self.attribute.output_columns[i]] for x in data if self.attribute.output_columns[i] in x]
             gen = [x for x in gen if x is not None]
             if not gen:
                 agg_data[c] = None
@@ -239,16 +239,13 @@ class PitchAttribute(AcousticAttribute):
         if self.cached_settings == (discourse, begin, end, channel, self.relative, num_points):
             data = self.cached_data
         else:
-            data = {}
 
             begin -= padding
             end += padding
-            results = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative,
+            data = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative,
                                        num_points=num_points, relative_time=self.relative_time)
-            for line in results:
-                data[line[0]] = {self.output_columns[0]: line[1]}
-                self.cached_settings = (discourse, begin, end, channel, self.relative, num_points)
-                self.cached_data = data
+            self.cached_settings = (discourse, begin, end, channel, self.relative, num_points)
+            self.cached_data = data
         return data
 
 
@@ -289,13 +286,10 @@ class IntensityAttribute(AcousticAttribute):
         if self.cached_settings == (discourse, begin, end, channel):
             data = self.cached_data
         else:
-            data = {}
             begin -= padding
             end += padding
-            results = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative,
+            data = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative,
                                            relative_time=self.relative_time)
-            for line in results:
-                data[line[0]] = {self.output_columns[0]: line[1]}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
             self.cached_data = data
         return data
@@ -338,13 +332,11 @@ class FormantAttribute(AcousticAttribute):
         if self.cached_settings == (discourse, begin, end, channel):
             data = self.cached_data
         else:
-            data = {}
+
             begin -= padding
             end += padding
-            results = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative,
+            data = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative,
                                           relative_time=self.relative_time)
-            for line in results:
-                data[line[0]] = {self.output_columns[i]: line[i + 1] for i in range(6)}
             self.cached_settings = (discourse, begin, end, channel, self.relative)
             self.cached_data = data
         return data

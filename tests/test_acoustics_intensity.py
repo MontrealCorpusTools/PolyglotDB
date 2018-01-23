@@ -28,9 +28,9 @@ def test_query_intensity(acoustic_utt_config):
         results = q.all()
 
         print(sorted(expected_intensity.items()))
-        print(sorted(results[0].track.items()))
-        for k, v in results[0].track.items():
-            assert (round(v['Intensity'], 1) == expected_intensity[k]['Intensity'])
+        print(results[0].track)
+        for point in results[0].track:
+            assert (round(point['Intensity'], 1) == expected_intensity[point.time]['Intensity'])
 
 
 @acoustic
@@ -46,4 +46,4 @@ def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path, results_
         q.to_csv(output_path)
         assert (len(results) > 0)
         for r in results:
-            assert (r.track)
+            assert (len(r.track))

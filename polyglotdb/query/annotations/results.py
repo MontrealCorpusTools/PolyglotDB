@@ -7,8 +7,8 @@ from ..base.results import BaseQueryResults, BaseRecord
 from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
                          SubAnnotation as QuerySubAnnotation,
                          SpeakerAnnotation, DiscourseAnnotation,
-                         Track)
-
+                         Track as TrackAnnotation)
+from ...acoustics.classes import Track
 from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 
 
@@ -75,7 +75,7 @@ class QueryResults(BaseQueryResults):
         if query._columns:
             self._acoustic_columns = query._acoustic_columns
             for x in query._acoustic_columns:
-                if isinstance(x, Track):
+                if isinstance(x, TrackAnnotation):
                     self.num_tracks += 1
                     self.track_columns.update(x.output_columns)
                 self.columns.extend(x.output_columns)
@@ -128,12 +128,12 @@ class QueryResults(BaseQueryResults):
         header = self.columns
         for line in self:
             baseline = {k: line[k] for k in header if k not in self.track_columns}
-            if line.track:
-                for k, v in sorted(line.track.items()):
+            if self.track_columns:
+                for point in line.track:
                     line = {}
                     line.update(baseline)
-                    line.update({'time': k})
-                    line.update(v)
+                    line.update({'time': point.time})
+                    line.update(point.values)
                     yield line
             else:
                 yield baseline
@@ -150,7 +150,7 @@ class AnnotationRecord(BaseRecord):
         self.values = result.values()
         self.acoustic_columns = []
         self.acoustic_values = []
-        self.track = {}
+        self.track = Track()
         self.track_columns = []
 
     def __getitem__(self, key):
@@ -165,12 +165,10 @@ class AnnotationRecord(BaseRecord):
         self.acoustic_values.append(value)
 
     def add_track(self, track):
-        # Could use interpolation of tracks?
-        columns = set(self.track_columns)
-        for k, v in track.items():
-            if k not in self.track:
-                self.track[k] = v
+
+        for point in track:
+            if point.time not in self.track:
+                self.track.add(point)
             else:
-                self.track[k].update(v)
-            columns.update(v.keys())
-        self.track_columns = sorted(columns)
+                self.track[point.time].update(point)
+        self.track_columns = self.track.keys()

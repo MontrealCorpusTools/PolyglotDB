@@ -28,7 +28,7 @@ def test_analyze_formants_basic_praat(acoustic_utt_config, praat_path, results_t
         q.to_csv(output_path)
         assert (len(results) > 0)
         for r in results:
-            assert (r.track)
+            assert (len(r.track))
 
 
 def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, results_test_dir):
@@ -47,7 +47,7 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
         print(len(results))
         for r in results:
             # print(r.track)
-            assert (r.track)
+            assert (len(r.track))
 
 
 @acoustic
@@ -67,7 +67,7 @@ def test_analyze_formants_gendered_praat(acoustic_utt_config, praat_path, result
         q.to_csv(output_path)
         assert (len(results) > 0)
         for r in results:
-            assert (r.track)
+            assert (len(r.track))
 
 
 def test_query_formants(acoustic_utt_config):
@@ -88,11 +88,11 @@ def test_query_formants(acoustic_utt_config):
         results = q.all()
 
         print(sorted(expected_formants.items()))
-        print(sorted(results[0].track.items()))
-        for k, v in results[0].track.items():
-            assert (round(v['F1'], 1) == expected_formants[k]['F1'])
-            assert (round(v['F2'], 1) == expected_formants[k]['F2'])
-            assert (round(v['F3'], 1) == expected_formants[k]['F3'])
+        print(results[0].track)
+        for point in results[0].track:
+            assert (round(point['F1'], 1) == expected_formants[point.time]['F1'])
+            assert (round(point['F2'], 1) == expected_formants[point.time]['F2'])
+            assert (round(point['F3'], 1) == expected_formants[point.time]['F3'])
 
 
 def test_query_aggregate_formants(acoustic_utt_config):

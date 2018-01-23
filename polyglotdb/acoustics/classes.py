@@ -2,6 +2,27 @@ class Track(object):
     def __init__(self):
         self.points = []
 
+    def keys(self):
+        keys = set()
+        for point in self:
+            keys.update(point.values.keys())
+        return sorted(keys)
+
+    def __getitem__(self, time):
+        for point in self:
+            if point.time == time:
+                return point
+        return None
+
+    def __len__(self):
+        return len(self.points)
+
+    def __contains__(self, time):
+        for point in self:
+            if point.time == time:
+                return True
+        return False
+
     def add(self, point):
         self.points.append(point)
 
@@ -14,9 +35,19 @@ class TimePoint(object):
         self.time = time
         self.values = {}
 
+    def __contains__(self, item):
+        return item in self.values
+
+    def __getitem__(self, item):
+        return self.values[item]
+
     def __getattr__(self, item):
         if item in self.values:
             return self.values[item]
 
     def add_value(self, name, value):
         self.values[name] = value
+
+    def update(self, point):
+        for k,v in point.values.items():
+            self.values[k] = v

@@ -11,7 +11,7 @@ from ...exceptions import SpeakerAttributeError
 from ..utils import PADDING
 
 
-def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch=50, max_pitch=500, with_pulses=False,
+def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch=50, max_pitch=500,
                             **kwargs):
     if isinstance(utterance, str):
         utterance_id = utterance
@@ -39,20 +39,15 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
         path = corpus_context.config.praat_path
     elif source == 'reaper':
         path = corpus_context.config.reaper_path
-    pitch_function = generate_pitch_function(source, min_pitch, max_pitch, path=path, with_pulses=with_pulses)
+    pitch_function = generate_pitch_function(source, min_pitch, max_pitch, path=path)
     track = []
     pulses = []
     for seg in segment_mapping:
         output = pitch_function(seg)
-        if with_pulses:
-            output, p = output
-            pulses.extend(p)
 
         for k, v in output.items():
             track.append({'time': k, 'F0': v['F0']})
     track = sorted(track, key=lambda x: x['time'])
-    if with_pulses:
-        return track, sorted(pulses)
     return track
 
 

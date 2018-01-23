@@ -263,7 +263,7 @@ class AudioContext(SyllabicContext):
                     break
         return self._has_sound_files
 
-    def get_intensity(self, discourse, begin, end, relative=False, relative_time=False, **kwargs):
+    def get_intensity(self, discourse, begin, end, channel=0, relative=False, relative_time=False, **kwargs):
         """
         Get intensity for a given discourse and time range
 
@@ -290,7 +290,7 @@ class AudioContext(SyllabicContext):
         begin = Decimal(begin).quantize(Decimal('0.001'))
         end = Decimal(end).quantize(Decimal('0.001'))
         num_points = kwargs.pop('num_points', 0)
-        filter_string = generate_filter_string(discourse, begin, end, num_points, kwargs)
+        filter_string = generate_filter_string(discourse, begin, end, channel, num_points, kwargs)
         client = self.acoustic_client()
         Intensity_name = "Intensity"
         if relative:
@@ -302,15 +302,17 @@ class AudioContext(SyllabicContext):
         query = '''select {} from "intensity"
                         {};'''.format(columns, filter_string)
         result = client.query(query)
-        listing = []
+        track = Track()
         for r in result.get_points('intensity'):
             s = to_seconds(r['time'])
             if relative_time:
                 s = (s - begin) / (end - begin)
-            listing.append((s, r[Intensity_name]))
-        return listing
+            p = TimePoint(s)
+            p.add_value(Intensity_name, r[Intensity_name] )
+            track.add(p)
+        return track
 
-    def get_formants(self, discourse, begin, end, relative=False, relative_time=False, **kwargs):
+    def get_formants(self, discourse, begin, end, channel=0, relative=False, relative_time=False, **kwargs):
         """
         Get formants for a given discourse and time range
 
@@ -337,7 +339,7 @@ class AudioContext(SyllabicContext):
         begin = Decimal(begin).quantize(Decimal('0.001'))
         end = Decimal(end).quantize(Decimal('0.001'))
         num_points = kwargs.pop('num_points', 0)
-        filter_string = generate_filter_string(discourse, begin, end, num_points, kwargs)
+        filter_string = generate_filter_string(discourse, begin, end, channel,  num_points, kwargs)
         client = self.acoustic_client()
         formant_names = ["F1", "F2", "F3", "B1", "B2", "B3"]
         if relative:
@@ -349,15 +351,18 @@ class AudioContext(SyllabicContext):
             columns = '"time", {}'.format(', '.join('"{}"'.format(x) for x in formant_names))
         result = client.query('''select {} from "formants"
                         {};'''.format(columns, filter_string))
-        listing = []
+        track = Track()
         for r in result.get_points('formants'):
             s = to_seconds(r['time'])
             if relative_time:
                 s = (s - begin) / (end - begin)
-            listing.append(tuple([s] + [r[x] for x in formant_names]))
-        return listing
+            p = TimePoint(s)
+            for f in formant_names:
+                p.add_value(f, r[f] )
+            track.add(p)
+        return track
 
-    def get_pitch(self, discourse, begin, end, channel, relative=False, relative_time=False, **kwargs):
+    def get_pitch(self, discourse, begin, end, channel=0, relative=False, relative_time=False, **kwargs):
         """
         Get pitch for a given discourse and time range
 

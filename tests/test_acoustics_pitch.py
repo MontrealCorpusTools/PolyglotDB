@@ -41,8 +41,8 @@ def test_save_new_pitch_track(acoustic_utt_config, praat_path):
         for r in q.all():
             print(r)
             print(len(r.track))
-            for t,p in r.track.items():
-                assert p == {'F0':100}
+            for point in r.track:
+                assert point['F0'] == 100
 
 
 @acoustic
@@ -59,7 +59,7 @@ def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
         results = q.all()
         assert (len(results) > 0)
         for r in results:
-            assert (r.track)
+            assert len(r.track)
 
 
 @acoustic
@@ -73,7 +73,7 @@ def test_track_mean_query(acoustic_utt_config):
             assert (r.track)
             assert (r['Mean_F0'])
             print(r.track, r['Mean_F0'])
-            calc_mean = sum(x['F0'] for x in r.track.values()) / len(r.track)
+            calc_mean = sum(x['F0'] for x in r.track) / len(r.track)
             assert (abs(r['Mean_F0'] - calc_mean) < 0.001)
 
 
@@ -89,7 +89,7 @@ def test_track_following_mean_query(acoustic_utt_config):
             assert (r.track)
             assert (r['following_phone_pitch_mean'])
             print(r.track, r['following_phone_pitch_mean'])
-            calc_mean = sum(x['F0'] for x in r.track.values()) / len(r.track)
+            calc_mean = sum(x['F0'] for x in r.track) / len(r.track)
             assert (abs(r['following_phone_pitch_mean'] - calc_mean) > 0.001)
 
 
@@ -105,7 +105,7 @@ def test_track_hierarchical_mean_query(acoustic_utt_config):
             assert (r.track)
             assert (r['word_pitch_mean'])
             print(r.track, r['word_pitch_mean'])
-            calc_mean = sum(x['F0'] for x in r.track.values()) / len(r.track)
+            calc_mean = sum(x['F0'] for x in r.track) / len(r.track)
             assert (abs(r['word_pitch_mean'] - calc_mean) > 0.001)
 
 
@@ -121,7 +121,7 @@ def test_track_hierarchical_following_mean_query(acoustic_utt_config):
         assert (len(results) > 0)
         for r in results:
             print(r['begin'])
-            assert (r.track)
+            assert len(r.track)
             assert (r['word_pitch_mean'])
             print(r['word_pitch_mean'], r['following_word_pitch_mean'])
             assert (r['word_pitch_mean'] != r['following_word_pitch_mean'])
@@ -142,7 +142,7 @@ def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_te
         results = q.all()
         assert (len(results) > 0)
         for r in results:
-            assert (r.track)
+            assert len(r.track)
             assert (r['utterance_pitch_mean'])
             assert (r['utterance_pitch_min'])
             assert (r['utterance_pitch_max'])
@@ -199,11 +199,11 @@ def test_query_pitch(acoustic_utt_config):
         q = q.columns(g.phone.label, g.phone.pitch.track)
         print(q.cypher())
         results = q.all()
-        assert (len(results[0].track.items()) == len(expected_pitch.items()))
+        assert (len(results[0].track) == len(expected_pitch.items()))
         print(sorted(expected_pitch.items()))
-        print(sorted(results[0].track.items()))
-        for k, v in results[0].track.items():
-            assert (round(v['F0'], 1) == expected_pitch[k]['F0'])
+        print(results[0].track)
+        for point in results[0].track:
+            assert (round(point['F0'], 1) == expected_pitch[point.time]['F0'])
 
 
 def test_query_aggregate_pitch(acoustic_utt_config):
