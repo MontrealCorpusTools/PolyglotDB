@@ -124,17 +124,18 @@ class LinguisticAnnotation(BaseAnnotation):
         """ Returns sorted untion of node property keys and type_node property keys """
         return sorted(set(self._node.keys()) | set(self._type_node.keys()))
 
-    def _load_track(self, type):
-        print(self.discourse.name, self.begin, self.end, self.channel)
+    def _load_track(self, attribute):
+        type = attribute.label
         if type == 'pitch':
-            results = self.corpus_context.get_pitch(self.discourse.name, self.begin, self.end, self.channel)
+            results = self.corpus_context.get_pitch(self.discourse.name, self.begin, self.end, self.channel,
+                                                    relative=attribute.relative, relative_time=attribute.relative_time)
 
         self._tracks[type] = results
 
     @property
     def pitch_track(self):
         if 'pitch' not in self._tracks:
-            self._load_track('pitch')
+            self._load_track(getattr(self.corpus_context, self._type, 'pitch'))
         return self._tracks['pitch']
 
     def __getattr__(self, key):

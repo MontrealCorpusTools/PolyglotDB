@@ -403,7 +403,6 @@ class AudioContext(SyllabicContext):
             columns = '"time", "{}"'.format(F0_name)
         query = '''select {} from "pitch"
                         {};'''.format(columns, filter_string)
-        print(query)
         result = client.query(query)
         track = Track()
         for r in result.get_points('pitch'):
@@ -411,7 +410,7 @@ class AudioContext(SyllabicContext):
             if relative_time:
                 s = (s - begin) / (end - begin)
             p = TimePoint(s)
-            p.add_value(F0_name, r[F0_name] )
+            p.add_value('F0', r[F0_name] )
             track.add(p)
         return track
 
@@ -421,7 +420,6 @@ class AudioContext(SyllabicContext):
         data = []
         for seg, track in tracks.items():
             if not len(track.keys()):
-                print(seg)
                 continue
             file_path, begin, end, channel = seg.file_path, seg.begin, seg.end, seg.channel
             res = self.execute_cypher(
@@ -507,7 +505,6 @@ class AudioContext(SyllabicContext):
 
     def _save_measurement(self, sound_file, track, measurement, **kwargs):
         if not len(track.keys()):
-            print(sound_file)
             return
         if isinstance(sound_file, str):
             sound_file = self.discourse_sound_file(sound_file)

@@ -53,7 +53,7 @@ def save_results(results, path, header=None, mode='w'):
                 except KeyError:
                     continue
                 writer.writerow(line)
-    elif isinstance(path, csv.writer):
+    else:
         if mode != 'a':
             path.writerow(header)
         for line in results:

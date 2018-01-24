@@ -1,5 +1,6 @@
 import time
 from ..query import value_for_cypher
+from ..query.metadata.query import MetaDataQuery
 from ..structure import Hierarchy
 from .base import BaseContext
 
@@ -97,9 +98,8 @@ class StructuredContext(BaseContext):
         h.corpus_name = self.corpus_name
         return h
 
-    def query_metadata(self, attribute):
-        q = self.query_graph(attribute.annotation).group_by(attribute).count()
-        return
+    def query_metadata(self, annotation):
+        return MetaDataQuery(self, annotation)
 
     def refresh_hierarchy(self):
         """
