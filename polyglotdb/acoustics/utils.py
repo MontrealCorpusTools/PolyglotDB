@@ -29,7 +29,7 @@ def generate_spectrogram(signal, sr, color_scale='log'):
     win_len = int(window_length * sr)
     if win_len > n_fft:
         n_fft = win_len
-    num_steps = 1000
+    num_steps = 500
     if len(signal) < num_steps:
         num_steps = len(signal)
     step_samp = int(len(signal) / num_steps)

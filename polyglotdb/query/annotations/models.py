@@ -135,7 +135,7 @@ class LinguisticAnnotation(BaseAnnotation):
     @property
     def pitch_track(self):
         if 'pitch' not in self._tracks:
-            self._load_track(getattr(self.corpus_context, self._type, 'pitch'))
+            self._load_track(getattr(getattr(self.corpus_context, self._type), 'pitch'))
         return self._tracks['pitch']
 
     def __getattr__(self, key):
