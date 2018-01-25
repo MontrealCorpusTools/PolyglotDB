@@ -7,6 +7,7 @@ from conch.analysis.segments import SegmentMapping
 from .helper import generate_pitch_function
 from ..segments import generate_utterance_segments
 from ...exceptions import SpeakerAttributeError
+from ..classes import Track, TimePoint
 
 from ..utils import PADDING
 
@@ -40,14 +41,15 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
     elif source == 'reaper':
         path = corpus_context.config.reaper_path
     pitch_function = generate_pitch_function(source, min_pitch, max_pitch, path=path)
-    track = []
-    pulses = []
+
+    track = Track()
     for seg in segment_mapping:
         output = pitch_function(seg)
 
         for k, v in output.items():
-            track.append({'time': k, 'F0': v['F0']})
-    track = sorted(track, key=lambda x: x['time'])
+            p = TimePoint(k)
+            p.add_value('F0',  v['F0'])
+            track.add(p)
     return track
 
 
