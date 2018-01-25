@@ -65,6 +65,7 @@ if __name__ == '__main__':
                     'polyglotdb.query.discourse',
                     'polyglotdb.query.speaker',
                     'polyglotdb.query.lexicon',
+                    'polyglotdb.query.metadata',
                     'polyglotdb.syllabification'],
           package_data={'polyglotdb.databases': ['*.conf'],
                         'polyglotdb.acoustics.formants': ['*.praat']},
