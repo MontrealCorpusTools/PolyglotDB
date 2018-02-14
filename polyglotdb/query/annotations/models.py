@@ -138,6 +138,27 @@ class LinguisticAnnotation(BaseAnnotation):
             self._load_track(getattr(getattr(self.corpus_context, self._type), 'pitch'))
         return self._tracks['pitch']
 
+    @property
+    def waveform(self):
+        signal, sr = self.corpus_context.load_waveform(self.discourse.name, 'vowel', begin=self.begin, end=self.end)
+        step = 1 / sr
+        return[{'amplitude': float(p), 'time': i * step + self.begin} for i, p in enumerate(signal)]
+
+    @property
+    def spectrogram(self):
+        orig, time_step, freq_step = self.corpus_context.generate_spectrogram(self.discourse.name, 'consonant', begin=self.begin,
+                                                            end=self.end)
+        reshaped = []
+        for i in range(orig.shape[0]):
+            for j in range(orig.shape[1]):
+                reshaped.append({'time': j * time_step + self.begin, 'frequency': i * freq_step,
+                                 'power': float(orig[i, j])})
+        return {'values': reshaped,
+                            'time_step': time_step,
+                            'freq_step': freq_step,
+                            'num_time_bins': orig.shape[1],
+                            'num_freq_bins': orig.shape[0]}
+
     def __getattr__(self, key):
         if self.corpus_context is None:
             raise (GraphModelError('This object is not bound to a corpus context.'))
