@@ -1,5 +1,5 @@
 from uuid import uuid1
-
+import time
 from polyglotdb.exceptions import GraphModelError
 
 from ..base.helper import key_for_cypher, value_for_cypher
@@ -80,6 +80,9 @@ class LinguisticAnnotation(BaseAnnotation):
 
         self._preloaded = False
 
+    def __str__(self):
+        return '<{} annotation with id: {}>'.format(self._type, self._node.properties['id'])
+
     @property
     def corpus_context(self):
         return self._corpus_context
@@ -136,13 +139,15 @@ class LinguisticAnnotation(BaseAnnotation):
     def pitch_track(self):
         if 'pitch' not in self._tracks:
             self._load_track(getattr(getattr(self.corpus_context, self._type), 'pitch'))
-        return self._tracks['pitch']
+        data = self._tracks['pitch']
+        return data
 
     @property
     def waveform(self):
         signal, sr = self.corpus_context.load_waveform(self.discourse.name, 'vowel', begin=self.begin, end=self.end)
         step = 1 / sr
-        return[{'amplitude': float(p), 'time': i * step + self.begin} for i, p in enumerate(signal)]
+        data = [{'amplitude': float(p), 'time': i * step + self.begin} for i, p in enumerate(signal)]
+        return data
 
     @property
     def spectrogram(self):
@@ -153,11 +158,12 @@ class LinguisticAnnotation(BaseAnnotation):
             for j in range(orig.shape[1]):
                 reshaped.append({'time': j * time_step + self.begin, 'frequency': i * freq_step,
                                  'power': float(orig[i, j])})
-        return {'values': reshaped,
+        data = {'values': reshaped,
                             'time_step': time_step,
                             'freq_step': freq_step,
                             'num_time_bins': orig.shape[1],
                             'num_freq_bins': orig.shape[0]}
+        return data
 
     def __getattr__(self, key):
         if self.corpus_context is None:

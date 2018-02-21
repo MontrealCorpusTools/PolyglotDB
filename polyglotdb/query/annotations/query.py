@@ -341,7 +341,8 @@ class SplitQuery(GraphQuery):
 
     def all(self):
         """ returns all results from a query """
-        if self._offset is not None or self._limit is not None:
+        labels = [x.attribute.label for x in self._criterion]
+        if self._offset is not None or self._limit is not None or 'id' in labels:
             return self.base_query().all()
         else:
             results = None
