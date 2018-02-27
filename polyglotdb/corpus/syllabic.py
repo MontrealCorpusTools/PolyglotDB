@@ -290,8 +290,11 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
         if call_back is not None:
             call_back('Cleaning up...')
-        self.execute_cypher(
-            'MATCH (n:{}:syllable) where n.prev_id is not Null REMOVE n.prev_id'.format(self.cypher_safe_name))
+        for s in self.speakers:
+            self.execute_cypher(
+                '''MATCH (s:{corpus_name}:Speaker)<-[:spoken_by]-(n:{corpus_name}:syllable) 
+                where s.name = {{speaker_name}} and n.prev_id is not Null 
+                REMOVE n.prev_id'''.format(corpus_name = self.cypher_safe_name), speaker_name=s)
 
         self.hierarchy.add_annotation_type('syllable', above=self.phone_name, below=self.word_name)
         self.hierarchy.add_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])

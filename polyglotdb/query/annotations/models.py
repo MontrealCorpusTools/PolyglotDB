@@ -144,7 +144,7 @@ class LinguisticAnnotation(BaseAnnotation):
 
     @property
     def waveform(self):
-        signal, sr = self.corpus_context.load_waveform(self.discourse.name, 'vowel', begin=self.begin, end=self.end)
+        signal, sr = self.corpus_context.load_waveform(self.discourse.name, 'low_freq', begin=self.begin, end=self.end)
         step = 1 / sr
         data = [{'amplitude': float(p), 'time': i * step + self.begin} for i, p in enumerate(signal)]
         return data
