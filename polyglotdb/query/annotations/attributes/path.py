@@ -38,7 +38,7 @@ class SubPathAnnotation(AnnotationCollectionNode):
                   'where_string': where_string,
                   'input_with_string': input_with,
                   'order_by': order_by,
-                  'optional': '',
+                  'optional': 'OPTIONAL ' if optional else '',
                   'sub_query': subannotation_query,
                   'with_pre_collection': self.with_pre_collection,
                   'output_with_string': output_with}

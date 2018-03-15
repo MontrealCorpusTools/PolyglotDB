@@ -170,6 +170,8 @@ class LinguisticAnnotation(BaseAnnotation):
             raise (GraphModelError('This object is not bound to a corpus context.'))
         if self._id is None:
             raise (GraphModelError('This object has not been loaded with an id yet.'))
+        if key == self._type:
+            return self
         if key == 'previous':
             if self._previous == 'empty':
                 return None
@@ -372,30 +374,30 @@ class LinguisticAnnotation(BaseAnnotation):
 
         properties : dict
         """
-        if 'begin' not in properties:
-            properties['begin'] = self.begin
-        if 'end' not in properties:
-            properties['end'] = self.end
+        #if 'begin' not in properties:
+        #    properties['begin'] = self.begin
+        #if 'end' not in properties:
+        #    properties['end'] = self.end
         properties['id'] = str(uuid1())
-
+        print(properties)
         discourse = self.discourse.name
-
-        self.corpus_context.hierarchy.add_subannotation_type(self._type, type)
-        statement = '''MATCH (n:{type}:{corpus} {{id:{{id}}}})
-        CREATE (n)<-[r:annotates]-(sub:{sub_type}:{corpus} {{{props}}})
+        statement = '''MATCH (n:{type}:{corpus} {{id:{{a_id}}}})
+        CREATE (n)<-[r:annotates]-(sub:{sub_type}:{corpus})
+        WITH sub, r
+        SET {props}
         return sub, r'''
-        props = ['{}: {}'.format(key_for_cypher(k), value_for_cypher(v))
+        props = ['sub.%s = {%s}' % (k, k)
                  for k, v in properties.items()]
         statement = statement.format(type=self._type, sub_type=type,
                                      corpus=self.corpus_context.cypher_safe_name, props=', '.join(props))
 
         if transaction is not None:
-            transaction.append(statement, id=self._id)
+            transaction.append(statement, a_id=self._id, **properties)
         else:
             sa = SubAnnotation(self.corpus_context)
             sa._annotation = self
             sa._type = type
-            res = self.corpus_context.execute_cypher(statement, id=self._id).single()
+            res = self.corpus_context.execute_cypher(statement, a_id=self._id, **properties).single()
 
             sa.node = res['sub']
             rel = res['r']
@@ -403,7 +405,7 @@ class LinguisticAnnotation(BaseAnnotation):
             if type not in self._subannotations:
                 self._subannotations[type] = []
             self._subannotations[type].append(sa)
-            self._subannotations[type].sort(key=lambda x: x.begin)
+            #self._subannotations[type].sort(key=lambda x: x.begin)
             return sa.node, rel
 
 
@@ -427,7 +429,9 @@ class SubAnnotation(BaseAnnotation):
             return self._node[key]
         if key == 'label':
             return None
-        raise (AttributeError)
+        if not self._corpus_context.hierarchy.has_subannotation_property(self._type, key):
+            raise AttributeError
+        return None
 
     def update_properties(self, **kwargs):
         """ 

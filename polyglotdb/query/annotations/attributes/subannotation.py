@@ -2,7 +2,7 @@ from .path import SubPathAnnotation, PathAttribute, key_for_cypher
 
 
 class SubAnnotation(SubPathAnnotation):
-    non_optional = True
+    non_optional = False
     subquery_match_template = '({def_collection_alias})-[:annotates]->({anchor_node_alias})'
 
     def __getattr__(self, key):

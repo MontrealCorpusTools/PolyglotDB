@@ -519,16 +519,60 @@ class Hierarchy(object):
                 higher.append(t)
         return higher
 
-    def add_subannotation_type(self, linguistic_type, subannotation_type):
+    def has_subannotation_type(self, subannotation_type):
+        return subannotation_type in self.subannotation_properties
+
+    def has_subannotation_property(self, subannotation_type, property_name):
+        if not self.has_subannotation_type(subannotation_type):
+            return False
+        return property_name in [x[0] for x in self.subannotation_properties[subannotation_type]]
+
+    def add_subannotation_type(self, corpus_context, linguistic_type, subannotation_type, properties=None):
+        if properties is None:
+            properties = []
         if subannotation_type in self.subannotation_properties:
             raise (HierarchyError('The subannotation_type {} is already specified for another linguistic type.'
                                   ' Please use a different name.'.format(subannotation_type)))
         if linguistic_type not in self.subannotations:
             self.subannotations[linguistic_type] = set()
         self.subannotations[linguistic_type].add(subannotation_type)
-        self.subannotation_properties[subannotation_type] = set()
+        self.subannotation_properties[subannotation_type] = set(k for k in properties)
+        if properties:
+            set_template = 's.{0} = {{{0}}}'
+            ps = []
+            kwargs = {}
+            for k, v in properties:
+                if v == int:
+                    v = 0
+                elif v == list:
+                    v = []
+                elif v == float:
+                    v = 0.0
+                elif v == str:
+                    v = ''
+                elif v == bool:
+                    v = False
+                elif v == type(None):
+                    v = None
+                ps.append(set_template.format(k))
+                kwargs[k] = v
+            statement = '''MATCH (c:Corpus), (c)<-[:contained_by*]-(a:{a_type}) WHERE c.name = {{corpus_name}}
+                    WITH a
+                    CREATE (a)<-[:annotates]-(s:{s_type})
+                    WITH s
+                    SET {sets}'''.format(sets=', '.join(ps), a_type= linguistic_type, s_type=subannotation_type)
+            corpus_context.execute_cypher(statement,
+                                          corpus_name=corpus_context.corpus_name, **kwargs)
 
-    def remove_subannotation_type(self, subannotation_type):
+        else:
+            statement = '''MATCH (c:Corpus), (c)<-[:contained_by*]-(a:{a_type}) WHERE c.name = {{corpus_name}}
+                    WITH a
+                    MERGE (a)<-[:annotates]-(s:{s_type})'''.format(a_type= linguistic_type, s_type=subannotation_type)
+            corpus_context.execute_cypher(statement,
+                                          corpus_name=corpus_context.corpus_name)
+        corpus_context.cache_hierarchy()
+
+    def remove_subannotation_type(self, corpus_context, subannotation_type):
         try:
             del self.subannotation_properties[subannotation_type]
         except KeyError:
@@ -536,9 +580,15 @@ class Hierarchy(object):
         for k, v in self.subannotations.items():
             if subannotation_type in v:
                 self.subannotations[k] = v - {subannotation_type}
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
+        DETACH DELETE s'''.format(s_type=subannotation_type)
+        corpus_context.execute_cypher(statement,
+                                      corpus_name=corpus_context.corpus_name)
+        corpus_context.cache_hierarchy()
 
     def add_subannotation_properties(self, corpus_context, subannotation_type, properties):
-        set_template = 'n.{0} = {{{0}}}'
+        set_template = 's.{0} = {{{0}}}'
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -558,12 +608,28 @@ class Hierarchy(object):
             kwargs[k] = v
 
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
-        MATCH (c)<-[:contained_by*]-(n)<-[:annotates]-(n:{type})
-        SET {sets}'''.format(sets=', '.join(ps), type=subannotation_type)
+        MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
+        SET {sets}'''.format(sets=', '.join(ps), s_type=subannotation_type)
         corpus_context.execute_cypher(statement,
                                       corpus_name=corpus_context.corpus_name, **kwargs)
 
         self.subannotation_properties[subannotation_type].update(k for k in properties)
+        corpus_context.cache_hierarchy()
+
+    def remove_subannotation_properties(self, corpus_context, subannotation_type, properties):
+        remove_template = 's.{0}'
+        ps = []
+        for k in properties:
+            ps.append(remove_template.format(k))
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
+        REMOVE {removes}'''.format(removes=', '.join(ps), s_type=subannotation_type)
+        corpus_context.execute_cypher(statement,
+                                      corpus_name=corpus_context.corpus_name)
+        to_remove = set(x for x in self.subannotation_properties[subannotation_type] if x[0] in properties)
+        self.subannotation_properties[subannotation_type].difference_update(to_remove)
+        corpus_context.cache_hierarchy()
 
     def has_speaker_property(self, key):
         for name, t in self.speaker_properties:
