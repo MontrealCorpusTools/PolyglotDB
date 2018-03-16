@@ -36,22 +36,19 @@ class AlignerParser(TextgridParser):
                 multiple_speakers = True
                 break
         if multiple_speakers:
-            speakers = {x.name.split('-')[0].strip() for x in tg.tiers if '-' in x.name}
+            speakers = {x.name.split('-')[0].strip() for x in tg.tiers if ' - ' in x.name}
             found_words = {x: False for x in speakers}
             found_phones = {x: False for x in speakers}
             for ti in tg.tiers:
-                if '-' not in ti.name:
+                if ' - ' not in ti.name:
                     continue
                 speaker, name = ti.name.split('-')
                 speaker = speaker.strip()
                 name = name.strip()
-                print(speaker, name)
                 if name.lower().startswith(self.word_label):
                     found_words[speaker] = True
                 elif name.lower().startswith(self.phone_label):
                     found_phones[speaker] = True
-            print(found_words)
-            print(found_phones)
             found_word = all(found_words.values())
             found_phone = all(found_words.values())
         else:
