@@ -16,6 +16,12 @@ class PGDBClient(object):
         self.corpus_name = corpus_name
         self.query_behavior = 'speaker'
 
+    def login(self, user_name, password):
+        end_point = '/'.join([self.host, 'api', 'api-token-auth', ''])
+        resp = requests.post(end_point, {'username':user_name, 'password':password})
+        token = resp.json()['token']
+        return token
+
     def create_database(self, database_name):
         databases = self.list_databases()
         for d in databases:
@@ -172,7 +178,7 @@ class PGDBClient(object):
 
         end_point = '/'.join([self.host, 'api', 'corpora', str(corpus_id), 'import_corpus', ''])
         data = {'blocking': blocking}
-        resp = requests.post(end_point, data=data)
+        resp = requests.post(end_point, data=data, headers={'Authorization': 'Token {}'.format(self.token)})
         if resp.status_code not in [200, 201, 202]:
             raise ClientError('Could not import corpus: {}'.format(resp.text))
 

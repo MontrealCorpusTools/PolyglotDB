@@ -78,17 +78,20 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
         speaker = r['s']['name']
         u = r['u']
         phones = r['p']
+
     query = '''DELETE from "pitch"
                     where "discourse" = '{}' 
                     and "speaker" = '{}' 
                     and "time" >= {} 
                     and "time" <= {};'''.format(discourse, speaker, to_nano(u['begin']), to_nano(u['end']))
     client = corpus_context.acoustic_client()
+    print(query)
     result = client.query(query)
     data = []
     for data_point in new_track:
         speaker, discourse, channel = speaker, discourse, channel
         time_point, value = data_point['time'], data_point['F0']
+        print(time_point, value)
         t_dict = {'speaker': speaker, 'discourse': discourse, 'channel': channel}
         label = None
         for i, p in enumerate(sorted(phones, key=lambda x: x['begin'])):

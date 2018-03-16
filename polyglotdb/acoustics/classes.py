@@ -39,7 +39,12 @@ class TimePoint(object):
         return item in self.values
 
     def __getitem__(self, item):
+        if item == 'time':
+            return self.time
         return self.values[item]
+
+    def __setitem__(self, key, value):
+        self.values[key] = value
 
     def __getattr__(self, item):
         if item in self.values:

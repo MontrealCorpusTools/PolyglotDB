@@ -42,6 +42,7 @@ def test_save_new_pitch_track(acoustic_utt_config, praat_path):
             print(r)
             print(len(r.track))
             for point in r.track:
+                print(point.time, point['F0'])
                 assert point['F0'] == 100
 
 

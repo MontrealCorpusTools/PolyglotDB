@@ -298,13 +298,24 @@ def corpus_data_syllable_morpheme_srur():
     data = parser.parse_discourse('test_syllable_morpheme')
     return data
 
+@pytest.fixture(scope='session')
+def test_user():
+    return 'test_user', 'notarealpassword'
 
 @pytest.fixture(scope='session')
-def graph_db(localhost):
+def auth_token(localhost, test_user):
     from polyglotdb.client.client import PGDBClient, ClientError
     client = PGDBClient(localhost)
+    token= client.login(*test_user)
+    return token
+
+@pytest.fixture(scope='session')
+def graph_db(localhost, auth_token):
+    from polyglotdb.client.client import PGDBClient, ClientError
+    client = PGDBClient(localhost, token=auth_token)
 
     dbs = client.list_databases()
+    print(dbs)
     for d in dbs:
         if d['name'] == 'main_test_database':
             client.delete_database(d['name'])
@@ -539,7 +550,7 @@ def reaper_path():
 
 @pytest.fixture(scope='session')
 def localhost():
-    return 'http://localhost:8000'
+    return 'http://localhost:8080'
 
 
 @pytest.fixture(scope='session')
