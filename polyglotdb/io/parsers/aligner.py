@@ -19,6 +19,7 @@ class AlignerParser(TextgridParser):
     word_label = 'word'
     phone_label = 'phone'
     name = 'aligner'
+    speaker_first = True
     def __init__(self, annotation_types, hierarchy, make_transcription=True,
                  make_label=False,
                  stop_check=None, call_back=None):
@@ -42,7 +43,10 @@ class AlignerParser(TextgridParser):
             for ti in tg.tiers:
                 if ' - ' not in ti.name:
                     continue
-                speaker, name = ti.name.split(' - ')
+                if self.speaker_first:
+                    speaker, name = ti.name.split(' - ')
+                else:
+                    name, speaker = ti.name.split(' - ')
                 print(speaker)
                 print(name)
                 speaker = speaker.strip()
@@ -134,7 +138,10 @@ class AlignerParser(TextgridParser):
                     cutoffs = [x / n_channels for x in range(1, n_channels)]
                     for ti in tg.tiers:
                         try:
-                            speaker, type = ti.name.split(' - ')
+                            if self.speaker_first:
+                                speaker, type = ti.name.split(' - ')
+                            else:
+                                type, speaker = ti.name.split(' - ')
                         except ValueError:
                             continue
                         if speaker in speaker_channel_mapping:
@@ -150,7 +157,10 @@ class AlignerParser(TextgridParser):
             # Parse the tiers
             for ti in tg.tiers:
                 try:
-                    speaker, type = ti.name.split(' - ')
+                    if self.speaker_first:
+                        speaker, type = ti.name.split(' - ')
+                    else:
+                        type, speaker = ti.name.split(' - ')
                 except ValueError:
                     continue
                 if type.lower().startswith(self.word_label):
