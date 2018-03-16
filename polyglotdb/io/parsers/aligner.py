@@ -43,12 +43,16 @@ class AlignerParser(TextgridParser):
                 if ' - ' not in ti.name:
                     continue
                 speaker, name = ti.name.split(' - ')
+                print(speaker)
+                print(name)
                 speaker = speaker.strip()
                 name = name.strip()
                 if name.lower().startswith(self.word_label):
                     found_words[speaker] = True
                 elif name.lower().startswith(self.phone_label):
                     found_phones[speaker] = True
+            print(found_words)
+            print(found_phones)
             found_word = all(found_words.values())
             found_phone = all(found_words.values())
         else:
