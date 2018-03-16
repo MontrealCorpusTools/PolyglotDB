@@ -77,7 +77,7 @@ class PGDBClient(object):
 
         end_point = '/'.join([self.host, 'api', 'databases', str(database_id), 'data_directory', ''])
         resp = requests.get(end_point, headers={'Authorization': 'Token {}'.format(self.token)})
-        print(resp.json())
+
         return resp.json()
 
     def get_ports(self, database_name):
@@ -145,14 +145,12 @@ class PGDBClient(object):
                 break
         else:
             raise ClientError('Could not find corpus, does not exist.')
-        print('client query data', data)
         data['blocking'] = blocking
         assert 'corpus_name' in data
         end_point = '/'.join([self.host, 'api', 'corpora', str(corpus_id), 'query', ''])
         resp = requests.post(end_point, json=data, headers={'Authorization': 'Token {}'.format(self.token)})
         if resp.status_code not in [200, 201, 202]:
             raise ClientError('Could not run query: {}'.format(resp.text))
-        print(resp.text)
         return resp.json()
 
     def import_corpus(self, name, source_directory, format, database_name, blocking=False):
@@ -173,7 +171,6 @@ class PGDBClient(object):
             data = {'name': name, 'source_directory': source_directory,
                     'format': format, 'database': database_id}
             resp = requests.post(end_point,data=data, headers={'Authorization': 'Token {}'.format(self.token)})
-            print(resp.json())
             corpus_id = resp.json()['id']
 
         end_point = '/'.join([self.host, 'api', 'corpora', str(corpus_id), 'import_corpus', ''])
@@ -192,7 +189,6 @@ class PGDBClient(object):
             raise ClientError('Could not find database, does not exist.')
         end_point = '/'.join([self.host, 'api', 'databases', str(database_id), 'start', ''])
         resp = requests.post(end_point, data={}, headers={'Authorization': 'Token {}'.format(self.token)})
-        print(resp)
         if resp.status_code not in [200, 201, 202]:
             raise ClientError('Could not start database: {}'.format(resp.text))
 

@@ -74,7 +74,11 @@ class AlignerParser(TextgridParser):
             Parsed data from the file
         '''
         tg = TextGrid()
-        tg.read(path)
+        try:
+            tg.read(path)
+        except Exception as e:
+            print('There was an issue parsing {}:'.format(path))
+            raise
 
         multiple_speakers, is_valid = self._is_valid(tg)
 
