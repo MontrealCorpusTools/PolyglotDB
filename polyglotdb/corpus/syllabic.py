@@ -189,6 +189,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
             q = q.order_by(word_type.begin)
             q = q.columns(word_type.id.column_name('id'), phone_type.id.column_name('phone_id'),
                           word_type.begin.column_name('begin'),
+                          word_type.label.column_name('label'),
                           word_type.end.column_name('end'),
                           phone_type.label.column_name('phones'),
                           phone_type.begin.column_name('begins'),
@@ -202,12 +203,10 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
             for w in results:
                 phones = w['phones']
                 phone_ids = w['phone_id']
+
                 if not phone_ids:
-                    print(q.cypher(), q.cypher_params())
-                    print(w)
-                    print(w['id'])
-                    print(phones)
-                    print(w['discourse'], w['begin'], w['end'])
+                    print('The word {} in file {} ({} to {}) did not have any phones.'.format(w['label'], w['discourse'], w['begin'], w['end']))
+                    continue
                 phone_begins = w['begins']
                 phone_ends = w['ends']
                 discourse = w['discourse']
