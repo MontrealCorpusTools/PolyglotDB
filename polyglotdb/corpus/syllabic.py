@@ -203,8 +203,9 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                 if not phone_ids:
                     print(q.cypher(), q.cypher_params())
                     print(w)
+                    print(w['id'])
                     print(phones)
-                    print(w['disocurse'])
+                    print(w['discourse'])
                 phone_begins = w['begins']
                 phone_ends = w['ends']
                 discourse = w['discourse']
