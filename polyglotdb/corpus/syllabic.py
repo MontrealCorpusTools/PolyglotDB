@@ -188,6 +188,8 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
             q = q.order_by(word_type.discourse.name.column_name('discourse'))
             q = q.order_by(word_type.begin)
             q = q.columns(word_type.id.column_name('id'), phone_type.id.column_name('phone_id'),
+                          word_type.begin.column_name('begin'),
+                          word_type.end.column_name('end'),
                           phone_type.label.column_name('phones'),
                           phone_type.begin.column_name('begins'),
                           phone_type.end.column_name('ends'),
@@ -205,7 +207,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                     print(w)
                     print(w['id'])
                     print(phones)
-                    print(w['discourse'])
+                    print(w['discourse'], w['begin'], w['end'])
                 phone_begins = w['begins']
                 phone_ends = w['ends']
                 discourse = w['discourse']
