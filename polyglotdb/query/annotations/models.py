@@ -151,18 +151,19 @@ class LinguisticAnnotation(BaseAnnotation):
 
     @property
     def spectrogram(self):
-        orig, time_step, freq_step = self.corpus_context.generate_spectrogram(self.discourse.name, 'consonant', begin=self.begin,
-                                                            end=self.end)
+        orig, time_step, freq_step = self.corpus_context.generate_spectrogram(self.discourse.name, 'consonant',
+                                                                              begin=self.begin,
+                                                                              end=self.end)
         reshaped = []
         for i in range(orig.shape[0]):
             for j in range(orig.shape[1]):
                 reshaped.append({'time': j * time_step + self.begin, 'frequency': i * freq_step,
                                  'power': float(orig[i, j])})
         data = {'values': reshaped,
-                            'time_step': time_step,
-                            'freq_step': freq_step,
-                            'num_time_bins': orig.shape[1],
-                            'num_freq_bins': orig.shape[0]}
+                'time_step': time_step,
+                'freq_step': freq_step,
+                'num_time_bins': orig.shape[1],
+                'num_freq_bins': orig.shape[0]}
         return data
 
     def __getattr__(self, key):
@@ -374,9 +375,9 @@ class LinguisticAnnotation(BaseAnnotation):
 
         properties : dict
         """
-        #if 'begin' not in properties:
+        # if 'begin' not in properties:
         #    properties['begin'] = self.begin
-        #if 'end' not in properties:
+        # if 'end' not in properties:
         #    properties['end'] = self.end
         properties['id'] = str(uuid1())
         print(properties)
@@ -405,7 +406,7 @@ class LinguisticAnnotation(BaseAnnotation):
             if type not in self._subannotations:
                 self._subannotations[type] = []
             self._subannotations[type].append(sa)
-            #self._subannotations[type].sort(key=lambda x: x.begin)
+            # self._subannotations[type].sort(key=lambda x: x.begin)
             return sa.node, rel
 
 
@@ -458,7 +459,8 @@ class SubAnnotation(BaseAnnotation):
         self._node = item
         self._id = item['id']
         for x in self._node.labels:
-            if x in self.corpus_context.hierarchy.subannotations[self._annotation._type]:
+            if self._annotation._type in self.corpus_context.hierarchy.subannotations and x in \
+                    self.corpus_context.hierarchy.subannotations[self._annotation._type]:
                 self._type = x
                 break
 
