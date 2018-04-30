@@ -87,7 +87,14 @@ class BaseQuery(object):
         """
         Apply one or more filters to a query.
         """
-        self._criterion.extend(args)
+        from .elements import EqualClauseElement
+        for a in args:
+            for c in self._criterion:
+                if c.attribute == a.attribute and isinstance(c, EqualClauseElement) and isinstance(a, EqualClauseElement):
+                    c.value = a.value
+                    break
+            else:
+                self._criterion.append(a)
         return self
 
     def columns(self, *args):

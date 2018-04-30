@@ -31,6 +31,7 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             pa = LinguisticAnnotation(corpus)
             pa.node = r[pre.alias]
             pa.type_node = r[pre.type_alias]
+            pa._preloaded = True
 
             a._supers[pre.node_type] = pa
         elif isinstance(pre, QuerySubAnnotation):
