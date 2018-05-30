@@ -81,7 +81,7 @@ class LinguisticAnnotation(BaseAnnotation):
         self._preloaded = False
 
     def __str__(self):
-        return '<{} annotation with id: {}>'.format(self._type, self._node.properties['id'])
+        return '<{} annotation with id: {}>'.format(self._type, self._node['id'])
 
     @property
     def corpus_context(self):
@@ -285,10 +285,10 @@ class LinguisticAnnotation(BaseAnnotation):
         """
         for k, v in kwargs.items():
             if k in self._type_node.keys():
-                self._type_node.properties.update(**{k: v})
-            self._node.properties.update(**{k: v})
+                self._type_node._update({k: v})
+            self._node._update({k: v})
         if self._node['begin'] > self._node['end']:
-            self._node.properties.update(begin=self._node['end'], end=self._node['begin'])
+            self._node._update({}, begin=self._node['end'], end=self._node['begin'])
         self._unsaved = True
 
     def save(self):
@@ -443,9 +443,9 @@ class SubAnnotation(BaseAnnotation):
         kwards : dict
             keyword arguments to update properties
         """
-        self._node.properties.update(**kwargs)
+        self._node._update(kwargs)
         if self._node['begin'] > self._node['end']:
-            self._node.properties.update(begin=self._node['end'], end=self._node['begin'])
+            self._node._update({}, begin=self._node['end'], end=self._node['begin'])
         self._unsaved = True
 
     @property
