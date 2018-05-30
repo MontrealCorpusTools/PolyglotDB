@@ -35,11 +35,12 @@ install:
   - source activate test-server-environment
   - pip install -r polyglot-server/requirements.txt
   - python polyglot-server/manage.py makemigrations
+  - echo "from django.contrib.auth.models import User; User.objects.filter(email='admin@example.com').delete(); User.objects.create_superuser('test_user', 'admin@example.com', 'notarealpassword')" | python manage.py shell
   - python polyglot-server/manage.py migrate --run-syncdb
 
 # Run test
 script:
-  - (python polyglot-server/manage.py runserver) & (source activate test-environment && coverage run --source=polyglotdb setup.py test)
+  - (python polyglot-server/manage.py runserver 8080) & (source activate test-environment && coverage run --source=polyglotdb setup.py test)
 
 # Calculate coverage
 after_success:
