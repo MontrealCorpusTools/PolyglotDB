@@ -4,7 +4,6 @@ from conch.analysis.pitch import ReaperPitchTrackFunction, PraatSegmentPitchTrac
 def generate_pitch_function(algorithm, min_pitch, max_pitch, path=None, kwargs=None):
     time_step = 0.01
     if algorithm == 'reaper':
-        print('HIIIIIII')
         pitch_function = ReaperPitchTrackFunction(reaper_path=path, min_pitch=min_pitch, max_pitch=max_pitch,
                                                   time_step=time_step)
     elif algorithm == 'praat':

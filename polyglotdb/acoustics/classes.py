@@ -35,6 +35,9 @@ class TimePoint(object):
         self.time = time
         self.values = {}
 
+    def __str__(self):
+        return '<Time point {}: {}>'.format(self.time, self.values)
+
     def __contains__(self, item):
         return item in self.values
 

@@ -47,6 +47,8 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
         output = pitch_function(seg)
 
         for k, v in output.items():
+            if v['F0'] is None or v['F0'] <= 0:
+                continue
             p = TimePoint(k)
             p.add_value('F0',  v['F0'])
             track.add(p)
@@ -78,14 +80,24 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
         speaker = r['s']['name']
         u = r['u']
         phones = r['p']
-
+    print(u['begin'], u['end'])
+    client = corpus_context.acoustic_client()
     query = '''DELETE from "pitch"
                     where "discourse" = '{}' 
                     and "speaker" = '{}' 
                     and "time" >= {} 
                     and "time" <= {};'''.format(discourse, speaker, to_nano(u['begin']), to_nano(u['end']))
-    client = corpus_context.acoustic_client()
     result = client.query(query)
+
+    query = '''select * from "pitch"
+                    where "discourse" = '{}' 
+                    and "speaker" = '{}' 
+                    and "time" >= {} 
+                    and "time" <= {};'''.format(discourse, speaker, to_nano(u['begin']), to_nano(u['end']))
+    result = client.query(query)
+    print(query)
+    for r in result:
+        print('RESULT', r)
     data = []
     for data_point in new_track:
         speaker, discourse, channel = speaker, discourse, channel
@@ -118,6 +130,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
              'fields': fields
              }
         data.append(d)
+    print(data)
     client.write_points(data, batch_size=1000, time_precision='ms')
 
 
@@ -160,7 +173,7 @@ def analyze_pitch(corpus_context,
         speaker_data = {}
         if call_back is not None:
             call_back('Getting original speaker means and SDs...')
-        for i, (k, v) in enumerate(segment_mapping.items()):
+        for i, ((k,), v) in enumerate(segment_mapping.items()):
             if call_back is not None:
                 call_back('Analyzing speaker {} ({} of {})'.format(k, i, num_speakers))
             output = analyze_segments(v, pitch_function, stop_check=stop_check)
@@ -179,7 +192,7 @@ def analyze_pitch(corpus_context,
                         sum_square_pitch += v * v
             speaker_data[k] = [sum_pitch / n, math.sqrt((n * sum_square_pitch - sum_pitch * sum_pitch) / (n * (n - 1)))]
 
-    for i, (speaker, v) in enumerate(segment_mapping.items()):
+    for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         if call_back is not None:
             call_back('Analyzing speaker {} ({} of {})'.format(speaker, i, num_speakers))
         if algorithm == 'gendered':

@@ -1,1 +1,1 @@
-from .query import GraphQuery, DiscourseGraphQuery, SpeakerGraphQuery
+from .query import GraphQuery, SplitQuery

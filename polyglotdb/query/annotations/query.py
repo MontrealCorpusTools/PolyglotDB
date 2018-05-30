@@ -11,9 +11,10 @@ from .attributes import (HierarchicalAnnotation)
 from .results import QueryResults
 from .profiles.base import Filter, Column
 
-from polyglotdb.exceptions import SubannotationError
+from polyglotdb.exceptions import GraphQueryError
 
 from ..base import BaseQuery
+
 
 
 def base_stop_check():
@@ -268,7 +269,12 @@ class GraphQuery(BaseQuery):
 
 
 class SplitQuery(GraphQuery):
-    splitter = ''
+    def __init__(self, corpus, to_find, stop_check=None):
+        super(SplitQuery, self).__init__(corpus, to_find, stop_check)
+        try:
+            self.splitter = self.corpus.config.query_behavior
+        except (AttributeError, GraphQueryError):
+            self.splitter = 'speaker'
 
     def base_query(self, filters=None):
         """ sets up base query
@@ -292,17 +298,34 @@ class SplitQuery(GraphQuery):
     def split_queries(self):
         """ splits a query into multiple queries """
         from .elements import BaseNotEqualClauseElement, BaseNotInClauseElement
-        attribute_name = self.splitter[:-1]  # remove 's', fixme maybe?
-        splitter_annotation = getattr(self.to_find, attribute_name)
-        splitter_attribute = getattr(splitter_annotation, 'name')
-        splitter_names = sorted(getattr(self.corpus, self.splitter))
+        speaker_annotation = getattr(self.to_find, 'speaker')
+        speaker_attribute = getattr(speaker_annotation, 'name')
+
+        discourse_annotation = getattr(self.to_find, 'discourse')
+        discourse_attribute = getattr(discourse_annotation, 'name')
+
+        splitter_names = sorted(getattr(self.corpus, self.splitter + 's'))
         if self.call_back is not None:
             self.call_back(0, len(splitter_names))
+        if self.splitter == 'speaker':
+            splitter_annotation = speaker_annotation
+            splitter_attribute = speaker_attribute
+        else:
+            splitter_annotation = discourse_annotation
+            splitter_attribute = discourse_attribute
         selection = []
         include = True
         reg_filters = []
+        filter_on_speaker = False
+        filter_on_discourse = False
         for c in self._criterion:
             try:
+                if c.attribute.node == speaker_annotation and \
+                                c.attribute.label == 'name':
+                    filter_on_speaker = True
+                elif c.attribute.node == discourse_annotation and \
+                                c.attribute.label == 'name':
+                    filter_on_discourse = True
                 if c.attribute.node == splitter_annotation and \
                                 c.attribute.label == 'name':
                     if isinstance(c.value, (list, tuple, set)):
@@ -315,7 +338,13 @@ class SplitQuery(GraphQuery):
                     reg_filters.append(c)
             except AttributeError:
                 reg_filters.append(c)
-
+        labels = [x.attribute.label for x in self._criterion if hasattr(x, 'attribute')]
+        if self._offset is not None or self._limit is not None or 'id' in labels:
+            yield self.base_query()
+            return
+        if filter_on_speaker and filter_on_discourse:
+            yield self.base_query()
+            return
         for i, x in enumerate(splitter_names):
             if selection:
                 if include and x not in selection:
@@ -324,7 +353,7 @@ class SplitQuery(GraphQuery):
                     continue
             if self.call_back is not None:
                 self.call_back(i)
-                self.call_back('Querying {} {} of {} ({})...'.format(attribute_name, i, len(splitter_names), x))
+                self.call_back('Querying {} {} of {} ({})...'.format(self.splitter, i, len(splitter_names), x))
 
             base = self.base_query(reg_filters)
             al = base.required_nodes()
@@ -341,20 +370,22 @@ class SplitQuery(GraphQuery):
 
     def all(self):
         """ returns all results from a query """
-        labels = [x.attribute.label for x in self._criterion if hasattr(x, 'attribute')]
-        if self._offset is not None or self._limit is not None or 'id' in labels:
-            return self.base_query().all()
-        else:
-            results = None
-            for q in self.split_queries():
-                if self.stop_check():
-                    return
-                if results is None:
-                    r = q.all()
-                    results = r
-                else:
-                    results.add_results(q)
-            return results
+        results = None
+        for q in self.split_queries():
+            if self.stop_check():
+                return
+            if results is None:
+                r = q.all()
+                results = r
+            else:
+                results.add_results(q)
+        return results
+
+    def count(self):
+        count = 0
+        for q in self.split_queries():
+            count += q.count()
+        return count
 
     def to_csv(self, path):
         for i, q in enumerate(self.split_queries()):
@@ -393,10 +424,3 @@ class SplitQuery(GraphQuery):
                 return
             q.set_properties(**kwargs)
 
-
-class SpeakerGraphQuery(SplitQuery):
-    splitter = 'speakers'
-
-
-class DiscourseGraphQuery(SplitQuery):
-    splitter = 'discourses'

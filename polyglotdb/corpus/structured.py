@@ -1,6 +1,6 @@
 import time
 from ..query import value_for_cypher
-from ..query.annotations.query import DiscourseGraphQuery
+from ..query.annotations.query import SplitQuery
 from ..query.metadata.query import MetaDataQuery
 from ..structure import Hierarchy
 from .base import BaseContext
@@ -211,7 +211,8 @@ class StructuredContext(BaseContext):
         if subset is not None:
             higher = higher.filter_by_subset(subset)
 
-        q = DiscourseGraphQuery(self, lower)
+        q = SplitQuery(self, lower)
+        q.splitter = 'discourse'
 
         q.cache(higher.position.column_name(name))
         self.hierarchy.add_token_properties(self, lower_annotation_type, [(name, float)])
@@ -236,7 +237,8 @@ class StructuredContext(BaseContext):
         lower = getattr(higher, lower_annotation_type)
         if subset is not None:
             lower = lower.filter_by_subset(subset)
-        q = DiscourseGraphQuery(self, higher)
+        q = SplitQuery(self, higher)
+        q.splitter = 'discourse'
 
         q.cache(lower.rate.column_name(name))
 
@@ -262,7 +264,8 @@ class StructuredContext(BaseContext):
         lower = getattr(higher, lower_annotation_type)
         if subset is not None:
             lower = lower.filter_by_subset(subset)
-        q = DiscourseGraphQuery(self, higher)
+        q = SplitQuery(self, higher)
+        q.splitter = 'discourse'
 
         q.cache(lower.count.column_name(name))
 

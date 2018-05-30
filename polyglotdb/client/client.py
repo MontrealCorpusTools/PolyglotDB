@@ -4,7 +4,7 @@ from requests.exceptions import ConnectionError
 
 from ..exceptions import ClientError
 from ..structure import Hierarchy
-from ..query.annotations import GraphQuery, DiscourseGraphQuery, SpeakerGraphQuery
+from ..query.annotations import GraphQuery, SplitQuery
 
 
 class PGDBClient(object):
@@ -256,11 +256,8 @@ class PGDBClient(object):
             Query object
 
         """
-        if self.query_behavior == 'speaker':
-            cls = SpeakerGraphQuery
-        elif self.query_behavior == 'discourse':
-            cls = DiscourseGraphQuery
-        else:
-            cls = GraphQuery
-        return cls(annotation_type.hierarchy, annotation_type)
+        q = SplitQuery(annotation_type.hierarchy, annotation_type)
+        q.splitter = self.query_behavior
+
+        return q
 

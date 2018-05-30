@@ -62,10 +62,18 @@ def analyze_formant_tracks(corpus_context, source='praat', call_back=None, stop_
     stop_check : callable
         stop check function, optional
     """
-    segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING).grouped_mapping('speaker')
+    segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING)
+    property_key = 'speaker'
+    data = {x: [] for x in segment_mapping.levels(property_key)}
+    for s in segment_mapping.segments:
+        print(s)
+        data[s[property_key]].append(s)
+    print(data)
+    segment_mapping = segment_mapping.grouped_mapping('speaker')
     if call_back is not None:
         call_back('Analyzing files...')
-    for i, (speaker, v) in enumerate(segment_mapping.items()):
+    print('segment_mapping', segment_mapping)
+    for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         gender = None
         try:
             q = corpus_context.query_speakers().filter(corpus_context.speaker.name == speaker)
@@ -109,7 +117,7 @@ def analyze_vowel_formant_tracks(corpus_context, source='praat',
     if call_back is not None:
         call_back('Analyzing files...')
     # goes through each phone and: makes a formant function, analyzes the phone, and saves the tracks
-    for i, (speaker, v) in enumerate(segment_mapping.items()):
+    for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         gender = None
         try:
             q = corpus_context.query_speakers().filter(corpus_context.speaker.name == speaker)

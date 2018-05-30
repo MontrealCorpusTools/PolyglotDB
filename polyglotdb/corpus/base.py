@@ -8,7 +8,7 @@ from decimal import Decimal
 from neo4j.v1 import GraphDatabase
 
 from ..query.annotations.attributes import AnnotationNode, PauseAnnotation
-from ..query.annotations import GraphQuery, SpeakerGraphQuery, DiscourseGraphQuery
+from ..query.annotations import GraphQuery, SplitQuery
 from ..query.lexicon import LexiconQuery, LexiconNode
 from ..query.speaker import SpeakerQuery, SpeakerNode
 from ..query.discourse import DiscourseQuery, DiscourseNode
@@ -64,8 +64,6 @@ class BaseContext(object):
         else:
             self.config.praat_path = shutil.which(praat_exe)
 
-        self.config.query_behavior = 'speaker'
-
     def exists(self):
         statement = '''MATCH (c:Corpus) where c.name = '{}' return c '''.format(self.corpus_name)
         res = list(self.execute_cypher(statement))
@@ -95,6 +93,8 @@ class BaseContext(object):
                 parameters[k] = float(v)
         try:
             with self.graph_driver.session() as session:
+                print(statement)
+                print(parameters)
                 results = session.run(statement, **parameters)
             return results
         except Exception as e:
@@ -289,13 +289,8 @@ class BaseContext(object):
             raise (GraphQueryError(
                 'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(
                     annotation_type.name, ', '.join(sorted(self.hierarchy.annotation_types)))))
-        if self.config.query_behavior == 'speaker':
-            cls = SpeakerGraphQuery
-        elif self.config.query_behavior == 'discourse':
-            cls = DiscourseGraphQuery
-        else:
-            cls = GraphQuery
-        return cls(self, annotation_type)
+
+        return SplitQuery(self, annotation_type)
 
     def query_lexicon(self, annotation_type):
         '''

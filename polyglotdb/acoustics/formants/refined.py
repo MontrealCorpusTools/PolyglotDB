@@ -46,7 +46,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
     best_prototype_metadata = {}
     # For each vowel token, collect the formant measurements
     # Pick the best track that is closest to the averages gotten from prototypes
-    for i, (vowel, seg) in enumerate(segment_mapping.grouped_mapping('label').items()):
+    for i, ((vowel,), seg) in enumerate(segment_mapping.grouped_mapping('label').items()):
 
         output = analyze_segments(seg, formant_function, stop_check=stop_check)  # Analyze the phone
 

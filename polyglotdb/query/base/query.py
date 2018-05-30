@@ -90,7 +90,8 @@ class BaseQuery(object):
         from .elements import EqualClauseElement
         for a in args:
             for c in self._criterion:
-                if c.attribute == a.attribute and isinstance(c, EqualClauseElement) and isinstance(a, EqualClauseElement):
+                if isinstance(c, EqualClauseElement) and isinstance(a, EqualClauseElement) and \
+                        c.attribute.node == a.attribute.node and c.attribute.label == a.attribute.label:
                     c.value = a.value
                     break
             else:

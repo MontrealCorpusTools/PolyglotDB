@@ -19,8 +19,9 @@ def test_analyze_discourse_pitch(acoustic_utt_config, praat_path):
         r = g.query_graph(g.utterance).all()
         assert(len(r))
         for u in r:
-            track = g.analyze_utterance_pitch(u, pitch_source='praat', min_pitch=80, max_pitch=90)
-            assert track
+            track = g.analyze_utterance_pitch(u, pitch_source='praat', min_pitch=80, max_pitch=100)
+            if u.begin < 24:
+                assert len(track)
 
 @acoustic
 def test_save_new_pitch_track(acoustic_utt_config, praat_path):
@@ -36,7 +37,11 @@ def test_save_new_pitch_track(acoustic_utt_config, praat_path):
             print(len(track))
             for x in track:
                 x['F0'] = 100
+                print(x)
+            print('UPDATING TRACK')
+
             g.update_utterance_pitch_track(u, track)
+
         q = g.query_graph(g.utterance).columns(g.utterance.id,g.utterance.pitch.track)
         for r in q.all():
             print(r)

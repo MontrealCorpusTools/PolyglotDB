@@ -31,12 +31,13 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
     speakers = corpus_context.speakers
     segment_mapping = SegmentMapping()
     for s in speakers:
+        print('speaker', s)
         statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
                     WHERE s.name = {{speaker_name}}
                     RETURN d, r'''.format(corpus_name=corpus_context.cypher_safe_name)
         results = corpus_context.execute_cypher(statement, speaker_name=s)
-
         for r in results:
+            print('result', r)
             channel = r['r']['channel']
             discourse = r['d']['name']
             if file_type == 'vowel':
@@ -54,9 +55,13 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                 qr = qr.filter(at.subset == subset)
             qr = qr.filter(at.discourse.name == discourse)
             qr = qr.filter(at.speaker.name == s)
+            print(qr._criterion)
+            print('query', qr.cypher())
+            print('count', qr.count())
             if qr.count() == 0:
                 continue
             annotations = qr.all()
+            print(annotations)
             if annotations is not None:
                 for a in annotations:
                     if duration_threshold is not None and a.end - a.begin < duration_threshold:

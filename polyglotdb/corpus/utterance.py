@@ -1,6 +1,6 @@
 from uuid import uuid1
 
-from ..query.annotations import SpeakerGraphQuery
+from ..query.annotations import SplitQuery
 from ..query.base.func import Max, Min
 from ..exceptions import GraphQueryError
 from ..io.importer import utterance_data_to_csvs, import_utterance_csv, create_utterance_csvs, \
@@ -14,7 +14,7 @@ class UtteranceContext(PauseContext):
         Remove all utterance annotations.
         """
         try:
-            q = SpeakerGraphQuery(self, self.utterance)
+            q = SplitQuery(self, self.utterance)
             q.delete()
             self.hierarchy.remove_annotation_type('utterance')
             self.encode_hierarchy()

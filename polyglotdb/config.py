@@ -69,6 +69,7 @@ class CorpusConfig(object):
         self.graph_user = None
         self.graph_password = None
         self.host = 'localhost'
+        self.query_behavior = 'speaker'
         self.graph_http_port = 7474
         self.graph_bolt_port = 7687
 
