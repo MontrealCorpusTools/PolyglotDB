@@ -66,13 +66,10 @@ def analyze_formant_tracks(corpus_context, source='praat', call_back=None, stop_
     property_key = 'speaker'
     data = {x: [] for x in segment_mapping.levels(property_key)}
     for s in segment_mapping.segments:
-        print(s)
         data[s[property_key]].append(s)
-    print(data)
     segment_mapping = segment_mapping.grouped_mapping('speaker')
     if call_back is not None:
         call_back('Analyzing files...')
-    print('segment_mapping', segment_mapping)
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         gender = None
         try:

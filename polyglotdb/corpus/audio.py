@@ -403,7 +403,7 @@ class AudioContext(SyllabicContext):
             columns = '"time", "{}"'.format(F0_name)
         query = '''select {} from "pitch"
                         {};'''.format(columns, filter_string)
-        print('QUERY', query)
+
         result = client.query(query)
         track = Track()
         for r in result.get_points('pitch'):
@@ -416,15 +416,15 @@ class AudioContext(SyllabicContext):
         return track
 
     def _save_measurement_tracks(self, measurement, tracks, speaker):
-        print('SAVING TRACKS')
+
         if measurement not in ['formants', 'pitch', 'intensity']:
             raise (NotImplementedError('Only pitch, formants, and intensity can be currently saved.'))
         data = []
-        print(len(tracks))
+
         for seg, track in tracks.items():
             if not len(track.keys()):
                 continue
-            print(seg, tracks)
+
             file_path, begin, end, channel = seg.file_path, seg.begin, seg.end, seg.channel
             res = self.execute_cypher(
                 'MATCH (d:Discourse:{corpus_name}) where d.vowel_file_path = {{file_path}} RETURN d.name as name'.format(

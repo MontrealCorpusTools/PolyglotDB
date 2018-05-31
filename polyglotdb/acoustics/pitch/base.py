@@ -80,7 +80,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
         speaker = r['s']['name']
         u = r['u']
         phones = r['p']
-    print(u['begin'], u['end'])
+
     client = corpus_context.acoustic_client()
     query = '''DELETE from "pitch"
                     where "discourse" = '{}' 
@@ -89,15 +89,6 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
                     and "time" <= {};'''.format(discourse, speaker, to_nano(u['begin']), to_nano(u['end']))
     result = client.query(query)
 
-    query = '''select * from "pitch"
-                    where "discourse" = '{}' 
-                    and "speaker" = '{}' 
-                    and "time" >= {} 
-                    and "time" <= {};'''.format(discourse, speaker, to_nano(u['begin']), to_nano(u['end']))
-    result = client.query(query)
-    print(query)
-    for r in result:
-        print('RESULT', r)
     data = []
     for data_point in new_track:
         speaker, discourse, channel = speaker, discourse, channel
@@ -130,7 +121,6 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
              'fields': fields
              }
         data.append(d)
-    print(data)
     client.write_points(data, batch_size=1000, time_precision='ms')
 
 

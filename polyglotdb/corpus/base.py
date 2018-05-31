@@ -93,8 +93,8 @@ class BaseContext(object):
                 parameters[k] = float(v)
         try:
             with self.graph_driver.session() as session:
-                print(statement)
-                print(parameters)
+                #print(statement)
+                #print(parameters)
                 results = session.run(statement, **parameters)
             return results
         except Exception as e:

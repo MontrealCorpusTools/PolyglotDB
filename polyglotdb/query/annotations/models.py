@@ -380,7 +380,6 @@ class LinguisticAnnotation(BaseAnnotation):
         # if 'end' not in properties:
         #    properties['end'] = self.end
         properties['id'] = str(uuid1())
-        print(properties)
         discourse = self.discourse.name
         statement = '''MATCH (n:{type}:{corpus} {{id:{{a_id}}}})
         CREATE (n)<-[r:annotates]-(sub:{sub_type}:{corpus})
