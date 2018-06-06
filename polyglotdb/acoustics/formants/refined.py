@@ -1,4 +1,5 @@
 import math
+import os
 import numpy as np
 
 from conch import analyze_segments
@@ -6,7 +7,6 @@ from conch import analyze_segments
 from ..segments import generate_vowel_segments
 from .helper import generate_variable_formants_point_function, get_mahalanobis, get_mean_SD, save_formant_point_data
 
-##### JM #####
 def read_prototypes(vowel_prototypes_path):
 
     """Reads pre-measured means and covariance matrices from a file.
@@ -36,14 +36,11 @@ def read_prototypes(vowel_prototypes_path):
 
     return means_covar_d
 
-##############
 
 def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_threshold=0, num_iterations=1,
                                       call_back=None,
                                       stop_check=None,
-                                      ##### JM #####
                                       vowel_prototypes_path=''
-                                      ##############
                                       ):
     """Extracts F1, F2, F3 and B1, B2, B3.
 
@@ -80,35 +77,29 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
     formant_function = generate_variable_formants_point_function(corpus_context, min_formants, max_formants)
     best_prototype_metadata = {}
 
-    ##### JM #####
-    if vowel_prototypes_path != '':
+    use_vowel_prototypes = vowel_prototypes_path and os.path.exists(vowel_prototypes_path)
+    if use_vowel_prototypes:
         vowel_prototype_metadata = read_prototypes(vowel_prototypes_path)
-    ##############
 
     # For each vowel token, collect the formant measurements
     # Pick the best track that is closest to the averages gotten from prototypes
-    ##### JM #####
-    # for i, (vowel, seg) in enumerate(segment_mapping.grouped_mapping('label').items()):
+
     total_speaker_vowel_pairs = len(segment_mapping.grouped_mapping('speaker', 'label').items())
     for i, ((speaker, vowel), seg) in enumerate(segment_mapping.grouped_mapping('speaker', 'label').items()):
         print (speaker+' '+vowel+': '+str(i+1)+' of '+str(total_speaker_vowel_pairs))
-    ##############
         output = analyze_segments(seg, formant_function, stop_check=stop_check)  # Analyze the phone
 
-        ##### JM #####
-        if vowel_prototypes_path == '' and len(seg) < 6:
-        ##############
+        if use_vowel_prototypes and len(seg) < 6:
             print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
             for s, data in output.items():
                 best_track = data[default_formant]
                 best_data[s] = {k: best_track[k] for j, k in enumerate(columns)}
             continue
 
-        ##### JM #####
         selected_tracks = {}
         for s, data in output.items():
             selected_tracks[s] = data[default_formant]
-        if vowel_prototypes_path == '':
+        if use_vowel_prototypes:
             print ('no prototypes, using get_mean_SD()')
             prev_prototype_metadata = get_mean_SD(selected_tracks)
         elif not vowel in vowel_prototype_metadata:
@@ -117,9 +108,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
         else:
             # print ('using prototype')
             prev_prototype_metadata = vowel_prototype_metadata
-        ##############
 
-        ##### JM #####
         if num_iterations > 1 and len(seg) < 6:
             print("Skipping iterations for vowel {}, at least 6 tokens are needed, only found {}.".format(vowel, len(seg)))
             my_iterations = [0]
@@ -127,8 +116,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
             my_iterations = range(num_iterations)
 
         for _ in my_iterations:
-        ##############
-            # print (_+1)
+
             selected_tracks = {}
             prototype_means = prev_prototype_metadata[vowel][0]
             # Get Mahalanobis distance between every new observation and the sample/means
@@ -149,9 +137,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
                 selected_tracks[s] = {k: best_track[i] for i, k in enumerate(columns)}
                 best_data[s] = {k: best_track[i] for i, k in enumerate(columns)}
                 best_data[s]['num_formants'] = best_number
-            ##### JM #####
             if len(seg) >= 6:
-            ##############
                 prototype_metadata = get_mean_SD(selected_tracks)
                 prev_prototype_metadata = prototype_metadata
                 best_prototype_metadata.update(prototype_metadata)
