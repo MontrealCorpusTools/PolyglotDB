@@ -64,7 +64,12 @@ for nformants from minformants to maxformants
         formant$ = fixed$(formant, 2)
 
         bw = Get bandwidth at time... 'j' 'r' Hertz Linear
-        bw$ = fixed$(bw, 2)
+
+        ##### JM #####
+        bw = log10(bw)
+        # bw$ = fixed$(bw, 2)
+        bw$ = fixed$(bw, 4)
+        ##############
 
         output$ = output$ + formant$ + tab$ + bw$
 
