@@ -298,6 +298,15 @@ class SplitQuery(GraphQuery):
     def split_queries(self):
         """ splits a query into multiple queries """
         from .elements import BaseNotEqualClauseElement, BaseNotInClauseElement
+        if self.splitter not in ['speaker', 'discourse']:
+            yield self.base_query()
+            return
+
+        labels = [x.attribute.label for x in self._criterion if hasattr(x, 'attribute')]
+        if self._offset is not None or self._limit is not None or 'id' in labels:
+            yield self.base_query()
+            return
+
         speaker_annotation = getattr(self.to_find, 'speaker')
         speaker_attribute = getattr(speaker_annotation, 'name')
 
@@ -338,10 +347,6 @@ class SplitQuery(GraphQuery):
                     reg_filters.append(c)
             except AttributeError:
                 reg_filters.append(c)
-        labels = [x.attribute.label for x in self._criterion if hasattr(x, 'attribute')]
-        if self._offset is not None or self._limit is not None or 'id' in labels:
-            yield self.base_query()
-            return
         if filter_on_speaker and filter_on_discourse:
             yield self.base_query()
             return
