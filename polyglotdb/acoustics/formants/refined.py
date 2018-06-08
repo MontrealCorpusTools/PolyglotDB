@@ -91,7 +91,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
         print (speaker+' '+vowel+': '+str(i+1)+' of '+str(total_speaker_vowel_pairs))
         output = analyze_segments(seg, formant_function, stop_check=stop_check)  # Analyze the phone
 
-        if not use_vowel_prototypes and len(seg) < 6:
+        if len(seg) < 6:
             print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
             for s, data in output.items():
                 best_track = data[default_formant]
