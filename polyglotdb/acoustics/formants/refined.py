@@ -86,6 +86,8 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
 
     total_speaker_vowel_pairs = len(segment_mapping.grouped_mapping('speaker', 'label').items())
     for i, ((speaker, vowel), seg) in enumerate(segment_mapping.grouped_mapping('speaker', 'label').items()):
+        if len(seg) == 0:
+            continue
         print (speaker+' '+vowel+': '+str(i+1)+' of '+str(total_speaker_vowel_pairs))
         output = analyze_segments(seg, formant_function, stop_check=stop_check)  # Analyze the phone
 
