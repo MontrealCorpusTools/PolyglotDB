@@ -105,8 +105,8 @@ class AudioContext(SyllabicContext):
         signal, sr = librosa.load(path, sr=None)
         return signal, sr
 
-    def analyze_pitch(self, source='praat', stop_check=None, call_back=None):
-        analyze_pitch(self, source, stop_check, call_back)
+    def analyze_pitch(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
+        analyze_pitch(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
     def analyze_utterance_pitch(self, utterance, source='praat', **kwargs):
         return analyze_utterance_pitch(self, utterance, source, **kwargs)
@@ -114,19 +114,19 @@ class AudioContext(SyllabicContext):
     def update_utterance_pitch_track(self, utterance, new_track):
         update_utterance_pitch_track(self, utterance, new_track)
 
-    def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None):
-        analyze_formant_tracks(self, source, stop_check, call_back)
+    def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
+        analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
-    def analyze_vowel_formant_tracks(self, source='praat', stop_check=None, call_back=None, vowel_inventory=None):
-        analyze_vowel_formant_tracks(self, source, stop_check, call_back, vowel_inventory)
+    def analyze_vowel_formant_tracks(self, source='praat', stop_check=None, call_back=None, vowel_inventory=None, multiprocessing=True):
+        analyze_vowel_formant_tracks(self, source, stop_check, call_back, vowel_inventory, multiprocessing=multiprocessing)
 
-    def analyze_intensity(self, source='praat', stop_check=None, call_back=None):
-        analyze_intensity(self, source, stop_check, call_back)
+    def analyze_intensity(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
+        analyze_intensity(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
     def analyze_script(self, phone_class, script_path, duration_threshold=0.01, arguments=None, stop_check=None,
-                       call_back=None):
+                       call_back=None, multiprocessing=True):
         analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold, arguments=arguments,
-                       stop_check=stop_check, call_back=call_back)
+                       stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
 
     def genders(self):
         res = self.execute_cypher(

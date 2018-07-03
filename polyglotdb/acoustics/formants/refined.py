@@ -40,7 +40,7 @@ def read_prototypes(vowel_prototypes_path):
 def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_threshold=0, num_iterations=1,
                                       call_back=None,
                                       stop_check=None,
-                                      vowel_prototypes_path=''
+                                      vowel_prototypes_path='', multiprocessing=True
                                       ):
     """Extracts F1, F2, F3 and B1, B2, B3.
 
@@ -89,7 +89,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
         if len(seg) == 0:
             continue
         print (speaker+' '+vowel+': '+str(i+1)+' of '+str(total_speaker_vowel_pairs))
-        output = analyze_segments(seg, formant_function, stop_check=stop_check)  # Analyze the phone
+        output = analyze_segments(seg, formant_function, stop_check=stop_check, multiprocessing=multiprocessing)  # Analyze the phone
 
         if len(seg) < 6:
             print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))

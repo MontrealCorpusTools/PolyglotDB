@@ -127,7 +127,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
 def analyze_pitch(corpus_context,
                   source='praat',
                   call_back=None,
-                  stop_check=None):
+                  stop_check=None, multiprocessing=True):
     """
 
     Parameters
@@ -166,7 +166,7 @@ def analyze_pitch(corpus_context,
         for i, ((k,), v) in enumerate(segment_mapping.items()):
             if call_back is not None:
                 call_back('Analyzing speaker {} ({} of {})'.format(k, i, num_speakers))
-            output = analyze_segments(v, pitch_function, stop_check=stop_check)
+            output = analyze_segments(v, pitch_function, stop_check=stop_check, multiprocessing=multiprocessing)
 
             sum_pitch = 0
             sum_square_pitch = 0
@@ -211,7 +211,7 @@ def analyze_pitch(corpus_context,
                 max_pitch = absolute_max_pitch
             pitch_function = generate_pitch_function(source, min_pitch, max_pitch,
                                                      path=path)
-        output = analyze_segments(v, pitch_function, stop_check=stop_check)
+        output = analyze_segments(v, pitch_function, stop_check=stop_check, multiprocessing=multiprocessing)
         corpus_context.save_pitch_tracks(output, speaker)
         corpus_context.hierarchy.add_token_properties(corpus_context, 'utterance', [('pitch_last_edited', int)])
         corpus_context.encode_hierarchy()

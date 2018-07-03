@@ -166,7 +166,7 @@ def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
         g.reset_acoustics()
         g.config.reaper_path = reaper_path
         g.config.pitch_algorithm = 'basic'
-        g.analyze_pitch(source='reaper')
+        g.analyze_pitch(source='reaper',multiprocessing=False)
 
 
 @acoustic

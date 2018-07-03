@@ -10,7 +10,7 @@ from ..utils import PADDING
 
 
 def analyze_formant_points(corpus_context, call_back=None, stop_check=None, vowel_inventory=None,
-                           duration_threshold=None):
+                           duration_threshold=None, multiprocessing=True):
     """First pass of the algorithm; generates prototypes.
 
     Parameters
@@ -45,11 +45,11 @@ def analyze_formant_points(corpus_context, call_back=None, stop_check=None, vowe
 
     formant_function = generate_formants_point_function(corpus_context)  # Make formant function
     output = analyze_segments(segment_mapping, formant_function,
-                              stop_check=stop_check)  # Analyze the phone
+                              stop_check=stop_check, multiprocessing=multiprocessing)  # Analyze the phone
     return output
 
 
-def analyze_formant_tracks(corpus_context, source='praat', call_back=None, stop_check=None):
+def analyze_formant_tracks(corpus_context, source='praat', call_back=None, stop_check=None, multiprocessing=True):
     """
     Analyze formants of an entire utterance, and save the resulting formant tracks into the database.
 
@@ -82,14 +82,14 @@ def analyze_formant_tracks(corpus_context, source='praat', call_back=None, stop_
             formant_function = generate_base_formants_function(corpus_context, gender=gender, source=source)
         else:
             formant_function = generate_base_formants_function(corpus_context, source=source)
-        output = analyze_segments(v, formant_function, stop_check=stop_check)
+        output = analyze_segments(v, formant_function, stop_check=stop_check, multiprocessing=multiprocessing)
         corpus_context.save_formant_tracks(output, speaker)
 
 
 def analyze_vowel_formant_tracks(corpus_context, source='praat',
                                  call_back=None,
                                  stop_check=None,
-                                 vowel_inventory=None):
+                                 vowel_inventory=None, multiprocessing=True):
     """
     Analyze formants of individual vowels, and save the resulting formant tracks into the database for each phone.
 
@@ -126,5 +126,5 @@ def analyze_vowel_formant_tracks(corpus_context, source='praat',
             formant_function = generate_base_formants_function(corpus_context, gender=gender, source=source)
         else:
             formant_function = generate_base_formants_function(corpus_context, source=source)
-        output = analyze_segments(v, formant_function, stop_check=stop_check)
+        output = analyze_segments(v, formant_function, stop_check=stop_check, multiprocessing=multiprocessing)
         corpus_context.save_formant_tracks(output, speaker)

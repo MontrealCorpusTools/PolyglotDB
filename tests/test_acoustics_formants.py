@@ -19,7 +19,7 @@ def test_analyze_formants_basic_praat(acoustic_utt_config, praat_path, results_t
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.praat_path = praat_path
-        g.analyze_formant_tracks()
+        g.analyze_formant_tracks(multiprocessing=False)
         assert (g.has_formants(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
@@ -36,7 +36,7 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
         g.reset_acoustics()
         g.config.praat_path = praat_path
         vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
-        g.analyze_vowel_formant_tracks(vowel_inventory=vowel_inventory)
+        g.analyze_vowel_formant_tracks(vowel_inventory=vowel_inventory,multiprocessing=False)
         assert (g.has_formants(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)

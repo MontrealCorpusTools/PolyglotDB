@@ -38,7 +38,7 @@ def analyze_script(corpus_context,
                    duration_threshold=0.01,
                    arguments=None,
                    call_back=None,
-                   stop_check=None):
+                   stop_check=None, multiprocessing=True):
     """
     Perform acoustic analysis of phones using an input praat script.
 
@@ -80,7 +80,7 @@ def analyze_script(corpus_context,
     praat_path = corpus_context.config.praat_path
     script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
     time_section = time.time()
-    output = analyze_segments(segment_mapping.segments, script_function, stop_check=stop_check)
+    output = analyze_segments(segment_mapping.segments, script_function, stop_check=stop_check, multiprocessing=multiprocessing)
     if call_back is not None:
         call_back("time analyzing segments: " + str(time.time() - time_section))
     header = sorted(list(output.values())[0].keys())

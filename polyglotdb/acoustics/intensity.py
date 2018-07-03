@@ -10,7 +10,7 @@ from .utils import PADDING
 def analyze_intensity(corpus_context,
                       source='praat',
                       call_back=None,
-                      stop_check=None):
+                      stop_check=None, multiprocessing=True):
     """
     Analyze intensity of an entire utterance, and save the resulting intensity tracks into the database.
 
@@ -35,7 +35,7 @@ def analyze_intensity(corpus_context,
         except SpeakerAttributeError:
             pass
         intensity_function = generate_base_intensity_function(corpus_context)
-        output = analyze_segments(v, intensity_function, stop_check=stop_check)
+        output = analyze_segments(v, intensity_function, stop_check=stop_check, multiprocessing=multiprocessing)
         corpus_context.save_intensity_tracks(output, speaker)
 
 
