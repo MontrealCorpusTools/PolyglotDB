@@ -64,6 +64,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
     today = datetime.utcnow()
     utt_type = corpus_context.hierarchy.highest
     phone_type = corpus_context.hierarchy.lowest
+    time_stamp = today.timestamp()
     statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name}),
                 (u:{utt_type}:{corpus_name})-[:spoken_by]->(s),
                 (u)-[:spoken_in]->(d),
@@ -72,7 +73,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
                 SET u.pitch_last_edited = {{date}}
                 RETURN u, d, r, s, collect(p) as p'''.format(corpus_name=corpus_context.cypher_safe_name,
                                                              utt_type=utt_type, phone_type=phone_type)
-    results = corpus_context.execute_cypher(statement, utterance_id=utterance_id, date=today.timestamp())
+    results = corpus_context.execute_cypher(statement, utterance_id=utterance_id, date=time_stamp)
 
     for r in results:
         channel = r['r']['channel']
@@ -122,6 +123,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
              }
         data.append(d)
     client.write_points(data, batch_size=1000, time_precision='ms')
+    return time_stamp
 
 
 def analyze_pitch(corpus_context,

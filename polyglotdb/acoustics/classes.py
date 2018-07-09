@@ -30,6 +30,7 @@ class Track(object):
         for p in sorted(self.points, key=lambda x: x.time):
             yield p
 
+
 class TimePoint(object):
     def __init__(self, time):
         self.time = time

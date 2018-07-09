@@ -112,7 +112,7 @@ class AudioContext(SyllabicContext):
         return analyze_utterance_pitch(self, utterance, source, **kwargs)
 
     def update_utterance_pitch_track(self, utterance, new_track):
-        update_utterance_pitch_track(self, utterance, new_track)
+        return update_utterance_pitch_track(self, utterance, new_track)
 
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
@@ -141,6 +141,9 @@ class AudioContext(SyllabicContext):
 
     def reset_acoustics(self, call_back=None, stop_check=None):
         self.acoustic_client().drop_database(self.corpus_name)
+
+    def reset_pitch(self):
+        self.acoustic_client().query('''DROP SERIES from "pitch";''')
 
     def acoustic_client(self):
         client = InfluxDBClient(**self.config.acoustic_conncetion_kwargs)
@@ -411,7 +414,8 @@ class AudioContext(SyllabicContext):
             if relative_time:
                 s = (s - begin) / (end - begin)
             p = TimePoint(s)
-            p.add_value('F0', r[F0_name] )
+            p.add_value('F0', r[F0_name])
+
             track.add(p)
         return track
 
@@ -863,6 +867,29 @@ class AudioContext(SyllabicContext):
                 results = {x['speaker']: [x[name]] for x in results}
         return results
 
+    def reset_relativized_pitch(self):
+
+        all_query = '''select * from "pitch"
+                        where "phone" != '' and "speaker" != '';'''
+        client = self.acoustic_client()
+        all_results = client.query(all_query)
+        data = []
+        for _, r in all_results.items():
+            for t_dict in r:
+                phone = t_dict.pop('phone')
+
+                pitch = t_dict.pop('F0')
+                if pitch is None:
+                    continue
+                time_point = t_dict.pop('time')
+                d = {'measurement': 'pitch',
+                     'tags': t_dict,
+                     "time": time_point,
+                     "fields": {'F0_relativized': None}
+                     }
+                data.append(d)
+        client.write_points(data, batch_size=1000)
+
     def relativize_pitch(self, by_speaker=True, by_phone=False):
         if not by_speaker and not by_phone:
             raise Exception('Relativization must be by phone, speaker, or both.')
@@ -892,34 +919,37 @@ class AudioContext(SyllabicContext):
             for k, v in result.items():
                 v = list(v)
                 summary_data[k[1]['speaker']] = v[0]['mean'], v[0]['stddev']
+        for s in self.speakers:
+            all_query = '''select * from "pitch"
+                            where "phone" != '' and "speaker" = '{}';'''.format(s)
+            all_results = client.query(all_query)
+            data = []
+            for _, r in all_results.items():
+                for t_dict in r:
 
-        all_query = '''select * from "pitch"
-                        where "phone" != '' and "speaker" != '';'''
-        all_results = client.query(all_query)
-        data = []
-        for _, r in all_results.items():
-            for t_dict in r:
-                phone = t_dict.pop('phone')
-                if by_speaker and by_phone:
-                    mean_f0, sd_f0 = summary_data[(t_dict['speaker'], phone)]
-                elif by_phone and not by_speaker:
-                    mean_f0, sd_f0 = summary_data[phone]
-                elif by_speaker:
-                    mean_f0, sd_f0 = summary_data[t_dict['speaker']]
-                if sd_f0 is None:
-                    continue
-                pitch = t_dict.pop('F0')
-                if pitch is None:
-                    continue
-                time_point = t_dict.pop('time')
-                new_pitch = (pitch - mean_f0) / sd_f0
-                d = {'measurement': 'pitch',
-                     'tags': t_dict,
-                     "time": time_point,
-                     "fields": {'F0_relativized': new_pitch}
-                     }
-                data.append(d)
-        client.write_points(data, batch_size=1000)
+                    phone = t_dict.pop('phone')
+                    if by_speaker and by_phone:
+                        mean_f0, sd_f0 = summary_data[(t_dict['speaker'], phone)]
+                    elif by_phone and not by_speaker:
+                        mean_f0, sd_f0 = summary_data[phone]
+                    elif by_speaker:
+                        mean_f0, sd_f0 = summary_data[t_dict['speaker']]
+                    if sd_f0 is None:
+                        continue
+                    pitch = t_dict.pop('F0')
+                    if pitch is None:
+                        continue
+                    new_pitch = t_dict.pop('F0_relativized', None)
+                    time_point = t_dict.pop('time')
+                    time_point = s_to_ms(to_seconds(time_point))
+                    new_pitch = (pitch - mean_f0) / sd_f0
+                    d = {'measurement': 'pitch',
+                         'tags': t_dict,
+                         "time": time_point,
+                         "fields": {'F0_relativized': new_pitch}
+                         }
+                    data.append(d)
+            client.write_points(data, batch_size=1000, time_precision='ms')
 
     def relativize_intensity(self, by_speaker=True):
         client = self.acoustic_client()

@@ -89,7 +89,6 @@ class QueryResults(BaseQueryResults):
         if self.models:
             self._preload_acoustics = query._preload_acoustics
 
-
     def _sanitize_record(self, r):
         if self.models:
             r = hydrate_model(r, self._to_find, self._to_find_type, self._preload, self._preload_acoustics, self.corpus)

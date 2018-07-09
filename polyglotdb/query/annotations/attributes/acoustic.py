@@ -21,6 +21,9 @@ class AcousticAttribute(AnnotationAttribute):
     def __repr__(self):
         return '<AcousticAttribute \'{}\'>'.format(str(self))
 
+    def __str__(self):
+        return "{}.{}".format(self.node, self.label)
+
     def __getattr__(self, key):
         if key == 'min':
             return Min(self)
