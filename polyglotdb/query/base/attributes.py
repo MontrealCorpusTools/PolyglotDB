@@ -35,6 +35,37 @@ class NodeAttribute(object):
     def for_column(self):
         return self.for_cypher()
 
+    def coerce_value(self, value):
+        if value is None:
+            return value
+        a_type = self.node.node_type
+        if a_type == 'Speaker':
+            for name, t in self.node.hierarchy.speaker_properties:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t(value)
+        elif a_type == 'Discourse':
+            for name, t in self.node.hierarchy.discourse_properties:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t(value)
+
+        elif self.node.hierarchy.has_token_property(a_type, self.label):
+            for name, t in self.node.hierarchy.token_properties[a_type]:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t(value)
+        elif self.node.hierarchy.has_type_property(a_type, self.label):
+            for name, t in self.node.hierarchy.type_properties[a_type]:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t(value)
+        raise ValueError('Property type "{}" not found for "{}".'.format(self.label, a_type))
+
     @property
     def alias(self):
         """ Removes '`' from annotation, concatenates annotation alias and label"""

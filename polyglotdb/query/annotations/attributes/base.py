@@ -61,7 +61,6 @@ class AnnotationAttribute(NodeAttribute):
             return '{}.{}'.format(self.node.type_alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.node.alias, key_for_cypher(self.label))
 
-
     @property
     def with_alias(self):
         """
