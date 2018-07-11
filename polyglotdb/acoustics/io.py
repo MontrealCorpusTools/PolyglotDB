@@ -113,7 +113,12 @@ def point_measures_from_csv(corpus_context, header_info):
     for s in corpus_context.speakers:
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_point_measures.csv'.format(s))
-        import_path = 'file:///{}'.format(make_path_safe(path))
+        # If on the Docker version, the files live in /site/proj
+        if os.path.exists('/site/proj'):
+            import_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+        else:
+            import_path = 'file:///{}'.format(make_path_safe(path))
+
         import_statement = '''
                 USING PERIODIC COMMIT 2000
                 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
