@@ -20,6 +20,8 @@ from polyglotdb.config import CorpusConfig
 def pytest_addoption(parser):
     parser.addoption("--skipacoustics", action="store_true",
                      help="skip acoustic tests")
+    parser.addoption("--client", action="store_true",
+                     help="run client tests")
 
 
 @pytest.fixture(scope='session')
@@ -298,16 +300,19 @@ def corpus_data_syllable_morpheme_srur():
     data = parser.parse_discourse('test_syllable_morpheme')
     return data
 
+
 @pytest.fixture(scope='session')
 def test_user():
     return 'test_user', 'notarealpassword'
+
 
 @pytest.fixture(scope='session')
 def auth_token(localhost, test_user):
     from polyglotdb.client.client import PGDBClient, ClientError
     client = PGDBClient(localhost)
-    token= client.login(*test_user)
+    token = client.login(*test_user)
     return token
+
 
 @pytest.fixture(scope='session')
 def graph_db(localhost, auth_token):

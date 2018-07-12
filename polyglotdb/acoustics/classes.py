@@ -2,6 +2,9 @@ class Track(object):
     def __init__(self):
         self.points = []
 
+    def __str__(self):
+        return '<Track: {}>'.format(self.points)
+
     def keys(self):
         keys = set()
         for point in self:

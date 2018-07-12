@@ -36,7 +36,7 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
         g.reset_acoustics()
         g.config.praat_path = praat_path
         vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
-        g.analyze_vowel_formant_tracks(vowel_inventory=vowel_inventory,multiprocessing=False)
+        g.analyze_vowel_formant_tracks(vowel_inventory=vowel_inventory, multiprocessing=False)
         assert (g.has_formants(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
@@ -48,6 +48,9 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
         for r in results:
             # print(r.track)
             assert (len(r.track))
+
+        g.reset_formants()
+        assert not g.has_formants(g.discourses[0])
 
 
 @acoustic
@@ -74,9 +77,9 @@ def test_query_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         expected_formants = {Decimal('4.23'): {'F1': 501, 'F2': 1500, 'F3': 2500},
-                             Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2500},
+                             Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2498},
                              Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
-                             Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2500},
+                             Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2502},
                              Decimal('4.27'): {'F1': 505, 'F2': 1496, 'F3': 2500}}
         g.save_formants('acoustic_corpus', expected_formants)
 
@@ -95,9 +98,50 @@ def test_query_formants(acoustic_utt_config):
             assert (round(point['F3'], 1) == expected_formants[point.time]['F3'])
 
 
+def test_relative_formants(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        means = {'F1': 503, 'F2': 1498, 'F3': 2500}
+        sds = {'F1': 1.5811, 'F2': 1.5811, 'F3': 1.4142}
+
+        expected_formants = {Decimal('4.23'): {'F1': 501, 'F2': 1500, 'F3': 2500},
+                             Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2498},
+                             Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
+                             Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2502},
+                             Decimal('4.27'): {'F1': 505, 'F2': 1496, 'F3': 2500}}
+        for k, v in expected_formants.items():
+            for f in ['F1', 'F2', 'F3']:
+                expected_formants[k]['{}_relativized'.format(f)] = (v[f] - means[f]) / sds[f]
+
+        g.relativize_formants(by_speaker=True)
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        ac = g.phone.formants
+        ac.relative = True
+        q = q.columns(g.phone.label, ac.track)
+        results = q.all()
+        assert (len(results[0].track) == len(expected_formants.items()))
+        print(sorted(expected_formants.items()))
+        print(results[0].track)
+        for point in results[0].track:
+            print(point)
+            for f in ['F1', 'F2', 'F3']:
+                assert (round(point[f], 4) == round(expected_formants[point.time]['{}_relativized'.format(f)], 4))
+
+        g.reset_relativized_formants()
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        ac = g.phone.formants
+        ac.relative = True
+        q = q.columns(g.phone.label, ac.track)
+        results = q.all()
+        assert len(results[0].track) == 0
+
+
 def test_query_aggregate_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))

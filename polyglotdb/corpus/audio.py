@@ -117,8 +117,10 @@ class AudioContext(SyllabicContext):
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
-    def analyze_vowel_formant_tracks(self, source='praat', stop_check=None, call_back=None, vowel_inventory=None, multiprocessing=True):
-        analyze_vowel_formant_tracks(self, source, stop_check, call_back, vowel_inventory, multiprocessing=multiprocessing)
+    def analyze_vowel_formant_tracks(self, source='praat', stop_check=None, call_back=None, vowel_inventory=None,
+                                     multiprocessing=True):
+        analyze_vowel_formant_tracks(self, source, stop_check, call_back, vowel_inventory,
+                                     multiprocessing=multiprocessing)
 
     def analyze_intensity(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_intensity(self, source, stop_check, call_back, multiprocessing=multiprocessing)
@@ -143,7 +145,13 @@ class AudioContext(SyllabicContext):
         self.acoustic_client().drop_database(self.corpus_name)
 
     def reset_pitch(self):
-        self.acoustic_client().query('''DROP SERIES from "pitch";''')
+        self.acoustic_client().query('''DROP MEASUREMENT "pitch";''')
+
+    def reset_formants(self):
+        self.acoustic_client().query('''DROP MEASUREMENT "formants";''')
+
+    def reset_intensity(self):
+        self.acoustic_client().query('''DROP MEASUREMENT "intensity";''')
 
     def acoustic_client(self):
         client = InfluxDBClient(**self.config.acoustic_conncetion_kwargs)
@@ -311,7 +319,7 @@ class AudioContext(SyllabicContext):
             if relative_time:
                 s = (s - begin) / (end - begin)
             p = TimePoint(s)
-            p.add_value(Intensity_name, r[Intensity_name] )
+            p.add_value("Intensity", r[Intensity_name])
             track.add(p)
         return track
 
@@ -342,7 +350,7 @@ class AudioContext(SyllabicContext):
         begin = Decimal(begin).quantize(Decimal('0.001'))
         end = Decimal(end).quantize(Decimal('0.001'))
         num_points = kwargs.pop('num_points', 0)
-        filter_string = generate_filter_string(discourse, begin, end, channel,  num_points, kwargs)
+        filter_string = generate_filter_string(discourse, begin, end, channel, num_points, kwargs)
         client = self.acoustic_client()
         formant_names = ["F1", "F2", "F3", "B1", "B2", "B3"]
         if relative:
@@ -361,7 +369,7 @@ class AudioContext(SyllabicContext):
                 s = (s - begin) / (end - begin)
             p = TimePoint(s)
             for f in formant_names:
-                p.add_value(f, r[f] )
+                p.add_value(f.split('_')[0], r[f])
             track.add(p)
         return track
 
@@ -868,27 +876,12 @@ class AudioContext(SyllabicContext):
         return results
 
     def reset_relativized_pitch(self):
-
-        all_query = '''select * from "pitch"
-                        where "phone" != '' and "speaker" != '';'''
         client = self.acoustic_client()
-        all_results = client.query(all_query)
-        data = []
-        for _, r in all_results.items():
-            for t_dict in r:
-                phone = t_dict.pop('phone')
-
-                pitch = t_dict.pop('F0')
-                if pitch is None:
-                    continue
-                time_point = t_dict.pop('time')
-                d = {'measurement': 'pitch',
-                     'tags': t_dict,
-                     "time": time_point,
-                     "fields": {'F0_relativized': None}
-                     }
-                data.append(d)
-        client.write_points(data, batch_size=1000)
+        query = """SELECT "phone", "F0" INTO "pitch_copy" FROM "pitch" GROUP BY *;"""
+        client.query(query)
+        client.query('DROP MEASUREMENT "pitch"')
+        client.query('SELECT * INTO "pitch" FROM "pitch_copy" GROUP BY *')
+        client.query('DROP MEASUREMENT "pitch_copy"')
 
     def relativize_pitch(self, by_speaker=True, by_phone=False):
         if not by_speaker and not by_phone:
@@ -951,6 +944,14 @@ class AudioContext(SyllabicContext):
                     data.append(d)
             client.write_points(data, batch_size=1000, time_precision='ms')
 
+    def reset_relativized_intensity(self):
+        client = self.acoustic_client()
+        query = """SELECT "phone", "Intensity" INTO "intensity_copy" FROM "intensity" GROUP BY *;"""
+        client.query(query)
+        client.query('DROP MEASUREMENT "intensity"')
+        client.query('SELECT * INTO "intensity" FROM "intensity_copy" GROUP BY *')
+        client.query('DROP MEASUREMENT "intensity_copy"')
+
     def relativize_intensity(self, by_speaker=True):
         client = self.acoustic_client()
         phone_type = getattr(self, self.phone_name)
@@ -973,31 +974,42 @@ class AudioContext(SyllabicContext):
                     v = list(v)
                     summary_data[p] = v[0]['mean'], v[0]['stddev']
 
-        all_query = '''select * from "intensity"
-                        where "phone" != '' and "speaker" != '';'''
-        all_results = client.query(all_query)
-        data = []
-        for _, r in all_results.items():
-            for t_dict in r:
-                phone = t_dict.pop('phone')
-                if by_speaker:
-                    mean_intensity, sd_intensity = summary_data[(t_dict['speaker'], phone)]
-                else:
-                    mean_intensity, sd_intensity = summary_data[phone]
-                if sd_intensity is None:
-                    continue
-                intensity = t_dict.pop('Intensity')
-                if intensity is None:
-                    continue
-                time_point = t_dict.pop('time')
-                new_intensity = (intensity - mean_intensity) / sd_intensity
-                d = {'measurement': 'intensity',
-                     'tags': t_dict,
-                     "time": time_point,
-                     "fields": {'Intensity_relativized': new_intensity}
-                     }
-                data.append(d)
-        client.write_points(data, batch_size=1000)
+        for s in self.speakers:
+            all_query = '''select * from "intensity"
+                            where "phone" != '' and "speaker" = '{}';'''.format(s)
+            all_results = client.query(all_query)
+            data = []
+            for _, r in all_results.items():
+                for t_dict in r:
+                    phone = t_dict.pop('phone')
+                    if by_speaker:
+                        mean_intensity, sd_intensity = summary_data[(t_dict['speaker'], phone)]
+                    else:
+                        mean_intensity, sd_intensity = summary_data[phone]
+                    if sd_intensity is None:
+                        continue
+                    intensity = t_dict.pop('Intensity')
+                    if intensity is None:
+                        continue
+                    time_point = t_dict.pop('time')
+                    time_point = s_to_ms(to_seconds(time_point))
+                    new_intensity = t_dict.pop('Intensity_relativized', None)
+                    new_intensity = (intensity - mean_intensity) / sd_intensity
+                    d = {'measurement': 'intensity',
+                         'tags': t_dict,
+                         "time": time_point,
+                         "fields": {'Intensity_relativized': new_intensity}
+                         }
+                    data.append(d)
+            client.write_points(data, batch_size=1000, time_precision='ms')
+
+    def reset_relativized_formants(self):
+        client = self.acoustic_client()
+        query = """SELECT "phone", "F1", "F2", "F3" INTO "formants_copy" FROM "formants" GROUP BY *;"""
+        client.query(query)
+        client.query('DROP MEASUREMENT "formants"')
+        client.query('SELECT * INTO "formants" FROM "formants_copy" GROUP BY *')
+        client.query('DROP MEASUREMENT "formants_copy"')
 
     def relativize_formants(self, by_speaker=True):
         client = self.acoustic_client()
@@ -1023,37 +1035,42 @@ class AudioContext(SyllabicContext):
                     summary_data[p] = v[0]['mean'], v[0]['stddev'], v[0]['mean_1'], v[0]['stddev_1'], v[0]['mean_2'], \
                                       v[0]['stddev_2']
 
-        all_query = '''select * from "formants"
-                        where "phone" != '' and "speaker" != '';'''
-        all_results = client.query(all_query)
-        data = []
-        for _, r in all_results.items():
-            for t_dict in r:
-                phone = t_dict.pop('phone')
-                if by_speaker:
-                    mean_F1, sd_F1, mean_F2, sd_F2, mean_F3, sd_F3 = summary_data[(t_dict['speaker'], phone)]
-                else:
-                    mean_F1, sd_F1, mean_F2, sd_F2, mean_F3, sd_F3 = summary_data[phone]
-                F1 = t_dict.pop('F1')
-                F2 = t_dict.pop('F2')
-                F3 = t_dict.pop('F3')
-                time_point = t_dict.pop('time')
-                fields = {}
-                if sd_F1 is not None and F1 is not None:
-                    new_F1 = (F1 - mean_F1) / sd_F1
-                    fields['F1_relativized'] = new_F1
-                if sd_F2 is not None and F2 is not None:
-                    new_F2 = (F2 - mean_F2) / sd_F2
-                    fields['F2_relativized'] = new_F2
-                if sd_F3 is not None and F3 is not None:
-                    new_F3 = (F3 - mean_F3) / sd_F3
-                    fields['F3_relativized'] = new_F3
-                if not fields:
-                    continue
-                d = {'measurement': 'formants',
-                     'tags': t_dict,
-                     "time": time_point,
-                     "fields": fields
-                     }
-                data.append(d)
-        client.write_points(data, batch_size=1000)
+        for s in self.speakers:
+            all_query = '''select * from "formants"
+                            where "phone" != '' and "speaker" = '{}';'''.format(s)
+            all_results = client.query(all_query)
+            data = []
+            for _, r in all_results.items():
+                for t_dict in r:
+                    phone = t_dict.pop('phone')
+                    if by_speaker:
+                        mean_F1, sd_F1, mean_F2, sd_F2, mean_F3, sd_F3 = summary_data[(t_dict['speaker'], phone)]
+                    else:
+                        mean_F1, sd_F1, mean_F2, sd_F2, mean_F3, sd_F3 = summary_data[phone]
+                    F1 = t_dict.pop('F1')
+                    new_F1 = t_dict.pop('F1_relativized', None)
+                    F2 = t_dict.pop('F2')
+                    new_F2 = t_dict.pop('F2_relativized', None)
+                    F3 = t_dict.pop('F3')
+                    new_F3 = t_dict.pop('F3_relativized', None)
+                    time_point = t_dict.pop('time')
+                    time_point = s_to_ms(to_seconds(time_point))
+                    fields = {}
+                    if sd_F1 is not None and F1 is not None:
+                        new_F1 = (F1 - mean_F1) / sd_F1
+                        fields['F1_relativized'] = new_F1
+                    if sd_F2 is not None and F2 is not None:
+                        new_F2 = (F2 - mean_F2) / sd_F2
+                        fields['F2_relativized'] = new_F2
+                    if sd_F3 is not None and F3 is not None:
+                        new_F3 = (F3 - mean_F3) / sd_F3
+                        fields['F3_relativized'] = new_F3
+                    if not fields:
+                        continue
+                    d = {'measurement': 'formants',
+                         'tags': t_dict,
+                         "time": time_point,
+                         "fields": fields
+                         }
+                    data.append(d)
+            client.write_points(data, batch_size=1000, time_precision='ms')
