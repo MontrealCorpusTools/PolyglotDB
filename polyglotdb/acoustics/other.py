@@ -1,12 +1,14 @@
 import time
 
+import os 
+
 from conch import analyze_segments
 
 from conch.analysis.praat import PraatAnalysisFunction
 
 from .segments import generate_segments
 
-from .io import point_measures_to_csv, point_measures_from_csv
+from .io import point_measures_to_csv, point_measures_from_csv, make_path_safe
 
 
 def generate_praat_script_function(praat_path, script_path, arguments=None):
@@ -77,6 +79,12 @@ def analyze_script(corpus_context,
                                         padding=0, duration_threshold=duration_threshold)
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
+
+    if os.path.exists('/site/proj'):
+            script_path = '/site/proj/{}'.format(make_path_safe(script_path))
+    else:
+        script_path = make_path_safe(script_path)
+
     praat_path = corpus_context.config.praat_path
     script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
     time_section = time.time()

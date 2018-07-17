@@ -1,3 +1,4 @@
+import os
 from conch.analysis.segments import SegmentMapping
 
 
@@ -47,6 +48,10 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
             if file_path is None:
                 print("Skipping discourse {} because no wav file exists.".format(discourse))
                 continue
+
+            if os.path.exists('/site/proj'):
+                file_path = '/site/proj/{}'.format(file_path)
+
             at = getattr(corpus_context, annotation_type)
             qr = corpus_context.query_graph(at)
             if subset is not None:
