@@ -14,11 +14,19 @@ from ..syllabification.maxonset import split_nonsyllabic_maxonset, split_ons_cod
 from .utterance import UtteranceContext
 
 
+def make_label_safe_for_cypher(label):
+    if not label.startswith('`'):
+        label = '`' + label
+    if not label.endswith('`'):
+        label += '`'
+    return label
+
+
 class SyllabicContext(UtteranceContext):
     """
     Class that contains methods for dealing specifically with syllables
     """
-    def find_onsets(self):
+    def find_onsets(self, syllabic_label='syllabic'):
         """
         Gets syllable onsets
 
@@ -29,9 +37,9 @@ class SyllabicContext(UtteranceContext):
 
         """
         statement = '''match (w:{word_name}:{corpus_name})
-where (w)<-[:contained_by*1..2]-()-[:is_a]->(:syllabic)
+where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
 with w
-match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:syllabic),
+match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
 (n)-[:contained_by*1..2]->(w)
 with w, n
 order by n.begin
@@ -44,6 +52,7 @@ match p = shortestPath((pn)-[:precedes*0..10]->(n))
 with extract(x in nodes(p)[0..-1]|x.label) as onset
 return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
                                              word_name=self.word_name,
+                                             syllabic_name = make_label_safe_for_cypher(syllabic_label),
                                              phone_name=self.phone_name)
         res = self.execute_cypher(statement)
         data = {}
@@ -51,7 +60,7 @@ return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
             data[tuple(r['onset'])] = r['freq']
         return data
 
-    def find_codas(self):
+    def find_codas(self, syllabic_label='syllabic'):
         """
         Gets syllable codas
 
@@ -61,9 +70,9 @@ return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
             A dictionary with coda values as keys and frequency values as values
         """
         statement = '''match (w:{word_name}:{corpus_name})
-where (w)<-[:contained_by*1..2]-()-[:is_a]->(:syllabic)
+where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
 with w
-match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:syllabic),
+match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
 (n)-[:contained_by*1..2]->(w)
 with w, n
 order by n.begin DESC
@@ -76,6 +85,7 @@ match p = shortestPath((n)-[:precedes*0..10]->(pn))
 with extract(x in nodes(p)[1..]|x.label) as coda
 return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                                            word_name=self.word_name,
+                                             syllabic_name = make_label_safe_for_cypher(syllabic_label),
                                            phone_name=self.phone_name)
 
         res = self.execute_cypher(statement)
@@ -143,7 +153,7 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
     def has_syllables(self):
         return 'syllable' in self.hierarchy.annotation_types
 
-    def encode_syllables(self, algorithm='maxonset', call_back=None, stop_check=None):
+    def encode_syllables(self, algorithm='maxonset', syllabic_label='syllabic', call_back=None, stop_check=None):
         """
         Encodes syllables to a corpus
 
@@ -155,17 +165,17 @@ return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
 
         self.reset_syllables(call_back, stop_check)
 
-        onsets = self.find_onsets()
+        onsets = self.find_onsets(syllabic_label=syllabic_label)
         if algorithm == 'probabilistic':
             onsets = norm_count_dict(onsets, onset=True)
-            codas = self.find_codas()
+            codas = self.find_codas(syllabic_label=syllabic_label)
             codas = norm_count_dict(codas, onset=False)
         elif algorithm == 'maxonset':
             onsets = set(onsets.keys())
         else:
             raise (NotImplementedError)
 
-        statement = '''MATCH (n:{}:syllabic) return n.label as label'''.format(self.cypher_safe_name)
+        statement = '''MATCH (n:{}:{}) return n.label as label'''.format(self.cypher_safe_name, make_label_safe_for_cypher(syllabic_label))
         res = self.execute_cypher(statement)
         syllabics = set(x['label'] for x in res)
 

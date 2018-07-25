@@ -347,7 +347,7 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.syllabic.SyllabicContext`
         the corpus to load into
     typed_data : dict
         the data
@@ -603,7 +603,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.syllabic.SyllabicContext`
         the corpus to load into
     split_name : str
         the identifier of the file
@@ -702,7 +702,7 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.syllabic.SyllabicContext`
         the corpus to load into
     split_name : str
         the identifier of the file
