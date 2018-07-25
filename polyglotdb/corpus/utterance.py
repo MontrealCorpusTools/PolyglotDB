@@ -9,6 +9,9 @@ from .pause import PauseContext
 
 
 class UtteranceContext(PauseContext):
+    """
+    Class that contains methods for dealing specifically with utterances
+    """
     def reset_utterances(self):
         """
         Remove all utterance annotations.

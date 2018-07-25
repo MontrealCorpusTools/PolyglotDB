@@ -12,23 +12,31 @@ Corpus class
    :toctree: generated/
    :template: class.rst
 
-   CorpusContext
+   BaseContext
+
+   PhonologicalContext
+
+   SyllabicContext
+
+   LexicalContext
+
+   UtteranceContext
+
+   PauseContext
 
    AudioContext
 
    ImportContext
 
-   LexicalContext
+   SummarizedContext
 
-   PauseContext
-
-   UtteranceContext
+   SpokenContext
 
    StructuredContext
 
-   SyllabicContext
+   AnnotatedContext
 
-   SpokenContext
+   CorpusContext
 
 Corpus structure class
 ----------------------

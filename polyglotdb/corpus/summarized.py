@@ -1,11 +1,14 @@
 from polyglotdb.exceptions import GraphQueryError
 
-from .featured import FeaturedContext
+from .phonological import PhonologicalContext
 
 from ..query.base.func import Average
 
 
-class SummarizedContext(FeaturedContext):
+class SummarizedContext(PhonologicalContext):
+    """
+    Class that contains methods for dealing specifically with summary measures for linguistic items
+    """
     def get_measure(self, data_name, statistic, annotation_type, by_speaker=False, speaker=None):
         """
         abstract function to get statistic for the data_name of an annotation_type

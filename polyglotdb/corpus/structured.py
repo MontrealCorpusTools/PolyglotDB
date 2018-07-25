@@ -32,6 +32,9 @@ def generate_cypher_property_list(property_set):
 
 
 class StructuredContext(BaseContext):
+    """
+    Class that contains methods for dealing specifically with metadata for the corpus
+    """
     def generate_hierarchy(self):
         """
         Creates the hierarchy, which is information on how the corpus is structured

@@ -5,6 +5,9 @@ from ..io.enrichment.spoken import enrich_speakers_from_csv, enrich_discourses_f
 
 
 class SpokenContext(AudioContext):
+    """
+    Class that contains methods for dealing specifically with speaker and sound file metadata
+    """
     def enrich_speakers_from_csv(self, path):
         """
         Enriches speakers from a csv file

@@ -15,6 +15,9 @@ from .utterance import UtteranceContext
 
 
 class SyllabicContext(UtteranceContext):
+    """
+    Class that contains methods for dealing specifically with syllables
+    """
     def find_onsets(self):
         """
         Gets syllable onsets

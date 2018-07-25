@@ -5,7 +5,10 @@ from ..exceptions import SubsetError
 from ..io.enrichment.features import enrich_features_from_csv
 
 
-class FeaturedContext(LexicalContext):
+class PhonologicalContext(LexicalContext):
+    """
+    Class that contains methods for dealing specifically with phones
+    """
     def enrich_inventory_from_csv(self, path):
         """
         Enriches corpus from a csv file

@@ -4,6 +4,9 @@ from .spoken import SpokenContext
 
 
 class LexicalContext(SpokenContext):
+    """
+    Class that contains methods for dealing specifically with words
+    """
     def enrich_lexicon(self, lexicon_data, type_data=None, case_sensitive=False):
         """
         adds properties to lexicon, adds properties to hierarchy
