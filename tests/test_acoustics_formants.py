@@ -35,8 +35,8 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.praat_path = praat_path
-        vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
-        g.analyze_vowel_formant_tracks(vowel_inventory=vowel_inventory, multiprocessing=False)
+        g.encode_class(['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow'], 'vowel')
+        g.analyze_vowel_formant_tracks(vowel_label='vowel', multiprocessing=False)
         assert (g.has_formants(g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
@@ -167,8 +167,8 @@ def test_refine_formants(acoustic_utt_config, praat_path, export_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         test_phone_label = 'ow'
         g.config.praat_path = praat_path
-        vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
-        old_data = analyze_formant_points(corpus_context=g, vowel_inventory=vowel_inventory)
+        g.encode_class(['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow'], 'vowel')
+        old_data = analyze_formant_points(corpus_context=g, vowel_label='vowel')
         old_metadata = get_mean_SD(old_data)
         save_formant_point_data(g, old_data)
         assert (g.hierarchy.has_token_property('phone', 'F1'))
@@ -189,9 +189,9 @@ def test_extract_formants_full(acoustic_utt_config, praat_path, export_test_dir)
     with CorpusContext(acoustic_utt_config) as g:
         test_phone_label = 'ow'
         g.config.praat_path = praat_path
-        vowel_inventory = ['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow']
+        g.encode_class(['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow'], 'vowel')
         print("starting test")
-        metadata = analyze_formant_points_refinement(g, vowel_inventory)
+        metadata = analyze_formant_points_refinement(g, 'vowel')
         assert (g.hierarchy.has_token_property('phone', 'F1'))
         q = g.query_graph(g.phone).filter(g.phone.label == test_phone_label)
         q = q.columns(g.phone.begin, g.phone.end, g.phone.F1.column_name('F1'))

@@ -37,7 +37,7 @@ def read_prototypes(vowel_prototypes_path):
     return means_covar_d
 
 
-def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_threshold=0, num_iterations=1,
+def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', duration_threshold=0, num_iterations=1,
                                       call_back=None,
                                       stop_check=None,
                                       vowel_prototypes_path='', multiprocessing=True
@@ -48,8 +48,8 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
     ----------
     corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
         The CorpusContext object of the corpus.
-    vowel_inventory : list
-        A list of vowels contained in the corpus.
+    vowel_label : str
+        The subset of phones to analyze.
     duration_threshold : float, optional
         Segments with length shorter than this value (in milliseconds) will not be analyzed.
     num_iterations : int, optional
@@ -60,13 +60,13 @@ def analyze_formant_points_refinement(corpus_context, vowel_inventory, duration_
     prototype_metadata : dict
         Means of F1, F2, F3, B1, B2, B3 and covariance matrices per vowel class.
     """
-    if vowel_inventory is not None:
-        corpus_context.encode_class(vowel_inventory, 'vowel')
+    if not corpus_context.hierarchy.has_type_subset('phone', vowel_label):
+        raise Exception('Phones do not have a "{}" subset.'.format(vowel_label))
     # ------------- Step 2: Varying formants -------------
     # Encodes vowel inventory into a phone class if it's specified
 
     # Gets segment mapping of phones that are vowels
-    segment_mapping = generate_vowel_segments(corpus_context, duration_threshold=duration_threshold, padding=0.1)
+    segment_mapping = generate_vowel_segments(corpus_context, duration_threshold=duration_threshold, padding=0.1, vowel_label=vowel_label)
     best_data = {}
     columns = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
     # Measure with varying levels of formants

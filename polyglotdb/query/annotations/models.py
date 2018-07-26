@@ -174,7 +174,7 @@ class LinguisticAnnotation(BaseAnnotation):
         if key == self._type:
             return self
         if key == 'label' and self._type == 'utterance':
-            return '{} ({} to {})'.format(self._discourse.name, self.begin, self.end)
+            return '{} ({} to {})'.format(self.discourse.name, self.begin, self.end)
         if key == 'previous':
             if self._previous == 'empty':
                 return None

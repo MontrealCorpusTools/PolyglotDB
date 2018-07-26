@@ -207,7 +207,7 @@ def test_encode_utterances(acoustic_config):
         for i, r in enumerate(results):
             assert (round(r['begin'], 3) == round(expected_utterances[i][0], 3))
             assert (round(r['end'], 3) == round(expected_utterances[i][1], 3))
-            assert (r['label'] is None)
+            assert (r['label'] is not None)
 
         q = g.query_graph(g.phone).filter(g.phone.begin == g.phone.utterance.begin)
         q = q.order_by(g.phone.begin)

@@ -17,7 +17,7 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
     file_type : str, optional
         One of 'low_freq', 'vowel', or 'consonant', specifies the type of audio file to use
     duration_threshold: float, optional
-        Segments with length shorter than this value (in milliseconds) will not be included
+        Segments with length shorter than this value (in seconds) will not be included
 
     Returns
     -------
@@ -69,7 +69,7 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
     return segment_mapping
 
 
-def generate_vowel_segments(corpus_context, duration_threshold=None, padding=0):
+def generate_vowel_segments(corpus_context, duration_threshold=None, padding=0, vowel_label='vowel'):
     """
     Generate segment vectors for each vowel, to be used as input to analyze_file_segments.
 
@@ -78,14 +78,14 @@ def generate_vowel_segments(corpus_context, duration_threshold=None, padding=0):
     corpus_context : :class:`polyglot.corpus.context.CorpusContext`
         The CorpusContext object of the corpus
     duration_threshold: float, optional
-        Segments with length shorter than this value (in milliseconds) will not be included
+        Segments with length shorter than this value (in seconds) will not be included
 
     Returns
     -------
     SegmentMapping
         Object containing vowel segments to be analyzed
     """
-    return generate_segments(corpus_context, annotation_type=corpus_context.phone_name, subset='vowel',
+    return generate_segments(corpus_context, annotation_type=corpus_context.phone_name, subset=vowel_label,
                              file_type='vowel', duration_threshold=duration_threshold, padding=padding)
 
 
@@ -100,7 +100,7 @@ def generate_utterance_segments(corpus_context, file_type='vowel', duration_thre
     file_type : str, optional
         One of 'low_freq', 'vowel', or 'consonant', specifies the type of audio file to use
     duration_threshold: float, optional
-        Segments with length shorter than this value (in milliseconds) will not be included
+        Segments with length shorter than this value (in seconds) will not be included
 
     Returns
     -------
