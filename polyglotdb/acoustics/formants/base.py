@@ -9,7 +9,7 @@ from ...exceptions import SpeakerAttributeError
 from ..utils import PADDING
 
 
-def analyze_formant_points(corpus_context, call_back=None, stop_check=None, vowel_inventory=None,
+def analyze_formant_points(corpus_context, call_back=None, stop_check=None, vowel_label='vowel',
                            duration_threshold=None, multiprocessing=True):
     """First pass of the algorithm; generates prototypes.
 
@@ -21,8 +21,8 @@ def analyze_formant_points(corpus_context, call_back=None, stop_check=None, vowe
         Information about callback.
     stop_check : string
         Information about stop check.
-    vowel_inventory : list
-        A list of all the vowels (in strings) used in the corpus.
+    vowel_label : str
+        The subset of phones to analyze.
     duration_threshold : float, optional
         Segments with length shorter than this value (in milliseconds) will not be analyzed.
 
@@ -32,13 +32,12 @@ def analyze_formant_points(corpus_context, call_back=None, stop_check=None, vowe
         Track data
     """
     # ------------- Step 1: Prototypes -------------
-    # Encodes vowel inventory into a phone class if it's specified
-    if vowel_inventory is not None:
-        corpus_context.encode_class(vowel_inventory, 'vowel')
+    if not corpus_context.hierarchy.has_type_subset('phone', vowel_label):
+        raise Exception('Phones do not have a "{}" subset.'.format(vowel_label))
 
     # Gets segment mapping of phones that are vowels
 
-    segment_mapping = generate_vowel_segments(corpus_context, duration_threshold=duration_threshold, padding=.25)
+    segment_mapping = generate_vowel_segments(corpus_context, duration_threshold=duration_threshold, padding=.25, vowel_label=vowel_label)
 
     if call_back is not None:
         call_back('Analyzing files...')
@@ -89,7 +88,7 @@ def analyze_formant_tracks(corpus_context, source='praat', call_back=None, stop_
 def analyze_vowel_formant_tracks(corpus_context, source='praat',
                                  call_back=None,
                                  stop_check=None,
-                                 vowel_inventory=None, multiprocessing=True):
+                                 vowel_label='vowel', multiprocessing=True):
     """
     Analyze formants of individual vowels, and save the resulting formant tracks into the database for each phone.
 
@@ -101,15 +100,13 @@ def analyze_vowel_formant_tracks(corpus_context, source='praat',
         call back function, optional
     stop_check : callable
         stop check function, optional
-    vowel_inventory : list of strings
-        list of vowels used to encode a class 'vowel', optional.
-        if not used, it's assumed that 'vowel' is already a phone class
+    vowel_label : str
+        The subset of phones to analyze.
     """
-    # encodes vowel inventory into a phone class if it's specified
-    if vowel_inventory is not None:
-        corpus_context.encode_class(vowel_inventory, 'vowel')
+    if not corpus_context.hierarchy.has_type_subset('phone', vowel_label):
+        raise Exception('Phones do not have a "{}" subset.'.format(vowel_label))
     # gets segment mapping of phones that are vowels
-    segment_mapping = generate_vowel_segments(corpus_context, padding=0).grouped_mapping('speaker')
+    segment_mapping = generate_vowel_segments(corpus_context, padding=0, vowel_label=vowel_label).grouped_mapping('speaker')
 
     if call_back is not None:
         call_back('Analyzing files...')

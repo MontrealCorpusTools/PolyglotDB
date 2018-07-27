@@ -117,9 +117,9 @@ class AudioContext(SyllabicContext):
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
-    def analyze_vowel_formant_tracks(self, source='praat', stop_check=None, call_back=None, vowel_inventory=None,
+    def analyze_vowel_formant_tracks(self, source='praat', stop_check=None, call_back=None, vowel_label='vowel',
                                      multiprocessing=True):
-        analyze_vowel_formant_tracks(self, source, stop_check, call_back, vowel_inventory,
+        analyze_vowel_formant_tracks(self, source, stop_check, call_back, vowel_label,
                                      multiprocessing=multiprocessing)
 
     def analyze_intensity(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):

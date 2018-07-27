@@ -168,7 +168,8 @@ class Hierarchy(object):
     def add_annotation_type(self, annotation_type, above=None, below=None):
         self._data[above] = annotation_type
         self._data[annotation_type] = below
-        self.token_properties[annotation_type] = {('id', str), ('label', str), ('begin', float), ('end', float)}
+        self.token_properties[annotation_type] = {('id', str), ('label', str),
+                                                  ('begin', float), ('end', float), ('duration', float)}
         self.type_properties[annotation_type] = {('label', str)}
 
     def remove_annotation_type(self, annotation_type):
