@@ -81,7 +81,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
         the data object
     """
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
-    log.info('Beginning to import {} into the graph database...'.format(data.name))
+    log.info('Beginning to import data into the graph database...')
     initial_begin = time.time()
     name, annotation_types = data.name, data.annotation_types
 

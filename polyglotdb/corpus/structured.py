@@ -50,9 +50,9 @@ class StructuredContext(BaseContext):
         (c)-[:spoken_by]->(s:Speaker),
         (c)-[:spoken_in]->(d:Discourse)
         where c.name = {corpus_name}
-        WITH n, nt, path, s, d
+        WITH c, n, nt, path, s, d
         OPTIONAL MATCH (n)<-[:annotates]-(subs)
-        return n,nt, path, collect(subs) as subs, s, d
+        return c, n,nt, path, collect(subs) as subs, s, d
         order by size(nodes(path))'''
         results = self.execute_cypher(hierarchy_statement, corpus_name=self.corpus_name)
         sup = None
@@ -64,7 +64,16 @@ class StructuredContext(BaseContext):
         token_subsets = {}
         speaker_properties = set()
         discourse_properties = set()
+        acoustics = set()
         for r in results:
+            if not acoustics:
+                if r['c'].get('pitch', False):
+                    acoustics.add('pitch')
+                if r['c'].get('formants', False):
+                    acoustics.add('formants')
+                if r['c'].get('intensity', False):
+                    acoustics.add('intensity')
+
             if not speaker_properties:
                 for k, v in r['s'].items():
                     speaker_properties.add((k, type(v)))
@@ -132,16 +141,22 @@ class StructuredContext(BaseContext):
         """
         encodes hierarchy
         """
+
         self.reset_hierarchy()
         hierarchy_template = '''({super})<-[:contained_by]-({sub})-[:is_a]->({sub_type})'''
         subannotation_template = '''({super})<-[:annotates]-({sub})'''
         speaker_template = '''(c)-[:spoken_by]->(s:Speaker {%s})'''
         discourse_template = '''(c)-[:spoken_in]->(d:Discourse {%s})'''
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        SET {set_statement}
+        with c
         MERGE {merge_statement}'''
         merge_statements = []
         speaker_props = generate_cypher_property_list(self.hierarchy.speaker_properties)
         discourse_props = generate_cypher_property_list(self.hierarchy.discourse_properties)
+        set_statements = []
+        for a in ['pitch','formants', 'intensity']:
+            set_statements.append('c.{} = {}'.format(a, a in self.hierarchy.acoustics))
         merge_statements.append(speaker_template % speaker_props)
         merge_statements.append(discourse_template % discourse_props)
         for at in self.hierarchy.highest_to_lowest:
@@ -186,7 +201,8 @@ class StructuredContext(BaseContext):
                 sa = "{0}:{0} {{label: '', begin:0, end: 0}}".format(sa)
                 merge_statements.append(subannotation_template.format(super=at, sub=sa))
 
-        statement = statement.format(merge_statement='\nMERGE '.join(merge_statements))
+        statement = statement.format(set_statement = ',\n'.join(set_statements), merge_statement='\nMERGE '.join(merge_statements))
+
         self.execute_cypher(statement, corpus_name=self.corpus_name)
         self.cache_hierarchy()
 

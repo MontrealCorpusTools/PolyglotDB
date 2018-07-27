@@ -46,6 +46,7 @@ class Hierarchy(object):
         self.token_properties = {}
         self.subset_tokens = {}
         self.type_properties = {}
+        self.acoustics = set()
 
         self.speaker_properties = {('name', str)}
         self.discourse_properties = {('name', str), ('file_path', str), ('low_freq_file_path', str), ('vowel_file_path', str), ('consonant_file_path', str), ('duration', float), ('sampling_rate', int), ('num_channels', int)}
@@ -86,6 +87,7 @@ class Hierarchy(object):
     def to_json(self):
         data = {'_data': self._data}
         data['corpus_name'] = self.corpus_name
+        data['acoustics'] = sorted(self.acoustics)
         data['subannotations'] = {k: sorted(v) for k, v in self.subannotations.items()}
         data['subannotation_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in
                                             self.subannotation_properties.items()}
@@ -100,6 +102,7 @@ class Hierarchy(object):
     def from_json(self, json):
         self._data = json['_data']
         self.corpus_name = json['corpus_name']
+        self.acoustics = json.get('acoustics', set())
         self.subannotations = {k: set(v) for k, v in json['subannotations'].items()}
         self.subannotation_properties = {k: set((name, type(t)) for name, t in v) for k, v in
                                          json['subannotation_properties'].items()}
