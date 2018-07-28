@@ -41,14 +41,13 @@ class DiscourseData(object):
             self.hierarchy.type_properties[at.name].add(('id', type('')))
             self.hierarchy.type_properties[at.name].add(('label', type('')))
             if not at.token_properties:
-                self.hierarchy.token_properties[at.name] = set((x, type(None)) for x in at.token_property_keys if x not in ['id', 'label', 'begin', 'end', 'duration'])
+                self.hierarchy.token_properties[at.name] = set((x, type(None)) for x in at.token_property_keys if x not in ['id', 'label', 'begin', 'end'])
             else:
                 self.hierarchy.token_properties[at.name] = at.token_properties
             self.hierarchy.token_properties[at.name].add(('id', type('')))
             self.hierarchy.token_properties[at.name].add(('label', type('')))
             self.hierarchy.token_properties[at.name].add(('begin', type(0.0)))
             self.hierarchy.token_properties[at.name].add(('end', type(0.0)))
-            self.hierarchy.token_properties[at.name].add(('duration', type(0.0)))
 
     def __getitem__(self, key):
         return self.data[key]

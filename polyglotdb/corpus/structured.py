@@ -169,6 +169,7 @@ class StructuredContext(BaseContext):
                 token_props = generate_cypher_property_list(self.hierarchy.token_properties[at])
                 if token_props:
                     token_props = ', ' + token_props
+                    token_props += ', duration: 0.0'
             except KeyError:
                 token_props = ''
             try:

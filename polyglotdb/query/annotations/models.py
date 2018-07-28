@@ -271,6 +271,8 @@ class LinguisticAnnotation(BaseAnnotation):
                 return self._subannotations[key]
         except KeyError:
             pass
+        if key == 'duration':
+            return self.end - self.begin
         if key in self._node.keys():
             return self._node[key]
         if key in self._type_node.keys():

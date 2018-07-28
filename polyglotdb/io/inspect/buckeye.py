@@ -21,12 +21,12 @@ def inspect_buckeye(word_path):
         Auto-detected parser for the Buckeye corpus
     """
     annotation_types = [OrthographyTier('word', 'word'),
-                        TranscriptionTier('transcription', 'word'),
-                        TranscriptionTier('surface_transcription', 'word'),
+                        OrthographyTier('transcription', 'word'),
+                        OrthographyTier('surface_transcription', 'word'),
                         OrthographyTier('category', 'word'),
                         SegmentTier('phone', 'phone')]
-    annotation_types[1].trans_delimiter = ' '
-    annotation_types[2].trans_delimiter = ' '
+    #annotation_types[1].trans_delimiter = ' '
+    #annotation_types[2].trans_delimiter = ' '
     annotation_types[2].type_property = False
     annotation_types[3].type_property = False
     hierarchy = Hierarchy({'phone': 'word', 'word': None})
