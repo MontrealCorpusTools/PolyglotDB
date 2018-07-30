@@ -27,12 +27,14 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             pa.node = r[pre.alias]
             a._speaker = pa
 
-        elif isinstance(pre, HierarchicalAnnotation):
+    for pre in to_preload:
+        if isinstance(pre, HierarchicalAnnotation):
             pa = LinguisticAnnotation(corpus)
             pa.node = r[pre.alias]
             pa.type_node = r[pre.type_alias]
             pa._preloaded = True
-
+            pa._discourse = a._discourse
+            pa._speaker = a._speaker
             a._supers[pre.node_type] = pa
         elif isinstance(pre, QuerySubAnnotation):
             subannotations = r[pre.collection_alias]
