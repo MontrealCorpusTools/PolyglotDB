@@ -173,6 +173,8 @@ class LinguisticAnnotation(BaseAnnotation):
             raise (GraphModelError('This object has not been loaded with an id yet.'))
         if key == self._type:
             return self
+        if key == 'current':
+            return self
         if key == 'label' and self._type == 'utterance':
             return '{} ({} to {})'.format(self.discourse.name, self.begin, self.end)
         if key == 'previous':
@@ -203,6 +205,18 @@ class LinguisticAnnotation(BaseAnnotation):
                 self._following.node = res[0]['following_token']
                 self._following.type_node = res[0]['following_type']
             return self._following
+        if key.startswith('previous'):
+            p, key = key.split('_', 1)
+            p = self.previous
+            if p is None:
+                return None
+            return getattr(p, key)
+        if key.startswith('following'):
+            p, key = key.split('_', 1)
+            f = self.following
+            if f is None:
+                return None
+            return getattr(f, key)
         if key == 'speaker':
             if self._speaker == 'empty':
                 return None
