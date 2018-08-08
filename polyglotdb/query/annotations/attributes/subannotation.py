@@ -5,6 +5,9 @@ class SubAnnotation(SubPathAnnotation):
     non_optional = False
     subquery_match_template = '({def_collection_alias})-[:annotates]->({anchor_node_alias})'
 
+    def __repr__(self):
+        return '<SubAnnotation of {} under {}'.format(str(self.collected_node), str(self.anchor_node))
+
     def __getattr__(self, key):
         from .path import PositionalAnnotation
         if key == 'annotation':
