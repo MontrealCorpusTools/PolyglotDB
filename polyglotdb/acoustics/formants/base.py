@@ -83,6 +83,9 @@ def analyze_formant_tracks(corpus_context, source='praat', call_back=None, stop_
             formant_function = generate_base_formants_function(corpus_context, source=source)
         output = analyze_segments(v, formant_function, stop_check=stop_check, multiprocessing=multiprocessing)
         corpus_context.save_formant_tracks(output, speaker)
+    if 'formants' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.acoustics.add('formants')
+        corpus_context.encode_hierarchy()
 
 
 def analyze_vowel_formant_tracks(corpus_context, source='praat',
@@ -125,3 +128,6 @@ def analyze_vowel_formant_tracks(corpus_context, source='praat',
             formant_function = generate_base_formants_function(corpus_context, source=source)
         output = analyze_segments(v, formant_function, stop_check=stop_check, multiprocessing=multiprocessing)
         corpus_context.save_formant_tracks(output, speaker)
+    if 'formants' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.acoustics.add('formants')
+        corpus_context.encode_hierarchy()

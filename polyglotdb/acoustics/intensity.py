@@ -26,7 +26,7 @@ def analyze_intensity(corpus_context,
     segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING).grouped_mapping('speaker')
     if call_back is not None:
         call_back('Analyzing files...')
-    for i, (speaker, v) in enumerate(segment_mapping.items()):
+    for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         gender = None
         try:
             q = corpus_context.query_speakers().filter(corpus_context.speaker.name == speaker)
@@ -37,6 +37,9 @@ def analyze_intensity(corpus_context,
         intensity_function = generate_base_intensity_function(corpus_context)
         output = analyze_segments(v, intensity_function, stop_check=stop_check, multiprocessing=multiprocessing)
         corpus_context.save_intensity_tracks(output, speaker)
+    if 'intensity' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.acoustics.add('intensity')
+        corpus_context.encode_hierarchy()
 
 
 def generate_base_intensity_function(corpus_context):

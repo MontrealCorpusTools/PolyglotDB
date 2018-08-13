@@ -52,6 +52,9 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
             p = TimePoint(k)
             p.add_value('F0',  v['F0'])
             track.add(p)
+    if 'pitch' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.acoustics.add('pitch')
+        corpus_context.encode_hierarchy()
     return track
 
 
@@ -123,6 +126,9 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
              }
         data.append(d)
     client.write_points(data, batch_size=1000, time_precision='ms')
+    if 'pitch' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.acoustics.add('pitch')
+        corpus_context.encode_hierarchy()
     return time_stamp
 
 
@@ -219,3 +225,5 @@ def analyze_pitch(corpus_context,
         corpus_context.encode_hierarchy()
         today = datetime.utcnow()
         corpus_context.query_graph(corpus_context.utterance).set_properties(pitch_last_edited=today.timestamp())
+        corpus_context.hierarchy.acoustics.add('pitch')
+        corpus_context.encode_hierarchy()

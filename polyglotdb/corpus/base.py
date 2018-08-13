@@ -181,6 +181,44 @@ class BaseContext(object):
             'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(
                 sorted(self.hierarchy.annotation_types)))))
 
+    def encode_type_subset(self, annotation_type, annotation_labels, subset_label):
+        """
+        Encode a type subset from labels of annotations
+
+        Parameters
+        ----------
+        annotation_type : str
+            Annotation type of labels
+        annotation_labels : list
+            a list of labels of annotations to subset together
+        subset_label : str
+            the label for the subset
+        """
+        ann = getattr(self, 'lexicon_' + annotation_type)
+        q = self.query_lexicon(ann).filter(ann.label.in_(annotation_labels))
+        q.create_subset(subset_label)
+        self.encode_hierarchy()
+
+    def reset_type_subset(self, annotation_type, subset_label):
+        """
+        Reset and remove a type subset
+
+        Parameters
+        ----------
+        annotation_type : str
+            Annotation type of the subset
+        subset_label : str
+            the label for the subset
+        """
+        from ..exceptions import SubsetError
+        ann = getattr(self, 'lexicon_' + annotation_type)
+        try:
+            q = self.query_lexicon(ann.filter_by_subset(subset_label))
+            q.remove_subset(subset_label)
+            self.encode_hierarchy()
+        except SubsetError:
+            pass
+
     @property
     def word_name(self):
         """

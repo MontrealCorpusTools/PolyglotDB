@@ -404,8 +404,13 @@ class LinguisticAnnotation(BaseAnnotation):
         WITH sub, r
         SET {props}
         return sub, r'''
-        props = ['sub.%s = {%s}' % (k, k)
-                 for k, v in properties.items()]
+        props = []
+        for k, v in properties.items():
+            props.append('sub.%s = {%s}' % (k, k))
+            if self._corpus_context.hierarchy.has_subannotation_property(type, k):
+                for name, t in self._corpus_context.hierarchy.subannotation_properties[type]:
+                    if name == k:
+                        properties[k] = t(v)
         statement = statement.format(type=self._type, sub_type=type,
                                      corpus=self.corpus_context.cypher_safe_name, props=', '.join(props))
 

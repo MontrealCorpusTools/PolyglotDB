@@ -41,6 +41,7 @@ def key_for_cypher(key):
     key : str
         key made into a string
     """
+    key = key.replace("`",'')
     if non_letter_finder.search(key) is not None:
         return "`{}`".format(key)
     return key

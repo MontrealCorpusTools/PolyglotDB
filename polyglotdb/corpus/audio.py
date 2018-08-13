@@ -143,15 +143,27 @@ class AudioContext(SyllabicContext):
 
     def reset_acoustics(self, call_back=None, stop_check=None):
         self.acoustic_client().drop_database(self.corpus_name)
+        if self.hierarchy.acoustics:
+            self.hierarchy.acoustics = set()
+            self.encode_hierarchy()
 
     def reset_pitch(self):
         self.acoustic_client().query('''DROP MEASUREMENT "pitch";''')
+        if 'pitch' in self.hierarchy.acoustics:
+            self.hierarchy.acoustics.remove('pitch')
+            self.encode_hierarchy()
 
     def reset_formants(self):
         self.acoustic_client().query('''DROP MEASUREMENT "formants";''')
+        if 'formants' in self.hierarchy.acoustics:
+            self.hierarchy.acoustics.remove('formants')
+            self.encode_hierarchy()
 
     def reset_intensity(self):
         self.acoustic_client().query('''DROP MEASUREMENT "intensity";''')
+        if 'intensity' in self.hierarchy.acoustics:
+            self.hierarchy.acoustics.remove('intensity')
+            self.encode_hierarchy()
 
     def acoustic_client(self):
         client = InfluxDBClient(**self.config.acoustic_conncetion_kwargs)

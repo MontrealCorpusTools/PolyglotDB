@@ -102,7 +102,7 @@ class Hierarchy(object):
     def from_json(self, json):
         self._data = json['_data']
         self.corpus_name = json['corpus_name']
-        self.acoustics = json.get('acoustics', set())
+        self.acoustics = set(json.get('acoustics', []))
         self.subannotations = {k: set(v) for k, v in json['subannotations'].items()}
         self.subannotation_properties = {k: set((name, type(t)) for name, t in v) for k, v in
                                          json['subannotation_properties'].items()}

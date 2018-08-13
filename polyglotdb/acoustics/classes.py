@@ -11,6 +11,12 @@ class Track(object):
             keys.update(point.values.keys())
         return sorted(keys)
 
+    def times(self):
+        times = set()
+        for point in self:
+            times.add(point.time)
+        return sorted(times)
+
     def __getitem__(self, time):
         for point in self:
             if point.time == time:
@@ -41,6 +47,9 @@ class TimePoint(object):
 
     def __str__(self):
         return '<Time point {}: {}>'.format(self.time, self.values)
+
+    def __repr__(self):
+        return str(self)
 
     def __contains__(self, item):
         return item in self.values

@@ -1,6 +1,7 @@
 from polyglotdb import CorpusContext
 from polyglotdb.query.base.func import Average, Count, Min, Max, InterquartileRange, Stdev, Sum, Median, Quantile
 
+
 def test_query_aggregate_count(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa').count()

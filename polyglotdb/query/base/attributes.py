@@ -394,6 +394,10 @@ class CollectionNode(object):
         WITH {output_with_string}'''
     collect_template = 'collect({a}) as {a}'
 
+    def __init__(self, anchor_node, collected_node):
+        self.anchor_node = anchor_node
+        self.collected_node = collected_node
+
     def subquery(self, withs, filters=None, optional=False):
         input_with = ', '.join(withs)
         new_withs = withs - {self.collection_alias}
@@ -424,10 +428,6 @@ class CollectionNode(object):
     @property
     def with_pre_collection(self):
         return self.collection_alias
-
-    def __init__(self, anchor_node, collected_node):
-        self.anchor_node = anchor_node
-        self.collected_node = collected_node
 
     def __eq__(self, other):
         if not isinstance(other, CollectionNode):
