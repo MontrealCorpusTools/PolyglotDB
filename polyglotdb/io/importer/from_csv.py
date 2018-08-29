@@ -479,7 +479,7 @@ def import_speaker_csvs(corpus_context, typed_data):
     
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:Speaker:{corpus_name}) where n.name = csvLine.name
+    MATCH (n:Speaker:{corpus_name}) where n.name = toString(csvLine.name)
     SET {new_properties}'''
 
     statement = import_statement.format(path=feat_path,
@@ -529,7 +529,7 @@ def import_discourse_csvs(corpus_context, typed_data):
     
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:Discourse:{corpus_name}) where n.name = csvLine.name
+    MATCH (n:Discourse:{corpus_name}) where n.name = toString(csvLine.name)
     SET {new_properties}'''
 
     statement = import_statement.format(path=feat_path,

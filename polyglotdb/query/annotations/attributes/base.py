@@ -296,20 +296,12 @@ class AnnotationNode(Node):
     def __getattr__(self, key):
         if key == 'current':
             return self
-        if key in ['previous', 'following']:
+        elif key in ['previous', 'following']:
             from .precedence import PreviousAnnotation, FollowingAnnotation
             if key == 'previous':
                 return PreviousAnnotation(self, -1)
             else:
                 return FollowingAnnotation(self, 1)
-        if key.startswith('previous'):
-            p, key = key.split('_', 1)
-            p = self.previous
-            return getattr(p, key)
-        if key.startswith('following'):
-            p, key = key.split('_', 1)
-            f = self.following
-            return getattr(f, key)
         elif key in ['previous_pause', 'following_pause']:
             from .pause import FollowingPauseAnnotation, PreviousPauseAnnotation
             node = self
@@ -319,6 +311,14 @@ class AnnotationNode(Node):
                 return PreviousPauseAnnotation(node)
             else:
                 return FollowingPauseAnnotation(node)
+        elif key.startswith('previous'):
+            p, key = key.split('_', 1)
+            p = self.previous
+            return getattr(p, key)
+        elif key.startswith('following'):
+            p, key = key.split('_', 1)
+            f = self.following
+            return getattr(f, key)
         elif key == 'follows_pause':
             from .pause import FollowsPauseAttribute
             return FollowsPauseAttribute(self)

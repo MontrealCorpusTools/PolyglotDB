@@ -53,7 +53,8 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                 qr = qr.filter(at.subset == subset)
             qr = qr.filter(at.discourse.name == discourse)
             qr = qr.filter(at.speaker.name == s)
-
+            if annotation_type != 'utterance':
+                qr.preload(at.utterance)
             if qr.count() == 0:
                 continue
             annotations = qr.all()
@@ -63,8 +64,12 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                         continue
                     if a.begin == a.end: # Skip zero duration segments if they exist
                         continue
-                    segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label,
-                                                     id=a.id, discourse=discourse, channel=channel, speaker=s,
+                    if annotation_type == 'utterance':
+                        utt_id = a.id
+                    else:
+                        utt_id = a.utterance.id
+                    segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label, id=a.id,
+                                                     utterance_id=utt_id, discourse=discourse, channel=channel, speaker=s,
                                                      annotation_type=annotation_type, padding=padding)
     return segment_mapping
 

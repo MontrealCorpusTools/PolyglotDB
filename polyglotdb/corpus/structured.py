@@ -166,6 +166,8 @@ class StructuredContext(BaseContext):
             else:
                 sup = '{}'.format(sup)
             try:
+                if ('duration', float) not in self.hierarchy.token_properties[at]:
+                    self.hierarchy.token_properties[at].add(('duration', float))
                 token_props = generate_cypher_property_list(self.hierarchy.token_properties[at])
                 if token_props:
                     token_props = ', ' + token_props

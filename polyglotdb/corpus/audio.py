@@ -286,6 +286,26 @@ class AudioContext(SyllabicContext):
                     break
         return self._has_sound_files
 
+    def get_utterance_intensity(self, utterance_id, discourse, speaker):
+        client = self.acoustic_client()
+        Intensity_name = "Intensity"
+        rel_name = Intensity_name + '_relativized'
+
+        columns = '"time", "{}", "{}"'.format(Intensity_name, rel_name)
+        query = '''select {} from "intensity"
+                        WHERE "utterance_id" = '{}'
+                        AND "discourse" = '{}'
+                        AND "speaker" = '{}';'''.format(columns, utterance_id, discourse, speaker)
+        result = client.query(query)
+        track = Track()
+        for r in result.get_points('intensity'):
+            s = to_seconds(r['time'])
+            p = TimePoint(s)
+            p.add_value(Intensity_name, r[Intensity_name])
+            p.add_value(rel_name, r[rel_name])
+            track.add(p)
+        return track
+
     def get_intensity(self, discourse, begin, end, channel=0, relative=False, relative_time=False, **kwargs):
         """
         Get intensity for a given discourse and time range
@@ -332,6 +352,25 @@ class AudioContext(SyllabicContext):
                 s = (s - begin) / (end - begin)
             p = TimePoint(s)
             p.add_value("Intensity", r[Intensity_name])
+            track.add(p)
+        return track
+
+    def get_utterance_formants(self, utterance_id, discourse, speaker):
+        client = self.acoustic_client()
+        formant_names = ["F1", "F2", "F3", "B1", "B2", "B3"]
+        columns = '"time", {}'.format(', '.join('"{0}", "{0}_relativized"'.format(x) for x in formant_names))
+        result = client.query('''select {} from "formants"
+                        WHERE "utterance_id" = '{}'
+                        AND "discourse" = '{}'
+                        AND "speaker" = '{}';'''.format(columns, utterance_id, discourse, speaker))
+        track = Track()
+        for r in result.get_points('formants'):
+            s = to_seconds(r['time'])
+            p = TimePoint(s)
+            for f in formant_names:
+                rel_name = f + '_relativized'
+                p.add_value(f, r[f])
+                p.add_value(rel_name, r[rel_name])
             track.add(p)
         return track
 
@@ -382,6 +421,26 @@ class AudioContext(SyllabicContext):
             p = TimePoint(s)
             for f in formant_names:
                 p.add_value(f.split('_')[0], r[f])
+            track.add(p)
+        return track
+
+    def get_utterance_pitch(self, utterance_id, discourse, speaker):
+        client = self.acoustic_client()
+        F0_name = "F0"
+        rel_name = "F0_relativized"
+
+        columns = '"time", "{}", "{}"'.format(F0_name, rel_name)
+        query = '''select {} from "pitch"
+                        WHERE "utterance_id" = '{}'
+                        AND "discourse" = '{}'
+                        AND "speaker" = '{}';'''.format(columns, utterance_id, discourse, speaker)
+        result = client.query(query)
+        track = Track()
+        for r in result.get_points('pitch'):
+            s = to_seconds(r['time'])
+            p = TimePoint(s)
+            p.add_value(F0_name, r[F0_name])
+            p.add_value(rel_name, r[rel_name])
             track.add(p)
         return track
 
@@ -440,7 +499,6 @@ class AudioContext(SyllabicContext):
         return track
 
     def _save_measurement_tracks(self, measurement, tracks, speaker):
-
         if measurement not in ['formants', 'pitch', 'intensity']:
             raise (NotImplementedError('Only pitch, formants, and intensity can be currently saved.'))
         data = []
@@ -448,10 +506,13 @@ class AudioContext(SyllabicContext):
         for seg, track in tracks.items():
             if not len(track.keys()):
                 continue
-
-            file_path, begin, end, channel = seg.file_path, seg.begin, seg.end, seg.channel
+            file_path, begin, end, channel, utterance_id = seg.file_path, seg.begin, seg.end, seg.channel, seg[
+                'utterance_id']
             res = self.execute_cypher(
-                'MATCH (d:Discourse:{corpus_name}) where d.vowel_file_path = {{file_path}} RETURN d.name as name'.format(
+                'MATCH (d:Discourse:{corpus_name}) where d.low_freq_file_path = {{file_path}} OR '
+                'd.vowel_file_path = {{file_path}} OR '
+                'd.consonant_file_path = {{file_path}} '
+                'RETURN d.name as name'.format(
                     corpus_name=self.cypher_safe_name), file_path=file_path)
             for r in res:
                 discourse = r['name']
@@ -484,7 +545,7 @@ class AudioContext(SyllabicContext):
                 if label is None:
                     continue
                 t_dict = {'speaker': speaker, 'discourse': discourse, 'channel': channel}
-                fields = {'phone': label}
+                fields = {'phone': label, 'utterance_id': utterance_id}
                 if measurement == 'formants':
                     F1, F2, F3 = sanitize_formants(value)
                     if F1 > 0:
@@ -549,6 +610,7 @@ class AudioContext(SyllabicContext):
             kwargs['discourse'] = sound_file
         else:
             kwargs['discourse'] = sound_file['name']
+        utterance_id = kwargs.pop('utterance_id', None)
         tag_dict.update(kwargs)
         phone_type = getattr(self, self.phone_name)
         min_time = min(track.keys())
@@ -578,6 +640,8 @@ class AudioContext(SyllabicContext):
             t_dict = {'speaker': speaker}
             t_dict.update(tag_dict)
             fields = {'phone': label}
+            if utterance_id is not None:
+                fields['utterance_id'] = utterance_id
             if measurement == 'formants':
                 F1, F2, F3 = sanitize_formants(value)
                 if F1 > 0:
@@ -634,6 +698,9 @@ class AudioContext(SyllabicContext):
             Tags to save for acoustic measurements
         """
         self._save_measurement(sound_file, formant_track, 'formants', **kwargs)
+        if 'formants' not in self.hierarchy.acoustics:
+            self.hierarchy.acoustics.add('formants')
+            self.encode_hierarchy()
 
     def save_pitch(self, sound_file, pitch_track, **kwargs):
         """
@@ -649,6 +716,9 @@ class AudioContext(SyllabicContext):
             Tags to save for acoustic measurements
         """
         self._save_measurement(sound_file, pitch_track, 'pitch', **kwargs)
+        if 'pitch' not in self.hierarchy.acoustics:
+            self.hierarchy.acoustics.add('pitch')
+            self.encode_hierarchy()
 
     def save_pitch_tracks(self, tracks, speaker):
         self._save_measurement_tracks('pitch', tracks, speaker)
@@ -673,6 +743,9 @@ class AudioContext(SyllabicContext):
             Tags to save for acoustic measurements
         """
         self._save_measurement(sound_file, intensity_track, 'intensity', **kwargs)
+        if 'intensity' not in self.hierarchy.acoustics:
+            self.hierarchy.acoustics.add('intensity')
+            self.encode_hierarchy()
 
     def has_formants(self, discourse):
         """
@@ -889,7 +962,7 @@ class AudioContext(SyllabicContext):
 
     def reset_relativized_pitch(self):
         client = self.acoustic_client()
-        query = """SELECT "phone", "F0" INTO "pitch_copy" FROM "pitch" GROUP BY *;"""
+        query = """SELECT "phone", "F0", "utterance_id" INTO "pitch_copy" FROM "pitch" GROUP BY *;"""
         client.query(query)
         client.query('DROP MEASUREMENT "pitch"')
         client.query('SELECT * INTO "pitch" FROM "pitch_copy" GROUP BY *')
@@ -933,6 +1006,7 @@ class AudioContext(SyllabicContext):
                 for t_dict in r:
 
                     phone = t_dict.pop('phone')
+                    utterance_id = t_dict.pop('utterance_id', '')
                     if by_speaker and by_phone:
                         mean_f0, sd_f0 = summary_data[(t_dict['speaker'], phone)]
                     elif by_phone and not by_speaker:
@@ -958,7 +1032,7 @@ class AudioContext(SyllabicContext):
 
     def reset_relativized_intensity(self):
         client = self.acoustic_client()
-        query = """SELECT "phone", "Intensity" INTO "intensity_copy" FROM "intensity" GROUP BY *;"""
+        query = """SELECT "phone", "Intensity", "utterance_id" INTO "intensity_copy" FROM "intensity" GROUP BY *;"""
         client.query(query)
         client.query('DROP MEASUREMENT "intensity"')
         client.query('SELECT * INTO "intensity" FROM "intensity_copy" GROUP BY *')
@@ -994,6 +1068,7 @@ class AudioContext(SyllabicContext):
             for _, r in all_results.items():
                 for t_dict in r:
                     phone = t_dict.pop('phone')
+                    utterance_id = t_dict.pop('utterance_id', '')
                     if by_speaker:
                         mean_intensity, sd_intensity = summary_data[(t_dict['speaker'], phone)]
                     else:
@@ -1015,9 +1090,65 @@ class AudioContext(SyllabicContext):
                     data.append(d)
             client.write_points(data, batch_size=1000, time_precision='ms')
 
+    def reassess_utterances(self, measure):
+        client = self.acoustic_client()
+        q = self.query_discourses()
+        q = q.columns(self.discourse.name.column_name('name'),
+                      self.discourse.speakers.name.column_name('speakers'))
+        discourses = q.all()
+        for d in discourses:
+            discourse_name = d['name']
+            data = []
+            for s in d['speakers']:
+                q = self.query_graph(self.utterance)
+                q = q.filter(self.utterance.discourse.name == discourse_name, self.utterance.speaker.name == s)
+                q = q.order_by(self.utterance.begin)
+                q = q.columns(self.utterance.id.column_name('utterance_id'),
+                              self.utterance.begin.column_name('begin'),
+                              self.utterance.end.column_name('end'))
+                utterances = q.all()
+                all_query = '''select * from "{}"
+                                where "phone" != '' and "speaker" = '{}';'''.format(measure, s)
+                all_results = client.query(all_query)
+                cur_index = 0
+                for _, r in all_results.items():
+                    for t_dict in r:
+                        phone = t_dict.pop('phone')
+                        utterance_id = t_dict.pop('utterance_id', '')
+                        value = None
+                        if measure == 'intensity':
+                            value = t_dict.pop('Intensity')
+                            rel_value = t_dict.pop('Intensity_relativized', None)
+                        elif measure == 'pitch':
+                            value = t_dict.pop('F0')
+                            rel_value = t_dict.pop('F0_relativized', None)
+                        elif measure == 'formants':
+                            F2 = t_dict.pop('F2')
+                            new_F2 = t_dict.pop('F2_relativized', None)
+                            F3 = t_dict.pop('F3')
+                            new_F3 = t_dict.pop('F3_relativized', None)
+                            value = t_dict.pop('F1')
+                            rel_value = t_dict.pop('F1_relativized', None)
+
+                        if value is None:
+                            continue
+                        time_point = to_seconds(t_dict.pop('time'))
+                        for i in range(cur_index, len(utterances)):
+                            if utterances[i]['begin'] <= time_point <= utterances[i]['end']:
+                                cur_index = i
+                                break
+                        time_point = s_to_ms(time_point)
+                        d = {'measurement': measure,
+                             'tags': t_dict,
+                             "time": time_point,
+                             "fields": {'utterance_id': utterances[cur_index]['utterance_id']}
+                             }
+                        data.append(d)
+            client.write_points(data, batch_size=1000, time_precision='ms')
+
     def reset_relativized_formants(self):
         client = self.acoustic_client()
-        query = """SELECT "phone", "F1", "F2", "F3" INTO "formants_copy" FROM "formants" GROUP BY *;"""
+        query = """SELECT "phone", "F1", "F2", "F3", "utterance_id" INTO "formants_copy" FROM "formants" GROUP BY *;"""
         client.query(query)
         client.query('DROP MEASUREMENT "formants"')
         client.query('SELECT * INTO "formants" FROM "formants_copy" GROUP BY *')
@@ -1055,6 +1186,7 @@ class AudioContext(SyllabicContext):
             for _, r in all_results.items():
                 for t_dict in r:
                     phone = t_dict.pop('phone')
+                    utterance_id = t_dict.pop('utterance_id', '')
                     if by_speaker:
                         mean_F1, sd_F1, mean_F2, sd_F2, mean_F3, sd_F3 = summary_data[(t_dict['speaker'], phone)]
                     else:

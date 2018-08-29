@@ -23,17 +23,11 @@ def analyze_intensity(corpus_context,
     stop_check : function
         stop check function, optional
     """
-    segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING).grouped_mapping('speaker')
+    segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING, file_type='consonant')
+    segment_mapping = segment_mapping.grouped_mapping('speaker')
     if call_back is not None:
         call_back('Analyzing files...')
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):
-        gender = None
-        try:
-            q = corpus_context.query_speakers().filter(corpus_context.speaker.name == speaker)
-            q = q.columns(corpus_context.speaker.gender.column_name('Gender'))
-            gender = q.all()[0]['Gender']
-        except SpeakerAttributeError:
-            pass
         intensity_function = generate_base_intensity_function(corpus_context)
         output = analyze_segments(v, intensity_function, stop_check=stop_check, multiprocessing=multiprocessing)
         corpus_context.save_intensity_tracks(output, speaker)

@@ -5,6 +5,9 @@ class Track(object):
     def __str__(self):
         return '<Track: {}>'.format(self.points)
 
+    def __repr__(self):
+        return '<TrackObject with {} points'.format(len(self.points))
+
     def keys(self):
         keys = set()
         for point in self:
@@ -39,6 +42,16 @@ class Track(object):
         for p in sorted(self.points, key=lambda x: x.time):
             yield p
 
+    def slice(self, begin, end):
+        new_track = Track()
+        for p in self:
+            if p.time < begin:
+                continue
+            if p.time > end:
+                break
+            new_track.add(p)
+        return new_track
+
 
 class TimePoint(object):
     def __init__(self, time):
@@ -65,6 +78,12 @@ class TimePoint(object):
     def __getattr__(self, item):
         if item in self.values:
             return self.values[item]
+
+    def has_value(self, name):
+        return name in self.values and self.values[name] is not None
+
+    def select_values(self, columns):
+        return {k: v for k,v in self.values.items() if k in columns}
 
     def add_value(self, name, value):
         self.values[name] = value

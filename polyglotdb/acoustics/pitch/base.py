@@ -149,8 +149,8 @@ def analyze_pitch(corpus_context,
     -------
 
     """
-    absolute_min_pitch = 55
-    absolute_max_pitch = 480
+    absolute_min_pitch = 50
+    absolute_max_pitch = 500
     if not 'utterance' in corpus_context.hierarchy:
         raise (Exception('Must encode utterances before pitch can be analyzed'))
     segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING).grouped_mapping('speaker')
