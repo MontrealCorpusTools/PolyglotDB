@@ -1,4 +1,5 @@
 from statistics import mean, stdev, median
+from decimal import Decimal
 
 from .base import AnnotationAttribute
 
@@ -182,6 +183,12 @@ class Track(AggregationAttribute):
 
     def hydrate(self, corpus, utterance_id, begin, end):
         data = self.attribute.hydrate(corpus, utterance_id, begin, end)
+        if self.attribute.relative_time:
+            begin = Decimal(begin)
+            end = Decimal(end)
+            duration = end - begin
+            for p in data:
+                p.time = (p.time - begin) / duration
         return data
 
     def __repr__(self):

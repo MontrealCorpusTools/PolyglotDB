@@ -229,8 +229,7 @@ class AudioContext(SyllabicContext):
         q = self.query_graph(self.utterance).filter(self.utterance.id == utterance_id).columns(
             self.utterance.begin.column_name('begin'),
             self.utterance.end.column_name('end'),
-            self.utterance.discourse.name.column_name('discourse'),
-            self.utterance.pitch.track)
+            self.utterance.discourse.name.column_name('discourse'))
         utterance_info = q.all()[0]
         path = os.path.join(self.discourse_audio_directory(utterance_info['discourse']),
                             '{}_{}.wav'.format(utterance_id, type))

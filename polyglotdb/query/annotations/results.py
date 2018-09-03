@@ -74,15 +74,15 @@ class QueryResults(BaseQueryResults):
         super(QueryResults, self).__init__(query)
         self.speaker_discourse_channels = {}
         self.num_tracks = 0
-        self.track_columns = set()
+        self.track_columns = []
         if query._columns:
             self._acoustic_columns = query._acoustic_columns
             for x in query._acoustic_columns:
                 if isinstance(x, TrackAnnotation):
                     self.num_tracks += 1
-                    self.track_columns.update(x.output_columns)
+                    self.track_columns.extend(y for y in x.output_columns if y not in self.track_columns)
                 else:
-                    self.columns.extend(x.output_columns)
+                    self._columns.extend(x.output_columns)
         if query._columns and self._acoustic_columns:
             statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
             RETURN s.name as speaker, d.name as discourse, r.channel as channel'''.format(corpus_name=self.corpus.cypher_safe_name)
@@ -94,6 +94,10 @@ class QueryResults(BaseQueryResults):
                 a.attribute.cache = self.acoustic_cache[a.attribute.label]
         if self.models:
             self._preload_acoustics = query._preload_acoustics
+
+    @property
+    def columns(self):
+        return self._columns + self.track_columns
 
     def _sanitize_record(self, r):
         if self.models:
