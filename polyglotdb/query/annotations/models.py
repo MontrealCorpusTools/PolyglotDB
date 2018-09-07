@@ -1,5 +1,6 @@
 from uuid import uuid1
 import time
+from decimal import Decimal
 from polyglotdb.exceptions import GraphModelError
 
 from ..base.helper import key_for_cypher, value_for_cypher
@@ -127,13 +128,20 @@ class LinguisticAnnotation(BaseAnnotation):
         """ Returns sorted untion of node property keys and type_node property keys """
         return sorted(set(self._node.keys()) | set(self._type_node.keys()))
 
-    def _load_track(self, attribute):
-        type = attribute.label
-        if type == 'pitch':
-            results = self.corpus_context.get_pitch(self.discourse.name, self.begin, self.end, self.channel,
-                                                    relative=attribute.relative, relative_time=attribute.relative_time)
+    def _load_track(self, track_attribute):
+        if self._type == 'utterance':
+            utt_id = self.id
+        else:
+            utt_id = self.utterance.id
+        results = track_attribute.hydrate(self.corpus_context, utt_id, self.begin, self.end)
+        if track_attribute.attribute.relative_time:
+            begin = Decimal(self.begin)
+            end = Decimal(self.end)
+            duration = end - begin
+            for p in results:
+                p.time = (p.time - begin) / duration
 
-        self._tracks[type] = results
+        self._tracks[track_attribute.attribute.label] = results
 
     @property
     def pitch_track(self):

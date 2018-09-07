@@ -315,7 +315,8 @@ class Hierarchy(object):
         SET {sets}'''.format(sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
                                       corpus_name=corpus_context.corpus_name, **kwargs)
-
+        to_add_names = [x[0] for x in properties]
+        self.speaker_properties = {x for x in self.speaker_properties if x[0] not in to_add_names}
         self.speaker_properties.update(k for k in properties)
 
     def remove_speaker_properties(self, corpus_context, properties):
@@ -358,6 +359,8 @@ class Hierarchy(object):
         corpus_context.execute_cypher(statement,
                                       corpus_name=corpus_context.corpus_name, **kwargs)
 
+        to_add_names = [x[0] for x in properties]
+        self.discourse_properties = {x for x in self.discourse_properties if x[0] not in to_add_names}
         self.discourse_properties.update(k for k in properties)
 
     def remove_discourse_properties(self, corpus_context, properties):

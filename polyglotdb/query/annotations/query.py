@@ -178,6 +178,18 @@ class GraphQuery(BaseQuery):
         res_list : list
             a list of results from the query
         """
+        if self._preload_acoustics:
+            discourse_found = False
+            speaker_found = False
+            for p in self._preload:
+                if p.node_type == 'Discourse':
+                    discourse_found = True
+                elif p.node_type == 'Speaker':
+                    speaker_found = True
+            if not discourse_found:
+                self.preload(getattr(self.to_find, 'discourse'))
+            if not speaker_found:
+                self.preload(getattr(self.to_find, 'speaker'))
         if self._acoustic_columns:
             for a in self._acoustic_columns:
                 discourse_found = False

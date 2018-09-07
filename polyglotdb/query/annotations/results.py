@@ -65,6 +65,18 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
                 subbed.append(pa)
             a._subs[pre.collected_node.node_type] = subbed
     for pre in to_preload_acoustics:
+        if a._type == 'utterance':
+            utterance_id = a.id
+        else:
+            utterance_id = a.utterance.id
+        if utterance_id not in pre.attribute.cache:
+            if pre.attribute.label == 'pitch':
+                data = corpus.get_utterance_pitch(utterance_id, a.discourse.name, a.speaker.name)
+            elif pre.attribute.label == 'intensity':
+                data = corpus.get_utterance_intensity(utterance_id, a.discourse.name, a.speaker.name)
+            elif pre.attribute.label == 'formants':
+                data = corpus.get_utterance_formants(utterance_id, a.discourse.name, a.speaker.name)
+            pre.attribute.cache[utterance_id] = data
         a._load_track(pre)
     return a
 
@@ -94,6 +106,11 @@ class QueryResults(BaseQueryResults):
                 a.attribute.cache = self.acoustic_cache[a.attribute.label]
         if self.models:
             self._preload_acoustics = query._preload_acoustics
+            if self._preload_acoustics:
+                self.acoustic_cache = {x: {} for x in sorted(query.corpus.hierarchy.acoustics)}
+                for a in self._preload_acoustics:
+                    a.attribute.cache = self.acoustic_cache[a.attribute.label]
+
 
     @property
     def columns(self):
@@ -101,6 +118,7 @@ class QueryResults(BaseQueryResults):
 
     def _sanitize_record(self, r):
         if self.models:
+
             r = hydrate_model(r, self._to_find, self._to_find_type, self._preload, self._preload_acoustics, self.corpus)
         else:
             r = AnnotationRecord(r)
