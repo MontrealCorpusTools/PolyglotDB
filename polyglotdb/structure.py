@@ -196,7 +196,7 @@ class Hierarchy(object):
         if annotation_type in self.subannotations:
             for s in self.subannotations[annotation_type]:
                 del self.subannotation_properties[s]
-            del self.subannotations
+            del self.subannotations[annotation_type]
 
     def add_type_properties(self, corpus_context, annotation_type, properties):
         set_template = 'n.{0} = {{{0}}}'
