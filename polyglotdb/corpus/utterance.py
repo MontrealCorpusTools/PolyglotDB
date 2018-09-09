@@ -80,6 +80,9 @@ class UtteranceContext(PauseContext):
         import_utterance_csv(self, call_back, stop_check)
         for m in self.hierarchy.acoustics:
             self.reassess_utterances(m)
+            if m == 'pitch':
+                self.hierarchy.add_token_properties(self, 'utterance', [('pitch_last_edited', int)])
+                self.encode_hierarchy()
         if stop_check is not None and stop_check():
             return
         if call_back is not None:
