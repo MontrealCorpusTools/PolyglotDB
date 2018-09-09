@@ -109,7 +109,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
             label = None
         if label is None:
             continue
-        fields = {'phone': label}
+        fields = {'phone': label, 'utterance_id': u['id']}
         try:
             if value is None:
                 continue

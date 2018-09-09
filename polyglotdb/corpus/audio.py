@@ -1107,7 +1107,9 @@ class AudioContext(SyllabicContext):
                               self.utterance.end.column_name('end'))
                 utterances = q.all()
                 all_query = '''select * from "{}"
-                                where "phone" != '' and "speaker" = '{}';'''.format(measure, s)
+                                where "phone" != '' and 
+                                "discourse" = '{}' and 
+                                "speaker" = '{}';'''.format(measure, discourse_name, s)
                 all_results = client.query(all_query)
                 cur_index = 0
                 for _, r in all_results.items():
