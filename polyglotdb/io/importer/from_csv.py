@@ -26,7 +26,7 @@ def import_type_csvs(corpus_context, type_headers):
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_type.csv'.format(at))
         # If on the Docker version, the files live in /site/proj
-        if os.path.exists('/site/proj'):
+        if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
             type_path = 'file:///site/proj/{}'.format(make_path_safe(path))
         else:
             type_path = 'file:///{}'.format(make_path_safe(path))
@@ -122,7 +122,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                     cur += 1
                 path = os.path.join(directory, '{}_{}.csv'.format(s, at))
                 # If on the Docker version, the files live in /site/proj
-                if os.path.exists('/site/proj'):
+                if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
                     rel_path = 'file:///site/proj/{}'.format(make_path_safe(path))
                 else:
                     rel_path = 'file:///{}'.format(make_path_safe(path))
@@ -206,7 +206,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                 path = os.path.join(directory, '{}_{}_{}.csv'.format(sp, k, s))
                 corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
                 # If on the Docker version, the files live in /site/proj
-                if os.path.exists('/site/proj'):
+                if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
                     sub_path = 'file:///site/proj/{}'.format(make_path_safe(path))
                 else:
                     sub_path = 'file:///{}'.format(make_path_safe(path))
@@ -264,7 +264,7 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory, 'lexicon_import.csv')
     # If on the Docker version, the files live in /site/proj
-    if os.path.exists('/site/proj'):
+    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
         lex_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         lex_path = 'file:///{}'.format(make_path_safe(path))
@@ -321,7 +321,7 @@ def import_feature_csvs(corpus_context, typed_data):
     path = os.path.join(directory, 'feature_import.csv')
 
     # If on the Docker version, the files live in /site/proj
-    if os.path.exists('/site/proj'):
+    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
         feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
@@ -372,7 +372,7 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
     path = os.path.join(directory, 'syllable_import.csv')
 
     # If on the Docker version, the files live in /site/proj
-    if os.path.exists('/site/proj'):
+    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
         syl_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         syl_path = 'file:///{}'.format(make_path_safe(path))
@@ -422,7 +422,7 @@ def import_utterance_enrichment_csvs(corpus_context, typed_data):
     path = os.path.join(directory, 'utterance_enrichment.csv')
 
     # If on the Docker version, the files live in /site/proj
-    if os.path.exists('/site/proj'):
+    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
         utt_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         utt_path = 'file:///{}'.format(make_path_safe(path))
@@ -472,7 +472,7 @@ def import_speaker_csvs(corpus_context, typed_data):
     path = os.path.join(directory, 'speaker_import.csv')
 
     # If on the Docker version, the files live in /site/proj
-    if os.path.exists('/site/proj'):
+    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
         feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
@@ -522,7 +522,7 @@ def import_discourse_csvs(corpus_context, typed_data):
     path = os.path.join(directory, 'discourse_import.csv')
 
     # If on the Docker version, the files live in /site/proj
-    if os.path.exists('/site/proj'):
+    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
         feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
@@ -567,7 +567,7 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
         path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(s))
         
         # If on the Docker version, the files live in /site/proj
-        if os.path.exists('/site/proj'):
+        if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
             csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
         else:
             csv_path = 'file:///{}'.format(make_path_safe(path))
@@ -630,7 +630,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                             '{}_syllable.csv'.format(s))
 
         # If on the Docker version, the files live in /site/proj
-        if os.path.exists('/site/proj'):
+        if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
             csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
         else:
             csv_path = 'file:///{}'.format(make_path_safe(path))
@@ -728,7 +728,7 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                             '{}_nonsyl.csv'.format(s))
 
         # If on the Docker version, the files live in /site/proj
-        if os.path.exists('/site/proj'):
+        if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
             csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
         else:
             csv_path = 'file:///{}'.format(make_path_safe(path))
@@ -803,7 +803,7 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
                         '{}_subannotations.csv'.format(type))
 
     # If on the Docker version, the files live in /site/proj
-    if os.path.exists('/site/proj'):
+    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
         csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         csv_path = 'file:///{}'.format(make_path_safe(path))

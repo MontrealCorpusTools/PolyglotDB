@@ -114,7 +114,7 @@ def point_measures_from_csv(corpus_context, header_info):
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_point_measures.csv'.format(s))
         # If on the Docker version, the files live in /site/proj
-        if os.path.exists('/site/proj'):
+        if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
             import_path = 'file:///site/proj/{}'.format(make_path_safe(path))
         else:
             import_path = 'file:///{}'.format(make_path_safe(path))
