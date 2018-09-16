@@ -8,7 +8,7 @@ from influxdb import InfluxDBClient
 
 from polyglotdb.query.discourse import DiscourseInspector
 from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_vowel_formant_tracks, analyze_intensity, \
-    analyze_script, analyze_utterance_pitch, update_utterance_pitch_track
+    analyze_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
 from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
 
@@ -113,6 +113,9 @@ class AudioContext(SyllabicContext):
 
     def update_utterance_pitch_track(self, utterance, new_track):
         return update_utterance_pitch_track(self, utterance, new_track)
+
+    def analyze_vot(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
+        analyze_pitch(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)

@@ -552,6 +552,13 @@ def reaper_path():
     else:
         return 'reaper'
 
+@pytest.fixture(scope='session')
+def autovot_path():
+    return 'auto_vot_decode.py'
+
+@pytest.fixture(scope='session')
+def vot_classifier_path():
+    return '/bb_jasa.classifier'
 
 @pytest.fixture(scope='session')
 def localhost():
