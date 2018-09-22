@@ -16,4 +16,5 @@ def test_analyze_vot(acoustic_utt_config, autovot_path, vot_classifier_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.autovot_path = autovot_path
-        g.analyze_vot()
+        g.encode_class(['p', 't', 'k', 'b', 'd', 'g'], 'stops')
+        g.analyze_vot(stop_label="stops")

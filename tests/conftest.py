@@ -554,7 +554,7 @@ def reaper_path():
 
 @pytest.fixture(scope='session')
 def autovot_path():
-    return 'auto_vot_decode.py'
+    return '/autovot/autovot/bin/auto_vot_decode.py'
 
 @pytest.fixture(scope='session')
 def vot_classifier_path():

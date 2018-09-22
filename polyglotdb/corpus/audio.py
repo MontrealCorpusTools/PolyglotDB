@@ -114,8 +114,8 @@ class AudioContext(SyllabicContext):
     def update_utterance_pitch_track(self, utterance, new_track):
         return update_utterance_pitch_track(self, utterance, new_track)
 
-    def analyze_vot(self, stop_check=None, call_back=None, multiprocessing=False):
-        analyze_vot(self, stop_check, call_back, multiprocessing)
+    def analyze_vot(self, stop_label="stops", stop_check=None, call_back=None, multiprocessing=False):
+        analyze_vot(self, stop_label, stop_check, call_back, multiprocessing)
 
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
