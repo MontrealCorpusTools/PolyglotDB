@@ -433,7 +433,7 @@ def acoustic_syllabics():
 
 @pytest.fixture(scope='session')
 def acoustic_utt_config(graph_db, textgrid_test_dir, acoustic_syllabics):
-    config = CorpusConfig('acoustic utt', **graph_db)
+    config = CorpusConfig('acoustic_utt', **graph_db)
 
     acoustic_path = os.path.join(textgrid_test_dir, 'acoustic_corpus.TextGrid')
     with CorpusContext(config) as c:

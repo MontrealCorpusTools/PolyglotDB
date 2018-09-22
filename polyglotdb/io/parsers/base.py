@@ -150,6 +150,7 @@ class BaseParser(object):
                     if not rl.subannotation:
                         continue
                     for sub in rl:
+                        #TODO: Maybe will cause VOTs to be under wrong phone.
                         annotation = annotation_types[k].lookup(sub.midpoint, speaker=speaker)
                         if isinstance(sub, Tobi):
                             a = PGSubAnnotation(sub.label, 'tone', sub.begin, sub.end)
