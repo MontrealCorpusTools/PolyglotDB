@@ -5,6 +5,7 @@ from conch.analysis.segments import SegmentMapping, FileSegment
 from conch.analysis.autovot import AutoVOTAnalysisFunction
 
 from ..segments import generate_utterance_segments, generate_segments
+from ...query.annotations.models import LinguisticAnnotation
 from ...exceptions import SpeakerAttributeError
 from ..classes import Track, TimePoint
 from ..utils import PADDING
@@ -41,3 +42,13 @@ def analyze_vot(corpus_context,
             segment_mapping.segments.append(seg)
 
     output = analyze_segments(segment_mapping, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
+    
+    #NOTE: possible that autovot conch integration doesn't check if nothing is returned for a given segment, 
+    # do something to make sure len(output)==len(segment_mapping) in conch
+    corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end",float)])
+    for discouse, discourse_output in zip(corpus_context.discourses, output):
+        for (begin, end), stop in zip(discourse_output["vot_marks"], stop_mapping[(discourse, )]):
+            model = LinguisticAnnotation(corpus_context)
+            model.load(stop["id"])
+            model.add_subannotation("vot", begin=begin, end=end)
+            model.save()
