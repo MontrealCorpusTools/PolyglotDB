@@ -1,6 +1,7 @@
 import os
 import re
 import librosa
+import subprocess
 from datetime import datetime
 from decimal import Decimal
 
@@ -235,10 +236,11 @@ class AudioContext(SyllabicContext):
                             '{}_{}.wav'.format(utterance_id, type))
         if os.path.exists(path):
             return path
-        fname = self.discourse_sound_file(utterance_info['discourse'])["consonant_file_path"]
-        data, sr = librosa.load(fname, sr=None, offset=utterance_info['begin'],
-                                duration=utterance_info['end'] - utterance_info['begin'])
-        librosa.output.write_wav(path, data, sr)
+        fname = self.discourse_sound_file(utterance_info['discourse'])["{}_file_path".format(type)]
+        subprocess.call(['sox', fname, path, 'trim', str(utterance_info['begin']), str(utterance_info['end'] - utterance_info['begin'])])
+        #data, sr = librosa.load(fname, sr=None, offset=utterance_info['begin'],
+        #                        duration=utterance_info['end'] - utterance_info['begin'])
+        #librosa.output.write_wav(path, data, sr)
         return path
 
     def has_all_sound_files(self):
