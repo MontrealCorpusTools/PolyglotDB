@@ -292,13 +292,13 @@ class BaseQuery(object):
 
     def cypher_params(self):
         from ..base.complex import ComplexClause
-        from ..base.elements import SubsetClauseElement
+        from ..base.elements import SubsetClauseElement, NotSubsetClauseElement
         from ..base.attributes import NodeAttribute
         params = {}
         for c in self._criterion:
             if isinstance(c, ComplexClause):
                 params.update(c.generate_params())
-            elif isinstance(c, SubsetClauseElement):
+            elif isinstance(c, (SubsetClauseElement, NotSubsetClauseElement)):
                 pass
             else:
                 try:
