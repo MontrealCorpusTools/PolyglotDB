@@ -37,17 +37,18 @@ def analyze_vot(corpus_context,
     for discourse in corpus_context.discourses:
         if (discourse,) in stop_mapping:
             sf = corpus_context.discourse_sound_file(discourse)
-            seg = FileSegment(sf["consonant_file_path"], sf["speech_begin"], sf["speech_end"])
+            seg = FileSegment(sf["consonant_file_path"], sf["speech_begin"], sf["speech_end"], name=discourse)
             seg.properties["vot_marks"] = [(x["begin"], x["end"]) for x in stop_mapping[(discourse,)]]
             segment_mapping.segments.append(seg)
 
     output = analyze_segments(segment_mapping, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
-    
+    print(dir(output))
     #NOTE: possible that autovot conch integration doesn't check if nothing is returned for a given segment, 
     # do something to make sure len(output)==len(segment_mapping) in conch
     corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end",float)])
-    for discouse, discourse_output in zip(corpus_context.discourses, output):
-        for (begin, end), stop in zip(discourse_output["vot_marks"], stop_mapping[(discourse, )]):
+    for discourse, discourse_output in output.items():
+        #OUTPUT is not veing saved but vot_mark
+        for (begin, end), stop in zip(discourse_output, stop_mapping[(discourse["name"], )]):
             model = LinguisticAnnotation(corpus_context)
             model.load(stop["id"])
             model.add_subannotation("vot", begin=begin, end=end)
