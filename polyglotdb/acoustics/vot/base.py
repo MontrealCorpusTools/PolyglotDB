@@ -42,14 +42,15 @@ def analyze_vot(corpus_context,
             segment_mapping.segments.append(seg)
 
     output = analyze_segments(segment_mapping, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
-    print(dir(output))
     #NOTE: possible that autovot conch integration doesn't check if nothing is returned for a given segment, 
     # do something to make sure len(output)==len(segment_mapping) in conch
     corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end",float)])
     for discourse, discourse_output in output.items():
         #OUTPUT is not veing saved but vot_mark
+        print(len(stop_mapping[(discourse["name"], )]))
+        print(len(discourse_output))
         for (begin, end), stop in zip(discourse_output, stop_mapping[(discourse["name"], )]):
             model = LinguisticAnnotation(corpus_context)
             model.load(stop["id"])
-            model.add_subannotation("vot", begin=begin, end=end)
+            model.add_subannotation("vot", begin=begin, end=begin+end)
             model.save()
