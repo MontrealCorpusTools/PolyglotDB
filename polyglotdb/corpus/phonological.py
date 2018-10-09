@@ -2,7 +2,7 @@ import re
 from ..io.importer import feature_data_to_csvs, import_feature_csvs
 from .lexical import LexicalContext
 from ..exceptions import SubsetError
-from ..io.enrichment.features import enrich_features_from_csv
+from ..io.enrichment.features import enrich_features_from_csv, parse_file
 
 
 class PhonologicalContext(LexicalContext):
@@ -20,6 +20,13 @@ class PhonologicalContext(LexicalContext):
         """
 
         enrich_features_from_csv(self, path)
+
+    def reset_inventory_csv(self, path):
+        labels = set(x.lower() for x in self.phones)
+        data, type_data = parse_file(path, labels=labels)
+
+        property_names = [x for x in type_data.keys()]
+        self.reset_features(property_names)
 
     def encode_class(self, phones, label):
         """
