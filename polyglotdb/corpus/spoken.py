@@ -23,7 +23,9 @@ class SpokenContext(AudioContext):
         data, type_data = parse_file(path, self.speakers)
         q = self.query_speakers()
         property_names = [x for x in type_data.keys()]
+        print(property_names)
         q.set_properties(**{x: None for x in property_names})
+
         self.hierarchy.remove_speaker_properties(self, property_names)
         self.encode_hierarchy()
 

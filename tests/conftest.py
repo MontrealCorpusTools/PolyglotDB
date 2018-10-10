@@ -561,3 +561,24 @@ def localhost():
 @pytest.fixture(scope='session')
 def stress_pattern_file(test_dir):
     return os.path.join(test_dir, 'lexicons', 'stress_pattern_lex.txt')
+
+
+@pytest.fixture(scope='session')
+def timed_lexicon_enrich_file(test_dir):
+    return os.path.join(test_dir, 'csv', 'timed_enrichment.txt')
+
+
+@pytest.fixture(scope='session')
+def acoustic_speaker_enrich_file(test_dir):
+    return os.path.join(test_dir, 'csv', 'acoustic_speaker_enrichment.txt')
+
+
+@pytest.fixture(scope='session')
+def acoustic_discourse_enrich_file(test_dir):
+    return os.path.join(test_dir, 'csv', 'acoustic_discourse_enrichment.txt')
+
+
+@pytest.fixture(scope='session')
+def acoustic_inventory_enrich_file(test_dir):
+    return os.path.join(test_dir, 'features', 'basic.txt')
+
