@@ -13,6 +13,11 @@ from ..utils import PADDING
 
 def analyze_vot(corpus_context,
                   stop_label='stops',
+                  classifier="/autovot/experiments/models/bb_jasa.classifier",
+                  vot_min=5,
+                  vot_max=100,
+                  window_min=30,
+                  window_max=30,
                   call_back=None,
                   stop_check=None, multiprocessing=False):
     """
@@ -33,7 +38,12 @@ def analyze_vot(corpus_context,
     stop_mapping = generate_segments(corpus_context, annotation_type='phone', subset='stops', padding=PADDING, file_type="consonant").grouped_mapping('discourse')
     segment_mapping = SegmentMapping()
     vot_func = AutoVOTAnalysisFunction(autovot_binaries_path = corpus_context.config.autovot_path ,\
-            classifier_to_use= "/autovot/experiments/models/bb_jasa.classifier")
+            classifier_to_use=classifier,
+            vot_min=vot_min,
+            vot_max=vot_max,
+            window_min=window_min,
+            window_max=window_max
+            )
     for discourse in corpus_context.discourses:
         if (discourse,) in stop_mapping:
             sf = corpus_context.discourse_sound_file(discourse)
