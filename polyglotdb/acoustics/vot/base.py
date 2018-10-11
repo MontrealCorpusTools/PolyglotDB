@@ -56,7 +56,9 @@ def analyze_vot(corpus_context,
     output = analyze_segments(segment_mapping, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
     #NOTE: possible that autovot conch integration doesn't check if nothing is returned for a given segment, 
     # do something to make sure len(output)==len(segment_mapping) in conch
-    corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end",float)])
+    #TODO: fix this
+    if not corpus_context.hierarchy.has_subannotation_type("vot"):
+        corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end",float)])
     for discourse, discourse_output in output.items():
         for (begin, end), stop in zip(discourse_output, \
                 sorted(stop_mapping[(discourse["name"], )], key=lambda x: x["begin"])):
