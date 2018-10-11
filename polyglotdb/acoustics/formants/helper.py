@@ -78,8 +78,10 @@ def parse_multiple_formant_output(output):
     to_return = {}
     for item in listing_list:
         output = parse_point_script_output(item)
-
-        to_return[track_nformants(output)] = output
+        # print (output)
+        reported_nformants = output.pop('num_formants')
+        # to_return[track_nformants(output)] = output
+        to_return[reported_nformants] = output
     return to_return
 
 
@@ -106,6 +108,7 @@ def generate_variable_formants_point_function(corpus_context, min_formants, max_
     script = os.path.join(script_dir, 'multiple_num_formants.praat')
     formant_function = PraatAnalysisFunction(script, praat_path=corpus_context.config.praat_path,
                                              arguments=[0.01, 0.025, min_formants, max_formants, max_freq])
+
     formant_function._function._output_parse_function = parse_multiple_formant_output
     return formant_function
 
@@ -208,7 +211,7 @@ def get_mahalanobis(prototype, observation, inverse_covariance):
 
 
 def save_formant_point_data(corpus_context, data, num_formants=False):
-    header = ['id', 'F1', 'F2', 'F3', 'B1', 'B2', 'B3']
+    header = ['id', 'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3', 'Ax', 'drop_formant']
     if num_formants:
         header += ['num_formants']
     point_measures_to_csv(corpus_context, data, header)
@@ -216,8 +219,10 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
     for h in header:
         if h == 'id':
             continue
-        if h != 'num_formants':
+        if h != 'num_formants' or h !='drop_formant':
             header_info[h] = float
+        # elif h != 'Fx':
+        #     header_info[h] = str
         else:
             header_info[h] = int
     point_measures_from_csv(corpus_context, header_info)
