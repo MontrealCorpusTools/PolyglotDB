@@ -16,7 +16,7 @@ def analyze_vot(corpus_context,
                   classifier="/autovot/experiments/models/bb_jasa.classifier",
                   vot_min=5,
                   vot_max=100,
-                  window_min=30,
+                  window_min=-30,
                   window_max=30,
                   call_back=None,
                   stop_check=None, multiprocessing=False):
@@ -37,10 +37,12 @@ def analyze_vot(corpus_context,
         raise Exception('Phones do not have a "{}" subset.'.format(stop_label))
     stop_mapping = generate_segments(corpus_context, annotation_type='phone', subset='stops', padding=PADDING, file_type="consonant").grouped_mapping('discourse')
     segment_mapping = SegmentMapping()
+    print(vot_min)
+    print(vot_max)
     vot_func = AutoVOTAnalysisFunction(autovot_binaries_path = corpus_context.config.autovot_path ,\
             classifier_to_use=classifier,
-            vot_min=vot_min,
-            vot_max=vot_max,
+            min_vot_length=vot_min,
+            max_vot_length=vot_max,
             window_min=window_min,
             window_max=window_max
             )

@@ -114,8 +114,20 @@ class AudioContext(SyllabicContext):
     def update_utterance_pitch_track(self, utterance, new_track):
         return update_utterance_pitch_track(self, utterance, new_track)
 
-    def analyze_vot(self, stop_label="stops", stop_check=None, call_back=None, multiprocessing=False):
-        analyze_vot(self, stop_label, stop_check, call_back, multiprocessing)
+    def analyze_vot(self,
+            stop_label="stops",
+            stop_check=None,
+            call_back=None,
+            multiprocessing=False,
+            classifier="/autovot/experiments/models/bb_jasa.classifier",
+            vot_min=5,
+            vot_max=100,
+            window_min=-30,
+            window_max=30):
+        analyze_vot(self, stop_label=stop_label, stop_check=stop_check,\
+                call_back=call_back, multiprocessing=multiprocessing,\
+                vot_min=vot_min, vot_max=vot_max, window_min=window_min,\
+                window_max=window_max)
 
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
