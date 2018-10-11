@@ -178,29 +178,41 @@ class GraphQuery(BaseQuery):
         res_list : list
             a list of results from the query
         """
+        if self._preload_acoustics:
+            discourse_found = False
+            speaker_found = False
+            for p in self._preload:
+                if p.node_type == 'Discourse':
+                    discourse_found = True
+                elif p.node_type == 'Speaker':
+                    speaker_found = True
+            if not discourse_found:
+                self.preload(getattr(self.to_find, 'discourse'))
+            if not speaker_found:
+                self.preload(getattr(self.to_find, 'speaker'))
         if self._acoustic_columns:
             for a in self._acoustic_columns:
                 discourse_found = False
                 speaker_found = False
                 begin_found = False
                 end_found = False
+                utterance_id_found = False
                 for c in self._columns + self._hidden_columns:
-                    if a.node.discourse == c.node and \
-                                    c.label == 'name':
+                    if a.node.discourse == c.node and c.label == 'name':
                         a.discourse_alias = c.output_alias
                         discourse_found = True
-                    if a.node.speaker == c.node and \
-                                    c.label == 'name':
+                    elif a.node.speaker == c.node and c.label == 'name':
                         a.speaker_alias = c.output_alias
                         speaker_found = True
-                    elif a.node == c.node and \
-                                    c.label == 'begin':
+                    elif a.node == c.node and c.label == 'begin':
                         a.begin_alias = c.output_alias
                         begin_found = True
-                    elif a.node == c.node and \
-                                    c.label == 'end':
+                    elif a.node == c.node and c.label == 'end':
                         a.end_alias = c.output_alias
                         end_found = True
+                    elif c.node.node_type == 'utterance' and c.label == 'id':
+                        a.utterance_alias = c.output_alias
+                        utterance_id_found = True
                 if not discourse_found:
                     self._hidden_columns.append(a.node.discourse.name.column_name(a.discourse_alias))
                 if not speaker_found:
@@ -209,6 +221,11 @@ class GraphQuery(BaseQuery):
                     self._hidden_columns.append(a.node.begin.column_name(a.begin_alias))
                 if not end_found:
                     self._hidden_columns.append(a.node.end.column_name(a.end_alias))
+                if not utterance_id_found:
+                    if self.to_find.node_type == 'utterance':
+                        self._hidden_columns.append(a.node.id.column_name(a.utterance_alias))
+                    else:
+                        self._hidden_columns.append(a.node.utterance.id.column_name(a.utterance_alias))
         return QueryResults(self)
 
     def create_subset(self, label):
@@ -298,6 +315,15 @@ class SplitQuery(GraphQuery):
     def split_queries(self):
         """ splits a query into multiple queries """
         from .elements import BaseNotEqualClauseElement, BaseNotInClauseElement
+        if self.splitter not in ['speaker', 'discourse']:
+            yield self.base_query()
+            return
+
+        labels = [x.attribute.label for x in self._criterion if hasattr(x, 'attribute')]
+        if self._offset is not None or self._limit is not None or 'id' in labels:
+            yield self.base_query()
+            return
+
         speaker_annotation = getattr(self.to_find, 'speaker')
         speaker_attribute = getattr(speaker_annotation, 'name')
 
@@ -338,10 +364,6 @@ class SplitQuery(GraphQuery):
                     reg_filters.append(c)
             except AttributeError:
                 reg_filters.append(c)
-        labels = [x.attribute.label for x in self._criterion if hasattr(x, 'attribute')]
-        if self._offset is not None or self._limit is not None or 'id' in labels:
-            yield self.base_query()
-            return
         if filter_on_speaker and filter_on_discourse:
             yield self.base_query()
             return

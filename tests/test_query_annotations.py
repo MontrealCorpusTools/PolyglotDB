@@ -174,6 +174,15 @@ def test_query_following_following(timed_config):
         assert (results[0]['following_following_label'] == 'cute')
 
 
+def test_query_following_preload(timed_config):
+    with CorpusContext(timed_config) as g:
+        q = g.query_graph(g.word).filter(g.word.label == 'cats')
+        q = q.preload(g.word.following, g.word.following.following)
+        results = q.all()
+        assert len(results) == 1
+        assert results[0].following.label == 'are'
+        assert results[0].following.following.label == 'cute'
+
 def test_query_time(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')

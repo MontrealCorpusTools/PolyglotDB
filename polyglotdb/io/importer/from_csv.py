@@ -25,7 +25,11 @@ def import_type_csvs(corpus_context, type_headers):
     for at, h in type_headers.items():
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_type.csv'.format(at))
-        type_path = 'file:///{}'.format(make_path_safe(path))
+        # If on the Docker version, the files live in /site/proj
+        if os.path.exists('/site/proj'):
+            type_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+        else:
+            type_path = 'file:///{}'.format(make_path_safe(path))
 
         corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
 
@@ -77,7 +81,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
         the data object
     """
     log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
-    log.info('Beginning to import {} into the graph database...'.format(data.name))
+    log.info('Beginning to import data into the graph database...')
     initial_begin = time.time()
     name, annotation_types = data.name, data.annotation_types
 
@@ -117,7 +121,11 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                     call_back(cur)
                     cur += 1
                 path = os.path.join(directory, '{}_{}.csv'.format(s, at))
-                rel_path = 'file:///{}'.format(make_path_safe(path))
+                # If on the Docker version, the files live in /site/proj
+                if os.path.exists('/site/proj'):
+                    rel_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+                else:
+                    rel_path = 'file:///{}'.format(make_path_safe(path))
 
                 session.write_transaction(unique_function, at)
 
@@ -197,7 +205,11 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
             for s in v:
                 path = os.path.join(directory, '{}_{}_{}.csv'.format(sp, k, s))
                 corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
-                sub_path = 'file:///{}'.format(make_path_safe(path))
+                # If on the Docker version, the files live in /site/proj
+                if os.path.exists('/site/proj'):
+                    sub_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+                else:
+                    sub_path = 'file:///{}'.format(make_path_safe(path))
 
                 rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 1000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
@@ -251,7 +263,11 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory, 'lexicon_import.csv')
-    lex_path = 'file:///{}'.format(make_path_safe(path))
+    # If on the Docker version, the files live in /site/proj
+    if os.path.exists('/site/proj'):
+        lex_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+    else:
+        lex_path = 'file:///{}'.format(make_path_safe(path))
     if case_sensitive:
         import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 3000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
@@ -303,7 +319,13 @@ def import_feature_csvs(corpus_context, typed_data):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory, 'feature_import.csv')
-    feat_path = 'file:///{}'.format(make_path_safe(path))
+
+    # If on the Docker version, the files live in /site/proj
+    if os.path.exists('/site/proj'):
+        feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+    else:
+        feat_path = 'file:///{}'.format(make_path_safe(path))
+    
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:{phone_type}_type:{corpus_name}) where n.label = csvLine.label
@@ -325,7 +347,7 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.syllabic.SyllabicContext`
         the corpus to load into
     typed_data : dict
         the data
@@ -348,7 +370,13 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory, 'syllable_import.csv')
-    syl_path = 'file:///{}'.format(make_path_safe(path))
+
+    # If on the Docker version, the files live in /site/proj
+    if os.path.exists('/site/proj'):
+        syl_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+    else:
+        syl_path = 'file:///{}'.format(make_path_safe(path))
+    
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:syllable_type:{corpus_name}) where n.label = csvLine.label
@@ -392,7 +420,13 @@ def import_utterance_enrichment_csvs(corpus_context, typed_data):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory, 'utterance_enrichment.csv')
-    utt_path = 'file:///{}'.format(make_path_safe(path))
+
+    # If on the Docker version, the files live in /site/proj
+    if os.path.exists('/site/proj'):
+        utt_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+    else:
+        utt_path = 'file:///{}'.format(make_path_safe(path))
+    
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:utterance:{corpus_name}) where n.id = csvLine.id
@@ -436,10 +470,16 @@ def import_speaker_csvs(corpus_context, typed_data):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory, 'speaker_import.csv')
-    feat_path = 'file:///{}'.format(make_path_safe(path))
+
+    # If on the Docker version, the files live in /site/proj
+    if os.path.exists('/site/proj'):
+        feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+    else:
+        feat_path = 'file:///{}'.format(make_path_safe(path))
+    
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:Speaker:{corpus_name}) where n.name = csvLine.name
+    MATCH (n:Speaker:{corpus_name}) where n.name = toString(csvLine.name)
     SET {new_properties}'''
 
     statement = import_statement.format(path=feat_path,
@@ -480,10 +520,16 @@ def import_discourse_csvs(corpus_context, typed_data):
     properties = ',\n'.join(properties)
     directory = corpus_context.config.temporary_directory('csv')
     path = os.path.join(directory, 'discourse_import.csv')
-    feat_path = 'file:///{}'.format(make_path_safe(path))
+
+    # If on the Docker version, the files live in /site/proj
+    if os.path.exists('/site/proj'):
+        feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+    else:
+        feat_path = 'file:///{}'.format(make_path_safe(path))
+    
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:Discourse:{corpus_name}) where n.name = csvLine.name
+    MATCH (n:Discourse:{corpus_name}) where n.name = toString(csvLine.name)
     SET {new_properties}'''
 
     statement = import_statement.format(path=feat_path,
@@ -519,7 +565,12 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
             call_back(i)
 
         path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(s))
-        csv_path = 'file:///{}'.format(make_path_safe(path))
+        
+        # If on the Docker version, the files live in /site/proj
+        if os.path.exists('/site/proj'):
+            csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+        else:
+            csv_path = 'file:///{}'.format(make_path_safe(path))
 
         statement = '''USING PERIODIC COMMIT 1000
                 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
@@ -552,7 +603,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.syllabic.SyllabicContext`
         the corpus to load into
     split_name : str
         the identifier of the file
@@ -577,7 +628,12 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             call_back(i)
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_syllable.csv'.format(s))
-        csv_path = 'file:///{}'.format(make_path_safe(path))
+
+        # If on the Docker version, the files live in /site/proj
+        if os.path.exists('/site/proj'):
+            csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+        else:
+            csv_path = 'file:///{}'.format(make_path_safe(path))
 
         statement = '''CYPHER planner=rule USING PERIODIC COMMIT 3000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -646,7 +702,7 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.syllabic.SyllabicContext`
         the corpus to load into
     split_name : str
         the identifier of the file
@@ -670,7 +726,12 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             call_back(i)
         path = os.path.join(corpus_context.config.temporary_directory('csv'),
                             '{}_nonsyl.csv'.format(s))
-        csv_path = 'file:///{}'.format(make_path_safe(path))
+
+        # If on the Docker version, the files live in /site/proj
+        if os.path.exists('/site/proj'):
+            csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+        else:
+            csv_path = 'file:///{}'.format(make_path_safe(path))
 
         statement = '''CYPHER planner=rule USING PERIODIC COMMIT 3000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -740,7 +801,13 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
                         '{}_subannotations.csv'.format(type))
-    csv_path = 'file:///{}'.format(make_path_safe(path))
+
+    # If on the Docker version, the files live in /site/proj
+    if os.path.exists('/site/proj'):
+        csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+    else:
+        csv_path = 'file:///{}'.format(make_path_safe(path))
+
     prop_temp = '''{name}: csvLine.{name}'''
     properties = []
 

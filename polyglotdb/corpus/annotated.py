@@ -2,7 +2,11 @@ from .summarized import SummarizedContext
 
 from ..io.importer import (subannotations_data_to_csv, import_subannotation_csv)
 
+
 class AnnotatedContext(SummarizedContext):
+    """
+    Class that contains methods for dealing specifically with annotations on linguistic items
+    """
     def import_subannotations(self, data, property_data, subannotation_name, annotation_type):
         subannotations_data_to_csv(self, subannotation_name, data)
         import_subannotation_csv(self, subannotation_name, annotation_type, property_data)

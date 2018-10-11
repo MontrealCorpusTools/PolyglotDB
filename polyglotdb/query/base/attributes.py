@@ -35,6 +35,51 @@ class NodeAttribute(object):
     def for_column(self):
         return self.for_cypher()
 
+    def value_type(self):
+        a_type = self.node.node_type
+        if a_type == 'Speaker':
+            for name, t in self.node.hierarchy.speaker_properties:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+        elif a_type == 'Discourse':
+            for name, t in self.node.hierarchy.discourse_properties:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+
+        elif self.node.hierarchy.has_token_property(a_type, self.label):
+            for name, t in self.node.hierarchy.token_properties[a_type]:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+        elif self.node.hierarchy.has_type_property(a_type, self.label):
+            for name, t in self.node.hierarchy.type_properties[a_type]:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+        elif self.node.hierarchy.has_subannotation_property(a_type, self.label):
+            for name, t in self.node.hierarchy.subannotation_properties[a_type]:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+        raise ValueError('Property type "{}" not found for "{}".'.format(self.label, a_type))
+
+    def coerce_value(self, value):
+        if value is None:
+            return value
+        t = self.value_type()
+        if t is None:
+            return None
+        if isinstance(value, list):
+            return [t(x) for x in value]
+        return t(value)
+
     @property
     def alias(self):
         """ Removes '`' from annotation, concatenates annotation alias and label"""
@@ -189,6 +234,7 @@ class NodeAttribute(object):
 
     cache_alias = alias
 
+
 class CollectionAttribute(NodeAttribute):
     collapsing = True
     acoustic = False
@@ -197,6 +243,42 @@ class CollectionAttribute(NodeAttribute):
 
     def __repr__(self):
         return '<CollectionAttribute \'{}\'>'.format(str(self))
+
+    def value_type(self):
+        n = self.node.collected_node
+        a_type = n.node_type
+        if a_type == 'Speaker':
+            for name, t in self.node.hierarchy.speaker_properties:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+        elif a_type == 'Discourse':
+            for name, t in self.node.hierarchy.discourse_properties:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+
+        elif self.node.hierarchy.has_token_property(a_type, self.label):
+            for name, t in self.node.hierarchy.token_properties[a_type]:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+        elif self.node.hierarchy.has_type_property(a_type, self.label):
+            for name, t in self.node.hierarchy.type_properties[a_type]:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+        elif self.node.hierarchy.has_subannotation_property(a_type, self.label):
+            for name, t in self.node.hierarchy.subannotation_properties[a_type]:
+                if name == self.label:
+                    if t == type(None) or t is None:
+                        return None
+                    return t
+        raise ValueError('Property type "{}" not found for "{}".'.format(self.label, a_type))
 
     def for_cypher(self):
         return self.for_return()
@@ -314,6 +396,10 @@ class CollectionNode(object):
         WITH {output_with_string}'''
     collect_template = 'collect({a}) as {a}'
 
+    def __init__(self, anchor_node, collected_node):
+        self.anchor_node = anchor_node
+        self.collected_node = collected_node
+
     def subquery(self, withs, filters=None, optional=False):
         input_with = ', '.join(withs)
         new_withs = withs - {self.collection_alias}
@@ -344,10 +430,6 @@ class CollectionNode(object):
     @property
     def with_pre_collection(self):
         return self.collection_alias
-
-    def __init__(self, anchor_node, collected_node):
-        self.anchor_node = anchor_node
-        self.collected_node = collected_node
 
     def __eq__(self, other):
         if not isinstance(other, CollectionNode):

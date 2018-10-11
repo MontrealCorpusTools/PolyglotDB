@@ -2,6 +2,9 @@ from .importable import ImportContext
 
 
 class PauseContext(ImportContext):
+    """
+    Class that contains methods for dealing specifically with non-speech elements
+    """
     @property
     def has_pauses(self):
         return 'pause' in self.hierarchy.subset_tokens[self.word_name]

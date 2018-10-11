@@ -5,7 +5,10 @@ from ..exceptions import SubsetError
 from ..io.enrichment.features import enrich_features_from_csv
 
 
-class FeaturedContext(LexicalContext):
+class PhonologicalContext(LexicalContext):
+    """
+    Class that contains methods for dealing specifically with phones
+    """
     def enrich_inventory_from_csv(self, path):
         """
         Enriches corpus from a csv file
@@ -29,22 +32,13 @@ class FeaturedContext(LexicalContext):
         label : str
             the label for the class
         """
-        phone = getattr(self, 'lexicon_' + self.phone_name)
-        q = self.query_lexicon(phone).filter(phone.label.in_(phones))
-        q.create_subset(label)
-        self.encode_hierarchy()
+        self.encode_type_subset('phone', phones, label)
 
     def reset_class(self, label):
         """
         resets the class
         """
-        phone = getattr(self, 'lexicon_' + self.phone_name)
-        try:
-            q = self.query_lexicon(phone.filter_by_subset(label))
-            q.remove_subset(label)
-            self.encode_hierarchy()
-        except SubsetError:
-            pass
+        self.reset_type_subset('phone', label)
 
     def encode_features(self, feature_dict):
         """

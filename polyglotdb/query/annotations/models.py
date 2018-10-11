@@ -1,5 +1,6 @@
 from uuid import uuid1
 import time
+from decimal import Decimal
 from polyglotdb.exceptions import GraphModelError
 
 from ..base.helper import key_for_cypher, value_for_cypher
@@ -127,13 +128,20 @@ class LinguisticAnnotation(BaseAnnotation):
         """ Returns sorted untion of node property keys and type_node property keys """
         return sorted(set(self._node.keys()) | set(self._type_node.keys()))
 
-    def _load_track(self, attribute):
-        type = attribute.label
-        if type == 'pitch':
-            results = self.corpus_context.get_pitch(self.discourse.name, self.begin, self.end, self.channel,
-                                                    relative=attribute.relative, relative_time=attribute.relative_time)
+    def _load_track(self, track_attribute):
+        if self._type == 'utterance':
+            utt_id = self.id
+        else:
+            utt_id = self.utterance.id
+        results = track_attribute.hydrate(self.corpus_context, utt_id, self.begin, self.end)
+        if track_attribute.attribute.relative_time:
+            begin = Decimal(self.begin)
+            end = Decimal(self.end)
+            duration = end - begin
+            for p in results:
+                p.time = (p.time - begin) / duration
 
-        self._tracks[type] = results
+        self._tracks[track_attribute.attribute.label] = results
 
     @property
     def pitch_track(self):
@@ -173,6 +181,10 @@ class LinguisticAnnotation(BaseAnnotation):
             raise (GraphModelError('This object has not been loaded with an id yet.'))
         if key == self._type:
             return self
+        if key == 'current':
+            return self
+        if key == 'label' and self._type == 'utterance':
+            return '{} ({} to {})'.format(self.discourse.name, self.begin, self.end)
         if key == 'previous':
             if self._previous == 'empty':
                 return None
@@ -201,6 +213,18 @@ class LinguisticAnnotation(BaseAnnotation):
                 self._following.node = res[0]['following_token']
                 self._following.type_node = res[0]['following_type']
             return self._following
+        if key.startswith('previous'):
+            p, key = key.split('_', 1)
+            p = self.previous
+            if p is None:
+                return None
+            return getattr(p, key)
+        if key.startswith('following'):
+            p, key = key.split('_', 1)
+            f = self.following
+            if f is None:
+                return None
+            return getattr(f, key)
         if key == 'speaker':
             if self._speaker == 'empty':
                 return None
@@ -269,6 +293,8 @@ class LinguisticAnnotation(BaseAnnotation):
                 return self._subannotations[key]
         except KeyError:
             pass
+        if key == 'duration':
+            return self.end - self.begin
         if key in self._node.keys():
             return self._node[key]
         if key in self._type_node.keys():
@@ -386,8 +412,13 @@ class LinguisticAnnotation(BaseAnnotation):
         WITH sub, r
         SET {props}
         return sub, r'''
-        props = ['sub.%s = {%s}' % (k, k)
-                 for k, v in properties.items()]
+        props = []
+        for k, v in properties.items():
+            props.append('sub.%s = {%s}' % (k, k))
+            if self._corpus_context.hierarchy.has_subannotation_property(type, k):
+                for name, t in self._corpus_context.hierarchy.subannotation_properties[type]:
+                    if name == k:
+                        properties[k] = t(v)
         statement = statement.format(type=self._type, sub_type=type,
                                      corpus=self.corpus_context.cypher_safe_name, props=', '.join(props))
 

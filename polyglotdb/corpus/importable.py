@@ -14,6 +14,9 @@ from .structured import StructuredContext
 
 
 class ImportContext(StructuredContext):
+    """
+    Class that contains methods for dealing with the initial import of corpus data
+    """
     def add_types(self, types, type_headers):
         '''
         This function imports types of annotations into the corpus.

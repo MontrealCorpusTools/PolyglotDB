@@ -46,6 +46,7 @@ class Hierarchy(object):
         self.token_properties = {}
         self.subset_tokens = {}
         self.type_properties = {}
+        self.acoustics = set()
 
         self.speaker_properties = {('name', str)}
         self.discourse_properties = {('name', str), ('file_path', str), ('low_freq_file_path', str), ('vowel_file_path', str), ('consonant_file_path', str), ('duration', float), ('sampling_rate', int), ('num_channels', int)}
@@ -86,6 +87,7 @@ class Hierarchy(object):
     def to_json(self):
         data = {'_data': self._data}
         data['corpus_name'] = self.corpus_name
+        data['acoustics'] = sorted(self.acoustics)
         data['subannotations'] = {k: sorted(v) for k, v in self.subannotations.items()}
         data['subannotation_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in
                                             self.subannotation_properties.items()}
@@ -100,6 +102,7 @@ class Hierarchy(object):
     def from_json(self, json):
         self._data = json['_data']
         self.corpus_name = json['corpus_name']
+        self.acoustics = set(json.get('acoustics', []))
         self.subannotations = {k: set(v) for k, v in json['subannotations'].items()}
         self.subannotation_properties = {k: set((name, type(t)) for name, t in v) for k, v in
                                          json['subannotation_properties'].items()}
@@ -165,7 +168,8 @@ class Hierarchy(object):
     def add_annotation_type(self, annotation_type, above=None, below=None):
         self._data[above] = annotation_type
         self._data[annotation_type] = below
-        self.token_properties[annotation_type] = {('id', str), ('label', str), ('begin', float), ('end', float)}
+        self.token_properties[annotation_type] = {('id', str), ('label', str),
+                                                  ('begin', float), ('end', float), ('duration', float)}
         self.type_properties[annotation_type] = {('label', str)}
 
     def remove_annotation_type(self, annotation_type):
@@ -192,7 +196,7 @@ class Hierarchy(object):
         if annotation_type in self.subannotations:
             for s in self.subannotations[annotation_type]:
                 del self.subannotation_properties[s]
-            del self.subannotations
+            del self.subannotations[annotation_type]
 
     def add_type_properties(self, corpus_context, annotation_type, properties):
         set_template = 'n.{0} = {{{0}}}'
@@ -311,7 +315,8 @@ class Hierarchy(object):
         SET {sets}'''.format(sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
                                       corpus_name=corpus_context.corpus_name, **kwargs)
-
+        to_add_names = [x[0] for x in properties]
+        self.speaker_properties = {x for x in self.speaker_properties if x[0] not in to_add_names}
         self.speaker_properties.update(k for k in properties)
 
     def remove_speaker_properties(self, corpus_context, properties):
@@ -354,6 +359,8 @@ class Hierarchy(object):
         corpus_context.execute_cypher(statement,
                                       corpus_name=corpus_context.corpus_name, **kwargs)
 
+        to_add_names = [x[0] for x in properties]
+        self.discourse_properties = {x for x in self.discourse_properties if x[0] not in to_add_names}
         self.discourse_properties.update(k for k in properties)
 
     def remove_discourse_properties(self, corpus_context, properties):

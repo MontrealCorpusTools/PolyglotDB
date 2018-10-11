@@ -61,7 +61,6 @@ class AnnotationAttribute(NodeAttribute):
             return '{}.{}'.format(self.node.type_alias, key_for_cypher(self.label))
         return '{}.{}'.format(self.node.alias, key_for_cypher(self.label))
 
-
     @property
     def with_alias(self):
         """
@@ -295,7 +294,9 @@ class AnnotationNode(Node):
         return FollowsClauseElement(self, other_annotation)
 
     def __getattr__(self, key):
-        if key in ['previous', 'following']:
+        if key == 'current':
+            return self
+        elif key in ['previous', 'following']:
             from .precedence import PreviousAnnotation, FollowingAnnotation
             if key == 'previous':
                 return PreviousAnnotation(self, -1)
@@ -310,6 +311,14 @@ class AnnotationNode(Node):
                 return PreviousPauseAnnotation(node)
             else:
                 return FollowingPauseAnnotation(node)
+        elif key.startswith('previous'):
+            p, key = key.split('_', 1)
+            p = self.previous
+            return getattr(p, key)
+        elif key.startswith('following'):
+            p, key = key.split('_', 1)
+            f = self.following
+            return getattr(f, key)
         elif key == 'follows_pause':
             from .pause import FollowsPauseAttribute
             return FollowsPauseAttribute(self)

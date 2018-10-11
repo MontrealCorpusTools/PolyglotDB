@@ -1,4 +1,5 @@
-from statistics import mean
+from statistics import mean, stdev, median
+from decimal import Decimal
 
 from .base import AnnotationAttribute
 
@@ -10,6 +11,7 @@ class AcousticAttribute(AnnotationAttribute):
         super(AcousticAttribute, self).__init__(node, label)
         self.output_label = None
         self.discourse_alias = node.alias + '_discourse'
+        self.utterance_alias = node.alias + '_utterance'
         self.speaker_alias = node.alias + '_speaker'
         self.begin_alias = node.alias + '_begin'
         self.end_alias = node.alias + '_end'
@@ -21,6 +23,9 @@ class AcousticAttribute(AnnotationAttribute):
     def __repr__(self):
         return '<AcousticAttribute \'{}\'>'.format(str(self))
 
+    def __str__(self):
+        return "{}.{}".format(self.node, self.label)
+
     def __getattr__(self, key):
         if key == 'min':
             return Min(self)
@@ -28,21 +33,27 @@ class AcousticAttribute(AnnotationAttribute):
             return Max(self)
         elif key == 'mean':
             return Mean(self)
+        elif key == 'median':
+            return Median(self)
+        elif key == 'stdev':
+            return Stdev(self)
         elif key == 'track':
             return Track(self)
-        elif key == 'sampled_track':
-            return SampledTrack(self)
         elif key == 'interpolated_track':
             return InterpolatedTrack(self)
+        raise AttributeError('AcousticAttributes have no property {}'.format(key))
 
     def hydrate(self, corpus, discourse, begin, end):
         pass
 
 
 class AggregationAttribute(AcousticAttribute):
+    agg_prefix = ''
+
     def __init__(self, acoustic_attribute):
         self.attribute = acoustic_attribute
         self.output_label = None
+        self.label = self.agg_prefix
 
     def __repr__(self):
         return '<AggregationAttribute \'{}\'>'.format(str(self))
@@ -50,6 +61,14 @@ class AggregationAttribute(AcousticAttribute):
     @property
     def node(self):
         return self.attribute.node
+
+    @property
+    def utterance_alias(self):
+        return self.attribute.utterance_alias
+
+    @utterance_alias.setter
+    def utterance_alias(self, value):
+        self.attribute.utterance_alias = value
 
     @property
     def discourse_alias(self):
@@ -89,8 +108,8 @@ class AggregationAttribute(AcousticAttribute):
             return [self.output_label]
         return ['{}_{}'.format(self.agg_prefix, x) for x in self.attribute.output_columns]
 
-    def hydrate(self, corpus, discourse, begin, end, channel=0):
-        data = self.attribute.hydrate(corpus, discourse, begin, end, channel)
+    def hydrate(self, corpus, utterance_id, begin, end):
+        data = self.attribute.hydrate(corpus, utterance_id, begin, end)
         agg_data = {}
         for i, c in enumerate(self.output_columns):
             gen = [x[self.attribute.output_columns[i]] for x in data if self.attribute.output_columns[i] in x]
@@ -109,7 +128,7 @@ class Min(AggregationAttribute):
     agg_prefix = 'Min'
 
     def __repr__(self):
-        return '<MinAttribute \'{}\'>'.format(str(self))
+        return '<Min \'{}\'>'.format(str(self))
 
     def function(self, data):
         return min(data)
@@ -119,7 +138,7 @@ class Max(AggregationAttribute):
     agg_prefix = 'Max'
 
     def __repr__(self):
-        return '<MaxAttribute \'{}\'>'.format(str(self))
+        return '<Max \'{}\'>'.format(str(self))
 
     def function(self, data):
         return max(data)
@@ -129,10 +148,32 @@ class Mean(AggregationAttribute):
     agg_prefix = 'Mean'
 
     def __repr__(self):
-        return '<MeanAttribute \'{}\'>'.format(str(self))
+        return '<Mean \'{}\'>'.format(str(self))
 
     def function(self, data):
         return mean(data)
+
+
+class Median(AggregationAttribute):
+    agg_prefix = 'Median'
+
+    def __repr__(self):
+        return '<Median \'{}\'>'.format(str(self))
+
+    def function(self, data):
+        return median(data)
+
+
+class Stdev(AggregationAttribute):
+    agg_prefix = 'Stdev'
+
+    def __repr__(self):
+        return '<Stdev \'{}\'>'.format(str(self))
+
+    def function(self, data):
+        if len(data) > 1:
+            return stdev(data)
+        return None
 
 
 class Track(AggregationAttribute):
@@ -140,21 +181,18 @@ class Track(AggregationAttribute):
     def output_columns(self):
         return ['time'] + [x for x in self.attribute.output_columns]
 
-    def hydrate(self, corpus, discourse, begin, end, channel=0):
-        data = self.attribute.hydrate(corpus, discourse, begin, end, channel)
+    def hydrate(self, corpus, utterance_id, begin, end):
+        data = self.attribute.hydrate(corpus, utterance_id, begin, end)
+        if self.attribute.relative_time:
+            begin = Decimal(begin)
+            end = Decimal(end)
+            duration = end - begin
+            for p in data:
+                p.time = (p.time - begin) / duration
         return data
 
     def __repr__(self):
         return '<Track \'{}\'>'.format(str(self))
-
-
-class SampledTrack(Track):
-    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=10):
-        data = self.attribute.hydrate(corpus, discourse, begin, end, channel, num_points)
-        return data
-
-    def __repr__(self):
-        return '<SampledTrack \'{}\'>'.format(str(self))
 
 
 class InterpolatedTrack(Track):
@@ -165,40 +203,44 @@ class InterpolatedTrack(Track):
     def __repr__(self):
         return '<InterpolatedTrack \'{}\'>'.format(str(self))
 
-    def hydrate(self, corpus, discourse, begin, end, channel=0):
+    def hydrate(self, corpus, utterance_id, begin, end):
+        from ....acoustics.classes import Track as RawTrack, TimePoint as RawTimePoint
         from scipy import interpolate
-        data = self.attribute.hydrate(corpus, discourse, begin, end, channel, padding=0.01)
-        if self.attribute.relative_time:
-            duration = 1
-            begin = 0
-        else:
-            duration = end - begin
+        data = self.attribute.hydrate(corpus, utterance_id, begin, end, padding=0.01)
+
+        duration = end - begin
         time_step = duration / (self.num_points - 1)
 
-        new_data = {begin + x * time_step: dict() for x in range(0, self.num_points)}
-        x = sorted(data.keys())
+        new_times = [begin + x * time_step for x in range(0, self.num_points)]
+        x = data.times()
         undef_regions = []
         for i, x1 in enumerate(x):
             if i != len(x) - 1:
                 if x[i + 1] - x1 > 0.015:
                     undef_regions.append((x1, x[i + 1]))
+        new_data = RawTrack()
         for o in self.attribute.output_columns:
             y = [data[x1][o] for x1 in x]
             if len(y) > 1:
                 f = interpolate.interp1d([float(x1) for x1 in x], y)
-            for k in new_data.keys():
+            for k in new_times:
+                out_time = k
+                if self.attribute.relative_time:
+                    out_time = (k - begin) / duration
+                point = RawTimePoint(out_time)
                 if len(y) < 2:
-                    new_data[k][o] = None
-                    continue
-                for r in undef_regions:
-                    if k > r[0] and k < r[1]:
-                        new_data[k][o] = None
-                        break
+                    point.add_value(o, None)
                 else:
-                    try:
-                        new_data[k][o] = f([k])[0]
-                    except ValueError:
-                        new_data[k][o] = None
+                    for r in undef_regions:
+                        if k > r[0] and k < r[1]:
+                            point.add_value(o, None)
+                            break
+                    else:
+                        try:
+                            point.add_value(o, f([k])[0])
+                        except ValueError:
+                            point.add_value(o, None)
+                new_data.add(point)
         return new_data
 
 
@@ -206,15 +248,18 @@ class PitchAttribute(AcousticAttribute):
     def __init__(self, node, relative=False):
         super(PitchAttribute, self).__init__(node, 'pitch')
         self.relative = relative
-        self.output_columns = ['F0']
-        if relative:
-            self.label += '_relative'
-            self.output_columns[0] += '_relative'
+
+    @property
+    def output_columns(self):
+        output_columns = ['F0']
+        if self.relative:
+            output_columns.append('F0_relativized')
+        return output_columns
 
     def __repr__(self):
         return '<PitchAttribute \'{}\'>'.format(str(self))
 
-    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0, padding=0):
+    def hydrate(self, corpus, utterance_id, begin, end, padding=0):
         """
         Gets all F0 from a discourse
 
@@ -222,46 +267,45 @@ class PitchAttribute(AcousticAttribute):
         ----------
         corpus : :class:`~polyglotdb.corpus.CorpusContext`
             The corpus to query
-        discourse : str
-            the discourse to query
+        utterance_id : str
+            The ID of the utterance
         begin : float
-            the start time of the pitch
+            The start time of the annotation
         end : float
-            the end time of the pitch
-        aggregation : defaults to None
+            The end time of the annotation
+        padding : float
+            Extra time at begin and end
 
         Returns
         -------
-        data : dict
-            A dictionary with 'F0' as the keys and a dictionary of times and F0 values as the value
+        :class:`~polyglotdb.acoustics.classes.Track`
+            A Track object with F0 TimePoints
          """
-
-        if self.cached_settings == (discourse, begin, end, channel, self.relative, num_points):
-            data = self.cached_data
-        else:
-
+        utterance_data = self.cache[utterance_id]
+        if self.node.node_type == 'utterance':
+            return utterance_data
+        if padding:
             begin -= padding
             end += padding
-            data = corpus.get_pitch(discourse, begin, end, channel=channel, relative=self.relative,
-                                       num_points=num_points, relative_time=self.relative_time)
-            self.cached_settings = (discourse, begin, end, channel, self.relative, num_points)
-            self.cached_data = data
-        return data
+        return utterance_data.slice(begin, end)
 
 
 class IntensityAttribute(AcousticAttribute):
     def __init__(self, node, relative=False):
         super(IntensityAttribute, self).__init__(node, 'intensity')
         self.relative = relative
-        self.output_columns = ['Intensity']
-        if relative:
-            self.label += '_relative'
-            self.output_columns[0] += '_relative'
+
+    @property
+    def output_columns(self):
+        output_columns = ['Intensity']
+        if self.relative:
+            output_columns.append('Intensity_relativized')
+        return output_columns
 
     def __repr__(self):
         return '<IntensityAttribute \'{}\'>'.format(str(self))
 
-    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0, padding=0):
+    def hydrate(self, corpus, utterance_id, begin, end, padding=0):
         """
         Gets all Intensity from a discourse
 
@@ -269,46 +313,46 @@ class IntensityAttribute(AcousticAttribute):
         ----------
         corpus : :class:`~polyglotdb.corpus.CorpusContext`
             The corpus to query
-        discourse : str
-            the discourse to query
+        utterance_id : str
+            The ID of the utterance
         begin : float
-            the start time of the pitch
+            The start time of the annotation
         end : float
-            the end time of the pitch
-        aggregation : defaults to None
+            The end time of the annotation
+        padding : float
+            Extra time at begin and end
 
         Returns
         -------
-        data : dict
-            A dictionary with 'Intensity' as the keys and a dictionary of times and F0 values as the value
+        :class:`~polyglotdb.acoustics.classes.Track`
+            A Track object with intensity TimePoints
          """
-
-        if self.cached_settings == (discourse, begin, end, channel):
-            data = self.cached_data
-        else:
+        utterance_data = self.cache[utterance_id]
+        if self.node.node_type == 'utterance':
+            return utterance_data
+        if padding:
             begin -= padding
             end += padding
-            data = corpus.get_intensity(discourse, begin, end, channel=channel, relative=self.relative,
-                                           relative_time=self.relative_time)
-            self.cached_settings = (discourse, begin, end, channel, self.relative)
-            self.cached_data = data
-        return data
+        return utterance_data.slice(begin, end)
 
 
 class FormantAttribute(AcousticAttribute):
     def __init__(self, node, relative=False):
         super(FormantAttribute, self).__init__(node, 'formants')
-        self.output_columns = ["F1", "F2", "F3", "B1", "B2", "B3"]
         self.relative = relative
-        if relative:
-            self.label += '_relative'
+
+    @property
+    def output_columns(self):
+        output_columns = ["F1", "F2", "F3", "B1", "B2", "B3"]
+        if self.relative:
             for i in range(6):
-                self.output_columns[i] += '_relative'
+                output_columns.append(output_columns[i] + '_relativized')
+        return output_columns
 
     def __repr__(self):
         return '<FormantAttribute \'{}\'>'.format(str(self))
 
-    def hydrate(self, corpus, discourse, begin, end, channel=0, num_points=0,padding=0):
+    def hydrate(self, corpus, utterance_id, begin, end, padding=0):
         """
         Gets all formants from a discourse
 
@@ -316,27 +360,24 @@ class FormantAttribute(AcousticAttribute):
         ----------
         corpus : :class:`~polyglotdb.corpus.CorpusContext`
             The corpus to query
-        discourse : str
-            the discourse to query
+        utterance_id : str
+            The ID of the utterance
         begin : float
-            the start time of the pitch
+            The start time of the annotation
         end : float
-            the end time of the pitch
-        aggregation : defaults to None
+            The end time of the annotation
+        padding : float
+            Extra time at begin and end
 
         Returns
         -------
-        data : dict
-            A dictionary with 'F1', 'F2', 'F3' as the keys and a dictionary of times and corresponding formant values as the value
+        :class:`~polyglotdb.acoustics.classes.Track`
+            A Track object with formant TimePoints
          """
-        if self.cached_settings == (discourse, begin, end, channel):
-            data = self.cached_data
-        else:
-
+        utterance_data = self.cache[utterance_id]
+        if self.node.node_type == 'utterance':
+            return utterance_data
+        if padding:
             begin -= padding
             end += padding
-            data = corpus.get_formants(discourse, begin, end, channel=channel, relative=self.relative,
-                                          relative_time=self.relative_time)
-            self.cached_settings = (discourse, begin, end, channel, self.relative)
-            self.cached_data = data
-        return data
+        return utterance_data.slice(begin, end)

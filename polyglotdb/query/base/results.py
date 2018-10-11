@@ -25,13 +25,17 @@ class BaseQueryResults(object):
             self._preload = None
             self._to_find = None
             self._to_find_type = None
-            self.columns = [x.output_alias.replace('`', '') for x in query._columns]
+            self._columns = [x.output_alias.replace('`', '') for x in query._columns]
         else:
             self.models = True
             self._preload = query._preload
             self._to_find = query.to_find.alias
             self._to_find_type = query.to_find.type_alias
-            self.columns = None
+            self._columns = None
+
+    @property
+    def columns(self):
+        return self._columns
 
     def __str__(self):
         return '\n'.join(str(x) for x in self)

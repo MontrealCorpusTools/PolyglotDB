@@ -27,12 +27,14 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             pa.node = r[pre.alias]
             a._speaker = pa
 
-        elif isinstance(pre, HierarchicalAnnotation):
+    for pre in to_preload:
+        if isinstance(pre, HierarchicalAnnotation):
             pa = LinguisticAnnotation(corpus)
             pa.node = r[pre.alias]
             pa.type_node = r[pre.type_alias]
             pa._preloaded = True
-
+            pa._discourse = a._discourse
+            pa._speaker = a._speaker
             a._supers[pre.node_type] = pa
         elif isinstance(pre, QuerySubAnnotation):
             subannotations = r[pre.collection_alias]
@@ -63,6 +65,18 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
                 subbed.append(pa)
             a._subs[pre.collected_node.node_type] = subbed
     for pre in to_preload_acoustics:
+        if a._type == 'utterance':
+            utterance_id = a.id
+        else:
+            utterance_id = a.utterance.id
+        if utterance_id not in pre.attribute.cache:
+            if pre.attribute.label == 'pitch':
+                data = corpus.get_utterance_pitch(utterance_id, a.discourse.name, a.speaker.name)
+            elif pre.attribute.label == 'intensity':
+                data = corpus.get_utterance_intensity(utterance_id, a.discourse.name, a.speaker.name)
+            elif pre.attribute.label == 'formants':
+                data = corpus.get_utterance_formants(utterance_id, a.discourse.name, a.speaker.name)
+            pre.attribute.cache[utterance_id] = data
         a._load_track(pre)
     return a
 
@@ -72,50 +86,61 @@ class QueryResults(BaseQueryResults):
         super(QueryResults, self).__init__(query)
         self.speaker_discourse_channels = {}
         self.num_tracks = 0
-        self.track_columns = set()
+        self.track_columns = []
         if query._columns:
             self._acoustic_columns = query._acoustic_columns
             for x in query._acoustic_columns:
                 if isinstance(x, TrackAnnotation):
                     self.num_tracks += 1
-                    self.track_columns.update(x.output_columns)
-                self.columns.extend(x.output_columns)
+                    self.track_columns.extend(y for y in x.output_columns if y not in self.track_columns)
+                else:
+                    self._columns.extend(x.output_columns)
         if query._columns and self._acoustic_columns:
             statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
             RETURN s.name as speaker, d.name as discourse, r.channel as channel'''.format(corpus_name=self.corpus.cypher_safe_name)
             results = self.corpus.execute_cypher(statement)
             for r in results:
                 self.speaker_discourse_channels[r['speaker'], r['discourse']] = r['channel']
+            self.acoustic_cache = {x: {} for x in sorted(query.corpus.hierarchy.acoustics)}
+            for a in self._acoustic_columns:
+                a.attribute.cache = self.acoustic_cache[a.attribute.label]
         if self.models:
             self._preload_acoustics = query._preload_acoustics
+            if self._preload_acoustics:
+                self.acoustic_cache = {x: {} for x in sorted(query.corpus.hierarchy.acoustics)}
+                for a in self._preload_acoustics:
+                    a.attribute.cache = self.acoustic_cache[a.attribute.label]
 
+
+    @property
+    def columns(self):
+        return self._columns + self.track_columns
 
     def _sanitize_record(self, r):
         if self.models:
+
             r = hydrate_model(r, self._to_find, self._to_find_type, self._preload, self._preload_acoustics, self.corpus)
         else:
             r = AnnotationRecord(r)
-            cache = {}
             for a in self._acoustic_columns:
-                if a.attribute is not None and a.attribute.label in cache:
-                    a.attribute.cached_settings, a.attribute.cached_data = cache[a.attribute.label]
-                elif a.label in cache:
-                    a.cached_settings, a.cached_data = cache[a.label]
                 if r[a.begin_alias] is None:
                     for k in a.output_columns:
                         r.add_acoustic(k, None)
                 else:
+                    utterance_id = r[a.utterance_alias]
                     discourse = r[a.discourse_alias]
                     speaker = r[a.speaker_alias]
-                    channel = self.speaker_discourse_channels[speaker, discourse]
-                    t = a.hydrate(self.corpus, discourse,
+                    if utterance_id not in a.attribute.cache:
+                        if a.attribute.label == 'pitch':
+                            data = self.corpus.get_utterance_pitch(utterance_id, discourse, speaker)
+                        elif a.attribute.label == 'intensity':
+                            data = self.corpus.get_utterance_intensity(utterance_id, discourse, speaker)
+                        elif a.attribute.label == 'formants':
+                            data = self.corpus.get_utterance_formants(utterance_id, discourse, speaker)
+                        a.attribute.cache[utterance_id] = data
+                    t = a.hydrate(self.corpus, utterance_id,
                                   r[a.begin_alias],
-                                  r[a.end_alias],
-                                  channel)
-                    if a.attribute is not None and a.attribute.label not in cache:
-                        cache[a.attribute.label] = a.attribute.cached_settings, a.attribute.cached_data
-                    elif a.label in cache:
-                        cache[a.label] = a.cached_settings, a.cached_data
+                                  r[a.end_alias])
                     for k in a.output_columns:
                         if k == 'time':
                             continue
@@ -134,7 +159,7 @@ class QueryResults(BaseQueryResults):
                     line = {}
                     line.update(baseline)
                     line.update({'time': point.time})
-                    line.update(point.values)
+                    line.update(point.select_values(self.track_columns))
                     yield line
             else:
                 yield baseline

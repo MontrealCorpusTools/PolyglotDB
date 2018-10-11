@@ -134,7 +134,7 @@ class BuckeyeParser(BaseParser):
             if w['surface_transcription'] is None:
                 w['surface_transcription'] = '?'
             self.annotation_types[1].add([(w['transcription'], beg, end)])
-            self.annotation_types[2].add([(' '.join(w['surface_transcription']), beg, end)])
+            self.annotation_types[2].add([(w['surface_transcription'], beg, end)])
             self.annotation_types[3].add([(w['category'], beg, end)])
             self.annotation_types[4].add(found)
 
@@ -213,7 +213,7 @@ def read_words(path):
                 word = line[1].replace(' ', '_')
                 if word[0] != "<" and word[0] != "{":
                     citation = line[2]
-                    phonetic = line[3].split(' ')
+                    phonetic = line[3]
                     if len(line) > 4:
                         category = line[4]
                         if word in FILLERS:

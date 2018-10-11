@@ -9,6 +9,9 @@ from .pause import PauseContext
 
 
 class UtteranceContext(PauseContext):
+    """
+    Class that contains methods for dealing specifically with utterances
+    """
     def reset_utterances(self):
         """
         Remove all utterance annotations.
@@ -75,6 +78,11 @@ class UtteranceContext(PauseContext):
                     prev_id = cur_id
             utterance_data_to_csvs(self, speaker_data)
         import_utterance_csv(self, call_back, stop_check)
+        for m in self.hierarchy.acoustics:
+            self.reassess_utterances(m)
+            if m == 'pitch':
+                self.hierarchy.add_token_properties(self, 'utterance', [('pitch_last_edited', int)])
+                self.encode_hierarchy()
         if stop_check is not None and stop_check():
             return
         if call_back is not None:

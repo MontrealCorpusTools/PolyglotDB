@@ -17,7 +17,7 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
     file_type : str, optional
         One of 'low_freq', 'vowel', or 'consonant', specifies the type of audio file to use
     duration_threshold: float, optional
-        Segments with length shorter than this value (in milliseconds) will not be included
+        Segments with length shorter than this value (in seconds) will not be included
 
     Returns
     -------
@@ -53,7 +53,8 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                 qr = qr.filter(at.subset == subset)
             qr = qr.filter(at.discourse.name == discourse)
             qr = qr.filter(at.speaker.name == s)
-
+            if annotation_type != 'utterance' and 'utterance'in corpus_context.hierarchy.annotation_types:
+                qr.preload(at.utterance)
             if qr.count() == 0:
                 continue
             annotations = qr.all()
@@ -63,13 +64,19 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                         continue
                     if a.begin == a.end: # Skip zero duration segments if they exist
                         continue
-                    segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label,
-                                                     id=a.id, discourse=discourse, channel=channel, speaker=s,
+                    if annotation_type == 'utterance':
+                        utt_id = a.id
+                    elif 'utterance'not in corpus_context.hierarchy.annotation_types:
+                        utt_id = None
+                    else:
+                        utt_id = a.utterance.id
+                    segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label, id=a.id,
+                                                     utterance_id=utt_id, discourse=discourse, channel=channel, speaker=s,
                                                      annotation_type=annotation_type, padding=padding)
     return segment_mapping
 
 
-def generate_vowel_segments(corpus_context, duration_threshold=None, padding=0):
+def generate_vowel_segments(corpus_context, duration_threshold=None, padding=0, vowel_label='vowel'):
     """
     Generate segment vectors for each vowel, to be used as input to analyze_file_segments.
 
@@ -78,14 +85,14 @@ def generate_vowel_segments(corpus_context, duration_threshold=None, padding=0):
     corpus_context : :class:`polyglot.corpus.context.CorpusContext`
         The CorpusContext object of the corpus
     duration_threshold: float, optional
-        Segments with length shorter than this value (in milliseconds) will not be included
+        Segments with length shorter than this value (in seconds) will not be included
 
     Returns
     -------
     SegmentMapping
         Object containing vowel segments to be analyzed
     """
-    return generate_segments(corpus_context, annotation_type=corpus_context.phone_name, subset='vowel',
+    return generate_segments(corpus_context, annotation_type=corpus_context.phone_name, subset=vowel_label,
                              file_type='vowel', duration_threshold=duration_threshold, padding=padding)
 
 
@@ -100,7 +107,7 @@ def generate_utterance_segments(corpus_context, file_type='vowel', duration_thre
     file_type : str, optional
         One of 'low_freq', 'vowel', or 'consonant', specifies the type of audio file to use
     duration_threshold: float, optional
-        Segments with length shorter than this value (in milliseconds) will not be included
+        Segments with length shorter than this value (in seconds) will not be included
 
     Returns
     -------

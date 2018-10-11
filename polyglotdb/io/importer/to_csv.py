@@ -148,7 +148,7 @@ def syllables_data_to_csvs(corpus_context, speaker_data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.syllabic.SyllabicContext`
         the corpus object
     data : dict
         Data to load into a csv
@@ -168,7 +168,7 @@ def syllables_enrichment_data_to_csvs(corpus_context, data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.syllabic.SyllabicContext`
         the corpus object
     data : Dict
         Data to load into a csv

@@ -17,11 +17,12 @@ def test_analyze_discourse_pitch(acoustic_utt_config, praat_path):
         g.config.praat_path = praat_path
 
         r = g.query_graph(g.utterance).all()
-        assert(len(r))
+        assert (len(r))
         for u in r:
             track = g.analyze_utterance_pitch(u, pitch_source='praat', min_pitch=80, max_pitch=100)
             if u.begin < 24:
                 assert len(track)
+
 
 @acoustic
 def test_save_new_pitch_track(acoustic_utt_config, praat_path):
@@ -30,7 +31,7 @@ def test_save_new_pitch_track(acoustic_utt_config, praat_path):
         g.reset_acoustics()
         g.analyze_pitch('praat')
         r = g.query_graph(g.utterance).all()
-        assert(len(r))
+        assert (len(r))
         for u in r:
             print(u.id)
             track = g.analyze_utterance_pitch(u, pitch_source='praat')
@@ -42,7 +43,7 @@ def test_save_new_pitch_track(acoustic_utt_config, praat_path):
 
             g.update_utterance_pitch_track(u, track)
 
-        q = g.query_graph(g.utterance).columns(g.utterance.id,g.utterance.pitch.track)
+        q = g.query_graph(g.utterance).columns(g.utterance.id, g.utterance.pitch.track)
         for r in q.all():
             print(r)
             print(len(r.track))
@@ -59,6 +60,19 @@ def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
         g.config.pitch_algorithm = 'basic'
         g.analyze_pitch()
         assert (g.has_pitch(g.discourses[0]))
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin, g.phone.end, g.phone.pitch.track)
+        print(q.cypher())
+        results = q.all()
+        assert (len(results) > 0)
+        for r in results:
+            assert len(r.track)
+
+
+def test_reset_utterances(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.reset_utterances()
+        g.encode_utterances(0.15)
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.pitch.track)
         print(q.cypher())
@@ -166,7 +180,7 @@ def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
         g.reset_acoustics()
         g.config.reaper_path = reaper_path
         g.config.pitch_algorithm = 'basic'
-        g.analyze_pitch(source='reaper')
+        g.analyze_pitch(source='reaper', multiprocessing=False)
 
 
 @acoustic
@@ -175,7 +189,7 @@ def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
         g.reset_acoustics()
         g.config.praat_path = praat_path
         g.config.pitch_algorithm = 'gendered'
-        g.analyze_pitch(source = 'praat')
+        g.analyze_pitch(source='praat')
 
 
 @acoustic
@@ -185,19 +199,28 @@ def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
         g.reset_acoustics()
         g.config.praat_path = praat_path
         g.config.pitch_algorithm = 'speaker_adjusted'
-        g.analyze_pitch(source = 'praat')
+        g.analyze_pitch(source='praat')
         assert (g.has_pitch('acoustic_corpus'))
+
+        g.reset_pitch()
+        assert not g.has_pitch(g.discourses[0])
 
 
 def test_query_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.utterance.id.column_name('id'))
+        utt_id = q.all()[0]['id']
+
         g.reset_acoustics()
         expected_pitch = {Decimal('4.23'): {'F0': 98},
                           Decimal('4.24'): {'F0': 100},
                           Decimal('4.25'): {'F0': 99},
                           Decimal('4.26'): {'F0': 95.8},
                           Decimal('4.27'): {'F0': 95.8}}
-        g.save_pitch('acoustic_corpus', expected_pitch)
+        g.save_pitch('acoustic_corpus', expected_pitch, utterance_id=utt_id)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -210,7 +233,6 @@ def test_query_pitch(acoustic_utt_config):
         print(results[0].track)
         for point in results[0].track:
             assert (round(point['F0'], 1) == expected_pitch[point.time]['F0'])
-
 
 def test_query_aggregate_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
@@ -226,10 +248,65 @@ def test_query_aggregate_pitch(acoustic_utt_config):
         assert (results[0]['Max_F0'] == 100)
         assert (round(results[0]['Mean_F0'], 2) == 97.72)
 
+def test_relativize_pitch(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        mean_f0 = 97.72
+        sd_f0 = 1.88997
+        expected_pitch = {Decimal('4.23'): {'F0': 98, 'F0_relativized': (98 - mean_f0) / sd_f0},
+                          Decimal('4.24'): {'F0': 100, 'F0_relativized': (100 - mean_f0) / sd_f0},
+                          Decimal('4.25'): {'F0': 99, 'F0_relativized': (99 - mean_f0) / sd_f0},
+                          Decimal('4.26'): {'F0': 95.8, 'F0_relativized': (95.8 - mean_f0) / sd_f0},
+                          Decimal('4.27'): {'F0': 95.8, 'F0_relativized': (95.8 - mean_f0) / sd_f0}}
+        g.relativize_pitch(by_speaker=True)
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        ac = g.phone.pitch
+        ac.relative = True
+        q = q.columns(g.phone.label, ac.track)
+        results = q.all()
+        assert (len(results[0].track) == len(expected_pitch.items()))
+        print(sorted(expected_pitch.items()))
+        print(results[0].track)
+        for point in results[0].track:
+            print(point)
+            assert (round(point['F0_relativized'], 5) == round(expected_pitch[point.time]['F0_relativized'], 5))
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        ac = g.phone.pitch
+        ac.relative = True
+        q = q.columns(g.phone.label, ac.min,
+                      ac.max, ac.mean)
+        results = q.all()
+        assert results[0]['Min_F0'] == 95.8
+        assert results[0]['Max_F0'] == 100
+        assert results[0]['Mean_F0'] == mean_f0
+        min_rel = (95.8 - mean_f0) / sd_f0
+        max_rel = (100- mean_f0) / sd_f0
+        assert abs(results[0]['Min_F0_relativized'] - min_rel) < 0.01
+        assert abs(results[0]['Max_F0_relativized'] - max_rel) < 0.01
+        assert results[0]['Mean_F0_relativized'] - 0 < 0.01
+
+
+
+        g.reset_relativized_pitch()
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        ac = g.phone.pitch
+        ac.relative = True
+        q = q.columns(g.phone.label, ac.track)
+        results = q.all()
+        assert len(results[0].track) == 5
+        for r in results:
+            for p in r.track:
+                assert not p.has_value('F0_relativized')
 
 def test_export_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
