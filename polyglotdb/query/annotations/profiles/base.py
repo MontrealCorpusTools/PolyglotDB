@@ -3,7 +3,7 @@ import pickle
 from polyglotdb.config import BASE_DIR
 
 PROFILE_DIR = os.path.join(BASE_DIR, 'profiles')
-os.makedirs(PROFILE_DIR, exist_ok=True)
+#os.makedirs(PROFILE_DIR, exist_ok=True)
 
 
 class Filter(object):

@@ -17,9 +17,9 @@ class PGDBClient(object):
         self.query_behavior = 'speaker'
 
     def login(self, user_name, password):
-        end_point = '/'.join([self.host, 'api', 'api-token-auth', ''])
+        end_point = '/'.join([self.host, 'api', 'rest-auth', 'login', ''])
         resp = requests.post(end_point, {'username':user_name, 'password':password})
-        token = resp.json()['token']
+        token = resp.json()['key']
         return token
 
     def create_database(self, database_name):
