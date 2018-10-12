@@ -98,6 +98,12 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
             continue
         print (speaker+' '+vowel+': '+str(i+1)+' of '+str(total_speaker_vowel_pairs))
         output = analyze_segments(seg, formant_function, stop_check=stop_check, multiprocessing=multiprocessing)  # Analyze the phone
+        if len(seg) < 6:
+            print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
+            for s, data in output.items():
+                best_track = data[default_formant]
+                best_data[s] = {k: best_track[k] for j, k in enumerate(columns)}
+            continue
         
         if drop_formant:
             # ADD ALL THE LEAVE-ONE-OUT CANDIDATES
@@ -109,6 +115,8 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                         new_measurements['Ax'] = measurements['A'+str(leave_out)]
                         candidate_name = str(candidate)+'x'+str(leave_out)
                         # print (measurements)
+                        if None in [measurements['A1'], measurements['A2'], measurements['F1'], measurements['F2']]:
+                            continue
                         try:
                             ref_norm_amp = (measurements['A1']/math.log2(measurements['F1']) +
                                             measurements['A2']/math.log2(measurements['F2']) +
@@ -141,12 +149,6 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                 output[s] = {**data, **new_data}        
                 # print (s)
                 # print (output[s])
-        if len(seg) < 6:
-            print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
-            for s, data in output.items():
-                best_track = data[default_formant]
-                best_data[s] = {k: best_track[k] for j, k in enumerate(columns)}
-            continue
 
         selected_tracks = {}
         for s, data in output.items():
