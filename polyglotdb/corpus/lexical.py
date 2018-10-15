@@ -47,12 +47,8 @@ class LexicalContext(SpokenContext):
         """
         enrich_lexicon_from_csv(self, path, case_sensitive)
 
-    def reset_lexicon_csv(self, path, case_sensitive=False):
-        if case_sensitive:
-            labels = set(self.words)
-        else:
-            labels = set(x.lower() for x in self.words)
-        data, type_data = parse_file(path, labels=labels, case_sensitive=case_sensitive)
+    def reset_lexicon_csv(self, path):
+        data, type_data = parse_file(path, labels=[])
         word = getattr(self, 'lexicon_' + self.word_name)
         q = self.query_lexicon(word)
         property_names = [x for x in type_data.keys()]

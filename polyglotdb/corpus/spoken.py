@@ -20,7 +20,7 @@ class SpokenContext(AudioContext):
         enrich_speakers_from_csv(self, path)
 
     def reset_speaker_csv(self, path):
-        data, type_data = parse_file(path, self.speakers)
+        data, type_data = parse_file(path, [])
         q = self.query_speakers()
         property_names = [x for x in type_data.keys()]
         print(property_names)
@@ -30,7 +30,7 @@ class SpokenContext(AudioContext):
         self.encode_hierarchy()
 
     def reset_discourse_csv(self, path):
-        data, type_data = parse_file(path, self.discourses)
+        data, type_data = parse_file(path, [])
         q = self.query_discourses()
         property_names = [x for x in type_data.keys()]
         q.set_properties(**{x: None for x in property_names})

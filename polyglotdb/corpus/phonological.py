@@ -22,8 +22,7 @@ class PhonologicalContext(LexicalContext):
         enrich_features_from_csv(self, path)
 
     def reset_inventory_csv(self, path):
-        labels = set(x.lower() for x in self.phones)
-        data, type_data = parse_file(path, labels=labels)
+        data, type_data = parse_file(path, labels=[])
 
         property_names = [x for x in type_data.keys()]
         self.reset_features(property_names)

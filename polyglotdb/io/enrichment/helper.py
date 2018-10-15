@@ -66,22 +66,40 @@ def parse_file(path, labels=None, case_sensitive=True):
         sanitized_names = [sanitize_name(x) for x in header]
         data = {}
         type_data = {}
-        for line in reader:
-            p = line[key_name]
-            if not case_sensitive:
-                p = p.lower()
-            if labels is not None and p not in labels:
-                continue
-            data[p] = {}
-            for i, f in enumerate(header):
-                if f == key_name:
+        if labels == []:
+            for line in reader:
+                p = line[key_name]
+                if not case_sensitive:
+                    p = p.lower()
+                data[p] = {}
+                for i, f in enumerate(header):
+                    if f == key_name:
+                        continue
+                    k = sanitized_names[i]
+                    if k not in type_data:
+                        type_data[k] = defaultdict(int)
+                    v = parse_string(line[f])
+                    if v is not None:
+                        type_data[k][type(v)] += 1
+                    data[p][k] = v
+                return data, type_data
+        else:
+            for line in reader:
+                p = line[key_name]
+                if not case_sensitive:
+                    p = p.lower()
+                if labels is not None and p not in labels:
                     continue
-                k = sanitized_names[i]
-                if k not in type_data:
-                    type_data[k] = defaultdict(int)
-                v = parse_string(line[f])
-                if v is not None:
-                    type_data[k][type(v)] += 1
-                data[p][k] = v
-    type_data = {k: max(v.keys(), key=lambda x: v[x]) for k, v in type_data.items()}
-    return data, type_data
+                data[p] = {}
+                for i, f in enumerate(header):
+                    if f == key_name:
+                        continue
+                    k = sanitized_names[i]
+                    if k not in type_data:
+                        type_data[k] = defaultdict(int)
+                    v = parse_string(line[f])
+                    if v is not None:
+                        type_data[k][type(v)] += 1
+                    data[p][k] = v
+        type_data = {k: max(v.keys(), key=lambda x: v[x]) for k, v in type_data.items()}
+        return data, type_data
