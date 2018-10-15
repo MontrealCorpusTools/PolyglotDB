@@ -87,3 +87,4 @@ def analyze_script(corpus_context,
     header_info = {h: float for h in header}
     point_measures_to_csv(corpus_context, output, header)
     point_measures_from_csv(corpus_context, header_info)
+    return [x for x in header if x != 'id']
