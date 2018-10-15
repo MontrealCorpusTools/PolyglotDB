@@ -128,8 +128,15 @@ class AudioContext(SyllabicContext):
 
     def analyze_script(self, phone_class, script_path, duration_threshold=0.01, arguments=None, stop_check=None,
                        call_back=None, multiprocessing=True):
-        analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold, arguments=arguments,
+        return analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold, arguments=arguments,
                        stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
+
+    def reset_formant_points(self):
+        encoded_props = []
+        for prop in ['F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3']:
+            if self.hierarchy.has_token_property('phone', prop):
+                encoded_props.append(prop)
+        q = self.query_graph(getattr(self, self.phone_name)).set_properties(**{x: None for x in encoded_props})
 
     def genders(self):
         res = self.execute_cypher(
