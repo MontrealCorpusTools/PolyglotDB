@@ -69,9 +69,7 @@ def parse_file(path, labels=None, case_sensitive=True):
         if labels == []:
             for line in reader:
                 p = line[key_name]
-                if not case_sensitive:
-                    p = p.lower()
-                data[p] = {}
+
                 for i, f in enumerate(header):
                     if f == key_name:
                         continue
@@ -81,11 +79,29 @@ def parse_file(path, labels=None, case_sensitive=True):
                     v = parse_string(line[f])
                     if v is not None:
                         type_data[k][type(v)] += 1
+                if not case_sensitive:
+                    p = p.lower()
+                data[p] = {}
+                for i, f in enumerate(header):
+                    if f == key_name:
+                        continue
+                    k = sanitized_names[i]
+                    v = parse_string(line[f])
                     data[p][k] = v
                 return data, type_data
         else:
             for line in reader:
                 p = line[key_name]
+
+                for i, f in enumerate(header):
+                    if f == key_name:
+                        continue
+                    k = sanitized_names[i]
+                    if k not in type_data:
+                        type_data[k] = defaultdict(int)
+                    v = parse_string(line[f])
+                    if v is not None:
+                        type_data[k][type(v)] += 1
                 if not case_sensitive:
                     p = p.lower()
                 if labels is not None and p not in labels:
@@ -95,11 +111,7 @@ def parse_file(path, labels=None, case_sensitive=True):
                     if f == key_name:
                         continue
                     k = sanitized_names[i]
-                    if k not in type_data:
-                        type_data[k] = defaultdict(int)
                     v = parse_string(line[f])
-                    if v is not None:
-                        type_data[k][type(v)] += 1
                     data[p][k] = v
         type_data = {k: max(v.keys(), key=lambda x: v[x]) for k, v in type_data.items()}
         return data, type_data
