@@ -16,13 +16,18 @@ def test_analyze_vot(acoustic_utt_config, autovot_path, vot_classifier_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.autovot_path = autovot_path
-        stops = ['p', 't', 'k', 'b', 'd', 'g']
+        stops = ['p', 't', 'k']#, 'b', 'd', 'g']
         g.encode_class(stops, 'stops')
-        g.analyze_vot(stop_label="stops")
-        #TODO: Go over all stops, not just /p/
+        g.analyze_vot(stop_label="stops",
+                classifier="/site/proj/PolyglotDB/tests/data/classifier/sotc_classifiers/sotc_voiceless.classifier",
+                vot_min=15,
+                vot_max=250,
+                window_min=-30,
+                window_max=30)
         q = g.query_graph(g.phone).filter(g.phone.label.in_(stops)).columns(g.phone.label, g.phone.begin, g.phone.end, g.phone.id, g.phone.vot.begin, g.phone.vot.end).order_by(g.phone.begin)
-        p_returns = [q.all()[i] for i in range(28)]
-        p_true = [(1.473, 1.478), (1.829, 1.8339999999999999), (1.88, 1.8849999999999998), (2.041, 2.046), (2.631, 2.6359999999999997), (2.774, 2.779), (2.906, 2.911), (3.352, 3.3569999999999998), (4.179, 4.184), (4.565, 4.57), (5.501, 5.507000000000001), (6.228, 6.234999999999999), (6.732, 6.737), (6.736, 6.741), (7.02, 7.029999999999999), (9.187, 9.196), (9.413, 9.418000000000001), (11.424, 11.429), (13.144, 13.194), (13.496, 13.501000000000001), (16.862, 16.869999999999997), (19.282, 19.292), (20.823, 20.828), (21.379, 21.384), (21.674, 21.679), (22.197, 22.201999999999998), (24.506, 24.511)]
+        p_returns = q.all()
+        p_true = [(1.593, 1.649) , (1.832, 1.848) , (1.909, 1.98) , (2.116, 2.137) , (2.687, 2.703) , (2.829, 2.8440000000000003) , (2.934, 2.9490000000000003) , (3.351, 3.403) , (5.574, 5.593999999999999), (6.207, 6.2219999999999995) , (6.736, 6.755999999999999) , (7.02, 7.0489999999999995) , (9.255, 9.287) , (9.498, 9.514999999999999) , (11.424, 11.479999999999999) , (13.144, 13.206) , (13.498, 13.523) , (25.125, 25.14)]
+
         for t, r in zip(p_true, p_returns):
             assert (r["node_vot_begin"][0], r["node_vot_end"][0]) == t
 

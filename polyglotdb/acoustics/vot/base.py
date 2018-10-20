@@ -37,8 +37,6 @@ def analyze_vot(corpus_context,
         raise Exception('Phones do not have a "{}" subset.'.format(stop_label))
     stop_mapping = generate_segments(corpus_context, annotation_type='phone', subset='stops', padding=PADDING, file_type="consonant").grouped_mapping('discourse')
     segment_mapping = SegmentMapping()
-    print(vot_min)
-    print(vot_max)
     vot_func = AutoVOTAnalysisFunction(autovot_binaries_path = corpus_context.config.autovot_path ,\
             classifier_to_use=classifier,
             min_vot_length=vot_min,

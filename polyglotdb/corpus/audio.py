@@ -127,7 +127,7 @@ class AudioContext(SyllabicContext):
         analyze_vot(self, stop_label=stop_label, stop_check=stop_check,\
                 call_back=call_back, multiprocessing=multiprocessing,\
                 vot_min=vot_min, vot_max=vot_max, window_min=window_min,\
-                window_max=window_max)
+                window_max=window_max, classifier=classifier)
 
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
