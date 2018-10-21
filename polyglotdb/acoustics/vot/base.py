@@ -47,9 +47,18 @@ def analyze_vot(corpus_context,
     for discourse in corpus_context.discourses:
         if (discourse,) in stop_mapping:
             sf = corpus_context.discourse_sound_file(discourse)
-            seg = FileSegment(sf["consonant_file_path"], sf["speech_begin"], sf["speech_end"], name=discourse)
-            seg.properties["vot_marks"] = [(x["begin"], x["end"]) for x in stop_mapping[(discourse,)]]
-            segment_mapping.segments.append(seg)
+            speaker_mapped_stops = {}
+            discourse_speakers = set()
+            for x in stop_mapping[(discourse,)]:
+                if x["speaker"] in speaker_mapped_stops:
+                    speaker_mapped_stops[x["speaker"]].append((x["begin"], x["end"], x["id"]))
+                else:
+                    speaker_mapped_stops[x["speaker"]] = [(x["begin"], x["end"], x["id"])]
+                    discourse_speakers.add(x["speaker"])
+            for speaker in discourse_speakers:
+                seg = FileSegment(sf["consonant_file_path"], sf["speech_begin"], sf["speech_end"], name=discourse)
+                seg.properties["vot_marks"] = speaker_mapped_stops[speaker]
+                segment_mapping.segments.append(seg)
 
     output = analyze_segments(segment_mapping, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
     #NOTE: possible that autovot conch integration doesn't check if nothing is returned for a given segment, 
@@ -57,10 +66,11 @@ def analyze_vot(corpus_context,
     #TODO: fix this
     if not corpus_context.hierarchy.has_subannotation_type("vot"):
         corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end",float)])
-    for discourse, discourse_output in output.items():
-        for (begin, end), stop in zip(discourse_output, \
-                sorted(stop_mapping[(discourse["name"], )], key=lambda x: x["begin"])):
-            model = LinguisticAnnotation(corpus_context)
-            model.load(stop["id"])
-            model.add_subannotation("vot", begin=begin, end=begin+end)
-            model.save()
+
+    for discourse_output in output.items():
+        if len(discourse_output) > 0:
+            for begin, end, stop_id in zip(discourse_output):
+                model = LinguisticAnnotation(corpus_context)
+                model.load(stop_id)
+                model.add_subannotation("vot", begin=begin, end=begin+end)
+                model.save()
