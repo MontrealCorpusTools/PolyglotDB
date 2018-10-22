@@ -79,6 +79,7 @@ def test_csv_vot(acoustic_utt_config, autovot_path, vot_classifier_path, export_
     export_path = os.path.join(export_test_dir, 'results_export_vot.csv')
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
+        g.reset_vot()
         g.config.autovot_path = autovot_path
         stops = ['p', 't', 'k']#, 'b', 'd', 'g']
         g.encode_class(stops, 'stops')
