@@ -94,9 +94,7 @@ def test_csv_vot(acoustic_utt_config, autovot_path, vot_classifier_path, export_
             if line == '':
                 continue
             line = line.split(',')
-            #For some odd reason the values are being written to CSV as 1.23/1.23 for any given value of the vot,
-            #definitely should be fixed but i have no clue where this is from
-            p_csv.append((float(line[0].split('/')[0]), float(line[1].split('/')[0])))
+            p_csv.append((float(line[0]), float(line[1])))
     for t, r in zip(p_true, p_csv):
         assert r == t
 

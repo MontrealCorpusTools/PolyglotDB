@@ -168,6 +168,12 @@ class AudioContext(SyllabicContext):
             self.hierarchy.acoustics.remove('pitch')
             self.encode_hierarchy()
 
+    def reset_vot(self):
+        self.acoustic_client().query('''DROP MEASUREMENT "vot";''')
+        if 'vot' in self.hierarchy.acoustics:
+            self.hierarchy.acoustics.remove('vot')
+            self.encode_hierarchy()
+
     def reset_formants(self):
         self.acoustic_client().query('''DROP MEASUREMENT "formants";''')
         if 'formants' in self.hierarchy.acoustics:
