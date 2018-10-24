@@ -170,10 +170,11 @@ class AudioContext(SyllabicContext):
 
     def reset_vot(self):
         self.execute_cypher('''MATCH (v:vot:{corpus_name}) DETACH DELETE v'''.format(corpus_name=self.cypher_safe_name))
-        if 'vot' in self.hierarchy.subannotations["phone"]:
-            self.hierarchy.subannotation_properties.pop("vot")
-            self.hierarchy.subannotations["phone"].remove("vot")
-            self.encode_hierarchy()
+        if 'phone' in self.hierarchy.subannotations:
+            if 'vot' in self.hierarchy.subannotations["phone"]:
+                self.hierarchy.subannotation_properties.pop("vot")
+                self.hierarchy.subannotations["phone"].remove("vot")
+                self.encode_hierarchy()
 
     def reset_formants(self):
         self.acoustic_client().query('''DROP MEASUREMENT "formants";''')
