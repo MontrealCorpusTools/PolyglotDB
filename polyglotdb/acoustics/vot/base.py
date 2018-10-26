@@ -65,12 +65,12 @@ def analyze_vot(corpus_context,
     # do something to make sure len(output)==len(segment_mapping) in conch
     #TODO: fix this
     if not corpus_context.hierarchy.has_subannotation_type("vot"):
-        corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end",float)])
+        corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end", float), ("confidence", float)])
         corpus_context.encode_hierarchy()
 
     for discourse, discourse_output in output.items():
-        for (begin, end, stop_id) in discourse_output:
+        for (begin, end, confidence, stop_id) in discourse_output:
             model = LinguisticAnnotation(corpus_context)
             model.load(stop_id)
-            model.add_subannotation("vot", begin=begin, end=begin+end)
+            model.add_subannotation("vot", begin=begin, end=begin+end, confidence=confidence)
             model.save()
