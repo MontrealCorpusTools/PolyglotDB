@@ -56,14 +56,10 @@ def analyze_vot(corpus_context,
                     speaker_mapped_stops[x["speaker"]] = [(x["begin"], x["end"], x["id"])]
                     discourse_speakers.add(x["speaker"])
             for speaker in discourse_speakers:
-                seg = FileSegment(sf["consonant_file_path"], sf["speech_begin"], sf["speech_end"], name=discourse)
-                seg.properties["vot_marks"] = speaker_mapped_stops[speaker]
-                segment_mapping.segments.append(seg)
-
-    output = analyze_segments(segment_mapping, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
-    #NOTE: possible that autovot conch integration doesn't check if nothing is returned for a given segment, 
-    # do something to make sure len(output)==len(segment_mapping) in conch
-    #TODO: fix this
+                segment_mapping.add_file_segment(sf["consonant_file_path"], \
+                        sf["speech_begin"], sf["speech_end"], sf["channel"],\
+                        name="{}-{}".format(speaker, discourse), vot_marks=speaker_mapped_stops[speaker])
+    output = analyze_segments(segment_mapping.segments, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
     if not corpus_context.hierarchy.has_subannotation_type("vot"):
         corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end", float), ("confidence", float)])
         corpus_context.encode_hierarchy()
