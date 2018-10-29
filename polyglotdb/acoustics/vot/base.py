@@ -60,13 +60,14 @@ def analyze_vot(corpus_context,
                         sf["speech_begin"], sf["speech_end"], sf["channel"],\
                         name="{}-{}".format(speaker, discourse), vot_marks=speaker_mapped_stops[speaker])
     output = analyze_segments(segment_mapping.segments, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
-    if not corpus_context.hierarchy.has_subannotation_type("vot"):
-        corpus_context.hierarchy.add_subannotation_type(corpus_context, "phone", "vot", properties=[("begin", float), ("end", float), ("confidence", float)])
-        corpus_context.encode_hierarchy()
 
+    list_of_stops = []
+    property_types = [("begin", float), ("end", float), ("confidence", float), ("annotated_id", float)]
     for discourse, discourse_output in output.items():
         for (begin, end, confidence, stop_id) in discourse_output:
-            model = LinguisticAnnotation(corpus_context)
-            model.load(stop_id)
-            model.add_subannotation("vot", begin=begin, end=begin+end, confidence=confidence)
-            model.save()
+            list_of_stops.append({"begin":begin,
+                                  "end":begin+end,
+                                  "confidence":confidence,
+                                  "annotated_id":stop_id})
+
+    corpus_context.import_subannotations(list_of_stops, property_types, "vot", "phone")
