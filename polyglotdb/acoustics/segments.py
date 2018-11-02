@@ -26,7 +26,7 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
     """
     if annotation_type not in corpus_context.hierarchy.annotation_types:
         raise Exception()
-    if subset is not None and not corpus_context.hierarchy.has_type_subset(annotation_type, subset):
+    if subset is not None and not corpus_context.hierarchy.has_type_subset(annotation_type, subset) and not corpus_context.hierarchy.has_token_subset(annotation_type, subset):
         raise Exception()
     speakers = corpus_context.speakers
     segment_mapping = SegmentMapping()
