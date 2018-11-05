@@ -33,7 +33,7 @@ def analyze_vot(corpus_context,
     -------
 
     """
-    if not corpus_context.hierarchy.has_token_subset('phone', stop_label):
+    if not corpus_context.hierarchy.has_token_subset('phone', stop_label) and not corpus_context.hierarchy.has_type_subset('phone', stop_label):
         raise Exception('Phones do not have a "{}" subset.'.format(stop_label))
     stop_mapping = generate_segments(corpus_context, annotation_type='phone', subset='stops', padding=PADDING, file_type="consonant").grouped_mapping('discourse')
     segment_mapping = SegmentMapping()
