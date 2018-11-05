@@ -553,10 +553,6 @@ def reaper_path():
         return 'reaper'
 
 @pytest.fixture(scope='session')
-def autovot_path():
-    return '/autovot/autovot/bin/auto_vot_decode.py'
-
-@pytest.fixture(scope='session')
 def vot_classifier_path():
     return '/bb_jasa.classifier'
 
