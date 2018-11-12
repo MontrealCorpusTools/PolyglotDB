@@ -1,5 +1,6 @@
 import tempfile
 
+from uuid import uuid1
 from conch import analyze_segments
 from conch.analysis.segments import SegmentMapping, FileSegment
 from conch.analysis.autovot import AutoVOTAnalysisFunction
@@ -61,11 +62,12 @@ def analyze_vot(corpus_context,
     output = analyze_segments(segment_mapping.segments, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
 
     list_of_stops = []
-    property_types = [("begin", float), ("end", float), ("confidence", float), ("annotated_id", float)]
+    property_types = [("begin", float), ("end", float), ("confidence", float)]
     for discourse, discourse_output in output.items():
         for (begin, end, confidence, stop_id) in discourse_output:
             list_of_stops.append({"begin":begin,
                                   "end":begin+end,
+                                  "id":uuid1(),
                                   "confidence":confidence,
                                   "annotated_id":stop_id})
 
