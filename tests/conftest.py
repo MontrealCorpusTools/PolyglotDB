@@ -302,35 +302,11 @@ def corpus_data_syllable_morpheme_srur():
 
 
 @pytest.fixture(scope='session')
-def test_user():
-    return 'test_user', 'notarealpassword'
-
-
-@pytest.fixture(scope='session')
-def auth_token(localhost, test_user):
-    from polyglotdb.client.client import PGDBClient, ClientError
-    client = PGDBClient(localhost)
-    token = client.login(*test_user)
-    return token
-
-
-@pytest.fixture(scope='session')
-def graph_db(localhost, auth_token):
-    from polyglotdb.client.client import PGDBClient, ClientError
-    client = PGDBClient(localhost, token=auth_token)
-
-    dbs = client.list_databases()
-    print(dbs)
-    for d in dbs:
-        if d['name'] == 'main_test_database':
-            client.delete_database(d['name'])
-
-    client.create_database('main_test_database')
-    ports = client.get_ports('main_test_database')
-    ports['data_dir'] = client.get_directory('main_test_database')
-    ports['host'] = 'localhost'
-    client.start_database('main_test_database')
-    return ports
+def graph_db():
+    config = {'graph_http_port': 7474, 'graph_bolt_port': 7687,
+              'acoustic_http_port': 8086}
+    config['host'] = 'localhost'
+    return config
 
 
 @pytest.fixture(scope='session')
@@ -581,4 +557,3 @@ def acoustic_discourse_enrich_file(test_dir):
 @pytest.fixture(scope='session')
 def acoustic_inventory_enrich_file(test_dir):
     return os.path.join(test_dir, 'features', 'basic.txt')
-

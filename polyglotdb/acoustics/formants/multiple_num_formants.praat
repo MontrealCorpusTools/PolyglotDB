@@ -46,8 +46,8 @@ selectObject: "Sound segment_of_interest"
 sound_samplerate = Get sampling frequency
 #ltas_bandwidth = ceiling(sound_samplerate/2048)
 ltas_bandwidth = ceiling(sound_samplerate/512)
-ltas_window_start = max(begin,r-0.0125)
-ltas_window_end = min(r+0.0125,end)
+ltas_window_start = max(begin,r-0.025)
+ltas_window_end = min(r+0.025,end)
 Extract part: ltas_window_start, ltas_window_end, "rectangular", 1, "yes"
 Rename: "amplitude_window"
 To Ltas: ltas_bandwidth

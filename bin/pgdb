@@ -52,9 +52,9 @@ CONFIG = load_config()
 
 TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
 
-NEO4J_VERSION = '3.2.3'
+NEO4J_VERSION = '3.4.9'
 
-INFLUXDB_VERSION = '1.1.0'
+INFLUXDB_VERSION = '1.2.4'
 
 
 def tqdm_hook(t):
@@ -253,6 +253,7 @@ if __name__ == '__main__':
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument('directory', nargs='?', help='Path to install data', default='')
     install_parser.add_argument('-q', '--quiet', help="Suppress user input", action='store_true')
+    install_parser.add_argument('-d', '--download', help="Force download of new versions", action='store_true')
     install_parser.set_defaults(which='install')
 
     start_parser = subparsers.add_parser("start")
@@ -303,9 +304,9 @@ if __name__ == '__main__':
                 else:
                     print('Aborting installation.')
                     sys.exit()
-        download_neo4j(directory)
+        download_neo4j(directory, overwrite=args.download)
         configure_neo4j(directory)
-        download_influxdb(directory)
+        download_influxdb(directory, overwrite=args.download)
         configure_influxdb(directory)
         try:
             shutil.rmtree(TEMP_DIR)
