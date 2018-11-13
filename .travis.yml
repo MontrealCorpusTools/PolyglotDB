@@ -31,11 +31,17 @@ install:
   - pip install -r requirements.txt
   - which python
   - conda list
+  - python bin/pgdb install -q
+  - python bin/pgdb start
 
 # Run test
 script:
   - source activate test-environment
   - coverage run --source=polyglotdb setup.py test
+
+after_script:
+  - source activate test-environment
+  - python bin/pgdb stop
 
 # Calculate coverage
 after_success:
