@@ -35,11 +35,13 @@ def test_to_csv(acoustic_utt_config, export_test_dir):
             if line == '':
                 continue
             line = line.split(',')
+            print(line)
             if i != 0:
                 line = [line[0], float(line[1]), float(line[2])]
-            print(line)
-            assert line[0] == expected[i][0]
-            assert line[1:] == pytest.approx(expected[i][1:], 1e-3)
+                assert line[0] == expected[i][0]
+                assert line[1:] == pytest.approx(expected[i][1:], 1e-3)
+            else:
+                assert line == expected[i]
             i += 1
 
     with CorpusContext(acoustic_utt_config) as g:
