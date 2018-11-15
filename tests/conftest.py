@@ -20,8 +20,6 @@ from polyglotdb.config import CorpusConfig
 def pytest_addoption(parser):
     parser.addoption("--skipacoustics", action="store_true",
                      help="skip acoustic tests")
-    parser.addoption("--client", action="store_true",
-                     help="run client tests")
 
 
 @pytest.fixture(scope='session')

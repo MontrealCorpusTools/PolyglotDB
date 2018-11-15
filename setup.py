@@ -61,7 +61,6 @@ if __name__ == '__main__':
                     'polyglotdb.query.base',
                     'polyglotdb.query.annotations',
                     'polyglotdb.query.annotations.attributes',
-                    'polyglotdb.query.annotations.profiles',
                     'polyglotdb.query.discourse',
                     'polyglotdb.query.speaker',
                     'polyglotdb.query.lexicon',

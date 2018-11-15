@@ -1,15 +1,6 @@
 import pytest
 import os
 
-from polyglotdb.io import inspect_csv
-
-from polyglotdb.io.types.content import (OrthographyAnnotationType,
-                                         TranscriptionAnnotationType,
-                                         NumericAnnotationType)
-
-from polyglotdb.io.helper import guess_type
-
-from polyglotdb.exceptions import DelimiterError
 from polyglotdb import CorpusContext
 
 

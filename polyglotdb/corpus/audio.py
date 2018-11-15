@@ -7,13 +7,10 @@ from decimal import Decimal
 
 from influxdb import InfluxDBClient
 
-from polyglotdb.query.discourse import DiscourseInspector
 from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_vowel_formant_tracks, analyze_intensity, \
     analyze_script, analyze_utterance_pitch, update_utterance_pitch_track
 from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
-
-from ..acoustics.utils import load_waveform, generate_spectrogram
 
 
 def sanitize_formants(value):
@@ -180,42 +177,6 @@ class AudioContext(SyllabicContext):
             client.create_database(self.corpus_name)
         return client
 
-    def inspect_discourse(self, discourse, begin=None, end=None):
-        """
-        Get a discourse inspecter object for a discourse
-
-        Parameters
-        ----------
-        discourse : str
-            Name of the discourse
-        begin : float, optional
-            Beginning of the initial cache
-        end : float, optional
-            End of the initial cache
-
-        Returns
-        -------
-        :class:`~polyglotdb.graph.discourse.DiscourseInspector`
-            DiscourseInspector for the specified discourse
-        """
-        return DiscourseInspector(self, discourse, begin, end)
-
-    def load_waveform(self, discourse, file_type='consonant', begin=None, end=None):
-        sf = self.discourse_sound_file(discourse)
-        if file_type == 'consonant':
-            file_path = sf['consonant_file_path']
-        elif file_type == 'vowel':
-            file_path = sf['vowel_file_path']
-        elif file_type == 'low_freq':
-            file_path = sf['low_freq_file_path']
-        else:
-            file_path = sf['file_path']
-        return load_waveform(file_path, begin, end)
-
-    def generate_spectrogram(self, discourse, file_type='consonant', begin=None, end=None):
-        signal, sr = self.load_waveform(discourse, file_type, begin, end)
-        return generate_spectrogram(signal, sr)
-
     def discourse_audio_directory(self, discourse):
         """
         Return the directory for the stored audio files for a discourse
@@ -245,9 +206,6 @@ class AudioContext(SyllabicContext):
             return path
         fname = self.discourse_sound_file(utterance_info['discourse'])["{}_file_path".format(type)]
         subprocess.call(['sox', fname, path, 'trim', str(utterance_info['begin']), str(utterance_info['end'] - utterance_info['begin'])])
-        #data, sr = librosa.load(fname, sr=None, offset=utterance_info['begin'],
-        #                        duration=utterance_info['end'] - utterance_info['begin'])
-        #librosa.output.write_wav(path, data, sr)
         return path
 
     def has_all_sound_files(self):

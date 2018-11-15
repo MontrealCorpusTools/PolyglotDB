@@ -1,7 +1,5 @@
 from .buckeye import BuckeyeParser
 
-from .csv import CsvParser
-
 from .ilg import IlgParser
 
 from .labbcat import LabbCatParser
