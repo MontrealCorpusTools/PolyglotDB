@@ -76,6 +76,8 @@ class NodeAttribute(object):
         t = self.value_type()
         if t is None:
             return None
+        if isinstance(value, list):
+            return [t(x) for x in value]
         return t(value)
 
     @property

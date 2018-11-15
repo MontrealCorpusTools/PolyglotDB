@@ -1,7 +1,7 @@
 from ..io.importer import (speaker_data_to_csvs, import_speaker_csvs,
                            discourse_data_to_csvs, import_discourse_csvs)
 from .audio import AudioContext
-from ..io.enrichment.spoken import enrich_speakers_from_csv, enrich_discourses_from_csv
+from ..io.enrichment.spoken import enrich_speakers_from_csv, enrich_discourses_from_csv, parse_file
 
 
 class SpokenContext(AudioContext):
@@ -18,6 +18,24 @@ class SpokenContext(AudioContext):
             the path to the csv file
         """
         enrich_speakers_from_csv(self, path)
+
+    def reset_speaker_csv(self, path):
+        data, type_data = parse_file(path, [])
+        q = self.query_speakers()
+        property_names = [x for x in type_data.keys()]
+        print(property_names)
+        q.set_properties(**{x: None for x in property_names})
+
+        self.hierarchy.remove_speaker_properties(self, property_names)
+        self.encode_hierarchy()
+
+    def reset_discourse_csv(self, path):
+        data, type_data = parse_file(path, [])
+        q = self.query_discourses()
+        property_names = [x for x in type_data.keys()]
+        q.set_properties(**{x: None for x in property_names})
+        self.hierarchy.remove_discourse_properties(self, property_names)
+        self.encode_hierarchy()
 
     def enrich_discourses_from_csv(self, path):
         """

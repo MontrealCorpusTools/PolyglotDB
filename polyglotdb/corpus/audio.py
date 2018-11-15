@@ -1,6 +1,7 @@
 import os
 import re
 import librosa
+import subprocess
 from datetime import datetime
 from decimal import Decimal
 
@@ -142,8 +143,15 @@ class AudioContext(SyllabicContext):
 
     def analyze_script(self, phone_class, script_path, duration_threshold=0.01, arguments=None, stop_check=None,
                        call_back=None, multiprocessing=True):
-        analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold, arguments=arguments,
+        return analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold, arguments=arguments,
                        stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
+
+    def reset_formant_points(self):
+        encoded_props = []
+        for prop in ['F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3']:
+            if self.hierarchy.has_token_property('phone', prop):
+                encoded_props.append(prop)
+        q = self.query_graph(getattr(self, self.phone_name)).set_properties(**{x: None for x in encoded_props})
 
     def genders(self):
         res = self.execute_cypher(
@@ -258,10 +266,11 @@ class AudioContext(SyllabicContext):
                             '{}_{}.wav'.format(utterance_id, type))
         if os.path.exists(path):
             return path
-        fname = self.discourse_sound_file(utterance_info['discourse'])["consonant_file_path"]
-        data, sr = librosa.load(fname, sr=None, offset=utterance_info['begin'],
-                                duration=utterance_info['end'] - utterance_info['begin'])
-        librosa.output.write_wav(path, data, sr)
+        fname = self.discourse_sound_file(utterance_info['discourse'])["{}_file_path".format(type)]
+        subprocess.call(['sox', fname, path, 'trim', str(utterance_info['begin']), str(utterance_info['end'] - utterance_info['begin'])])
+        #data, sr = librosa.load(fname, sr=None, offset=utterance_info['begin'],
+        #                        duration=utterance_info['end'] - utterance_info['begin'])
+        #librosa.output.write_wav(path, data, sr)
         return path
 
     def has_all_sound_files(self):

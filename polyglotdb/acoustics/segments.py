@@ -53,7 +53,7 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                 qr = qr.filter(at.subset == subset)
             qr = qr.filter(at.discourse.name == discourse)
             qr = qr.filter(at.speaker.name == s)
-            if annotation_type != 'utterance':
+            if annotation_type != 'utterance' and 'utterance'in corpus_context.hierarchy.annotation_types:
                 qr.preload(at.utterance)
             if qr.count() == 0:
                 continue
@@ -66,6 +66,8 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                         continue
                     if annotation_type == 'utterance':
                         utt_id = a.id
+                    elif 'utterance'not in corpus_context.hierarchy.annotation_types:
+                        utt_id = None
                     else:
                         utt_id = a.utterance.id
                     segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label, id=a.id,

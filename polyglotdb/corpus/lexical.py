@@ -1,5 +1,5 @@
 from ..io.importer import lexicon_data_to_csvs, import_lexicon_csvs
-from ..io.enrichment.lexical import enrich_lexicon_from_csv
+from ..io.enrichment.lexical import enrich_lexicon_from_csv, parse_file
 from .spoken import SpokenContext
 
 
@@ -46,3 +46,13 @@ class LexicalContext(SpokenContext):
             Defaults to false
         """
         enrich_lexicon_from_csv(self, path, case_sensitive)
+
+    def reset_lexicon_csv(self, path):
+        data, type_data = parse_file(path, labels=[])
+        word = getattr(self, 'lexicon_' + self.word_name)
+        q = self.query_lexicon(word)
+        property_names = [x for x in type_data.keys()]
+        q.set_properties(**{x: None for x in property_names})
+        self.hierarchy.remove_type_properties(self, self.word_name, property_names)
+        self.encode_hierarchy()
+
