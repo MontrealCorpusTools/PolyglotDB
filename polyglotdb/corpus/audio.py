@@ -8,7 +8,7 @@ from decimal import Decimal
 from influxdb import InfluxDBClient
 
 from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_vowel_formant_tracks, analyze_intensity, \
-    analyze_script, analyze_utterance_pitch, update_utterance_pitch_track
+    analyze_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
 from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
 
@@ -112,6 +112,21 @@ class AudioContext(SyllabicContext):
     def update_utterance_pitch_track(self, utterance, new_track):
         return update_utterance_pitch_track(self, utterance, new_track)
 
+    def analyze_vot(self,
+            stop_label="stops",
+            stop_check=None,
+            call_back=None,
+            multiprocessing=False,
+            classifier="/autovot/experiments/models/bb_jasa.classifier",
+            vot_min=5,
+            vot_max=100,
+            window_min=-30,
+            window_max=30):
+        analyze_vot(self, stop_label=stop_label, stop_check=stop_check,\
+                call_back=call_back, multiprocessing=multiprocessing,\
+                vot_min=vot_min, vot_max=vot_max, window_min=window_min,\
+                window_max=window_max, classifier=classifier)
+
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
@@ -157,6 +172,14 @@ class AudioContext(SyllabicContext):
         if 'pitch' in self.hierarchy.acoustics:
             self.hierarchy.acoustics.remove('pitch')
             self.encode_hierarchy()
+
+    def reset_vot(self):
+        self.execute_cypher('''MATCH (v:vot:{corpus_name}) DETACH DELETE v'''.format(corpus_name=self.cypher_safe_name))
+        if 'phone' in self.hierarchy.subannotations:
+            if 'vot' in self.hierarchy.subannotations["phone"]:
+                self.hierarchy.subannotation_properties.pop("vot")
+                self.hierarchy.subannotations["phone"].remove("vot")
+                self.encode_hierarchy()
 
     def reset_formants(self):
         self.acoustic_client().query('''DROP MEASUREMENT "formants";''')
