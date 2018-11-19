@@ -47,6 +47,7 @@ if __name__ == '__main__':
                     'polyglotdb.acoustics',
                     'polyglotdb.acoustics.formants',
                     'polyglotdb.acoustics.pitch',
+                    'polyglotdb.acoustics.vot',
                     'polyglotdb.client',
                     'polyglotdb.corpus',
                     'polyglotdb.databases',

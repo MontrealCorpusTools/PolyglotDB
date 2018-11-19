@@ -527,8 +527,8 @@ def reaper_path():
         return 'reaper'
 
 @pytest.fixture(scope='session')
-def vot_classifier_path():
-    return '/bb_jasa.classifier'
+def vot_classifier_path(test_dir):
+    return os.path.join(test_dir, 'classifier', 'sotc_classifiers', 'sotc_voiceless.classifier')
 
 @pytest.fixture(scope='session')
 def localhost():

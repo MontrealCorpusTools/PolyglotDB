@@ -8,6 +8,7 @@ acoustic = pytest.mark.skipif(
     reason="remove --skipacoustics option to run"
 )
 
+
 def test_to_csv(acoustic_utt_config, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export.csv')
     with CorpusContext(acoustic_utt_config) as g:
@@ -49,7 +50,7 @@ def test_to_csv(acoustic_utt_config, export_test_dir):
 
     # ignore ids
     expected = [['node_phone_label', 'node_phone_duration', 'node_phone_begin'],
-                ['aa', 0.0783100000000001,2.70424],
+                ['aa', 0.0783100000000001, 2.70424],
                 ['aa', 0.12199999999999989, 9.32077],
                 ['aa', 0.03981000000000279, 24.56029]]
     with open(export_path, 'r') as f:
@@ -69,23 +70,29 @@ def test_to_csv(acoustic_utt_config, export_test_dir):
                 assert line == expected[i]
             i += 1
 
+
 @acoustic
 def test_csv_vot(acoustic_utt_config, vot_classifier_path, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export_vot.csv')
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.reset_vot()
-        stops = ['p', 't', 'k']#, 'b', 'd', 'g']
+        stops = ['p', 't', 'k']  # , 'b', 'd', 'g']
         g.encode_class(stops, 'stops')
         g.analyze_vot(stop_label="stops",
-                classifier="/site/proj/PolyglotDB/tests/data/classifier/sotc_classifiers/sotc_voiceless.classifier",
-                vot_min=15,
-                vot_max=250,
-                window_min=-30,
-                window_max=30)
-        q = g.query_graph(g.phone).filter(g.phone.label.in_(stops)).columns(g.phone.vot.begin, g.phone.vot.end).order_by(g.phone.begin)
+                      classifier=vot_classifier_path,
+                      vot_min=15,
+                      vot_max=250,
+                      window_min=-30,
+                      window_max=30)
+        q = g.query_graph(g.phone).filter(g.phone.label.in_(stops)).columns(g.phone.vot.begin,
+                                                                            g.phone.vot.end).order_by(g.phone.begin)
         q.to_csv(export_path)
-        p_true = [(1.593, 1.649) , (1.832, 1.848) , (1.909, 1.98) , (2.116, 2.137) , (2.687, 2.703) , (2.829, 2.8440000000000003) , (2.934, 2.9490000000000003) , (3.351, 3.403) , (5.574, 5.593999999999999), (6.207, 6.2219999999999995) , (6.736, 6.755999999999999) , (7.02, 7.0489999999999995) , (9.255, 9.287) , (9.498, 9.514999999999999) , (11.424, 11.479999999999999) , (13.144, 13.206) , (13.498, 13.523) , (25.125, 25.14)]
+        p_true = [(1.593, 1.649), (1.832, 1.848), (1.909, 1.98), (2.116, 2.137), (2.687, 2.703),
+                  (2.829, 2.8440000000000003), (2.934, 2.9490000000000003), (3.351, 3.403), (5.574, 5.593999999999999),
+                  (6.207, 6.2219999999999995), (6.736, 6.755999999999999), (7.02, 7.0489999999999995), (9.255, 9.287),
+                  (9.498, 9.514999999999999), (11.424, 11.479999999999999), (13.144, 13.206), (13.498, 13.523),
+                  (25.125, 25.14)]
     p_csv = []
     with open(export_path, 'r') as f:
         f.readline()
@@ -97,4 +104,3 @@ def test_csv_vot(acoustic_utt_config, vot_classifier_path, export_test_dir):
             p_csv.append((float(line[0]), float(line[1])))
     for t, r in zip(p_true, p_csv):
         assert r == t
-
