@@ -15,6 +15,7 @@ addons:
   apt:
     packages:
       - oracle-java8-installer
+      - sox
 
 before_install:
   - sudo rm -rf /dev/shm
