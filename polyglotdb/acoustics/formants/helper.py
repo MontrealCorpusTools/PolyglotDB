@@ -137,8 +137,8 @@ def generate_formants_point_function(corpus_context, gender=None):
     return formant_function
 
 
-def get_mean_SD(data):
-    """Generates means for F1, F2, F3, B1, B2, B3 and covariance matrices per vowel class.
+def get_mean_SD(data, prototype_parameters=['F1', 'F2', 'F3', 'B1', 'B2', 'B3']):
+    """Generates per-vowel-class means and covariance matrices for an arbitrary set of parameters (such as F1, F2, F3, B1, B2, B3) .
 
     Parameters
     ----------
@@ -162,21 +162,23 @@ def get_mean_SD(data):
         observation_list = []
         for seg, value in data.items():
             if seg['label'] == phone:
-                observation = [
-                    value['F1'],
-                    value['F2'],
-                    value['F3'],
-                    value['B1'],
-                    value['B2'],
-                    value['B3']
-                ]
+                observation = [value[pp] for pp in prototype_parameters]
+                # observation = [
+                #     value['F1'],
+                #     value['F2'],
+                #     value['F3'],
+                #     value['B1'],
+                #     value['B2'],
+                #     value['B3']
+                # ]
                 observation_list.append([x if x else 0 for x in observation])
 
-        f1_mean, f2_mean, f3_mean = mean(x[0] for x in observation_list), mean(x[1] for x in observation_list), mean(
-            x[2] for x in observation_list)
-        b1_mean, b2_mean, b3_mean = mean(x[3] for x in observation_list), mean(x[4] for x in observation_list), mean(
-            x[5] for x in observation_list)
-        all_means = [f1_mean, f2_mean, f3_mean, b1_mean, b2_mean, b3_mean]
+        # f1_mean, f2_mean, f3_mean = mean(x[0] for x in observation_list), mean(x[1] for x in observation_list), mean(
+        #     x[2] for x in observation_list)
+        # b1_mean, b2_mean, b3_mean = mean(x[3] for x in observation_list), mean(x[4] for x in observation_list), mean(
+        #     x[5] for x in observation_list)
+        # all_means = [f1_mean, f2_mean, f3_mean, b1_mean, b2_mean, b3_mean]
+        all_means = [mean(x[i] for x in observation_list) for i,pp in enumerate(prototype_parameters)]
 
         observation_list = np.array(observation_list)
         cov = np.cov(observation_list.T)
