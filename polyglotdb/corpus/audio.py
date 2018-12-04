@@ -11,6 +11,7 @@ from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_vowel_for
     analyze_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
 from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
+from ..acoustics.utils import load_waveform, generate_spectrogram
 
 
 def sanitize_formants(value):
@@ -102,6 +103,22 @@ class AudioContext(SyllabicContext):
             path = os.path.expanduser(sound_file.file_path)
         signal, sr = librosa.load(path, sr=None)
         return signal, sr
+
+    def load_waveform(self, discourse, file_type='consonant', begin=None, end=None):
+        sf = self.discourse_sound_file(discourse)
+        if file_type == 'consonant':
+            file_path = sf['consonant_file_path']
+        elif file_type == 'vowel':
+            file_path = sf['vowel_file_path']
+        elif file_type == 'low_freq':
+            file_path = sf['low_freq_file_path']
+        else:
+            file_path = sf['file_path']
+        return load_waveform(file_path, begin, end)
+    
+    def generate_spectrogram(self, discourse, file_type='consonant', begin=None, end=None):
+        signal, sr = self.load_waveform(discourse, file_type, begin, end)
+        return generate_spectrogram(signal, sr)
 
     def analyze_pitch(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_pitch(self, source, stop_check, call_back, multiprocessing=multiprocessing)
