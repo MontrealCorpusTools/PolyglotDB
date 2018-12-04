@@ -8,9 +8,8 @@ class AnnotatedContext(SummarizedContext):
     Class that contains methods for dealing specifically with annotations on linguistic items
     """
     def import_subannotations(self, data, property_data, subannotation_name, annotation_type):
+        if not self.hierarchy.has_subannotation_type(subannotation_name):
+            self.hierarchy.add_subannotation_type(self, annotation_type, subannotation_name, properties=property_data)
+            self.encode_hierarchy()
         subannotations_data_to_csv(self, subannotation_name, data)
-        import_subannotation_csv(self, subannotation_name, annotation_type, property_data)
-        self.hierarchy.add_subannotation_type(annotation_type, subannotation_name)
-        for prop, t in property_data:
-            t, b, e, props = d
-
+        import_subannotation_csv(self, subannotation_name, annotation_type, ["id", "annotated_id"] + [x[0] for x in property_data])

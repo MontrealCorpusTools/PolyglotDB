@@ -193,7 +193,6 @@ def test_refine_formants(acoustic_utt_config, praat_path, export_test_dir):
         for r in results:
             assert (r['F1'])
 
-            # assert False
 
 
 def test_extract_formants_full(acoustic_utt_config, praat_path, export_test_dir):
@@ -214,4 +213,9 @@ def test_extract_formants_full(acoustic_utt_config, praat_path, export_test_dir)
         for r in results:
             assert (r['F1'])
 
-            # assert False, "dumb assert
+
+def test_reset_refined_formants(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        assert (g.hierarchy.has_token_property('phone', 'F1'))
+        g.reset_formant_points()
+        assert (not g.hierarchy.has_token_property('phone', 'F1'))

@@ -7,13 +7,10 @@ from decimal import Decimal
 
 from influxdb import InfluxDBClient
 
-from polyglotdb.query.discourse import DiscourseInspector
 from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_vowel_formant_tracks, analyze_intensity, \
-    analyze_script, analyze_utterance_pitch, update_utterance_pitch_track
+    analyze_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
 from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
-
-from ..acoustics.utils import load_waveform, generate_spectrogram
 
 
 def sanitize_formants(value):
@@ -115,6 +112,21 @@ class AudioContext(SyllabicContext):
     def update_utterance_pitch_track(self, utterance, new_track):
         return update_utterance_pitch_track(self, utterance, new_track)
 
+    def analyze_vot(self,
+            stop_label="stops",
+            stop_check=None,
+            call_back=None,
+            multiprocessing=False,
+            classifier="/autovot/experiments/models/bb_jasa.classifier",
+            vot_min=5,
+            vot_max=100,
+            window_min=-30,
+            window_max=30):
+        analyze_vot(self, stop_label=stop_label, stop_check=stop_check,\
+                call_back=call_back, multiprocessing=multiprocessing,\
+                vot_min=vot_min, vot_max=vot_max, window_min=window_min,\
+                window_max=window_max, classifier=classifier)
+
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
         analyze_formant_tracks(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
@@ -128,8 +140,15 @@ class AudioContext(SyllabicContext):
 
     def analyze_script(self, phone_class, script_path, duration_threshold=0.01, arguments=None, stop_check=None,
                        call_back=None, multiprocessing=True):
-        analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold, arguments=arguments,
+        return analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold, arguments=arguments,
                        stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
+
+    def reset_formant_points(self):
+        encoded_props = []
+        for prop in ['F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3']:
+            if self.hierarchy.has_token_property('phone', prop):
+                encoded_props.append(prop)
+        q = self.query_graph(getattr(self, self.phone_name)).set_properties(**{x: None for x in encoded_props})
 
     def genders(self):
         res = self.execute_cypher(
@@ -154,6 +173,14 @@ class AudioContext(SyllabicContext):
             self.hierarchy.acoustics.remove('pitch')
             self.encode_hierarchy()
 
+    def reset_vot(self):
+        self.execute_cypher('''MATCH (v:vot:{corpus_name}) DETACH DELETE v'''.format(corpus_name=self.cypher_safe_name))
+        if 'phone' in self.hierarchy.subannotations:
+            if 'vot' in self.hierarchy.subannotations["phone"]:
+                self.hierarchy.subannotation_properties.pop("vot")
+                self.hierarchy.subannotations["phone"].remove("vot")
+                self.encode_hierarchy()
+
     def reset_formants(self):
         self.acoustic_client().query('''DROP MEASUREMENT "formants";''')
         if 'formants' in self.hierarchy.acoustics:
@@ -172,42 +199,6 @@ class AudioContext(SyllabicContext):
         if self.corpus_name not in databases:
             client.create_database(self.corpus_name)
         return client
-
-    def inspect_discourse(self, discourse, begin=None, end=None):
-        """
-        Get a discourse inspecter object for a discourse
-
-        Parameters
-        ----------
-        discourse : str
-            Name of the discourse
-        begin : float, optional
-            Beginning of the initial cache
-        end : float, optional
-            End of the initial cache
-
-        Returns
-        -------
-        :class:`~polyglotdb.graph.discourse.DiscourseInspector`
-            DiscourseInspector for the specified discourse
-        """
-        return DiscourseInspector(self, discourse, begin, end)
-
-    def load_waveform(self, discourse, file_type='consonant', begin=None, end=None):
-        sf = self.discourse_sound_file(discourse)
-        if file_type == 'consonant':
-            file_path = sf['consonant_file_path']
-        elif file_type == 'vowel':
-            file_path = sf['vowel_file_path']
-        elif file_type == 'low_freq':
-            file_path = sf['low_freq_file_path']
-        else:
-            file_path = sf['file_path']
-        return load_waveform(file_path, begin, end)
-
-    def generate_spectrogram(self, discourse, file_type='consonant', begin=None, end=None):
-        signal, sr = self.load_waveform(discourse, file_type, begin, end)
-        return generate_spectrogram(signal, sr)
 
     def discourse_audio_directory(self, discourse):
         """
@@ -238,9 +229,6 @@ class AudioContext(SyllabicContext):
             return path
         fname = self.discourse_sound_file(utterance_info['discourse'])["{}_file_path".format(type)]
         subprocess.call(['sox', fname, path, 'trim', str(utterance_info['begin']), str(utterance_info['end'] - utterance_info['begin'])])
-        #data, sr = librosa.load(fname, sr=None, offset=utterance_info['begin'],
-        #                        duration=utterance_info['end'] - utterance_info['begin'])
-        #librosa.output.write_wav(path, data, sr)
         return path
 
     def has_all_sound_files(self):

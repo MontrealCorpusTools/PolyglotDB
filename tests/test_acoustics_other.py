@@ -34,7 +34,8 @@ def test_analyze_script(acoustic_utt_config, praat_path, praatscript_test_dir):
         g.config.praat_path = praat_path
         g.encode_class(['s', 'z', 'sh', 'zh'], 'sibilant')
         script_path = os.path.join(praatscript_test_dir, 'sibilant_jane.praat')
-        g.analyze_script('sibilant', script_path, stop_check=None, call_back=None,multiprocessing=False)
+        props = g.analyze_script('sibilant', script_path, stop_check=None, call_back=None,multiprocessing=False)
+        assert props == sorted(['cog', 'peak', 'slope', 'spread'])
         q = g.query_graph(g.phone).filter(g.phone.subset == 'sibilant')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.peak)
         results = q.all()

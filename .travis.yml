@@ -15,6 +15,7 @@ addons:
   apt:
     packages:
       - oracle-java8-installer
+      - sox
 
 before_install:
   - sudo rm -rf /dev/shm
@@ -23,24 +24,26 @@ before_install:
   #- sudo apt-get update && sudo apt-get install oracle-java8-installer
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - bash continuous-integration/travis/install.sh
+  - ls -al $HOME/tools/autovot/autovot/bin
 
 # Install packages
 install:
-  - export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  - export PATH="$HOME/miniconda/miniconda/bin:$HOME/tools/autovot/autovot/bin:$PATH"
   - source activate test-environment
   - pip install -r requirements.txt
   - which python
   - conda list
-  - git clone https://github.com/MontrealCorpusTools/polyglot-server.git
-  - source activate test-server-environment
-  - pip install -r polyglot-server/requirements.txt
-  - python polyglot-server/manage.py makemigrations
-  - python polyglot-server/manage.py migrate --run-syncdb
-  - echo "from django.contrib.auth.models import User; User.objects.filter(email='admin@example.com').delete(); User.objects.create_superuser('test_user', 'admin@example.com', 'notarealpassword')" | python polyglot-server/manage.py shell
+  - python bin/pgdb install -q
+  - python bin/pgdb start
 
 # Run test
 script:
-  - (python polyglot-server/manage.py runserver 8080) & (source activate test-environment && coverage run --source=polyglotdb setup.py test)
+  - source activate test-environment
+  - coverage run --source=polyglotdb setup.py test
+
+after_script:
+  - source activate test-environment
+  - python bin/pgdb stop
 
 # Calculate coverage
 after_success:

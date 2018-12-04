@@ -277,6 +277,7 @@ class BaseQuery(object):
 
     def set_properties(self, **kwargs):
         self._set_properties = {k: v for k,v in kwargs.items()}
+        print(self.cypher(), self.cypher_params())
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
         self._set_properties = {}

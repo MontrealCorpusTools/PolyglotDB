@@ -149,16 +149,16 @@ class SubPathAnnotation(AnnotationCollectionNode):
         elif key == 'antepenultimate':
             return PositionalAnnotation(self, -3)
         elif self.hierarchy is not None \
-                and self.node_type in self.hierarchy.subannotations \
-                and key in self.hierarchy.subannotations[self.node_type]:
+                and self.collected_node.node_type in self.hierarchy.subannotations \
+                and key in self.hierarchy.subannotations[self.collected_node.node_type]:
             from .subannotation import SubAnnotation
-            return SubAnnotation(self, AnnotationNode(key, corpus=self.node.corpus))
+            return SubAnnotation(self, AnnotationNode(key, corpus=self.collected_node.corpus))
 
         if key not in special_attributes and self.hierarchy is not None and not self.hierarchy.has_token_property(
-                self.node_type, key) and not self.hierarchy.has_type_property(self.node_type, key):
+                self.collected_node.node_type, key) and not self.hierarchy.has_type_property(self.collected_node.node_type, key):
             raise (
                 AttributeError(
-                    'The \'{}\' annotation types do not have a \'{}\' property.'.format(self.node_type, key)))
+                    'The \'{}\' annotation types do not have a \'{}\' property.'.format(self.collected_node.node_type, key)))
         return PathAttribute(self, key)
 
 

@@ -1,5 +1,3 @@
-from .csv import inspect_csv
-
 from .buckeye import inspect_buckeye
 
 from .ilg import inspect_ilg

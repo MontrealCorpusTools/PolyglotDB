@@ -52,9 +52,9 @@ CONFIG = load_config()
 
 TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
 
-NEO4J_VERSION = '3.2.3'
+NEO4J_VERSION = '3.4.9'
 
-INFLUXDB_VERSION = '1.1.0'
+INFLUXDB_VERSION = '1.2.4'
 
 
 def tqdm_hook(t):
@@ -167,14 +167,6 @@ def display_help():
     pass
 
 
-def create_new_database():
-    pass
-
-
-def remove_database(name):
-    pass
-
-
 def uninstall():
     directory = CONFIG['Data']['directory']
     if not os.path.exists(directory):
@@ -193,7 +185,7 @@ def uninstall():
         pass
 
 
-def start(name):
+def start():
     try:
         shutil.rmtree(os.path.expanduser('~/.neo4j'))
     except FileNotFoundError:
@@ -223,7 +215,7 @@ def start(name):
         f.write(str(influx_proc.pid))
 
 
-def stop(name):
+def stop():
     if sys.platform.startswith('win'):
         exe = 'neo4j.bat'
     else:
@@ -253,23 +245,17 @@ if __name__ == '__main__':
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument('directory', nargs='?', help='Path to install data', default='')
     install_parser.add_argument('-q', '--quiet', help="Suppress user input", action='store_true')
+    install_parser.add_argument('-d', '--download', help="Force download of new versions", action='store_true')
     install_parser.set_defaults(which='install')
 
     start_parser = subparsers.add_parser("start")
     start_parser.set_defaults(which='start')
-    start_parser.add_argument('name', nargs='?', help='Name of database', default='default')
 
     status_parser = subparsers.add_parser("status")
     status_parser.set_defaults(which='status')
-    start_parser.add_argument('name', nargs='?', help='Name of database', default='all')
 
     stop_parser = subparsers.add_parser("stop")
     stop_parser.set_defaults(which='stop')
-    stop_parser.add_argument('name', nargs='?', help='Name of database or "all"')
-
-    remove_parser = subparsers.add_parser("remove")
-    remove_parser.set_defaults(which='remove')
-    remove_parser.add_argument('name', help='Name of database')
 
     remove_parser = subparsers.add_parser("uninstall")
     remove_parser.set_defaults(which='uninstall')
@@ -303,9 +289,9 @@ if __name__ == '__main__':
                 else:
                     print('Aborting installation.')
                     sys.exit()
-        download_neo4j(directory)
+        download_neo4j(directory, overwrite=args.download)
         configure_neo4j(directory)
-        download_influxdb(directory)
+        download_influxdb(directory, overwrite=args.download)
         configure_influxdb(directory)
         try:
             shutil.rmtree(TEMP_DIR)
@@ -314,13 +300,11 @@ if __name__ == '__main__':
     elif args.which == 'uninstall':
         uninstall()
     elif args.which == 'start':
-        start('')
+        start()
     elif args.which == 'status':
         pass
     elif args.which == 'stop':
-        stop('')
-    elif args.which == 'remove':
-        pass
+        stop()
 
     if CONFIG_CHANGED:
         save_config(CONFIG)

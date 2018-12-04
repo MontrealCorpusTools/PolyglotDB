@@ -67,3 +67,12 @@ if [ ! -f "$HOME/tools/reaper" ]; then
 else
   echo "Reaper already installed"
 fi
+
+if [ ! -d "$HOME/tools/autovot" ]; then
+  cd $HOME/tools
+  git clone https://github.com/mlml/autovot.git
+  cd autovot/autovot/code
+  make
+else
+  echo "AutoVOT already installed"
+fi
