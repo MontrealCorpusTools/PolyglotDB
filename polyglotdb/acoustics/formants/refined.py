@@ -146,9 +146,13 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                             [slope, intercept] = np.linalg.lstsq(Farray.T, As)[0]
 
                         except:
-                            As = [measurements['A1'], measurements['A2']]
-                            Fs = [math.log2(measurements['F1']), math.log2(measurements['F2'])]
-                            [slope, intercept] = [0, 0]
+                            try:
+                                As = [measurements['A1'], measurements['A2']]
+                                Fs = [math.log2(measurements['F1']), math.log2(measurements['F2'])]
+                                [slope, intercept] = [0, 0]
+                            except:
+                                # Lack of formants for these settings
+                                continue
 
                     for leave_out in range(1, 1 + min(3, candidate)):
                         new_measurements = {}
