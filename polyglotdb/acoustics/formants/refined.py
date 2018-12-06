@@ -70,10 +70,11 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
     # Encodes vowel inventory into a phone class if it's specified
 
     use_vowel_prototypes = vowel_prototypes_path and os.path.exists(vowel_prototypes_path)
+    base_formant_columns = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
     if use_vowel_prototypes:
         vowel_prototype_metadata, prototype_parameters = read_prototypes(vowel_prototypes_path)
     else:
-        prototype_parameters = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
+        prototype_parameters = base_formant_columns
 
     # Gets segment mapping of phones that are vowels
     segment_mapping = generate_vowel_segments(corpus_context, duration_threshold=duration_threshold, padding=0.1,
@@ -120,8 +121,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
             print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
             for s, data in output.items():
                 best_track = data[default_formant]
-                # best_data[s] = {k: best_track[k] for j, k in enumerate(columns)}
-                best_data[s] = {k: best_track[k] for j, k in enumerate(prototype_parameters)}
+                best_data[s] = {k: best_track[k] for j, k in enumerate(base_formant_columns)}
             continue
 
         if drop_formant:
