@@ -202,7 +202,12 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
 
         selected_tracks = {}
         for s, data in output.items():
-            selected_tracks[s] = data[default_formant]
+            try:
+                selected_tracks[s] = data[default_formant]
+            except:
+                print(s)
+                print(data)
+                raise
         if not use_vowel_prototypes:
             print('no prototypes, using get_mean_SD()')
             prev_prototype_metadata = get_mean_SD(selected_tracks, prototype_parameters)
