@@ -13,13 +13,14 @@ def read_prototypes(vowel_prototypes_path):
     """
     # print ('READING PROTOTYPES FROM /phon/SPADE/test_priors.csv')
     # print ('READING PROTOTYPES FROM /phon/SPADE/ral_prototypes.csv')
-    print ('READING PROTOTYPES FROM '+vowel_prototypes_path)
     means_covar_d = {}
 
     with open(vowel_prototypes_path) as means_covar_file:
         means_covar_lines = means_covar_file.readlines()
         means_covar_header = means_covar_lines.pop(0)
-        
+        prototype_parameters = means_covar_header.strip().split(',')
+        prototype_parameters = [p.split('_')[0] for p in prototype_parameters if not p in ['type', 'phone']]
+        print ('READING PROTOTYPES FROM '+vowel_prototypes_path+' with parameters '+', '.join(prototype_parameters))
         for line in means_covar_lines:
             splitline = line.strip().split(',')
             means_covar_info_type = splitline[0]
@@ -34,7 +35,7 @@ def read_prototypes(vowel_prototypes_path):
             elif means_covar_info_type == 'matrix':
                 means_covar_d[means_covar_phone][1].append(means_covar_values)
 
-    return means_covar_d
+    return means_covar_d, prototype_parameters
 
 
 def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', duration_threshold=0, num_iterations=1,
@@ -67,11 +68,25 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
     # ------------- Step 2: Varying formants -------------
     # Encodes vowel inventory into a phone class if it's specified
 
+    use_vowel_prototypes = vowel_prototypes_path and os.path.exists(vowel_prototypes_path)
+    if use_vowel_prototypes:
+        vowel_prototype_metadata, prototype_parameters = read_prototypes(vowel_prototypes_path)
+
     # Gets segment mapping of phones that are vowels
     segment_mapping = generate_vowel_segments(corpus_context, duration_threshold=duration_threshold, padding=0.1, vowel_label=vowel_label)
     best_data = {}
-    columns = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
-    extra_columns = ['A1', 'A2', 'A3', 'Ax']
+
+    # we used to have just columns, a list of output columns and prototype columns. Now these are not the same thing
+    # so we have extra_columns (a list of columns in the output but not the prototypes) and prototype_parameters (a list of columns in the prototypes)
+    # columns = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
+    # extra_columns = ['A1', 'A2', 'A3', 'Ax']
+    output_columns = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3', 'Ax', 'A1A2diff', 'A2A3diff']
+
+    print ('prototype_parameters:', prototype_parameters)
+    # print ('columns:', columns)
+    # print ('extra_columns:', extra_columns)
+    print ('output_columns:', output_columns)
+
     log_output = []
     log_output.append(','.join(['speaker','vowel','n','iterations']))
     # Measure with varying levels of formants
@@ -85,82 +100,103 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
     formant_function = generate_variable_formants_point_function(corpus_context, min_formants, max_formants)
     best_prototype_metadata = {}
 
-    use_vowel_prototypes = vowel_prototypes_path and os.path.exists(vowel_prototypes_path)
-    if use_vowel_prototypes:
-        vowel_prototype_metadata = read_prototypes(vowel_prototypes_path)
 
     # For each vowel token, collect the formant measurements
     # Pick the best track that is closest to the averages gotten from prototypes
 
     total_speaker_vowel_pairs = len(segment_mapping.grouped_mapping('speaker', 'label').items())
     for i, ((speaker, vowel), seg) in enumerate(segment_mapping.grouped_mapping('speaker', 'label').items()):
+
         if len(seg) == 0:
             continue
-        print (speaker+' '+vowel+': '+str(i+1)+' of '+str(total_speaker_vowel_pairs))
+        print (speaker+' '+vowel+': '+str(i+1)+' of '+str(total_speaker_vowel_pairs)+': '+str(len(seg))+' tokens')
         output = analyze_segments(seg, formant_function, stop_check=stop_check, multiprocessing=multiprocessing)  # Analyze the phone
-        if len(seg) < 6:
-            print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
-            for s, data in output.items():
-                best_track = data[default_formant]
-                best_data[s] = {k: best_track[k] for j, k in enumerate(columns)}
-            continue
-
+        
         if drop_formant:
             # ADD ALL THE LEAVE-ONE-OUT CANDIDATES
             for s, data in output.items():
                 new_data = {}
                 for candidate, measurements in data.items():
+
+                    try:
+                        As = [measurements['A1'], measurements['A2'], measurements['A3'], measurements['A4']]
+                        Fs = [math.log2(measurements['F1']), math.log2(measurements['F2']), math.log2(measurements['F3']), math.log2(measurements['F4'])]
+                        Farray = np.array([Fs,np.ones(len(Fs))]) 
+                        [slope, intercept] = np.linalg.lstsq(Farray.T,As)[0]
+
+                    except:
+                        try:
+                            As = [measurements['A1'], measurements['A2'], measurements['A3']]
+                            Fs = [math.log2(measurements['F1']), math.log2(measurements['F2']), math.log2(measurements['F3'])]
+                            Farray = np.array([Fs,np.ones(len(Fs))]) 
+                            [slope, intercept] = np.linalg.lstsq(Farray.T,As)[0]
+
+                        except:
+                            As = [measurements['A1'], measurements['A2']]
+                            Fs = [math.log2(measurements['F1']), math.log2(measurements['F2'])]
+                            [slope,intercept] = [0,0]
+
                     for leave_out in range(1,1+min(3,candidate)):
                         new_measurements = {}
                         new_measurements['Ax'] = measurements['A'+str(leave_out)]
                         candidate_name = str(candidate)+'x'+str(leave_out)
-                        # print (measurements)
-                        if None in [measurements['A1'], measurements['A2'], measurements['F1'], measurements['F2']]:
-                            continue
-                        try:
-                            ref_norm_amp = (measurements['A1']/math.log2(measurements['F1']) +
-                                            measurements['A2']/math.log2(measurements['F2']) +
-                                            measurements['A3']/math.log2(measurements['F3']) +
-                                            measurements['A4']/math.log2(measurements['F4'])) / 4
-                        except:
-                            try:
-                                ref_norm_amp = (measurements['A1']/math.log2(measurements['F1']) +
-                                                measurements['A2']/math.log2(measurements['F2']) +
-                                                measurements['A3']/math.log2(measurements['F3'])) / 3
-                            except:
-                                ref_norm_amp = (measurements['A1']/math.log2(measurements['F1']) +
-                                                measurements['A2']/math.log2(measurements['F2'])) / 2
-                        try:
-                            Ax_norm_amp = measurements['A'+str(leave_out)]/math.log2(measurements['F'+str(leave_out)])
-                        except:
-                            Ax_norm_amp = 0
-                        # print (ref_norm_amp, Ax_norm_amp, weak_Ax)
-                        if Ax_norm_amp < ref_norm_amp:
-                            # print('keeping', candidate_name)
+                        
+                        if leave_out < len(As) and As[leave_out-1] < intercept + slope*Fs[leave_out-1]:
+                            this_is_droppable = True
+                        else:
+                            this_is_droppable = False
+                        if this_is_droppable:
                             for parameter in measurements.keys():
                                 if int(parameter[-1]) < leave_out:
                                     new_measurements[parameter] = measurements[parameter]
                                 elif int(parameter[-1]) > leave_out:
                                     new_measurements[parameter[0]+str(int(parameter[-1])-1)] = measurements[parameter]
                             new_data[candidate_name] = new_measurements
-                        # else:
-                        #     print('excluding', candidate_name)
+
                     data[candidate]['Ax'] = data[candidate]['A4']
-                output[s] = {**data, **new_data}
-                # print (s)
-                # print (output[s])
+
+                output[s] = {**data, **new_data}        
+        else:
+            for s, data in output.items():
+                for candidate, measurements in data.items():
+                    output[s][candidate]['Ax'] = output[s][candidate]['A4']
+
+        for s, data in output.items():        
+            for candidate, measurements in data.items():
+                try:
+                    output[s][candidate]['A1A2diff'] = data[candidate]['A1'] - data[candidate]['A2']
+                    try:
+                        output[s][candidate]['A2A3diff'] = data[candidate]['A2'] - data[candidate]['A3']
+                    except:
+                        try:
+                            output[s][candidate]['A2A3diff'] = data[candidate]['A2']
+                        except:
+                            output[s][candidate]['A2A3diff'] = 0
+                except:
+                    try:
+                        output[s][candidate]['A1A2diff'] = data[candidate]['A1']
+                    except:
+                        output[s][candidate]['A1A2diff'] = 0
+                    output[s][candidate]['A2A3diff'] = 0
+
+        if len(seg) < 6:
+            print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
+            for s, data in output.items():
+                best_track = data[default_formant]
+                # best_data[s] = {k: best_track[k] for j, k in enumerate(columns)}
+                best_data[s] = {k: best_track[k] for j, k in enumerate(prototype_parameters)}
+            continue
 
         selected_tracks = {}
         for s, data in output.items():
             selected_tracks[s] = data[default_formant]
         if not use_vowel_prototypes:
             print ('no prototypes, using get_mean_SD()')
-            prev_prototype_metadata = get_mean_SD(selected_tracks)
+            prev_prototype_metadata = get_mean_SD(selected_tracks, prototype_parameters)
         elif not vowel in vowel_prototype_metadata:
             print ('no prototype for',vowel,'so using get_mean_SD()')
-            prev_prototype_metadata = get_mean_SD(selected_tracks)
+            prev_prototype_metadata = get_mean_SD(selected_tracks, prototype_parameters)
         else:
-            # print ('using prototype')
             prev_prototype_metadata = vowel_prototype_metadata
 
         if num_iterations > 1 and len(seg) < 6:
@@ -168,9 +204,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
             my_iterations = [0]
         else:
             my_iterations = range(num_iterations)
-
         for _ in my_iterations:
-
             best_numbers = []
             selected_tracks = {}
             prototype_means = prev_prototype_metadata[vowel][0]
@@ -178,36 +212,35 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
             covariance = np.array(prev_prototype_metadata[vowel][1])
             inverse_covariance = np.linalg.pinv(covariance)
             best_number = 5
-
             for s, data in output.items():
                 best_distance = math.inf
                 best_track = 0
                 for number, point in data.items():
-                    point = [point[x] if point[x] else 0 for x in columns]
+                    point = [point[x] if point[x] else 0 for x in prototype_parameters]
                     distance = get_mahalanobis(prototype_means, point, inverse_covariance)
                     if distance < best_distance:  # Update "best" measures when new best distance is found
                         best_distance = distance
                         best_track = point
                         best_number = number
-                selected_tracks[s] = {k: best_track[i] for i, k in enumerate(columns)}
-                best_data[s] = {k: best_track[i] for i, k in enumerate(columns)}
-                best_data[s]['num_formants'] = float(str(best_number).split('x')[0])
-                # print ('best number is',best_number)
-                if drop_formant:
-                    for extra_column in extra_columns:
-                        best_data[s][extra_column] = output[s][best_number][extra_column]
+                # selected_tracks[s] = {k: best_track[i] for i, k in enumerate(columns)}
+                selected_tracks[s] = {k: best_track[i] for i, k in enumerate(prototype_parameters)}
+                # best_data[s] = {k: best_track[i] for i, k in enumerate(output_columns)}
+                # best_data[s] = {k: best_track[i] for i, k in enumerate(columns)}
+                best_data[s] = {}
+                for output_column in output_columns:
+                    best_data[s][output_column] = output[s][best_number][output_column]  
 
-                    # best_data[s]['Fx'] = str(best_number)
-                    best_data[s]['Fx'] = int(str(best_number)[0])
-                    if 'x' in str(best_number):
-                        best_data[s]['drop_formant'] = int(str(best_number).split('x')[-1])
-                    else:
-                        best_data[s]['drop_formant'] = 0
+                best_data[s]['num_formants'] = float(str(best_number).split('x')[0])
+                best_data[s]['Fx'] = int(str(best_number)[0])
+                if 'x' in str(best_number):
+                    best_data[s]['drop_formant'] = int(str(best_number).split('x')[-1])
+                else:
+                    best_data[s]['drop_formant'] = 0
 
                 best_numbers.append(best_number)
 
             if len(seg) >= 6:
-                prototype_metadata = get_mean_SD(selected_tracks)
+                prototype_metadata = get_mean_SD(selected_tracks, prototype_parameters)
                 prev_prototype_metadata = prototype_metadata
                 best_prototype_metadata.update(prototype_metadata)
 
@@ -216,18 +249,15 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                 for i,bn in enumerate(best_numbers):
                     if bn != last_iteration_best_numbers[i]:
                         changed_numbers += 1
-                # print (_, ':', changed_numbers, 'changed out of', len(output))
                 if changed_numbers == 0:
-                    break
+                    break      
             last_iteration_best_numbers = best_numbers
         log_output.append(','.join([speaker,vowel,str(len(output)),str(_+1)]))
-        # print (speaker+' '+vowel+': '+str(i+1)+' of '+str(total_speaker_vowel_pairs))
 
-    with open('iterations_log.csv', 'w') as f:
+    with open('iterations_log.csv', 'a') as f:
         for i in log_output:
             f.write(i+'\n')
 
     save_formant_point_data(corpus_context, best_data, num_formants=True)
     corpus_context.cache_hierarchy()
     return best_prototype_metadata
-
