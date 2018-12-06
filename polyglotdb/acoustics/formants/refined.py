@@ -181,6 +181,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
             for s, data in output.items():
                 for candidate, measurements in data.items():
                     output[s][candidate]['Ax'] = output[s][candidate]['A4']
+        output = {k: v for k,v in output.items() if v}
 
         for s, data in output.items():
             for candidate, measurements in data.items():
@@ -199,9 +200,9 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                     except:
                         output[s][candidate]['A1A2diff'] = 0
                     output[s][candidate]['A2A3diff'] = 0
-
         selected_tracks = {}
         for s, data in output.items():
+
             try:
                 selected_tracks[s] = data[default_formant]
             except:
