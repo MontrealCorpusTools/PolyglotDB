@@ -128,6 +128,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
             # ADD ALL THE LEAVE-ONE-OUT CANDIDATES
             for s, data in output.items():
                 new_data = {}
+                ignored_candidates = []
                 for candidate, measurements in data.items():
 
                     try:
@@ -152,6 +153,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                                 [slope, intercept] = [0, 0]
                             except:
                                 # Lack of formants for these settings
+                                ignored_candidates.append(candidate)
                                 continue
 
                     for leave_out in range(1, 1 + min(3, candidate)):
@@ -173,7 +175,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                             new_data[candidate_name] = new_measurements
 
                     data[candidate]['Ax'] = data[candidate]['A4']
-
+                data = {k: v for k,v in data.items() if k not in ignored_candidates}
                 output[s] = {**data, **new_data}
         else:
             for s, data in output.items():
