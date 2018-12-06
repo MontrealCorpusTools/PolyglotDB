@@ -95,6 +95,8 @@ class PGDBClient(object):
     def list_databases(self):
         end_point = '/'.join([self.host, 'api', 'databases', ''])
         resp = requests.get(end_point, headers={'Authorization': 'Token {}'.format(self.token)})
+        if resp.status_code != 200:
+            raise ClientError('Encountered error getting list of databases: {}'.format(resp.json()))
         return resp.json()
 
     def list_corpora(self, database_name=None):

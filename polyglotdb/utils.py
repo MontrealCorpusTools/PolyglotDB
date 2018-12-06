@@ -18,6 +18,8 @@ def ensure_local_database_running(database_name, port=None, token=None):
     host = 'http://localhost:{}'.format(port)
     client = PGDBClient(host, token=token)
 
+    databases = client.list_databases()
+
     try:
         response = client.create_database(database_name)
     except (ClientError, ConnectionError):
