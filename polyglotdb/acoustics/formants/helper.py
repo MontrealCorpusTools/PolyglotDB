@@ -137,7 +137,7 @@ def generate_formants_point_function(corpus_context, gender=None):
     return formant_function
 
 
-def get_mean_SD(data, prototype_parameters=['F1', 'F2', 'F3', 'B1', 'B2', 'B3']):
+def get_mean_SD(data, prototype_parameters=None):
     """Generates per-vowel-class means and covariance matrices for an arbitrary set of parameters (such as F1, F2, F3, B1, B2, B3) .
 
     Parameters
@@ -152,6 +152,8 @@ def get_mean_SD(data, prototype_parameters=['F1', 'F2', 'F3', 'B1', 'B2', 'B3'])
     metadata : dict
         Means and covariance matrices per vowel class.
     """
+    if prototype_parameters is None:
+        prototype_parameters = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
     metadata = {}
     phones = set()
     for seg, value in data.items():
@@ -178,7 +180,7 @@ def get_mean_SD(data, prototype_parameters=['F1', 'F2', 'F3', 'B1', 'B2', 'B3'])
         # b1_mean, b2_mean, b3_mean = mean(x[3] for x in observation_list), mean(x[4] for x in observation_list), mean(
         #     x[5] for x in observation_list)
         # all_means = [f1_mean, f2_mean, f3_mean, b1_mean, b2_mean, b3_mean]
-        all_means = [mean(x[i] for x in observation_list) for i,pp in enumerate(prototype_parameters)]
+        all_means = [mean(x[i] for x in observation_list) for i, pp in enumerate(prototype_parameters)]
 
         observation_list = np.array(observation_list)
         cov = np.cov(observation_list.T)
@@ -221,7 +223,7 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
     for h in header:
         if h == 'id':
             continue
-        if h != 'num_formants' or h !='drop_formant':
+        if h != 'num_formants' or h != 'drop_formant':
             header_info[h] = float
         # elif h != 'Fx':
         #     header_info[h] = str
