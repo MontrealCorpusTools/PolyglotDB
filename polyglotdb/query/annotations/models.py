@@ -163,11 +163,24 @@ class LinguisticAnnotation(BaseAnnotation):
                                                                               begin=self.begin,
                                                                               end=self.end)
         reshaped = []
+
         for i in range(orig.shape[0]):
             for j in range(orig.shape[1]):
                 reshaped.append({'time': j * time_step + self.begin, 'frequency': i * freq_step,
                                  'power': float(orig[i, j])})
         data = {'values': reshaped,
+                'time_step': time_step,
+                'freq_step': freq_step,
+                'num_time_bins': orig.shape[1],
+                'num_freq_bins': orig.shape[0]}
+        return data
+
+    @property
+    def spectrogram_fast(self):
+        orig, time_step, freq_step = self.corpus_context.generate_spectrogram(self.discourse.name, 'consonant',
+                                                                              begin=self.begin,
+                                                                              end=self.end)
+        data = {'values': orig,
                 'time_step': time_step,
                 'freq_step': freq_step,
                 'num_time_bins': orig.shape[1],
