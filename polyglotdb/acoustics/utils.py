@@ -41,9 +41,6 @@ def generate_spectrogram(signal, sr, color_scale='log'):
     # win_len = None
     if window == 'gaussian':
         window = partial(gaussian, std=0.45 * (win_len) / 2)
-    # import matplotlib.pyplot as plt
-    # plt.plot(window(250))
-    # plt.show()
     data = stft(signal, n_fft, step_samp, center=True, win_length=win_len, window=window)
     data = np.abs(data)
     data = 20 * np.log10(data) if color_scale == 'log' else data
