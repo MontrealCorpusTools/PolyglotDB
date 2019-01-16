@@ -30,10 +30,7 @@ def analyze_intensity(corpus_context,
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         intensity_function = generate_base_intensity_function(corpus_context)
         output = analyze_segments(v, intensity_function, stop_check=stop_check, multiprocessing=multiprocessing)
-        corpus_context.save_intensity_tracks(output, speaker)
-    if 'intensity' not in corpus_context.hierarchy.acoustics:
-        corpus_context.hierarchy.acoustics.add('intensity')
-        corpus_context.encode_hierarchy()
+        corpus_context.save_acoustic_tracks('intensity',output, speaker, [('Intensity', float)])
 
 
 def generate_base_intensity_function(corpus_context):

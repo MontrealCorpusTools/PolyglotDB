@@ -24,7 +24,8 @@ def test_query_intensity(acoustic_utt_config):
                               Decimal('4.25'): {'Intensity': 99},
                               Decimal('4.26'): {'Intensity': 95.8},
                               Decimal('4.27'): {'Intensity': 95.8}}
-        g.save_intensity('acoustic_corpus', expected_intensity, utterance_id=utt_id)
+        properties = [('Intensity', float)]
+        g.save_acoustic_track('intensity','acoustic_corpus', expected_intensity, properties, utterance_id=utt_id)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -48,7 +49,7 @@ def test_relativize_intensity(acoustic_utt_config):
                               Decimal('4.25'): {'Intensity': 99, 'Intensity_relativized': (99 - mean_f0) / sd_f0},
                               Decimal('4.26'): {'Intensity': 95.8, 'Intensity_relativized': (95.8 - mean_f0) / sd_f0},
                               Decimal('4.27'): {'Intensity': 95.8, 'Intensity_relativized': (95.8 - mean_f0) / sd_f0}}
-        g.relativize_intensity(by_speaker=True)
+        g.relativize_acoustic_measure('intensity', by_speaker=True)
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
@@ -62,7 +63,8 @@ def test_relativize_intensity(acoustic_utt_config):
             print(point)
             assert (round(point['Intensity_relativized'], 5) == round(expected_intensity[point.time]['Intensity_relativized'], 5))
 
-        g.reset_relativized_intensity()
+        g.reset_relativized_acoustic_measure('intensity')
+        assert g.hierarchy.acoustic_properties['intensity'] == {('Intensity', float)}
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -81,7 +83,7 @@ def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path, results_
     with CorpusContext(acoustic_utt_config) as g:
         g.config.praat_path = praat_path
         g.analyze_intensity()
-        assert (g.has_intensity(g.discourses[0]))
+        assert (g.discourse_has_acoustics('intensity', g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.intensity.track)
         results = q.all()
@@ -91,5 +93,5 @@ def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path, results_
         for r in results:
             assert (len(r.track))
 
-        g.reset_intensity()
-        assert not g.has_intensity(g.discourses[0])
+        g.reset_acoustic_measure('intensity')
+        assert not g.discourse_has_acoustics('intensity', g.discourses[0])

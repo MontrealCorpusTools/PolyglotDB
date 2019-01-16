@@ -46,7 +46,7 @@ class Hierarchy(object):
         self.token_properties = {}
         self.subset_tokens = {}
         self.type_properties = {}
-        self.acoustics = set()
+        self.acoustic_properties = {}
 
         self.speaker_properties = {('name', str)}
         self.discourse_properties = {('name', str), ('file_path', str), ('low_freq_file_path', str), ('vowel_file_path', str), ('consonant_file_path', str), ('duration', float), ('sampling_rate', int), ('num_channels', int)}
@@ -84,10 +84,14 @@ class Hierarchy(object):
     def annotation_types(self):
         return set(self._data.keys())
 
+    @property
+    def acoustics(self):
+        return sorted(self.acoustic_properties.keys())
+
     def to_json(self):
         data = {'_data': self._data}
         data['corpus_name'] = self.corpus_name
-        data['acoustics'] = sorted(self.acoustics)
+        data['acoustic_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.acoustic_properties.items()}
         data['subannotations'] = {k: sorted(v) for k, v in self.subannotations.items()}
         data['subannotation_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in
                                             self.subannotation_properties.items()}
@@ -102,7 +106,7 @@ class Hierarchy(object):
     def from_json(self, json):
         self._data = json['_data']
         self.corpus_name = json['corpus_name']
-        self.acoustics = set(json.get('acoustics', []))
+        self.acoustic_properties = {k: set((name, type(t)) for name, t in v) for k, v in json.get('acoustic_properties', {}).items()}
         self.subannotations = {k: set(v) for k, v in json['subannotations'].items()}
         self.subannotation_properties = {k: set((name, type(t)) for name, t in v) for k, v in
                                          json['subannotation_properties'].items()}
@@ -244,6 +248,51 @@ class Hierarchy(object):
 
         to_remove = set(x for x in self.type_properties[annotation_type] if x[0] in properties)
         self.type_properties[annotation_type].difference_update(to_remove)
+
+    def add_acoustic_properties(self, corpus_context, acoustic_type, properties):
+        set_template = 'n.{0} = {{{0}}}'
+        ps = []
+        kwargs = {}
+        for k, v in properties:
+            if v == int:
+                v = 0
+            elif v == list:
+                v = []
+            elif v == float:
+                v = 0.0
+            elif v == str:
+                v = ''
+            elif v == bool:
+                v = False
+            elif v == type(None):
+                v = None
+            ps.append(set_template.format(k))
+            kwargs[k] = v
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)-[:has_acoustics]->(n:{type})
+        SET {sets}'''.format(type=acoustic_type, sets=', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                                      corpus_name=corpus_context.corpus_name, **kwargs)
+        if acoustic_type not in self.acoustic_properties:
+            self.acoustic_properties[acoustic_type] = set()
+        self.acoustic_properties[acoustic_type].update(k for k in properties)
+
+    def remove_acoustic_properties(self, corpus_context, acoustic_type, properties):
+        remove_template = 'n.{0}'
+        ps = []
+        for k in properties:
+            ps.append(remove_template.format(k))
+
+        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        MATCH (c)-[:has_acoustics]->(n:{type})
+        REMOVE {removes}'''.format(type=acoustic_type, removes=', '.join(ps))
+        corpus_context.execute_cypher(statement,
+                                      corpus_name=corpus_context.corpus_name)
+        if acoustic_type not in self.acoustic_properties:
+            self.acoustic_properties[acoustic_type] = {}
+        to_remove = set(x for x in self.acoustic_properties[acoustic_type] if x[0] in properties)
+        self.acoustic_properties[acoustic_type].difference_update(to_remove)
 
     def add_token_properties(self, corpus_context, annotation_type, properties):
         set_template = 'n.{0} = {{{0}}}'

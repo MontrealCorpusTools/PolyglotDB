@@ -135,7 +135,9 @@ class StructuredContext(BaseContext):
                                 WHERE c.name = {corpus}
                                 WITH n, t, c, s, d
                                 OPTIONAL MATCH (t)<-[:annotates]-(a)
-                                DETACH DELETE a, t, n, s, d''', corpus=self.corpus_name)
+                                WITH n, t, c, s, d, a
+                                OPTIONAL MATCH (c)-[:has_acoustics]->(ac)
+                                DETACH DELETE a, t, n, s, d, ac''', corpus=self.corpus_name)
 
     def encode_hierarchy(self):
         """
@@ -147,16 +149,16 @@ class StructuredContext(BaseContext):
         subannotation_template = '''({super})<-[:annotates]-({sub})'''
         speaker_template = '''(c)-[:spoken_by]->(s:Speaker {%s})'''
         discourse_template = '''(c)-[:spoken_in]->(d:Discourse {%s})'''
+        acoustic_template = '''(c)-[:has_acoustics]->(%s:%s {%s})'''
         statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
-        SET {set_statement}
         with c
         MERGE {merge_statement}'''
         merge_statements = []
         speaker_props = generate_cypher_property_list(self.hierarchy.speaker_properties)
         discourse_props = generate_cypher_property_list(self.hierarchy.discourse_properties)
-        set_statements = []
-        for a in ['pitch','formants', 'intensity']:
-            set_statements.append('c.{} = {}'.format(a, a in self.hierarchy.acoustics))
+        for a in self.hierarchy.acoustics:
+            acoustic_props = generate_cypher_property_list(self.hierarchy.acoustic_properties[a])
+            merge_statements.append(acoustic_template % (a, a, acoustic_props))
         merge_statements.append(speaker_template % speaker_props)
         merge_statements.append(discourse_template % discourse_props)
         for at in self.hierarchy.highest_to_lowest:
@@ -204,7 +206,7 @@ class StructuredContext(BaseContext):
                 sa = "{0}:{0} {{label: '', begin:0, end: 0}}".format(sa)
                 merge_statements.append(subannotation_template.format(super=at, sub=sa))
 
-        statement = statement.format(set_statement = ',\n'.join(set_statements), merge_statement='\nMERGE '.join(merge_statements))
+        statement = statement.format(merge_statement='\nMERGE '.join(merge_statements))
 
         self.execute_cypher(statement, corpus_name=self.corpus_name)
         self.cache_hierarchy()
