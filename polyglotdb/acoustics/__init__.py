@@ -6,4 +6,4 @@ from .vot import analyze_vot
 
 from .intensity import analyze_intensity
 
-from .other import analyze_script
+from .other import analyze_script, analyze_track_script

@@ -88,7 +88,11 @@ def test_query_formants(acoustic_utt_config):
                              Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2502},
                              Decimal('4.27'): {'F1': 505, 'F2': 1496, 'F3': 2500}}
         properties = [('F1', float), ('F2', float), ('F3', float)]
-        g.save_acoustic_track('formants', 'acoustic_corpus', expected_formants,properties, utterance_id=utt_id)
+        if 'formants' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'formants',
+                                                             properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('formants', 'acoustic_corpus', expected_formants, utterance_id=utt_id)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')

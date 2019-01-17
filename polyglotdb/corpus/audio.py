@@ -8,7 +8,7 @@ from decimal import Decimal
 from influxdb import InfluxDBClient
 
 from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_intensity, \
-    analyze_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
+    analyze_script, analyze_track_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
 from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
 from ..acoustics.utils import load_waveform, generate_spectrogram
@@ -146,6 +146,12 @@ class AudioContext(SyllabicContext):
         return analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold,
                               arguments=arguments,
                               stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
+
+    def analyze_track_script(self, acoustic_name, properties, script_path, duration_threshold=0.01,phone_class=None,
+                             arguments=None, stop_check=None, call_back=None, multiprocessing=True, file_type='consonant'):
+        return analyze_track_script(self, acoustic_name, properties, script_path, duration_threshold=duration_threshold,
+                              arguments=arguments, phone_class=phone_class,
+                              stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing, file_type='consonant')
 
     def reset_formant_points(self):
         encoded_props = []
@@ -485,7 +491,7 @@ class AudioContext(SyllabicContext):
             data.append(d)
         self.acoustic_client().write_points(data, batch_size=1000)
 
-    def save_acoustic_track(self, acoustic_name, discourse, track, properties, **kwargs):
+    def save_acoustic_track(self, acoustic_name, discourse, track, **kwargs):
         """
         Save an acoustic track for a sound file
 
@@ -500,12 +506,9 @@ class AudioContext(SyllabicContext):
         kwargs: kwargs
             Tags to save for acoustic measurements
         """
-        if acoustic_name not in self.hierarchy.acoustics:
-            self.hierarchy.add_acoustic_properties(self, acoustic_name, properties)
-            self.encode_hierarchy()
         self._save_measurement(discourse, track, acoustic_name, **kwargs)
 
-    def save_acoustic_tracks(self, acoustic_name, tracks, speaker, properties):
+    def save_acoustic_tracks(self, acoustic_name, tracks, speaker):
         """
         Save multiple acoustic tracks for a collection of analyzed segments
 
@@ -517,12 +520,7 @@ class AudioContext(SyllabicContext):
             Name of the speaker of the tracks
         tracks : dict
             Dictionary with times as keys and tuples of F1, F2, and F3 values as values
-        properties: list
-            List of properties to update the hierarchy object if necessary
         """
-        if acoustic_name not in self.hierarchy.acoustics:
-            self.hierarchy.add_acoustic_properties(self, acoustic_name, properties)
-            self.encode_hierarchy()
         self._save_measurement_tracks(acoustic_name, tracks, speaker)
 
     def discourse_has_acoustics(self, acoustic_name, discourse):

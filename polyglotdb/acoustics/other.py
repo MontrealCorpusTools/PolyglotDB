@@ -4,9 +4,10 @@ from conch import analyze_segments
 
 from conch.analysis.praat import PraatAnalysisFunction
 
-from .segments import generate_segments
+from .segments import generate_segments, generate_utterance_segments
 
 from .io import point_measures_to_csv, point_measures_from_csv
+from .utils import PADDING
 
 
 def generate_praat_script_function(praat_path, script_path, arguments=None):
@@ -38,6 +39,7 @@ def analyze_script(corpus_context,
                    duration_threshold=0.01,
                    arguments=None,
                    call_back=None,
+                   file_type='consonant',
                    stop_check=None, multiprocessing=True):
     """
     Perform acoustic analysis of phones using an input praat script.
@@ -64,23 +66,20 @@ def analyze_script(corpus_context,
     stop_check : callable
         stop check function, optional
     """
-    # print("analyzing sibilants")
+    if file_type not in ['consonant', 'vowel', 'low_freq']:
+        raise ValueError('File type must be one of: consonant, vowel, or low_freq')
     if call_back is not None:
         call_back('Analyzing phones...')
-    directory = corpus_context.config.temporary_directory('csv')
-    csv_name = 'analyze_script_import.csv'
-    needs_header = True
-    output_types = {}
-    header = ['id', 'begin', 'end']
     time_section = time.time()
-    segment_mapping = generate_segments(corpus_context, corpus_context.phone_name, phone_class, file_type='consonant',
+    segment_mapping = generate_segments(corpus_context, corpus_context.phone_name, phone_class, file_type=file_type,
                                         padding=0, duration_threshold=duration_threshold)
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
     praat_path = corpus_context.config.praat_path
     script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
     time_section = time.time()
-    output = analyze_segments(segment_mapping.segments, script_function, stop_check=stop_check, multiprocessing=multiprocessing)
+    output = analyze_segments(segment_mapping.segments, script_function, stop_check=stop_check,
+                              multiprocessing=multiprocessing)
     if call_back is not None:
         call_back("time analyzing segments: " + str(time.time() - time_section))
     header = sorted(list(output.values())[0].keys())
@@ -88,3 +87,34 @@ def analyze_script(corpus_context,
     point_measures_to_csv(corpus_context, output, header)
     point_measures_from_csv(corpus_context, header_info)
     return [x for x in header if x != 'id']
+
+
+def analyze_track_script(corpus_context,
+                         acoustic_name,
+                         properties,
+                         script_path,
+                         duration_threshold=0.01,
+                         phone_class=None,
+                         arguments=None,
+                         call_back=None,
+                         file_type='consonant',
+                         stop_check=None, multiprocessing=True):
+    if file_type not in ['consonant', 'vowel', 'low_freq']:
+        raise ValueError('File type must be one of: consonant, vowel, or low_freq')
+    if acoustic_name not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.add_acoustic_properties(corpus_context, acoustic_name, properties)
+        corpus_context.encode_hierarchy()
+    if call_back is not None:
+        call_back('Analyzing phones...')
+    if phone_class is None:
+        segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING)
+    else:
+        segment_mapping = generate_segments(corpus_context, corpus_context.phone_name, phone_class, file_type=file_type,
+                                            padding=PADDING, duration_threshold=duration_threshold)
+
+    segment_mapping = segment_mapping.grouped_mapping('speaker')
+    praat_path = corpus_context.config.praat_path
+    script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
+    for i, ((speaker,), v) in enumerate(segment_mapping.items()):
+        output = analyze_segments(v, script_function, stop_check=stop_check, multiprocessing=multiprocessing)
+        corpus_context.save_acoustic_tracks(acoustic_name, output, speaker)

@@ -25,7 +25,12 @@ def test_query_intensity(acoustic_utt_config):
                               Decimal('4.26'): {'Intensity': 95.8},
                               Decimal('4.27'): {'Intensity': 95.8}}
         properties = [('Intensity', float)]
-        g.save_acoustic_track('intensity','acoustic_corpus', expected_intensity, properties, utterance_id=utt_id)
+
+        if 'intensity' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'intensity',
+                                                properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('intensity','acoustic_corpus', expected_intensity , utterance_id=utt_id)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')

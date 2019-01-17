@@ -167,6 +167,9 @@ def analyze_pitch(corpus_context,
         # kwargs = None
     pitch_function = generate_pitch_function(source, absolute_min_pitch, absolute_max_pitch,
                                              path=path)
+    if 'pitch' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.add_acoustic_properties(corpus_context, 'pitch', [('F0', float)])
+        corpus_context.encode_hierarchy()
     if algorithm == 'speaker_adjusted':
         speaker_data = {}
         if call_back is not None:
@@ -220,7 +223,7 @@ def analyze_pitch(corpus_context,
             pitch_function = generate_pitch_function(source, min_pitch, max_pitch,
                                                      path=path)
         output = analyze_segments(v, pitch_function, stop_check=stop_check, multiprocessing=multiprocessing)
-        corpus_context.save_acoustic_tracks('pitch', output, speaker, [('F0', float)])
+        corpus_context.save_acoustic_tracks('pitch', output, speaker)
         today = datetime.utcnow()
         corpus_context.query_graph(corpus_context.utterance).set_properties(pitch_last_edited=today.timestamp())
         corpus_context.encode_hierarchy()

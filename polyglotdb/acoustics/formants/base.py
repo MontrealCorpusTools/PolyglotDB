@@ -69,10 +69,9 @@ def analyze_formant_tracks(corpus_context, vowel_label=None, source='praat', cal
         if not corpus_context.hierarchy.has_type_subset('phone', vowel_label):
             raise Exception('Phones do not have a "{}" subset.'.format(vowel_label))
         segment_mapping = generate_vowel_segments(corpus_context, padding=0, vowel_label=vowel_label)
-    property_key = 'speaker'
-    data = {x: [] for x in segment_mapping.levels(property_key)}
-    for s in segment_mapping.segments:
-        data[s[property_key]].append(s)
+    if 'formants' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.add_acoustic_properties(corpus_context, 'formants', [('F1', float), ('F2', float), ('F3', float)])
+        corpus_context.encode_hierarchy()
     segment_mapping = segment_mapping.grouped_mapping('speaker')
     if call_back is not None:
         call_back('Analyzing files...')
@@ -89,5 +88,5 @@ def analyze_formant_tracks(corpus_context, vowel_label=None, source='praat', cal
         else:
             formant_function = generate_base_formants_function(corpus_context, source=source)
         output = analyze_segments(v, formant_function, stop_check=stop_check, multiprocessing=multiprocessing)
-        corpus_context.save_acoustic_tracks('formants', output, speaker, [('F1', float), ('F2', float), ('F3', float)])
+        corpus_context.save_acoustic_tracks('formants', output, speaker)
 

@@ -221,7 +221,11 @@ def test_query_pitch(acoustic_utt_config):
                           Decimal('4.26'): {'F0': 95.8},
                           Decimal('4.27'): {'F0': 95.8}}
         properties = [('F0', float)]
-        g.save_acoustic_track('pitch', 'acoustic_corpus', expected_pitch, properties, utterance_id=utt_id)
+        if 'pitch' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'pitch',
+                                                properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('pitch', 'acoustic_corpus', expected_pitch, utterance_id=utt_id)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
