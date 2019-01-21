@@ -26,7 +26,7 @@ class PyTest(TestCommand):
 
 if __name__ == '__main__':
     setup(name='polyglotdb',
-          version='0.1.18',
+          version='0.1.19',
           description='',
           long_description=readme(),
           classifiers=[
