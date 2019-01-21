@@ -27,13 +27,13 @@ def analyze_intensity(corpus_context,
     segment_mapping = segment_mapping.grouped_mapping('speaker')
     if call_back is not None:
         call_back('Analyzing files...')
+    if 'intensity' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.add_acoustic_properties(corpus_context, 'intensity', [('Intensity', float)])
+        corpus_context.encode_hierarchy()
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         intensity_function = generate_base_intensity_function(corpus_context)
         output = analyze_segments(v, intensity_function, stop_check=stop_check, multiprocessing=multiprocessing)
-        corpus_context.save_intensity_tracks(output, speaker)
-    if 'intensity' not in corpus_context.hierarchy.acoustics:
-        corpus_context.hierarchy.acoustics.add('intensity')
-        corpus_context.encode_hierarchy()
+        corpus_context.save_acoustic_tracks('intensity',output, speaker)
 
 
 def generate_base_intensity_function(corpus_context):

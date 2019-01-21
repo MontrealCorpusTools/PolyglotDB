@@ -331,15 +331,9 @@ class AnnotationNode(Node):
         elif key == 'discourse':
             from .discourse import DiscourseAnnotation
             return DiscourseAnnotation(self)
-        elif key == 'pitch':
-            from .acoustic import PitchAttribute
-            return PitchAttribute(self, relative=('relative' in key))
-        elif key == 'intensity':
-            from .acoustic import IntensityAttribute
-            return IntensityAttribute(self, relative=('relative' in key))
-        elif key == 'formants':
-            from .acoustic import FormantAttribute
-            return FormantAttribute(self, relative=('relative' in key))
+        elif key in self.hierarchy.acoustics:
+            from .acoustic import AcousticAttribute
+            return AcousticAttribute(self, key)
         elif self.hierarchy is not None and key in self.hierarchy.contained_by(self.node_type):
             from .hierarchical import HierarchicalAnnotation
             types = self.hierarchy.get_higher_types(self.node_type)

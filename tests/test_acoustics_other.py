@@ -48,3 +48,30 @@ def test_analyze_script(acoustic_utt_config, praat_path, praatscript_test_dir):
         assert (len(results) > 0)
         for r in results:
             assert (r.values)
+
+@acoustic
+def test_analyze_track_script(acoustic_utt_config, praat_path, praatscript_test_dir):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.praat_path = praat_path
+        g.encode_class(['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow'], 'vowel')
+        script_path = os.path.join(praatscript_test_dir, 'formants.praat')
+        props =  [('F1', float), ('F2', float), ('F3', float)]
+        arguments = [0.01, 0.025, 5, 5500]
+        g.analyze_track_script('formants_other', props, script_path, phone_class='vowel', file_type='vowel', arguments=arguments)
+
+        assert 'formants_other' in g.hierarchy.acoustics
+
+        assert (g.discourse_has_acoustics('formants_other', g.discourses[0]))
+        q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
+        q = q.columns(g.phone.begin, g.phone.end, g.phone.formants_other.track)
+        results = q.all()
+
+        assert (len(results) > 0)
+        print(len(results))
+        for r in results:
+            # print(r.track)
+            assert (len(r.track))
+
+        g.reset_acoustic_measure('formants_other')
+        assert not g.discourse_has_acoustics('formants_other', g.discourses[0])

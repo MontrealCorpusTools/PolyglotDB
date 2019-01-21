@@ -131,12 +131,7 @@ class QueryResults(BaseQueryResults):
                     discourse = r[a.discourse_alias]
                     speaker = r[a.speaker_alias]
                     if utterance_id not in a.attribute.cache:
-                        if a.attribute.label == 'pitch':
-                            data = self.corpus.get_utterance_pitch(utterance_id, discourse, speaker)
-                        elif a.attribute.label == 'intensity':
-                            data = self.corpus.get_utterance_intensity(utterance_id, discourse, speaker)
-                        elif a.attribute.label == 'formants':
-                            data = self.corpus.get_utterance_formants(utterance_id, discourse, speaker)
+                        data = self.corpus.get_utterance_acoustics(a.attribute.label, utterance_id, discourse, speaker)
                         a.attribute.cache[utterance_id] = data
                     t = a.hydrate(self.corpus, utterance_id,
                                   r[a.begin_alias],

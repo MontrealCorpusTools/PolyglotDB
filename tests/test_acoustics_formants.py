@@ -20,7 +20,7 @@ def test_analyze_formants_basic_praat(acoustic_utt_config, praat_path, results_t
         g.reset_acoustics()
         g.config.praat_path = praat_path
         g.analyze_formant_tracks(multiprocessing=False)
-        assert (g.has_formants(g.discourses[0]))
+        assert (g.discourse_has_acoustics('formants', g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
         results = q.all()
@@ -36,8 +36,8 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
         g.reset_acoustics()
         g.config.praat_path = praat_path
         g.encode_class(['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow'], 'vowel')
-        g.analyze_vowel_formant_tracks(vowel_label='vowel', multiprocessing=False)
-        assert (g.has_formants(g.discourses[0]))
+        g.analyze_formant_tracks(vowel_label='vowel', multiprocessing=False)
+        assert (g.discourse_has_acoustics('formants', g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
         results = q.all()
@@ -49,8 +49,8 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
             # print(r.track)
             assert (len(r.track))
 
-        g.reset_formants()
-        assert not g.has_formants(g.discourses[0])
+        g.reset_acoustic_measure('formants')
+        assert not g.discourse_has_acoustics('formants', g.discourses[0])
 
 
 @acoustic
@@ -62,7 +62,7 @@ def test_analyze_formants_gendered_praat(acoustic_utt_config, praat_path, result
         assert (g.hierarchy.has_speaker_property('gender'))
         g.config.praat_path = praat_path
         g.analyze_formant_tracks()
-        assert (g.has_formants(g.discourses[0]))
+        assert (g.discourse_has_acoustics('formants', g.discourses[0]))
         assert 'formants' in g.hierarchy.acoustics
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.formants.track)
@@ -87,7 +87,12 @@ def test_query_formants(acoustic_utt_config):
                              Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
                              Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2502},
                              Decimal('4.27'): {'F1': 505, 'F2': 1496, 'F3': 2500}}
-        g.save_formants('acoustic_corpus', expected_formants, utterance_id=utt_id)
+        properties = [('F1', float), ('F2', float), ('F3', float)]
+        if 'formants' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'formants',
+                                                             properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('formants', 'acoustic_corpus', expected_formants, utterance_id=utt_id)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -118,7 +123,7 @@ def test_relative_formants(acoustic_utt_config):
             for f in ['F1', 'F2', 'F3']:
                 expected_formants[k]['{}_relativized'.format(f)] = (v[f] - means[f]) / sds[f]
 
-        g.relativize_formants(by_speaker=True)
+        g.relativize_acoustic_measure('formants', by_speaker=True)
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
@@ -135,7 +140,7 @@ def test_relative_formants(acoustic_utt_config):
                 rel_name = '{}_relativized'.format(f)
                 assert (round(point[rel_name], 4) == round(expected_formants[point.time][rel_name], 4))
 
-        g.reset_relativized_formants()
+        g.reset_relativized_acoustic_measure('formants')
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')

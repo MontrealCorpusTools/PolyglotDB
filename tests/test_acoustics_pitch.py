@@ -59,7 +59,7 @@ def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
         g.config.praat_path = praat_path
         g.config.pitch_algorithm = 'basic'
         g.analyze_pitch()
-        assert (g.has_pitch(g.discourses[0]))
+        assert (g.discourse_has_acoustics('pitch', g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.pitch.track)
         print(q.cypher())
@@ -200,10 +200,10 @@ def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
         g.config.praat_path = praat_path
         g.config.pitch_algorithm = 'speaker_adjusted'
         g.analyze_pitch(source='praat')
-        assert (g.has_pitch('acoustic_corpus'))
+        assert (g.discourse_has_acoustics('pitch', 'acoustic_corpus'))
 
-        g.reset_pitch()
-        assert not g.has_pitch(g.discourses[0])
+        g.reset_acoustic_measure('pitch')
+        assert not g.discourse_has_acoustics('pitch', g.discourses[0])
 
 
 def test_query_pitch(acoustic_utt_config):
@@ -220,7 +220,12 @@ def test_query_pitch(acoustic_utt_config):
                           Decimal('4.25'): {'F0': 99},
                           Decimal('4.26'): {'F0': 95.8},
                           Decimal('4.27'): {'F0': 95.8}}
-        g.save_pitch('acoustic_corpus', expected_pitch, utterance_id=utt_id)
+        properties = [('F0', float)]
+        if 'pitch' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'pitch',
+                                                properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('pitch', 'acoustic_corpus', expected_pitch, utterance_id=utt_id)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -233,6 +238,7 @@ def test_query_pitch(acoustic_utt_config):
         print(results[0].track)
         for point in results[0].track:
             assert (round(point['F0'], 1) == expected_pitch[point.time]['F0'])
+
 
 def test_query_aggregate_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
@@ -248,6 +254,7 @@ def test_query_aggregate_pitch(acoustic_utt_config):
         assert (results[0]['Max_F0'] == 100)
         assert (round(results[0]['Mean_F0'], 2) == 97.72)
 
+
 def test_relativize_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         mean_f0 = 97.72
@@ -257,7 +264,7 @@ def test_relativize_pitch(acoustic_utt_config):
                           Decimal('4.25'): {'F0': 99, 'F0_relativized': (99 - mean_f0) / sd_f0},
                           Decimal('4.26'): {'F0': 95.8, 'F0_relativized': (95.8 - mean_f0) / sd_f0},
                           Decimal('4.27'): {'F0': 95.8, 'F0_relativized': (95.8 - mean_f0) / sd_f0}}
-        g.relativize_pitch(by_speaker=True)
+        g.relativize_acoustic_measure('pitch', by_speaker=True)
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
@@ -284,14 +291,13 @@ def test_relativize_pitch(acoustic_utt_config):
         assert results[0]['Max_F0'] == 100
         assert results[0]['Mean_F0'] == mean_f0
         min_rel = (95.8 - mean_f0) / sd_f0
-        max_rel = (100- mean_f0) / sd_f0
+        max_rel = (100 - mean_f0) / sd_f0
         assert abs(results[0]['Min_F0_relativized'] - min_rel) < 0.01
         assert abs(results[0]['Max_F0_relativized'] - max_rel) < 0.01
         assert results[0]['Mean_F0_relativized'] - 0 < 0.01
 
-
-
-        g.reset_relativized_pitch()
+        g.reset_relativized_acoustic_measure('pitch')
+        assert g.hierarchy.acoustic_properties['pitch'] == {('F0', float)}
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -304,6 +310,7 @@ def test_relativize_pitch(acoustic_utt_config):
         for r in results:
             for p in r.track:
                 assert not p.has_value('F0_relativized')
+
 
 def test_export_pitch(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
