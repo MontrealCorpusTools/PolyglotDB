@@ -1,4 +1,4 @@
-.. _Polyglot server: https://github.com/MontrealCorpusTools/polyglot-server
+.. _ISCAN server: https://github.com/MontrealCorpusTools/ISCAN
 
 .. _installation:
 
@@ -12,10 +12,11 @@ Prerequisites
 =============
 
 PolyglotDB is the Python API for interacting with PolyglotDB databases.  The easiest way to set up and interface with
-a PolyglotDB database is through setting up a `Polyglot server`_.
-The Polyglot server can be set up on a lab's central server, or you can run it on your local computer as well (though many
-of PolyglotDB's algorithms benefit from having more processors and memory available).  Please see the Polyglot server
-documentation for more information on setting it up (http://polyglot-server.readthedocs.io/en/latest/getting_started.html).
+a PolyglotDB database is through setting up an `ISCAN server`_.
+An Integrated Speech Corpus Analysis (ISCAN) server can be set up on a lab's central server, or you can run it on your
+local computer as well (though many
+of PolyglotDB's algorithms benefit from having more processors and memory available).  Please see the ISCAN
+documentation for more information on setting it up (http://iscan.readthedocs.io/en/latest/getting_started.html).
 
 PolyglotDB provides a lightweight Python client for connecting to remote servers without any external prerequisites
 (these are handled by the Polyglot server) besides Python packages.
@@ -45,10 +46,11 @@ To install from source (primarily for development):
 Set up local database
 ---------------------
 
-Please be aware that this way to set up a database is not recommended.  See the `Polyglot server`_ for a more fully featured
+Please be aware that this way to set up a database is not recommended for larger groups.  See the `ISCAN server`_ for a more fully featured
 solution.
 
-If you do not have access to a Polyglot-server, or just want a lightweight version of the server instead, you can use a utility script.
+If you do not have access to an ISCAN server, or just want a lightweight version of the server instead, you can use a utility script
+that is installed with the PolyglotDB package.
 
 Mac
 ```

@@ -5,8 +5,6 @@ Introduction
 ************
 
 
-.. _PGDB website: http://phonologicalcorpustools.github.io/PolyglotDB/
-
 .. _Phonological CorpusTools: http://phonologicalcorpustools.github.io/CorpusTools/
 
 .. _GitHub repository: https://github.com/PhonologicalCorpusTools/PolyglotDB/
