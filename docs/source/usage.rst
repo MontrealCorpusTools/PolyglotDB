@@ -58,10 +58,10 @@ CorpusContext objects (or CorpusConfig objects):
 
 
 
-.. _local_polyglot_server:
+.. _local_iscan_server:
 
-Local Polyglot server
----------------------
+Local ISCAN server
+------------------
 
 A locally running ISCAN server is a more fully functional system that can manage multiple Polyglot databases (creating, starting and stopping
 as necessary through a graphical web interface).
