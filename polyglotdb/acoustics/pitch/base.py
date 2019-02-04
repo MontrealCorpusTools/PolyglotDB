@@ -134,16 +134,18 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
 
 def analyze_pitch(corpus_context,
                   source='praat',
+                  algorithm='base',
                   call_back=None,
                   stop_check=None, multiprocessing=True):
     """
 
     Parameters
     ----------
-    corpus_context : :class:`~polyglotdb.CorpusContext`
-    source
-    call_back
-    stop_check
+    corpus_context : :class:`~polyglotdb.corpus.audio.AudioContext`
+    source : str
+    algorithm : str
+    call_back : callable
+    stop_check  : callable
 
     Returns
     -------
@@ -155,7 +157,6 @@ def analyze_pitch(corpus_context,
         raise (Exception('Must encode utterances before pitch can be analyzed'))
     segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING).grouped_mapping('speaker')
     num_speakers = len(segment_mapping)
-    algorithm = corpus_context.config.pitch_algorithm
     path = None
     if source == 'praat':
         path = corpus_context.config.praat_path

@@ -109,8 +109,8 @@ class AudioContext(SyllabicContext):
         signal, sr = self.load_waveform(discourse, file_type, begin, end)
         return generate_spectrogram(signal, sr)
 
-    def analyze_pitch(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
-        analyze_pitch(self, source, stop_check, call_back, multiprocessing=multiprocessing)
+    def analyze_pitch(self, source='praat', algorithm='base', stop_check=None, call_back=None, multiprocessing=True):
+        analyze_pitch(self, source, algorithm, stop_check, call_back, multiprocessing=multiprocessing)
 
     def analyze_utterance_pitch(self, utterance, source='praat', **kwargs):
         return analyze_utterance_pitch(self, utterance, source, **kwargs)

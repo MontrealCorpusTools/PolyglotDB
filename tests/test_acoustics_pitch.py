@@ -57,7 +57,6 @@ def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.praat_path = praat_path
-        g.config.pitch_algorithm = 'basic'
         g.analyze_pitch()
         assert (g.discourse_has_acoustics('pitch', g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
@@ -179,7 +178,6 @@ def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.reaper_path = reaper_path
-        g.config.pitch_algorithm = 'basic'
         g.analyze_pitch(source='reaper', multiprocessing=False)
 
 
@@ -188,18 +186,15 @@ def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.praat_path = praat_path
-        g.config.pitch_algorithm = 'gendered'
-        g.analyze_pitch(source='praat')
+        g.analyze_pitch(source='praat', algorithm='gendered')
 
 
 @acoustic
 def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
-        g.reset_acoustics()
         g.config.praat_path = praat_path
-        g.config.pitch_algorithm = 'speaker_adjusted'
-        g.analyze_pitch(source='praat')
+        g.analyze_pitch(source='praat', algorithm='speaker_adjusted')
         assert (g.discourse_has_acoustics('pitch', 'acoustic_corpus'))
 
         g.reset_acoustic_measure('pitch')
