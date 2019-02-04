@@ -80,7 +80,7 @@ class AlignerParser(TextgridParser):
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
         '''
-        tg = TextGrid()
+        tg = TextGrid(strict=False)
         try:
             tg.read(path)
         except Exception as e:

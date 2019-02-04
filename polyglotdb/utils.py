@@ -14,7 +14,7 @@ def get_corpora_list(config):
 @contextmanager
 def ensure_local_database_running(database_name, port=None, token=None):
     if port is None:
-        port = 8000
+        port = 8080
     host = 'http://localhost:{}'.format(port)
     client = PGDBClient(host, token=token)
 
