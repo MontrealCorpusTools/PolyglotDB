@@ -1,3 +1,17 @@
+
+.. _Montreal Forced Aligner: https://github.com/MontrealCorpusTools/Montreal-Forced-Aligner
+
+.. _FAVE-align: https://github.com/JoFrhwld/FAVE
+
+.. _LaBB-CAT: http://labbcat.sourceforge.net/
+
+.. _TIMIT: https://catalog.ldc.upenn.edu/LDC93S1
+
+.. _Buckeye: https://buckeyecorpus.osu.edu/
+
+.. _BAS Partitur: http://www.bas.uni-muenchen.de/forschung/publikationen/Granada-98-Partitur.pdf
+
+
 .. _importing:
 
 *****************
@@ -9,12 +23,55 @@ Corpora can be imported from several input formats.  The list of currently
 supported formats is:
 
 
+* TextGrids from `Montreal Forced Aligner`_ or `FAVE-align`_
 * Praat TextGrids
-* Interlinear gloss text
-* Plain running text
-* CSV (no annotation graphs are made)
-* TIMIT
-* Buckeye
+* TextGrids exported from `LaBB-CAT`_
+* `BAS Partitur`_ format
+* `TIMIT`_
+* `Buckeye`_
+
+Each format has a inspection function in the :code:`polyglot.io` submodule that will check that format of the specified directory
+or file matches the input format and return the appropriate parser.
+
+These functions would be used as follows:
+
+.. code-block:: python
+
+   import polyglotdb.io as pgio
+
+   corpus_directory = '/path/to/directory'
+
+   parser = pgio.inspect_mfa(corpus_directory) # MFA output TextGrids
+
+   # OR
+
+   parser = pgio.inspect_fave(corpus_directory) # FAVE output TextGrids
+
+   # OR
+
+   parser = pgio.inspect_textgrid(corpus_directory)
+
+   # OR
+
+   parser = pgio.inspect_labbcat(corpus_directory)
+
+   # OR
+
+   parser = pgio.inspect_partitur(corpus_directory)
+
+   # OR
+
+   parser = pgio.inspect_timit(corpus_directory)
+
+   # OR
+
+   parser = pgio.inspect_buckeye(corpus_directory)
+
+
+
+.. note::
+
+   For more technical detail on the inspect functions and the parser objects they return, see :ref:`pgdb_io`.
 
 To import a corpus, the :code:`CorpusContext` context manager has to be imported
 from :code:`polyglotdb`:
@@ -28,7 +85,8 @@ with.
 
 Before importing a corpus, you should ensure that a Neo4j server is running.
 Interacting with corpora requires submitting the connection details.  The
-easiest way to do this is with a utility function :code:`ensure_local_database_running`:
+easiest way to do this is with a utility function :code:`ensure_local_database_running` (see :ref:`local` for more
+information):
 
 .. code-block:: python
 
@@ -66,7 +124,8 @@ tries to guess the relevant attributes of each tier.
 
    The discourse load function of :code:`Corpuscontext` objects takes
    a parser as the first argument. Parsers contain an attribute :code:`annotation_types`,
-   which the user can modify to change how a corpus is imported.
+   which the user can modify to change how a corpus is imported.  For most standard formats, including TextGrids from
+   aligners, no modification is necessary.
 
 All interaction with the databases is via the :code:`CorpusContext` context manager.
 Further details on import arguments can be found

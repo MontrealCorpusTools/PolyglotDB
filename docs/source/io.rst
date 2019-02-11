@@ -1,3 +1,16 @@
+
+.. _Montreal Forced Aligner: https://github.com/MontrealCorpusTools/Montreal-Forced-Aligner
+
+.. _FAVE-align: https://github.com/JoFrhwld/FAVE
+
+.. _LaBB-CAT: http://labbcat.sourceforge.net/
+
+.. _TIMIT: https://catalog.ldc.upenn.edu/LDC93S1
+
+.. _Buckeye: https://buckeyecorpus.osu.edu/
+
+.. _BAS Partitur: http://www.bas.uni-muenchen.de/forschung/publikationen/Granada-98-Partitur.pdf
+
 .. _pgdb_io:
 
 **************
@@ -30,18 +43,18 @@ which are then imported into the database.
 
 Currently the following formats are supported:
 
-- TextGrid
-- Column-delimited text files (i.e. CSV)
+- Praat TextGrids
+- Output from forced aligners (`Montreal Forced Aligner`_ and `FAVE-align`_)
+- Output from other corpus management software (`LaBB-CAT`_)
 - Text files
 
   - Interlinear gloss text files
-  - Orthographic text
-  - Transcribed text
+  - `BAS Partitur`_ format
 
 - Corpus-specific formats
 
-  - Buckeye
-  - TIMIT
+  - `Buckeye`_
+  - `TIMIT`_
 
 Inspect
 -------
@@ -55,7 +68,7 @@ will return a parser with annotation types for each interval and point tier in t
 Details of inspect functions
 ````````````````````````````
 
-Textgrid:
+Textgrid (:ref:`io_tg_parser_api`):
 
 - Annotation types:
 
@@ -73,78 +86,52 @@ Textgrid:
 
 - Hierarchy:
 
-  - Posits segments as contained by words (if both exist)
+  - Creates word type transcription property based off contained phones (if both exist)
 
-CSV:
-
-- Annotation types:
-
-  - AnnotationType per column
-
-- Hierarchy:
-
-  - Words only
-
-Interlinear gloss files:
+LaBB-CAT format TextGrids (:ref:`io_labbcat_parser_api`):
 
 - Annotation types:
 
-  - Guesses the number of lines per gloss based on the number of words in
-    each line (so 3 3 3 4 4 4, would return 3 lines per gloss with 2 total
-    glosses and 2 2 2 2 3 3 would return 2 lines per gloss with 3 total glosses)
-  - AnnotationType per guessed number of lines per gloss
-  - First AnnotationType is guessed to be the orthography of the word
-  - Guesses the types of the remaining AnnotationTypes based on their content, i.e.,
-    if they contain a ``.``, they are guessed to be a transcription.
+  - One AnnotationType for words
+  - One AnnotationType for phones
 
 - Hierarchy:
 
-  - Words only
+  - Creates word type transcription property based off contained phones
 
-Orthographic text files:
+MFA (:ref:`io_mfa_parser_api`):
 
 - Annotation types:
 
-  - One AnnotationType for the word
+  - One AnnotationType for words
+  - One AnnotationType for phones
 
 - Hierarchy:
 
-  - Words only
+  - Creates word type transcription property based off contained phones
 
-Transcribed text files:
-
-- Annotation types:
-
-  - One AnnotationType for the word (with the property of having a transcription)
-
-- Hierarchy:
-
-  - Words only
-
-Buckeye:
+Buckeye (:ref:`io_buckeye_parser_api`):
 
 - Annotation types:
 
   - One AnnotationType for words
   - Words have type properties for underlying transcription and token
     properties for their part of speech
-  - One AnnotationType for surface transcriptions
+  - One AnnotationType for phones
 
-- Hierarchy:
 
-  - Posits ``surface_transcriptions`` as contained by words
-
-TIMIT:
+TIMIT (:ref:`io_timit_parser_api`):
 
 - Annotation types:
 
   - One AnnotationType for words
-  - One AnnotationType for surface transcriptions
+  - One AnnotationType for phones
   - Timepoints in number of samples get converted to seconds
 
 - Hierarchy:
 
-  - Posits ``surface_transcriptions`` as contained by words
+  - Creates word type transcription property based off contained phones
+
 
 Load discourse
 --------------

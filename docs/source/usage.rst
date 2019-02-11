@@ -1,7 +1,9 @@
 
+.. _SPADE analysis repository: https://github.com/MontrealCorpusTools/SPADE
+
 .. _local:
 
-Interacting with a local Polyglot instance
+Interacting with a local Polyglot database
 ==========================================
 
 There are two potential ways to have a local Polyglot instance up and running on your local machine.  The first is a
@@ -34,7 +36,7 @@ When using this set up the following ports are used (and are relevant for later 
 If any of those ports are in use by other programs (they're also the default ports for the respective database software),
 then the Polyglot instance will not be able to start.
 
-Once :code:`pgdb start` has executed, the local Neo4j instance can be seen at :code:`http://localhost:7474/`
+Once :code:`pgdb start` has executed, the local Neo4j instance can be seen at :code:`http://localhost:7474/`.
 
 Connecting from a script
 ````````````````````````
@@ -109,4 +111,6 @@ document that git does not track, and load it via a function like:
 This utility is thus best for isolated work by a single user, where only they will be interacting
 with the particular database specified and the database only needs to be available during the running of the script.
 
-You can see an example of this type of script in the :code:`examples/formant_analysis/refined_formants_example.py` script.
+You can see an example of this type of script in the :code:`examples/formant_analysis/refined_formants_example.py` script,
+or in the scripts in the `SPADE analysis repository`_.
+

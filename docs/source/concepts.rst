@@ -14,7 +14,7 @@ PRECEDENCE PICTURE NEEDED
 
 The data in a PolyglotDB corpus is structured as an annotation graph.
 Each node in the graph represents a linguistic object (annotation).
-These nodes are organized in a precendence relationship in time (in the
+These nodes are organized in a precedence relationship in time (in the
 above example XXX follows YYY).
 
 HIERARCHICAL PICTURE NEEDED
@@ -24,7 +24,7 @@ encoded.  In the above example the word XXX contains the phones Y, Y and Y.
 
 
 Types versus tokens
--------------------
+===================
 
 PICTURE ILLUSTRATING TYPES VERSUS TOKENS
 

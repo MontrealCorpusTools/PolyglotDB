@@ -91,7 +91,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'PolyglotDB'
-copyright = '2015, Montreal Corpus Tools'
+copyright = '2015-2019, Montreal Corpus Tools'
 author = 'Montreal Corpus Tools'
 
 # The version info for the project you're documenting, acts as replacement for

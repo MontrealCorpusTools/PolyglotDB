@@ -18,19 +18,6 @@ Buckeye
 
    inspect_buckeye
 
-.. _io_csv_inspect_api:
-
-CSV
----
-
-.. currentmodule:: polyglotdb.io.inspect.csv
-
-.. autosummary::
-   :toctree: generated/
-   :template: function.rst
-
-   inspect_csv
-
 .. _io_ilg_inspect_api:
 
 Interlinear gloss text
@@ -43,27 +30,6 @@ Interlinear gloss text
    :template: function.rst
 
    inspect_ilg
-
-.. _io_text_inspect_api:
-
-Running text
-------------
-
-.. currentmodule:: polyglotdb.io.inspect.text_orthography
-
-.. autosummary::
-   :toctree: generated/
-   :template: function.rst
-
-   inspect_orthography
-
-.. currentmodule:: polyglotdb.io.inspect.text_transcription
-
-.. autosummary::
-   :toctree: generated/
-   :template: function.rst
-
-   inspect_transcription
 
 .. _io_tg_inspect_api:
 

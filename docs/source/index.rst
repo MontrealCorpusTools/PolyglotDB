@@ -11,14 +11,12 @@ Contents:
 
    introduction.rst
    getting_started.rst
+   tutorial.rst
    usage.rst
    import.rst
    enrichment.rst
-   acoustics.rst
    queries.rst
-   io.rst
-   concepts.rst
-   apireference.rst
+   developer.rst
 
 See `the PolyglotDB wiki`_ for the changelog.
 

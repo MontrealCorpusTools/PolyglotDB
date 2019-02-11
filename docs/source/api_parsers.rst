@@ -5,90 +5,72 @@
 Parser Classes
 **************
 
-.. _io_buckeye_parser_api:
-
-Buckeye
--------
-
-.. currentmodule:: polyglotdb.io.parsers.buckeye
-
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   BuckeyeParser
-
-.. _io_csv_parser_api:
-
-CSV
----
-
-.. currentmodule:: polyglotdb.io.parsers.csv
-
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   CsvParser
-
-
 
 .. _io_ilg_parser_api:
 
-Interlinear gloss text
-----------------------
+ILG text parser
+---------------
 
-.. currentmodule:: polyglotdb.io.parsers.ilg
 
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
+.. autoclass:: polyglotdb.io.parsers.ilg.IlgParser
 
-   IlgParser
 
-.. _io_text_parser_api:
-
-Running text
-------------
-
-.. currentmodule:: polyglotdb.io.parsers.text_orthography
-
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   OrthographyTextParser
-
-.. currentmodule:: polyglotdb.io.parsers.text_transcription
-
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   TranscriptionTextParser
 
 .. _io_tg_parser_api:
 
-TextGrids
----------
+TextGrid parser
+---------------
 
-.. currentmodule:: polyglotdb.io.parsers.textgrid
 
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
+.. autoclass:: polyglotdb.io.parsers.textgrid.TextgridParser
 
-   TextgridParser
+
+
+.. _io_mfa_parser_api:
+
+MFA parser
+----------
+
+
+.. autoclass:: polyglotdb.io.parsers.mfa.MfaParser
+   :members:
+   :inherited-members:
+
+
+
+
+.. _io_fave_parser_api:
+
+FAVE-align parser
+-----------------
+
+
+.. autoclass:: polyglotdb.io.parsers.fave.FaveParser
+   :inherited-members:
+
+
 
 .. _io_timit_parser_api:
 
-TIMIT
------
+TIMIT parser
+------------
 
-.. currentmodule:: polyglotdb.io.parsers.timit
+.. autoclass:: polyglotdb.io.parsers.timit.TimitParser
 
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
 
-   TimitParser
+.. _io_buckeye_parser_api:
+
+Buckeye parser
+--------------
+
+.. autoclass:: polyglotdb.io.parsers.buckeye.BuckeyeParser
+
+
+.. _io_labbcat_parser_api:
+
+LaBB-CAT parser
+---------------
+
+.. autoclass:: polyglotdb.io.parsers.labbcat.LabbCatParser
+
+

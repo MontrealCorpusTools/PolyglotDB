@@ -8,6 +8,10 @@ from ..query.annotations import GraphQuery, SplitQuery
 
 
 class PGDBClient(object):
+    """
+    Simple client for interacting with ISCAN servers.
+    """
+
     def __init__(self, host, token=None, corpus_name=None):
         self.host = host
         self.token = token
@@ -18,7 +22,7 @@ class PGDBClient(object):
 
     def login(self, user_name, password):
         end_point = '/'.join([self.host, 'api', 'rest-auth', 'login', ''])
-        resp = requests.post(end_point, {'username':user_name, 'password':password})
+        resp = requests.post(end_point, {'username': user_name, 'password': password})
         token = resp.json()['key']
         return token
 
@@ -136,8 +140,7 @@ class PGDBClient(object):
                 break
         else:
             raise ClientError('Could not find database, does not exist.')
-        end_point = '/'.join([self.host, 'api', 'databases',  str(database_id), 'stop', ''])
+        end_point = '/'.join([self.host, 'api', 'databases', str(database_id), 'stop', ''])
         resp = requests.post(end_point, data={}, headers={'Authorization': 'Token {}'.format(self.token)})
         if resp.status_code not in [200, 201, 202]:
             raise ClientError('Could not stop database: {}'.format(resp.text))
-

@@ -17,3 +17,4 @@ Contents:
    enrichment_utterances.rst
    enrichment_csvs.rst
    enrichment_queries.rst
+   acoustics.rst

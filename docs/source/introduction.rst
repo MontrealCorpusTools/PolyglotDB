@@ -24,7 +24,7 @@ Introduction
 General Background
 ==================
 
-*PolyglotDB* is a Python package that focuses on representing linguistic
+**PolyglotDB** is a Python package that focuses on representing linguistic
 data in relational and graph databases.
 
 PolyglotDB represents language (speech and text corpora) using the
@@ -42,7 +42,7 @@ are primitives rather than relational tables.  Graph databases map on
 annotation graphs in a much cleaner fashion than relational databases.
 The graph database used in PolyglotDB is `Neo4j`_.
 
-PolyglotDB also uses a NoSQL timeseries database called `InfluxDB`_.
+PolyglotDB also uses a NoSQL time-series database called `InfluxDB`_.
 Acoustic measurements like F0 and formants are stored here as every time step (10 ms)
 has a value associated with it.  Each measurement is also associated with a speaker and a phone from
 the graph database.

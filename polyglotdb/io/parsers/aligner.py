@@ -20,6 +20,7 @@ class AlignerParser(TextgridParser):
     phone_label = 'phone'
     name = 'aligner'
     speaker_first = True
+
     def __init__(self, annotation_types, hierarchy, make_transcription=True,
                  make_label=False,
                  stop_check=None, call_back=None):
