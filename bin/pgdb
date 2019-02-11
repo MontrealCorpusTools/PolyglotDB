@@ -27,8 +27,7 @@ def load_config():
     else:
         c['Neo4j'] = {'http_port': 7474,
                       'https_port': 7475,
-                      'bolt_port': 7687,
-                      'auth_enabled': 'false'
+                      'bolt_port': 7687
                       }
         c['Neo4j_wrapper'] = {'max_heap': 4096}
         c['InfluxDB'] = {'http_port': 8086,
@@ -52,7 +51,7 @@ CONFIG = load_config()
 
 TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
 
-NEO4J_VERSION = '3.4.9'
+NEO4J_VERSION = '3.5.3'
 
 INFLUXDB_VERSION = '1.2.4'
 

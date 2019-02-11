@@ -142,24 +142,30 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                     token_prop_string = ', ' + ', '.join(properties)
                 else:
                     token_prop_string = ''
+                node_import_statement = '''USING PERIODIC COMMIT 4000
+                LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                                            end: toFloat(csvLine.end){token_property_string} }})
+                '''
+                node_kwargs = {'path': rel_path, 'annotation_type': at,
+                          'token_property_string': token_prop_string,
+                          'corpus_name': corpus_context.cypher_safe_name}
                 if st is not None:
-                    rel_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 4000
-            LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-            MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
-            (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-            (s:Speaker:{corpus_name} {{name: csvLine.speaker}})
-            CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                        end: toFloat(csvLine.end){token_property_string} }}),
-                                        (t)-[:is_a]->(n),
-                                        (t)-[:contained_by]->(super),
-                                        (t)-[:spoken_in]->(d),
-                                        (t)-[:spoken_by]->(s)
-            WITH t, csvLine
-            MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
-            CREATE (p)-[:precedes]->(t)
-            '''
-                    kwargs = {'path': rel_path, 'annotation_type': at,
-                              'token_property_string': token_prop_string,
+                    rel_import_statement = '''USING PERIODIC COMMIT 4000
+                    LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                    MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
+                    (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
+                    (s:Speaker:{corpus_name} {{name: csvLine.speaker}}),
+                    (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
+                    CREATE (t)-[:is_a]->(n),
+                        (t)-[:contained_by]->(super),
+                        (t)-[:spoken_in]->(d),
+                        (t)-[:spoken_by]->(s)
+                    WITH t, csvLine
+                    MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+                        CREATE (p)-[:precedes]->(t)
+                    '''
+                    rel_kwargs = {'path': rel_path, 'annotation_type': at,
                               'corpus_name': corpus_context.cypher_safe_name,
                               'stype': st}
                 else:
@@ -168,21 +174,20 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
             LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
             MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
             (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-            (s:Speaker:{corpus_name} {{ name: csvLine.speaker}})
-            CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                        end: toFloat(csvLine.end){token_property_string} }}),
-                                        (t)-[:is_a]->(n),
-                                        (t)-[:spoken_in]->(d),
-                                        (t)-[:spoken_by]->(s)
-            WITH t, csvLine
-            MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
-            CREATE (p)-[:precedes]->(t)
+            (s:Speaker:{corpus_name} {{ name: csvLine.speaker}}),
+                    (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
+            CREATE (t)-[:is_a]->(n),
+                    (t)-[:spoken_in]->(d),
+                    (t)-[:spoken_by]->(s)
+                WITH t, csvLine
+                MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+                    CREATE (p)-[:precedes]->(t)
             '''
-                    kwargs = {'path': rel_path, 'annotation_type': at,
-                              'token_property_string': token_prop_string,
+                    rel_kwargs = {'path': rel_path, 'annotation_type': at,
                               'corpus_name': corpus_context.cypher_safe_name}
-                statement = rel_import_statement.format(**kwargs)
-                speaker_statements.append(statement)
+                node_statement = node_import_statement.format(**node_kwargs)
+                rel_statement = rel_import_statement.format(**rel_kwargs)
+                speaker_statements.append((node_statement, rel_statement))
                 begin = time.time()
                 session.write_transaction(begin_index, at)
                 session.write_transaction(end_index, at)
@@ -193,7 +198,8 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
             call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), speakers[i]))
         for s in speaker_statements:
             log.info('Loading {} relationships...'.format(at))
-            corpus_context.execute_cypher(s)
+            corpus_context.execute_cypher(s[0])
+            corpus_context.execute_cypher(s[1])
             log.info('Finished loading {} relationships!'.format(at))
             log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
 
