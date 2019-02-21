@@ -118,7 +118,6 @@ class QueryResults(BaseQueryResults):
 
     def _sanitize_record(self, r):
         if self.models:
-
             r = hydrate_model(r, self._to_find, self._to_find_type, self._preload, self._preload_acoustics, self.corpus)
         else:
             r = AnnotationRecord(r)
