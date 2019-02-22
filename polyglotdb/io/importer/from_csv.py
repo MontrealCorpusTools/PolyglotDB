@@ -583,51 +583,45 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
                 MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
                 (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
+                WITH csvLine, begin, end
                 CREATE (utt:utterance:{corpus}:speech {{id: csvLine.id, begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus})
         '''
+
+        node_statement = node_statement.format(path=csv_path,
+                                     corpus=corpus_context.cypher_safe_name,
+                                     word_type=corpus_context.word_name)
+        corpus_context.execute_cypher(node_statement)
         rel_statement = '''USING PERIODIC COMMIT 1000
                 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
                 MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus}),
-                (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}}),
-                (utt:utterance:{corpus}:speech {{id: csvLine.id)
+                (utt:utterance:{corpus}:speech {{id: csvLine.id}})
                 CREATE
                     (d)<-[:spoken_in]-(utt),
                     (s)<-[:spoken_by]-(utt)
-                WITH utt, begin, end, csvLine
+                WITH utt,  csvLine
 
-                OPTIONAL MATCH (prev:utterance {{id:csvLine.prev_id}})
-                FOREACH (o IN CASE WHEN prev IS NOT NULL THEN [prev] ELSE [] END |
-                  CREATE (prev)-[:precedes]->(utt)
-                )
-                WITH utt, begin, end
-                MATCH path = shortestPath((begin)-[:precedes*0..]->(end))
-                WITH utt, begin, end, nodes(path) as words
+                MATCH (prev:utterance {{id:csvLine.prev_id}})
+                CREATE (prev)-[:precedes]->(utt)
+        '''
+        rel_statement = rel_statement.format(path=csv_path,
+                                     corpus=corpus_context.cypher_safe_name,
+                                     word_type=corpus_context.word_name)
+        corpus_context.execute_cypher(rel_statement)
+
+        word_statement = '''USING PERIODIC COMMIT 1000
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
+                (utt:utterance:{corpus}:speech {{id: csvLine.id}}),
+                (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}}),
+                path = shortestPath((begin)-[:precedes*0..]->(end))
+                WITH utt, nodes(path) as words
                 UNWIND words as w
                 CREATE (w)-[:contained_by]->(utt)
         '''
-
-        statement = '''USING PERIODIC COMMIT 1000
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus}),
-                (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
-                CREATE (utt:utterance:{corpus}:speech {{id: csvLine.id, begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus}),
-                    (d)<-[:spoken_in]-(utt),
-                    (s)<-[:spoken_by]-(utt)
-                WITH utt, begin, end, csvLine
-
-                OPTIONAL MATCH (prev:utterance {{id:csvLine.prev_id}})
-                FOREACH (o IN CASE WHEN prev IS NOT NULL THEN [prev] ELSE [] END |
-                  CREATE (prev)-[:precedes]->(utt)
-                )
-                WITH utt, begin, end
-                MATCH path = shortestPath((begin)-[:precedes*0..]->(end))
-                WITH utt, begin, end, nodes(path) as words
-                UNWIND words as w
-                CREATE (w)-[:contained_by]->(utt)'''
-        statement = statement.format(path=csv_path,
+        word_statement = word_statement.format(path=csv_path,
                                      corpus=corpus_context.cypher_safe_name,
                                      word_type=corpus_context.word_name)
-        corpus_context.execute_cypher(statement)
+        corpus_context.execute_cypher(word_statement)
         # os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 
