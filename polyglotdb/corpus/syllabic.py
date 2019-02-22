@@ -36,28 +36,31 @@ class SyllabicContext(UtteranceContext):
             A dictionary with onset values as keys and frequency values as values
 
         """
-        statement = '''match (w:{word_name}:{corpus_name})
-where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
-with w
-match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
-(n)-[:contained_by*1..2]->(w)
-with w, n
-order by n.begin
-with w,collect(n)[0..1] as coll unwind coll as n
-
-MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
-where not (pn)<-[:precedes]-()-[:contained_by*1..2]->(w)
-with w, n,pn
-match p = shortestPath((pn)-[:precedes*0..10]->(n))
-with extract(x in nodes(p)[0..-1]|x.label) as onset
-return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
-                                             word_name=self.word_name,
-                                             syllabic_name = make_label_safe_for_cypher(syllabic_label),
-                                             phone_name=self.phone_name)
-        res = self.execute_cypher(statement)
-        data = {}
-        for r in res:
-            data[tuple(r['onset'])] = r['freq']
+        from collections import Counter
+        data = Counter()
+        for s in self.speakers:
+            statement = '''match (w:{word_name}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+    where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
+    AND s.name = {{speaker}}
+    with w
+    match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
+    (n)-[:contained_by*1..2]->(w)
+    with w, n
+    order by n.begin
+    with w,collect(n)[0..1] as coll unwind coll as n
+    
+    MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
+    where not (pn)<-[:precedes]-()-[:contained_by*1..2]->(w)
+    with w, n,pn
+    match p = shortestPath((pn)-[:precedes*0..10]->(n))
+    with extract(x in nodes(p)[0..-1]|x.label) as onset
+    return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
+                                                 word_name=self.word_name,
+                                                 syllabic_name = make_label_safe_for_cypher(syllabic_label),
+                                                 phone_name=self.phone_name)
+            res = self.execute_cypher(statement, speaker=s)
+            for r in res:
+                data[tuple(r['onset'])] += r['freq']
         return data
 
     def find_codas(self, syllabic_label='syllabic'):
@@ -69,29 +72,32 @@ return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
         data : dict
             A dictionary with coda values as keys and frequency values as values
         """
-        statement = '''match (w:{word_name}:{corpus_name})
-where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
-with w
-match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
-(n)-[:contained_by*1..2]->(w)
-with w, n
-order by n.begin DESC
-with w,collect(n)[0..1] as coll unwind coll as n
+        from collections import Counter
+        data = Counter()
+        for s in self.speakers:
+            statement = '''match (w:{word_name}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
+    where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
+    AND s.name = {{speaker}}
+    with w
+    match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
+    (n)-[:contained_by*1..2]->(w)
+    with w, n
+    order by n.begin DESC
+    with w,collect(n)[0..1] as coll unwind coll as n
+    
+    MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
+    where not (pn)-[:precedes]->()-[:contained_by*1..2]->(w)
+    with w, n,pn
+    match p = shortestPath((n)-[:precedes*0..10]->(pn))
+    with extract(x in nodes(p)[1..]|x.label) as coda
+    return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
+                                               word_name=self.word_name,
+                                                 syllabic_name = make_label_safe_for_cypher(syllabic_label),
+                                               phone_name=self.phone_name)
 
-MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
-where not (pn)-[:precedes]->()-[:contained_by*1..2]->(w)
-with w, n,pn
-match p = shortestPath((n)-[:precedes*0..10]->(pn))
-with extract(x in nodes(p)[1..]|x.label) as coda
-return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
-                                           word_name=self.word_name,
-                                             syllabic_name = make_label_safe_for_cypher(syllabic_label),
-                                           phone_name=self.phone_name)
-
-        res = self.execute_cypher(statement)
-        data = {}
-        for r in res:
-            data[tuple(r['coda'])] = r['freq']
+            res = self.execute_cypher(statement, speaker=s)
+            for r in res:
+                data[tuple(r['coda'])] += r['freq']
         return data
 
     def encode_syllabic_segments(self, phones):
