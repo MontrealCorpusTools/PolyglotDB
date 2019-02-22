@@ -36,25 +36,28 @@ class PauseContext(ImportContext):
 
         if call_back is not None:
             call_back('Finishing up...')
-        statement = '''MATCH (prec:{corpus}:{word_type}:speech)
-        WHERE not (prec)-[:precedes]->()
-        WITH prec
-        MATCH p = (prec)-[:precedes_pause*]->(foll:{corpus}:{word_type}:speech)
-        WITH prec, foll, p
-        WHERE NONE (x in nodes(p)[1..-1] where x:speech)
-        MERGE (prec)-[:precedes]->(foll)'''.format(corpus=self.cypher_safe_name,
-                                                   word_type=self.word_name)
+        for s in self.speakers:
+            statement = '''MATCH (prec:{corpus}:{word_type}:speech)-[:spoken_by]->(s:Speaker:{corpus})
+            WHERE not (prec)-[:precedes]->()
+            AND s.name = {{speaker}}
+            WITH prec
+            MATCH p = (prec)-[:precedes_pause*]->(foll:{corpus}:{word_type}:speech)
+            WITH prec, foll, p
+            WHERE NONE (x in nodes(p)[1..-1] where x:speech)
+            MERGE (prec)-[:precedes]->(foll)'''.format(corpus=self.cypher_safe_name,
+                                                       word_type=self.word_name)
 
-        self.execute_cypher(statement)
+            self.execute_cypher(statement, speaker=s)
 
-        statement = '''MATCH (w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
-            with d, max(w.end) as speech_end, min(w.begin) as speech_begin
-            set d.speech_begin = speech_begin,
-                d.speech_end = speech_end
-            return d'''.format(corpus=self.cypher_safe_name,
-                               word_type=self.word_name)
+            statement = '''MATCH (s:Speaker:{corpus})<-[:spoken_by]-(w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
+            WHERE s.name = {{speaker}}
+                with d, max(w.end) as speech_end, min(w.begin) as speech_begin
+                set d.speech_begin = speech_begin,
+                    d.speech_end = speech_end
+                return d'''.format(corpus=self.cypher_safe_name,
+                                   word_type=self.word_name)
 
-        results = self.execute_cypher(statement)
+            results = self.execute_cypher(statement, speaker=s)
         self.hierarchy.add_token_labels(self, self.word_name, ['pause'])
         self.hierarchy.add_discourse_properties(self, [('speech_begin', float), ('speech_end', float)])
         self.encode_hierarchy()
@@ -63,20 +66,26 @@ class PauseContext(ImportContext):
         """
         Revert all words marked as pauses to regular words marked as speech
         """
-        statement = '''MATCH (n:{corpus}:{word_type}:speech)-[r:precedes]->(m:{corpus}:{word_type}:speech)
-        WHERE (n)-[:precedes_pause]->()
-        DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
-        self.execute_cypher(statement)
+        for s in self.speakers:
+            statement = '''MATCH (n:{corpus}:{word_type}:speech)-[r:precedes]->(m:{corpus}:{word_type}:speech),
+            (m)-[:spoken_by]->(s:Speaker:{corpus})
+            WHERE (n)-[:precedes_pause]->()
+            AND s.name = {{speaker}}
+            DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
+            self.execute_cypher(statement, speaker=s)
 
-        statement = '''MATCH (n:{corpus}:{word_type})-[r:precedes_pause]->(m:{corpus}:{word_type})
-        MERGE (n)-[:precedes]->(m)
-        DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
-        self.execute_cypher(statement)
+            statement = '''MATCH (n:{corpus}:{word_type})-[r:precedes_pause]->(m:{corpus}:{word_type}),
+            (m)-[:spoken_by]->(s:Speaker:{corpus})
+            WHERE s.name = {{speaker}}
+            MERGE (n)-[:precedes]->(m)
+            DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
+            self.execute_cypher(statement, speaker=s)
 
-        statement = '''MATCH (n:pause:{corpus})
-        SET n :speech
-        REMOVE n:pause'''.format(corpus=self.cypher_safe_name)
-        self.execute_cypher(statement)
+            statement = '''MATCH (n:pause:{corpus})-[:spoken_by]->(s:Speaker:{corpus})
+            WHERE s.name = {{speaker}}
+            SET n :speech
+            REMOVE n:pause'''.format(corpus=self.cypher_safe_name)
+            self.execute_cypher(statement, speaker=s)
         try:
             self.hierarchy.annotation_types.remove('pause')
             self.hierarchy.subset_tokens[self.word_name].remove('pause')
