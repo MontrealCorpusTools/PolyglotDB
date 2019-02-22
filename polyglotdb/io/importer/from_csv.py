@@ -691,12 +691,10 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
         rel_statement = '''
         USING PERIODIC COMMIT 1000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
+        MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
                 (s:syllable:{corpus}:speech {{id: csvLine.id}}),
                 (n)-[:spoken_by]->(sp:Speaker),
                 (n)-[:spoken_in]->(d:Discourse)
-        WITH n, w, csvLine, sp, d, r,s
-        DELETE r
         WITH n, w, csvLine, sp, d, s
         CREATE (s)-[:contained_by]->(w),
                 (n)-[:contained_by]->(s),
@@ -712,6 +710,17 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                      phone_name=corpus_context.phone_name)
         corpus_context.execute_cypher(statement)
 
+        del_rel_statement = '''
+        USING PERIODIC COMMIT 1000
+        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+        MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
+        DELETE r
+        '''
+        statement = del_rel_statement.format(path=csv_path,
+                                     corpus=corpus_context.cypher_safe_name,
+                                     word_name=corpus_context.word_name,
+                                     phone_name=corpus_context.phone_name)
+        corpus_context.execute_cypher(statement)
         onset_statement = '''
         USING PERIODIC COMMIT 1000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
