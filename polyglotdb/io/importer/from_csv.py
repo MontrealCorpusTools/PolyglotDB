@@ -662,6 +662,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
         else:
             csv_path = 'file:///{}'.format(make_path_safe(path))
+        begin = time.time()
         nucleus_statement = '''
         USING PERIODIC COMMIT 1000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -673,7 +674,9 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                      word_name=corpus_context.word_name,
                                      phone_name=corpus_context.phone_name)
         corpus_context.execute_cypher(statement)
+        print('Nucleus took: {} seconds'.format(time.time()-begin))
 
+        begin = time.time()
         node_statement = '''
         USING PERIODIC COMMIT 1000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -688,6 +691,9 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
         statement = node_statement.format(path=csv_path,
                                      corpus=corpus_context.cypher_safe_name,)
         corpus_context.execute_cypher(statement)
+        print('Nodes took: {} seconds'.format(time.time()-begin))
+
+        begin = time.time()
         rel_statement = '''
         USING PERIODIC COMMIT 1000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -709,7 +715,9 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                      word_name=corpus_context.word_name,
                                      phone_name=corpus_context.phone_name)
         corpus_context.execute_cypher(statement)
+        print('Relationships took: {} seconds'.format(time.time()-begin))
 
+        begin = time.time()
         del_rel_statement = '''
         USING PERIODIC COMMIT 1000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -721,6 +729,9 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                      word_name=corpus_context.word_name,
                                      phone_name=corpus_context.phone_name)
         corpus_context.execute_cypher(statement)
+        print('Deleting relationships took: {} seconds'.format(time.time()-begin))
+
+        begin = time.time()
         onset_statement = '''
         USING PERIODIC COMMIT 1000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -745,7 +756,9 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                      word_name=corpus_context.word_name,
                                      phone_name=corpus_context.phone_name)
         corpus_context.execute_cypher(statement)
+        print('Onsets took: {} seconds'.format(time.time()-begin))
 
+        begin = time.time()
         coda_statment = '''
         USING PERIODIC COMMIT 1000
         LOAD CSV WITH HEADERS FROM "{path}" as csvLine
@@ -769,6 +782,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                      word_name=corpus_context.word_name,
                                      phone_name=corpus_context.phone_name)
         corpus_context.execute_cypher(statement)
+        print('Codas took: {} seconds'.format(time.time()-begin))
 
 
 def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
