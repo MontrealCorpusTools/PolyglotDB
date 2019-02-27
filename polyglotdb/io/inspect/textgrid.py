@@ -187,7 +187,7 @@ def guess_tiers(tg):
     word_type = figure_linguistic_type(word_labels)
     phone_type = figure_linguistic_type(phone_labels)
     for k, v in tier_guesses.items():
-        if v[0] == 'word':
+        if 'word' in k.lower() or v[0] == 'word':
             tier_guesses[k] = word_type
         else:
             tier_guesses[k] = phone_type

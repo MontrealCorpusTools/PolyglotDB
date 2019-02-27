@@ -43,14 +43,10 @@ which are then imported into the database.
 
 Currently the following formats are supported:
 
-- Praat TextGrids
+- Praat TextGrids (:ref:`inspect_textgrids`)
 - Output from forced aligners (`Montreal Forced Aligner`_ and `FAVE-align`_)
 - Output from other corpus management software (`LaBB-CAT`_)
-- Text files
-
-  - Interlinear gloss text files
-  - `BAS Partitur`_ format
-
+- `BAS Partitur`_ format
 - Corpus-specific formats
 
   - `Buckeye`_
@@ -62,76 +58,168 @@ Inspect
 Inspect functions (i.e., :code:`inspect_textgrid`) return a guess for
 how to parse the annotations present in a given file (or files in a given
 directory).  They return a parser of the respective type (i.e., :code:`TextgridParser`)
-with an attribute for the :code:`annotation_types` detected.  For instance, the inspect function for TextGrids
+with an attribute for the :code:`annotation_tiers` detected.  For instance, the inspect function for TextGrids
 will return a parser with annotation types for each interval and point tier in the TextGrid.
 
-Details of inspect functions
-````````````````````````````
 
-Textgrid (:ref:`io_tg_parser_api`):
+.. _inspect_textgrids:
 
-- Annotation types:
+Inspect TextGrids
+`````````````````
 
-  - AnnotationType per tier
-  - All interval tiers with the same number of intervals as the guessed
-    word tier are guessed to be attributes of the words (i.e. part-of-speech)
+.. note::
 
-.. note:: The linguistic types of annotation types (i.e., does a given
-   annotation type contain an attribute of a word or a segment?)) is guessed
-   via the rate/duration of the annotations in a tier.  Using average durations
-   per discourse from the Buckeye Corpus, probability of the tier being a
-   word or segment annotation is calculated and the higher probability determines
-   the guess.  Currently the only guesses for linguistic types are "words"
-   and "segments".
-
-- Hierarchy:
-
-  - Creates word type transcription property based off contained phones (if both exist)
-
-LaBB-CAT format TextGrids (:ref:`io_labbcat_parser_api`):
-
-- Annotation types:
-
-  - One AnnotationType for words
-  - One AnnotationType for phones
-
-- Hierarchy:
-
-  - Creates word type transcription property based off contained phones
-
-MFA (:ref:`io_mfa_parser_api`):
-
-- Annotation types:
-
-  - One AnnotationType for words
-  - One AnnotationType for phones
-
-- Hierarchy:
-
-  - Creates word type transcription property based off contained phones
-
-Buckeye (:ref:`io_buckeye_parser_api`):
-
-- Annotation types:
-
-  - One AnnotationType for words
-  - Words have type properties for underlying transcription and token
-    properties for their part of speech
-  - One AnnotationType for phones
+   See :ref:`io_tg_parser_api` for full API of the TextGrid Parser
 
 
-TIMIT (:ref:`io_timit_parser_api`):
+Consider the following TextGrid with interval tiers for words and phones:
 
-- Annotation types:
+.. figure:: _static/img/io_example.png
+    :align: center
+    :alt: Image cannot be displayed in your browser
 
-  - One AnnotationType for words
-  - One AnnotationType for phones
-  - Timepoints in number of samples get converted to seconds
+Running the :code:`inspect_textgrid` function for this file will return two annotation types. From bottom to top, it will
+generate a :code:`phone` annotation type and a :code:`word` annotation type.  Words and phones are two special linguistic
+types in PolyglotDB.  Other linguistic types can be defined in a TextGrid (i.e., grouping words into utterances or phones into syllables,
+though functionality exists for computing both of those automatically), but word and phone tiers must be defined.
 
-- Hierarchy:
+.. note::
 
-  - Creates word type transcription property based off contained phones
+   Which tier corresponds to which special :code:`word` and :code:`phone` type is done via heuristics.  The first and most
+   reliable is whether the tier name contains "word" or "phone" in their tier name.  The second is done by using cutoffs
+   for mean and SD of word and phone durations in the Buckeye corpus to determine if the intervals are more likely to be
+   word or phones.  For reference, the mean and SD of words used is 0.2465409 and 0.03175723, and those used for phones
+   is 0.08327773 and 0.03175723.
 
+From the above TextGrid, phones will have a :code:`label` property (i.e., "Y"), a :code:`begin` property (i.e., 0.15),
+and a :code:`end` property (i.e., 0.25).
+Words will have a :code:`label` property (i.e., "you"), a :code:`begin` property (i.e., 0.15),
+and a :code:`end` property (i.e., 0.25), as well as a computed :code:`transcription`
+property
+made of up of all of the included phones based on timings (i.e., "Y.UW1").  Any empty intervals will result in "words"
+that have the :code:`label` of "<SIL>", which can then be marked as pause later in corpus processing
+(see :ref:`encoding_pauses` for more details).
+
+.. note::
+
+   The computation of transcription uses the midpoints of phones and whether they are between the begin and end time
+   points of words.
+
+
+Inspect MFA formatted TextGrids
+```````````````````````````````
+
+The Montreal Forced Aligner generates TextGrids for files in two formats that PolyglotDB can parse.  The first format
+is for files with a single speaker.  These files will have two tiers, one for words (named :code:`words`) and one for phones (named :code:`phones`).
+The second format is for files with multiple speakers, where each speaker will have a pair of tiers for words (formatted as :code:`Speaker name - words`)
+and phones (formatted as :code:`Speaker name - phones`).
+
+.. note::
+
+   See :ref:`io_mfa_parser_api` for full API of the MFA Parser
+
+Inspect FAVE formatted TextGrids
+````````````````````````````````
+
+The FAVE aligner generates TextGrids for files in two formats that PolyglotDB can parse.  The first format
+is for files with a single speaker.  These files will have two tiers, one for words (named :code:`word`) and one for phones (named :code:`phone`).
+The second format is for files with multiple speakers, where each speaker will have a pair of tiers for words (formatted as :code:`Speaker name - word`)
+and phones (formatted as :code:`Speaker name - phone`).
+
+.. note::
+
+   See :ref:`io_mfa_parser_api` for full API of the FAVE Parser
+
+Inspect LaBB-CAT formatted TextGrids
+````````````````````````````````````
+
+The LaBB-CAT system generates force-aligned TextGrids for files in a format that PolyglotDB can parse (though some editing may be
+required due to issues in exporting single speakers in LaBB-CAT).  As with the other supported aligner output formats,
+PolyglotDB looks for word and phone tiers per speaker (or for just a single speaker depending on export options).  The
+parser will use :code:`transcript` to find the word tiers (i.e. :code:`Speaker name - transcript`) and :code:`segment` to find
+the phone tiers (i.e., :code:`Speaker name - phones`).
+
+.. note::
+
+   See :ref:`io_labbcat_parser_api` for full API of the LaBB-CAT Parser
+
+Inspect Buckeye Corpus
+``````````````````````
+
+The `Buckeye`_ Corpus is stored in an idiosyncratic format that has two text files per sound file (i.e., :code:`s0101a.wav`), one detailing information
+about words (i.e., :code:`s0101a.words`) and one detailing information about surface phones (i.e. :code:`s0101a.phones`).  The PolyglotDB
+parser extracts label, begin and end for each phone.  Words have type properties for their underlying transcription and
+token properties for their part of speech and begin/end.
+
+.. note::
+
+   See :ref:`io_buckeye_parser_api` for full API of the Buckeye Parser
+
+Inspect TIMIT Corpus
+````````````````````
+
+The `TIMIT`_ corpus is stored in an idiosyncratic format that has two text files per sound file (i.e., :code:`sa1.wav`), one detailing information
+about words (i.e., :code:`sa1.WRD`) and one detailing information about surface phones (i.e. :code:`sa1.PHN`).  The PolyglotDB
+parser extracts label, begin and end for each phone and each word.  Time stamps are converted from samples in the original text files
+to seconds for use in PolyglotDB.
+
+.. note::
+
+   See :ref:`io_timit_parser_api` for full API of the Buckeye Parser
+
+.. _modifying_parsers:
+
+Modifying aspects of parsing
+----------------------------
+
+Additional properties for linguistic units can be imported as well through the use of extra interval tiers when using a
+TextGrid parser (see :ref:`inspect_textgrids`), as in the following TextGrid:
+
+.. figure:: _static/img/io_example_extra_word_props.png
+    :align: center
+    :alt: Image cannot be displayed in your browser
+
+Here we have properties for each word's part of speech (POS tier) and transcription.  The transcription tier will overwrite
+the automatic calculation of transcription based on contained segments.  Each of these will be properties will be type properties
+by default (see :ref:`type_token` for more details).  If these properties are meant to be token level properties (i.e.,
+the part of speech of a word varies depending on the token produced), it can changed as follows:
+
+.. code-block:: python
+
+    from polyglotdb import CorpusContext
+    import polyglotdb.io as pgio
+
+    parser = pgio.inspect_textgrid('/path/to/textgrid/file/or/directory')
+    parser.annotation_tiers[2].type_property = False # The index of the TextGrid tier for POS is 2
+
+    # ... code that uses the parser to import data
+
+If the content of a tier should be ignored (i.e., if it contains information not related to any annotations in particular),
+then it can be manually marked to be ignored as follows:
+
+.. code-block:: python
+
+    from polyglotdb import CorpusContext
+    import polyglotdb.io as pgio
+
+    parser = pgio.inspect_textgrid('/path/to/textgrid/file/or/directory')
+    parser.annotation_tiers[0].ignored = True # Index of 0 if the first tier should be ignored
+
+    # ... code that uses the parser to import data
+
+Parsers created through other inspect functions (i.e. Buckeye) can be modified in similar ways, though the TextGrid parser
+is necessarily the most flexible.
+
+Speaker parsers
+```````````````
+
+There are two currently implemented schemes for parsing speaker names from a file path.  The first is the :ref:`filename_speaker_parser`,
+which takes a number of characters in the base file name (without the extension) starting either from the left or right. For
+instance, the path :code:`/path/to/buckeye/s0101a.words` for a Buckeye file would return the speaker :code:`s01` using 3 characters from the left.
+
+The other speaker parser is the :ref:`directory_speaker_parser`, which parses speakers from the directory that contains
+the specified path.  For instance, given the path :code:`/path/to/buckeye/s01/s0101a.words` would return :code:`s01` because the containing
+folder of the file is named :code:`s01`.
 
 Load discourse
 --------------
@@ -166,6 +254,21 @@ called as well:
 
    with CorpusContext(config) as c:
        c.load_directory(parser, '/path/to/textgrids')
+
+Writing new parsers
+-------------------
+
+New parsers can be created through extending either the :ref:`io_base_parser_api` class or one of the more specialized
+parser classes. There are in general three aspects that need to be implemented.  First, the :code:`_extensions` property should
+be updated to reflect the file extensions that the parser will find and attempt to parse.  This property should be an iterable,
+even if only one extension is to be used.
+
+Second, the :code:`__init__` function should be implemented if anything above and beyond the based class init function is required
+(i.e., special speaker parsing).
+
+Finally, the :code:`parse_discourse` function should be overwritten to implement some way of populating data on the annotation tiers
+from the source data files and ultimately create a :code:`DiscourseData` object (intermediate data representation for straight-forward importing
+into the Polyglot databases).
 
 Exporters
 =========

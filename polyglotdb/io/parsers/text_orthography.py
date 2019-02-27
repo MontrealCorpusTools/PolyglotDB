@@ -13,7 +13,7 @@ class OrthographyTextParser(BaseParser):
 
     Parameters
     ----------
-    annotation_types: list
+    annotation_tiers: list
         Annotation types of the files to parse
     stop_check : callable, optional
         Function to check whether to halt parsing
@@ -21,9 +21,9 @@ class OrthographyTextParser(BaseParser):
         Function to output progress messages
     '''
 
-    def __init__(self, annotation_types,
+    def __init__(self, annotation_tiers,
                  stop_check=None, call_back=None):
-        super(OrthographyTextParser, self).__init__(annotation_types,
+        super(OrthographyTextParser, self).__init__(annotation_tiers,
                                                     Hierarchy({'word': None}), make_transcription=False,
                                                     stop_check=stop_check, call_back=call_back)
 
@@ -50,7 +50,7 @@ class OrthographyTextParser(BaseParser):
         else:
             speaker = None
 
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
             a.speaker = speaker
 
@@ -71,16 +71,16 @@ class OrthographyTextParser(BaseParser):
             to_add = []
             for word in line:
                 spell = word.strip()
-                spell = ''.join(x for x in spell if not x in self.annotation_types[0].ignored_characters)
+                spell = ''.join(x for x in spell if not x in self.annotation_tiers[0].ignored_characters)
                 if spell == '':
                     continue
                 to_add.append(spell)
-            self.annotation_types[0].add((x, num_annotations + i) for i, x in enumerate(to_add))
+            self.annotation_tiers[0].add((x, num_annotations + i) for i, x in enumerate(to_add))
             num_annotations += len(to_add)
 
         pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
         return data

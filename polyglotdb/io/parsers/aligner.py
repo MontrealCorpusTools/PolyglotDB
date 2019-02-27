@@ -21,10 +21,10 @@ class AlignerParser(TextgridParser):
     name = 'aligner'
     speaker_first = True
 
-    def __init__(self, annotation_types, hierarchy, make_transcription=True,
+    def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
                  make_label=False,
                  stop_check=None, call_back=None):
-        super(AlignerParser, self).__init__(annotation_types, hierarchy, make_transcription,
+        super(AlignerParser, self).__init__(annotation_tiers, hierarchy, make_transcription,
                                         make_label, stop_check, call_back)
         self.speaker_parser = DirectorySpeakerParser()
 
@@ -101,26 +101,26 @@ class AlignerParser(TextgridParser):
             else:
                 speaker = None
 
-            for a in self.annotation_types:
+            for a in self.annotation_tiers:
                 a.reset()
                 a.speaker = speaker
 
             # Parse the tiers
             for i, ti in enumerate(tg.tiers):
                 if ti.name.lower().startswith(self.word_label):
-                    self.annotation_types[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
+                    self.annotation_tiers[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
                 elif ti.name.lower().startswith(self.phone_label):
-                    self.annotation_types[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
+                    self.annotation_tiers[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             pg_annotations = self._parse_annotations(types_only)
 
             data = DiscourseData(name, pg_annotations, self.hierarchy)
-            for a in self.annotation_types:
+            for a in self.annotation_tiers:
                 a.reset()
 
         # Format 2
         else:
-            dummy = self.annotation_types
-            self.annotation_types = []
+            dummy = self.annotation_tiers
+            self.annotation_tiers = []
             wav_path = find_wav_path(path)
             speaker_channel_mapping = {}
             if wav_path is not None:
@@ -172,12 +172,12 @@ class AlignerParser(TextgridParser):
                 at = OrthographyTier(type, type)
                 at.speaker = speaker
                 at.add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
-                self.annotation_types.append(at)
+                self.annotation_tiers.append(at)
             pg_annotations = self._parse_annotations(types_only)
             data = DiscourseData(name, pg_annotations, self.hierarchy)
             data.speaker_channel_mapping = speaker_channel_mapping
 
-            self.annotation_types = dummy
+            self.annotation_tiers = dummy
 
         data.wav_path = find_wav_path(path)
         return data

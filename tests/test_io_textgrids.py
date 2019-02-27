@@ -13,8 +13,8 @@ from polyglotdb.exceptions import TextGridError, GraphQueryError
 def test_tobi(textgrid_test_dir):
     path = os.path.join(textgrid_test_dir, 'tobi.TextGrid')
     parser = inspect_textgrid(path)
-    assert (isinstance(parser.annotation_types[0], TobiTier))
-    assert (isinstance(parser.annotation_types[1], OrthographyTier))
+    assert (isinstance(parser.annotation_tiers[0], TobiTier))
+    assert (isinstance(parser.annotation_tiers[1], OrthographyTier))
 
 
 @pytest.mark.xfail
@@ -39,11 +39,11 @@ def test_load(textgrid_test_dir, graph_db):
     with CorpusContext('test_textgrid', **graph_db) as c:
         c.reset()
         parser = inspect_textgrid(path)
-        parser.annotation_types[1].linguistic_type = 'word'
-        parser.annotation_types[2].ignored = True
+        parser.annotation_tiers[1].linguistic_type = 'word'
+        parser.annotation_tiers[2].ignored = True
         parser.hierarchy['word'] = None
         parser.hierarchy['phone'] = 'word'
-        print([(x.linguistic_type, x.name) for x in parser.annotation_types])
+        print([(x.linguistic_type, x.name) for x in parser.annotation_tiers])
         c.load(parser, path)
 
 
@@ -60,7 +60,7 @@ def test_directory(textgrid_test_dir, graph_db):
 @pytest.mark.xfail
 def test_inspect_textgrid_directory(textgrid_test_dir):
     parser = inspect_textgrid(textgrid_test_dir)
-    assert (len(parser.annotation_types) == 4)
+    assert (len(parser.annotation_tiers) == 4)
 
 
 @pytest.mark.xfail
@@ -78,8 +78,8 @@ def test_load_pronunciation_ignore(textgrid_test_dir, graph_db):
     with CorpusContext('test_pronunc', **graph_db) as c:
         c.reset()
         parser = inspect_textgrid(path)
-        parser.annotation_types[1].ignored = True
-        parser.annotation_types[2].ignored = True
+        parser.annotation_tiers[1].ignored = True
+        parser.annotation_tiers[2].ignored = True
         c.load(parser, path)
 
         with pytest.raises(GraphQueryError):
@@ -93,7 +93,7 @@ def test_load_pronunciation(textgrid_test_dir, graph_db):
     with CorpusContext('test_pronunc', **graph_db) as c:
         c.reset()
         parser = inspect_textgrid(path)
-        parser.annotation_types[2].type_property = False
+        parser.annotation_tiers[2].type_property = False
         c.load(parser, path)
 
         q = c.query_graph(c.word).filter(c.word.label == 'probably')

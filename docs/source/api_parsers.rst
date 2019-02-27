@@ -6,13 +6,13 @@ Parser Classes
 **************
 
 
-.. _io_ilg_parser_api:
+.. _io_base_parser_api:
 
-ILG text parser
----------------
+Base parser
+-----------
 
 
-.. autoclass:: polyglotdb.io.parsers.ilg.IlgParser
+.. autoclass:: polyglotdb.io.parsers.base.BaseParser
 
 
 
@@ -73,4 +73,21 @@ LaBB-CAT parser
 
 .. autoclass:: polyglotdb.io.parsers.labbcat.LabbCatParser
 
+
+Speaker parsers
+===============
+
+.. _filename_speaker_parser:
+
+Filename Speaker Parser
+-----------------------
+
+.. autoclass:: polyglotdb.io.parsers.speaker.FilenameSpeakerParser
+
+.. _directory_speaker_parser:
+
+Directory Speaker Parser
+------------------------
+
+.. autoclass:: polyglotdb.io.parsers.speaker.DirectorySpeakerParser
 

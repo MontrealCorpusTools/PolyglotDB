@@ -13,7 +13,7 @@ class TranscriptionTextParser(BaseParser):
 
     Parameters
     ----------
-    annotation_types: list
+    annotation_tiers: list
         Annotation types of the files to parse
     stop_check : callable, optional
         Function to check whether to halt parsing
@@ -21,9 +21,9 @@ class TranscriptionTextParser(BaseParser):
         Function to output progress messages
     '''
 
-    def __init__(self, annotation_types,
+    def __init__(self, annotation_tiers,
                  stop_check=None, call_back=None):
-        super(TranscriptionTextParser, self).__init__(annotation_types,
+        super(TranscriptionTextParser, self).__init__(annotation_tiers,
                                                       Hierarchy({'word': None}), make_transcription=False,
                                                       make_label=True,
                                                       stop_check=stop_check, call_back=call_back)
@@ -51,7 +51,7 @@ class TranscriptionTextParser(BaseParser):
         else:
             speaker = None
 
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
             a.speaker = speaker
 
@@ -77,6 +77,6 @@ class TranscriptionTextParser(BaseParser):
         pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
         return data

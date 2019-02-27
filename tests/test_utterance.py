@@ -72,8 +72,8 @@ def test_utterance_nosilence(graph_db, textgrid_test_dir):
     with CorpusContext('word_phone_nosilence', **graph_db) as g:
         g.reset()
         parser = inspect_textgrid(tg_path)
-        parser.annotation_types[0].linguistic_type = 'phone'
-        parser.annotation_types[1].linguistic_type = 'word'
+        parser.annotation_tiers[0].linguistic_type = 'phone'
+        parser.annotation_tiers[1].linguistic_type = 'word'
         parser.hierarchy['word'] = None
         parser.hierarchy['phone'] = 'word'
         g.load(parser, tg_path)
@@ -121,8 +121,8 @@ def test_utterance_oneword(graph_db, textgrid_test_dir):
     with CorpusContext('one_word_no_silence', **graph_db) as g:
         g.reset()
         parser = inspect_textgrid(tg_path)
-        parser.annotation_types[0].linguistic_type = 'phone'
-        parser.annotation_types[1].linguistic_type = 'word'
+        parser.annotation_tiers[0].linguistic_type = 'phone'
+        parser.annotation_tiers[1].linguistic_type = 'word'
         parser.hierarchy['word'] = None
         parser.hierarchy['phone'] = 'word'
         g.load(parser, tg_path)
@@ -141,8 +141,8 @@ def test_no_speech_utterance(graph_db, textgrid_test_dir):
     with CorpusContext('one_word_no_silence', **graph_db) as g:
         g.reset()
         parser = inspect_textgrid(tg_path)
-        parser.annotation_types[0].linguistic_type = 'phone'
-        parser.annotation_types[1].linguistic_type = 'word'
+        parser.annotation_tiers[0].linguistic_type = 'phone'
+        parser.annotation_tiers[1].linguistic_type = 'word'
         parser.hierarchy['word'] = None
         parser.hierarchy['phone'] = 'word'
         g.load(parser, tg_path)

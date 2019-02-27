@@ -33,7 +33,7 @@ class BuckeyeParser(BaseParser):
 
     Parameters
     ----------
-    annotation_types: list
+    annotation_tiers: list
         Annotation types of the files to parse
     hierarchy : :class:`~polyglotdb.structure.Hierarchy`
         Details of how linguistic types relate to one another
@@ -44,9 +44,9 @@ class BuckeyeParser(BaseParser):
     '''
     _extensions = ['.words']
 
-    def __init__(self, annotation_types, hierarchy,
+    def __init__(self, annotation_tiers, hierarchy,
                  stop_check=None, call_back=None):
-        super(BuckeyeParser, self).__init__(annotation_types, hierarchy,
+        super(BuckeyeParser, self).__init__(annotation_tiers, hierarchy,
                                             make_transcription=False, make_label=False,
                                             stop_check=stop_check, call_back=call_back)
         self.speaker_parser = FilenameSpeakerParser(3)
@@ -79,7 +79,7 @@ class BuckeyeParser(BaseParser):
         else:
             speaker = None
 
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
             a.speaker = speaker
 
@@ -128,20 +128,20 @@ class BuckeyeParser(BaseParser):
                     end = found[-1][2]
                     if i != len(words) - 1:
                         words[i + 1]['begin'] = end
-            self.annotation_types[0].add([(word, beg, end)])
+            self.annotation_tiers[0].add([(word, beg, end)])
             if w['transcription'] is None:
                 w['transcription'] = '?'
             if w['surface_transcription'] is None:
                 w['surface_transcription'] = '?'
-            self.annotation_types[1].add([(w['transcription'], beg, end)])
-            self.annotation_types[2].add([(w['surface_transcription'], beg, end)])
-            self.annotation_types[3].add([(w['category'], beg, end)])
-            self.annotation_types[4].add(found)
+            self.annotation_tiers[1].add([(w['transcription'], beg, end)])
+            self.annotation_tiers[2].add([(w['surface_transcription'], beg, end)])
+            self.annotation_tiers[3].add([(w['category'], beg, end)])
+            self.annotation_tiers[4].add(found)
 
         pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
 
         data.wav_path = find_wav_path(word_path)

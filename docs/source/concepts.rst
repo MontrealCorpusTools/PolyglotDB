@@ -23,6 +23,8 @@ In addition to precedence relations, hierarchical relationships are also
 encoded.  In the above example the word XXX contains the phones Y, Y and Y.
 
 
+.. _type_token:
+
 Types versus tokens
 ===================
 

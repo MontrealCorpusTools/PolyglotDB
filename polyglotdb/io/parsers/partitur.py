@@ -11,9 +11,9 @@ from .base import DiscourseData
 class PartiturParser(BaseParser):
     _extensions = ['.par,2']
 
-    def __init__(self, annotation_types, hierarchy,
+    def __init__(self, annotation_tiers, hierarchy,
                  stop_check=None, call_back=None):
-        super(PartiturParser, self).__init__(annotation_types, hierarchy,
+        super(PartiturParser, self).__init__(annotation_tiers, hierarchy,
                                              make_transcription=False, make_label=False,
                                              stop_check=stop_check, call_back=call_back)
         self.speaker_parser = DirectorySpeakerParser()
@@ -33,7 +33,7 @@ class PartiturParser(BaseParser):
             Parsed data from the file
         '''
         speaker = parse_speaker(path)
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
             a.speaker = speaker
 
@@ -47,18 +47,18 @@ class PartiturParser(BaseParser):
             # tup = (key, words[key][0], words[key][1])
 
             word = tup[0]
-            self.annotation_types[0].add([tup[0:3]])
-            self.annotation_types[1].add([(str(tup[3]), tup[1], tup[2])])
+            self.annotation_tiers[0].add([tup[0:3]])
+            self.annotation_tiers[1].add([(str(tup[3]), tup[1], tup[2])])
 
 
-            # self.annotation_types[0][-1].type_properties['transcription'] = tup[3]
+            # self.annotation_tiers[0][-1].type_properties['transcription'] = tup[3]
 
         for tup in phones.values():
-            self.annotation_types[2].add(((x for x in tup)))
+            self.annotation_tiers[2].add(((x for x in tup)))
         pg_annotations = self._parse_annotations(types_only)
         data = DiscourseData(name, pg_annotations, self.hierarchy)
 
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
         return data
 

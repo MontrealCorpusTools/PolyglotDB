@@ -19,7 +19,7 @@ class IlgParser(BaseParser):
 
     Parameters
     ----------
-    annotation_types: list
+    annotation_tiers: list
         Annotation types of the files to parse
     stop_check : callable, optional
         Function to check whether to halt parsing
@@ -27,9 +27,9 @@ class IlgParser(BaseParser):
         Function to output progress messages
     '''
 
-    def __init__(self, annotation_types,
+    def __init__(self, annotation_tiers,
                  stop_check=None, call_back=None):
-        super(IlgParser, self).__init__(annotation_types,
+        super(IlgParser, self).__init__(annotation_tiers,
                                         Hierarchy({'word': None}), make_transcription=False,
                                         make_label=True,
                                         stop_check=stop_check, call_back=call_back)
@@ -50,7 +50,7 @@ class IlgParser(BaseParser):
         '''
         lines = ilg_text_to_lines(path)
 
-        if len(lines) % len(self.annotation_types) != 0:
+        if len(lines) % len(self.annotation_tiers) != 0:
             raise (ILGLinesMismatchError(lines))
 
         if self.call_back is not None:
@@ -65,7 +65,7 @@ class IlgParser(BaseParser):
         else:
             speaker = None
 
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
             a.speaker = speaker
 
@@ -79,7 +79,7 @@ class IlgParser(BaseParser):
                 self.call_back(index)
             cur_line = {}
             mismatch = False
-            for line_ind, annotation_type in enumerate(self.annotation_types):
+            for line_ind, annotation_type in enumerate(self.annotation_tiers):
                 if annotation_type.ignored:
                     continue
                 actual_line_ind, line = lines[index + line_ind]
@@ -87,13 +87,13 @@ class IlgParser(BaseParser):
                     mismatch = True
 
                 cur_line[line_ind] = line
-                self.annotation_types[line_ind].add(((x, num_annotations + j) for j, x in enumerate(line)))
+                self.annotation_tiers[line_ind].add(((x, num_annotations + j) for j, x in enumerate(line)))
             if mismatch:
                 start_line = lines[index][0]
-                end_line = start_line + len(self.annotation_types)
+                end_line = start_line + len(self.annotation_tiers)
                 mismatching_lines.append(((start_line, end_line), cur_line))
 
-            index += len(self.annotation_types)
+            index += len(self.annotation_tiers)
             num_annotations += len(line)
 
         if len(mismatching_lines) > 0:
@@ -102,6 +102,6 @@ class IlgParser(BaseParser):
         pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
         return data

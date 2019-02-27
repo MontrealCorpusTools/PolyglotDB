@@ -15,7 +15,7 @@ class TimitParser(BaseParser):
 
     Parameters
     ----------
-    annotation_types: list
+    annotation_tiers: list
         Annotation types of the files to parse
     hierarchy : :class:`~polyglotdb.structure.Hierarchy`
         Details of how linguistic types relate to one another
@@ -26,9 +26,9 @@ class TimitParser(BaseParser):
     '''
     _extensions = ['.wrd']
 
-    def __init__(self, annotation_types, hierarchy,
+    def __init__(self, annotation_tiers, hierarchy,
                  stop_check=None, call_back=None):
-        super(TimitParser, self).__init__(annotation_types, hierarchy,
+        super(TimitParser, self).__init__(annotation_tiers, hierarchy,
                                           make_transcription=True, make_label=False,
                                           stop_check=stop_check, call_back=call_back)
         self.speaker_parser = DirectorySpeakerParser()
@@ -60,7 +60,7 @@ class TimitParser(BaseParser):
         else:
             speaker = None
 
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
             a.speaker = speaker
 
@@ -72,13 +72,13 @@ class TimitParser(BaseParser):
         if words[-1]['end'] != phones[-1][2]:
             words.append({'spelling': 'sil', 'begin': words[-1]['end'], 'end': phones[-1][2]})
 
-        self.annotation_types[0].add((x['spelling'], x['begin'], x['end']) for x in words)
-        self.annotation_types[1].add(phones)
+        self.annotation_tiers[0].add((x['spelling'], x['begin'], x['end']) for x in words)
+        self.annotation_tiers[1].add(phones)
 
         pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
 
         word_path = word_path.replace(".wrd", ".wav")
@@ -106,7 +106,7 @@ def read_phones(path):
     
     Returns
     -------
-    output : list of tuples
+    list of tuples
         each tuple is label, begin, end for a phone
 
     """
@@ -133,7 +133,7 @@ def read_words(path):
     
     Returns
     -------
-    output : list of dicts
+    list of dicts
         each dict has spelling, begin, end
 
     """

@@ -14,13 +14,13 @@ from polyglotdb import CorpusContext
 def test_inspect_ilg(ilg_test_dir):
     basic_path = os.path.join(ilg_test_dir, 'basic.txt')
     parser = inspect_ilg(basic_path)
-    assert (len(parser.annotation_types) == 2)
-    assert (parser.annotation_types[1].trans_delimiter == '.')
+    assert (len(parser.annotation_tiers) == 2)
+    assert (parser.annotation_tiers[1].trans_delimiter == '.')
 
 
 def test_inspect_ilg_directory(ilg_test_dir):
     parser = inspect_ilg(ilg_test_dir)
-    assert (len(parser.annotation_types) == 2)
+    assert (len(parser.annotation_tiers) == 2)
 
 
 @pytest.mark.xfail

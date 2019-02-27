@@ -30,7 +30,7 @@ def test_export_transcription(graph_db, export_test_dir):
 def test_delim_error(graph_db, text_transcription_test_dir):
     transcription_path = os.path.join(text_transcription_test_dir, 'text_transcription.txt')
     parser = inspect_transcription(transcription_path)
-    parser.annotation_types[0].trans_delimiter = ','
+    parser.annotation_tiers[0].trans_delimiter = ','
     with CorpusContext('transcription_test_raises', **graph_db) as c:
         with pytest.raises(DelimiterError):
             c.load(parser, transcription_path)
@@ -47,7 +47,7 @@ def test_load_transcription_morpheme(graph_db, text_transcription_test_dir):
     transcription_morphemes_path = os.path.join(text_transcription_test_dir,
                                                 'text_transcription_morpheme_boundaries.txt')
     parser = inspect_transcription(transcription_morphemes_path)
-    parser.annotation_types[0].morph_delimiters = set('-=')
+    parser.annotation_tiers[0].morph_delimiters = set('-=')
     with CorpusContext('transcription_morpheme', **graph_db) as c:
         c.reset()
         c.load(parser, transcription_morphemes_path)

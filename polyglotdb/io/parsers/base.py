@@ -15,7 +15,7 @@ class BaseParser(object):
 
     Parameters
     ----------
-    annotation_types: list
+    annotation_tiers: list
         Annotation types of the files to parse
     hierarchy : :class:`~polyglotdb.structure.Hierarchy`
         Details of how linguistic types relate to one another
@@ -29,11 +29,11 @@ class BaseParser(object):
     '''
     _extensions = ['.txt']
 
-    def __init__(self, annotation_types, hierarchy, make_transcription=True,
+    def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
                  make_label=False,
                  stop_check=None, call_back=None):
         self.speaker_parser = None
-        self.annotation_types = annotation_types
+        self.annotation_tiers = annotation_tiers
         self.hierarchy = hierarchy
         self.make_transcription = make_transcription
         self.make_label = make_label
@@ -62,22 +62,22 @@ class BaseParser(object):
         return True
 
     def _parse_annotations(self, types_only=False):
-        annotation_types = {}
+        annotation_tiers = {}
         segment_type = None
         for k, v in self.hierarchy.items():
-            annotation_types[k] = PGAnnotationType(k)
-            annotation_types[k].supertype = v
+            annotation_tiers[k] = PGAnnotationType(k)
+            annotation_tiers[k].supertype = v
             if 'word' in k:
-                annotation_types[k].is_word = True  # FIXME?
+                annotation_tiers[k].is_word = True  # FIXME?
                 self.hierarchy.type_properties['word'] = set()
                 self.hierarchy.token_properties['word'] = set()
-            if k not in self.hierarchy.values() and not annotation_types[k].is_word:
+            if k not in self.hierarchy.values() and not annotation_tiers[k].is_word:
                 segment_type = k
 
-        for k in annotation_types.keys():
+        for k in annotation_tiers.keys():
             relevent_levels = {}
             lengths = {}
-            for inputlevel in self.annotation_types:
+            for inputlevel in self.annotation_tiers:
                 if inputlevel.ignored:
                     continue
                 if inputlevel.linguistic_type != k:
@@ -104,7 +104,7 @@ class BaseParser(object):
                     end = None
                     for rl in speaker_levels:
                         if types_only and not rl.type_property:
-                            annotation_types[k].token_property_keys.add(rl.name)
+                            annotation_tiers[k].token_property_keys.add(rl.name)
                             continue
                         if rl.subannotation:
                             continue
@@ -142,8 +142,8 @@ class BaseParser(object):
                     a.token_properties.update(token_properties)
                     a.speaker = speaker
                     if i != 0:
-                        a.previous_id = annotation_types[k][-1].id
-                    annotation_types[k].add(a)
+                        a.previous_id = annotation_tiers[k][-1].id
+                    annotation_tiers[k].add(a)
                 for rl in speaker_levels:
                     if types_only:
                         continue
@@ -151,7 +151,7 @@ class BaseParser(object):
                         continue
                     for sub in rl:
                         #TODO: Maybe will cause VOTs to be under wrong phone.
-                        annotation = annotation_types[k].lookup(sub.midpoint, speaker=speaker)
+                        annotation = annotation_tiers[k].lookup(sub.midpoint, speaker=speaker)
                         if isinstance(sub, Tobi):
                             a = PGSubAnnotation(sub.label, 'tone', sub.begin, sub.end)
                         elif isinstance(sub, BreakIndex):
@@ -162,14 +162,14 @@ class BaseParser(object):
                         if k not in self.hierarchy.subannotations:
                             self.hierarchy.subannotations[k] = set()
                         self.hierarchy.subannotations[k].add(a.type)
-        for k, v in annotation_types.items():
-            annotation_types[k].optimize_lookups()
+        for k, v in annotation_tiers.items():
+            annotation_tiers[k].optimize_lookups()
             if not types_only:
                 st = v.supertype
                 if st is not None:
-                    annotation_types[st].optimize_lookups()
-                    for a in annotation_types[k]:
-                        super_annotation = annotation_types[st].lookup(a.midpoint, speaker=a.speaker)
+                    annotation_tiers[st].optimize_lookups()
+                    for a in annotation_tiers[k]:
+                        super_annotation = annotation_tiers[st].lookup(a.midpoint, speaker=a.speaker)
                         try:
                             a.super_id = super_annotation.id
                         except AttributeError:
@@ -177,19 +177,19 @@ class BaseParser(object):
                             # raise
             if self.make_transcription and segment_type is not None and v.is_word:
                 v.type_property_keys.update(['transcription'])
-                annotation_types[segment_type].optimize_lookups()
-                for a in annotation_types[k]:
-                    transcription = annotation_types[segment_type].lookup_range(a.begin, a.end, speaker=a.speaker)
+                annotation_tiers[segment_type].optimize_lookups()
+                for a in annotation_tiers[k]:
+                    transcription = annotation_tiers[segment_type].lookup_range(a.begin, a.end, speaker=a.speaker)
                     a.type_properties['transcription'] = [x.label for x in transcription]
                 v.type_properties |= set([(tuple(['transcription', type("string")]))])
                 self.hierarchy.type_properties['word'] |= set([(tuple(['transcription', type("string")]))])
             if self.make_label and 'transcription' in v.type_property_keys and v.is_word:
-                for a in annotation_types[k]:
+                for a in annotation_tiers[k]:
                     if a.label is None:
                         a.label = ''.join(a.type_properties['transcription'])
-                        annotation_types[k].type_property_keys.add('label')
-                        annotation_types[k].token_property_keys.add('label')
-        return annotation_types
+                        annotation_tiers[k].type_property_keys.add('label')
+                        annotation_tiers[k].token_property_keys.add('label')
+        return annotation_tiers
 
     def parse_information(self, path, corpus_name):
         """

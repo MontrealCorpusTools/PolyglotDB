@@ -16,7 +16,7 @@ class TextgridParser(BaseParser):
 
     Parameters
     ----------
-    annotation_types: list
+    annotation_tiers: list
         Annotation types of the files to parse
     hierarchy : :class:`~polyglotdb.structure.Hierarchy`
         Details of how linguistic types relate to one another
@@ -30,10 +30,10 @@ class TextgridParser(BaseParser):
     '''
     _extensions = ['.textgrid']
 
-    def __init__(self, annotation_types, hierarchy, make_transcription=True,
+    def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
                  make_label=False,
                  stop_check=None, call_back=None):
-        super(TextgridParser, self).__init__(annotation_types, hierarchy,
+        super(TextgridParser, self).__init__(annotation_tiers, hierarchy,
                                              make_transcription=True, make_label=True,
                                              stop_check=stop_check, call_back=call_back)
 
@@ -61,7 +61,7 @@ class TextgridParser(BaseParser):
         '''
         tg = self.load_textgrid(path)
 
-        if len(tg.tiers) != len(self.annotation_types):
+        if len(tg.tiers) != len(self.annotation_tiers):
             raise (TextGridError(
                 "The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(
                     path)))
@@ -72,7 +72,7 @@ class TextgridParser(BaseParser):
         else:
             speaker = None
 
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
             a.speaker = speaker
 
@@ -80,13 +80,13 @@ class TextgridParser(BaseParser):
         for i, ti in enumerate(tg.tiers):
 
             if isinstance(ti, IntervalTier):
-                self.annotation_types[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
+                self.annotation_tiers[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
             else:
-                self.annotation_types[i].add(((x.mark.strip(), x.time) for x in ti))
+                self.annotation_tiers[i].add(((x.mark.strip(), x.time) for x in ti))
         pg_annotations = self._parse_annotations(types_only)
 
         data = DiscourseData(name, pg_annotations, self.hierarchy)
-        for a in self.annotation_types:
+        for a in self.annotation_tiers:
             a.reset()
         data.wav_path = find_wav_path(path)
         return data

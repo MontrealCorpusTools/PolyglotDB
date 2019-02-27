@@ -41,7 +41,7 @@ def test_export_spelling(graph_db, export_test_dir):
 def test_load_spelling_ignore(graph_db, text_spelling_test_dir):
     spelling_path = os.path.join(text_spelling_test_dir, 'text_spelling.txt')
     parser = inspect_orthography(spelling_path)
-    parser.annotation_types[0].ignored_characters = set(["'", '.'])
+    parser.annotation_tiers[0].ignored_characters = set(["'", '.'])
     with CorpusContext('spelling_ignore', **graph_db) as c:
         c.reset()
         c.load(parser, spelling_path)
