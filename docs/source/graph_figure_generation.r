@@ -1,6 +1,7 @@
 library(dagitty)
 library(ggdag)
 library(tibble)
+library(stringr)
 
 setwd('E:/Dev/Polyglot/PolyglotDB/docs/source/_static/img')
 
@@ -110,3 +111,26 @@ t2[t2$start_level == t2$end_level & !is.na(t2$end_level),]$arc_type <- 'dashed'
 ggplot(t2, aes(x = x, y = y, xend = xend, yend = yend, color=start_level)) +geom_dag_edges(aes(edge_linetype=arc_type)) +geom_dag_node(show.legend = FALSE) +geom_dag_text(aes(label=actual_label), size=3, color='black') +theme_dag() +scale_dag()
 ggsave('neo4j_annotations.png',width=8,height = 6,units='in', dpi=300)
 
+dag <- dagify("CORPUS" ~ "Utterance" + "Pitch" + "Formants" + "Speaker" + "Discourse",
+              "Utterance" ~ "Word" + "Intonation" + "Utterance type",
+              "Word" ~ "Syllable" + "Word type",
+              "Syllable" ~ "Phone" + "Syllable type",
+              "Phone" ~ "Closure" + "Burst" + "Phone type",
+              labels = c("Closure"="begin\nend", 
+                         "Intonation"="tune\nproblematic",
+                         "Word"="label\nbegin\nend",
+                         "Word type"="label\ntranscription\nfrequency",
+                         "Speaker"="name\ngender\nage",
+                         "Discourse"="name\nconsonant_file_path\nvowel_file_path\nlow_freq_file_path"
+                         )
+)
+t4 <- data.frame(tidy_dagitty(dag, layout = 'igraph', algorithm = 'kk'))
+t4$node_type <- 'annotation'
+t4[str_detect(t4$name, 'type'),]$node_type <- 'annotation type'
+t4[t4$name %in% c('Burst', 'Closure', 'Intonation'),]$node_type <- 'subannotation'
+t4[t4$name %in% c('Speaker', 'Discourse'),]$node_type <- 'spoken'
+t4[t4$name %in% c('Pitch', 'Formants'),]$node_type <- 'acoustics'
+t4[t4$name %in% c('CORPUS'),]$node_type <- 'corpus'
+
+ggplot(t4, aes(x = x, y = y, xend = xend, yend = yend, color=node_type)) +geom_dag_edges() +geom_dag_node(show.legend = FALSE) +geom_dag_text(size=3, color='black') +theme_dag() +scale_dag() + geom_dag_label_repel(aes(label=label), size=3, color='black')
+ggsave('hierarchy.png',width=10,height = 6,units='in', dpi=300)

@@ -61,3 +61,5 @@ docs/source/generated/
 # PyBuilder
 target/
 
+
+docs/source/_static/img/\.Rhistory
