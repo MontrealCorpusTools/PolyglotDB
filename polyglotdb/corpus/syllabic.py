@@ -203,9 +203,9 @@ class SyllabicContext(UtteranceContext):
                 call_back(i)
                 call_back(process_string.format(i, len(self.speakers), s))
             discourses = self.get_discourses_of_speaker(s)
-            speaker_boundaries = {s: []}
-            speaker_non_syls = {s: []}
             for d in discourses:
+                syllables = []
+                non_syllables = []
                 q = self.query_graph(word_type)
                 q = q.filter(word_type.speaker.name == s)
                 q = q.filter(word_type.discourse.name == d)
@@ -244,7 +244,7 @@ class SyllabicContext(UtteranceContext):
                                'label': label,
                                'type_id': make_type_id([label], self.corpus_name),
                                'end': phone_ends[-1]}
-                        speaker_non_syls[s].append(row)
+                        non_syllables.append(row)
                         prev_id = cur_id
                         continue
                     for j, i in enumerate(vow_inds):
@@ -301,10 +301,10 @@ class SyllabicContext(UtteranceContext):
                                'label': label,
                                'type_id': make_type_id([label], self.corpus_name),
                                'coda_id': cur_coda_id, 'begin': begin, 'end': end}
-                        speaker_boundaries[s].append(row)
+                        syllables.append(row)
                         prev_id = cur_id
-            syllables_data_to_csvs(self, speaker_boundaries)
-            nonsyls_data_to_csvs(self, speaker_non_syls)
+                syllables_data_to_csvs(self, s, d, syllables)
+                nonsyls_data_to_csvs(self, s, d, non_syllables)
         import_syllable_csv(self, call_back, stop_check)
         import_nonsyl_csv(self, call_back, stop_check)
         if stop_check is not None and stop_check():

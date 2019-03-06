@@ -142,7 +142,7 @@ def utterance_enriched_data_to_csvs(corpus_context, utterance_data):
             writer.writerow(v)
 
 
-def syllables_data_to_csvs(corpus_context, speaker_data):
+def syllables_data_to_csvs(corpus_context, speaker, discourse, syllable_data):
     """
     Convert syllable data into a CSV file
 
@@ -155,11 +155,10 @@ def syllables_data_to_csvs(corpus_context, speaker_data):
   
 
     """
-    for s, data in speaker_data.items():
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_syllable.csv'.format(s))
-        header = ['id', 'prev_id', 'vowel_id', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
-        write_csv_file(path, header, data, 'a')
+    path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                        '{}_{}_syllable.csv'.format(speaker, discourse))
+    header = ['id', 'prev_id', 'vowel_id', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
+    write_csv_file(path, header, syllable_data, 'a')
 
 
 def syllables_enrichment_data_to_csvs(corpus_context, data):
@@ -186,7 +185,7 @@ def syllables_enrichment_data_to_csvs(corpus_context, data):
             writer.writerow(v)
 
 
-def nonsyls_data_to_csvs(corpus_context, speaker_data):
+def nonsyls_data_to_csvs(corpus_context, speaker, discourse, data):
     """
     Convert non-syllable data into a CSV file
 
@@ -200,11 +199,10 @@ def nonsyls_data_to_csvs(corpus_context, speaker_data):
         identifier of the file to load
 
     """
-    for s, data in speaker_data.items():
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_nonsyl.csv'.format(s))
-        header = ['id', 'prev_id', 'break', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
-        write_csv_file(path, header, data, 'a')
+    path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                        '{}_{}_nonsyl.csv'.format(speaker, discourse))
+    header = ['id', 'prev_id', 'break', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
+    write_csv_file(path, header, data, 'a')
 
 
 def subannotations_data_to_csv(corpus_context, type, data):
@@ -333,18 +331,22 @@ def create_utterance_csvs(corpus_context):
 def create_syllabic_csvs(corpus_context):
     header = ['id', 'prev_id', 'vowel_id', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
     for s in corpus_context.speakers:
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_syllable.csv'.format(s))
-        with open(path, 'w', newline='', encoding='utf8') as f:
-            writer = csv.DictWriter(f, header, delimiter=',')
-            writer.writeheader()
+        discourses = corpus_context.get_discourses_of_speaker(s)
+        for d in discourses:
+            path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                                '{}_{}_syllable.csv'.format(s, d))
+            with open(path, 'w', newline='', encoding='utf8') as f:
+                writer = csv.DictWriter(f, header, delimiter=',')
+                writer.writeheader()
 
 
 def create_nonsyllabic_csvs(corpus_context):
     header = ['id', 'prev_id', 'break', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
     for s in corpus_context.speakers:
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_nonsyl.csv'.format(s))
-        with open(path, 'w', newline='', encoding='utf8') as f:
-            writer = csv.DictWriter(f, header, delimiter=',')
-            writer.writeheader()
+        discourses = corpus_context.get_discourses_of_speaker(s)
+        for d in discourses:
+            path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                                '{}_{}_nonsyl.csv'.format(s, d))
+            with open(path, 'w', newline='', encoding='utf8') as f:
+                writer = csv.DictWriter(f, header, delimiter=',')
+                writer.writeheader()

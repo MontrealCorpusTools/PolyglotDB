@@ -653,135 +653,137 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
         if call_back is not None:
             call_back('Importing syllables for speaker {} of {} ({})...'.format(i, len(speakers), s))
             call_back(i)
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_syllable.csv'.format(s))
+        discourses = corpus_context.get_discourses_of_speaker(s)
+        for d in discourses:
+            path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                                '{}_{}_syllable.csv'.format(s, d))
 
-        # If on the Docker version, the files live in /site/proj
-        if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
-            csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
-        else:
-            csv_path = 'file:///{}'.format(make_path_safe(path))
-        #begin = time.time()
-        nucleus_statement = '''
-        USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (n:{phone_name}:{corpus}:speech {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
-        SET n :nucleus, n.syllable_position = 'nucleus'
-        '''
-        statement = nucleus_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_name=corpus_context.word_name,
-                                     phone_name=corpus_context.phone_name)
-        corpus_context.execute_cypher(statement)
-        #print('Nucleus took: {} seconds'.format(time.time()-begin))
+            # If on the Docker version, the files live in /site/proj
+            if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
+                csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+            else:
+                csv_path = 'file:///{}'.format(make_path_safe(path))
+            #begin = time.time()
+            nucleus_statement = '''
+            USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MATCH (n:{phone_name}:{corpus}:speech {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
+            SET n :nucleus, n.syllable_position = 'nucleus'
+            '''
+            statement = nucleus_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            #print('Nucleus took: {} seconds'.format(time.time()-begin))
 
-        #begin = time.time()
-        node_statement = '''
-        USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
-        ON CREATE SET s_type.label = csvLine.label
-        WITH s_type, csvLine
-        CREATE (s:syllable:{corpus}:speech {{id: csvLine.id,
-                            label: csvLine.label,
-                            begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}}),
-                (s)-[:is_a]->(s_type)
-        '''
-        statement = node_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,)
-        corpus_context.execute_cypher(statement)
-        #print('Nodes took: {} seconds'.format(time.time()-begin))
+            #begin = time.time()
+            node_statement = '''
+            USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
+            ON CREATE SET s_type.label = csvLine.label
+            WITH s_type, csvLine
+            CREATE (s:syllable:{corpus}:speech {{id: csvLine.id,
+                                label: csvLine.label,
+                                begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}}),
+                    (s)-[:is_a]->(s_type)
+            '''
+            statement = node_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,)
+            corpus_context.execute_cypher(statement)
+            #print('Nodes took: {} seconds'.format(time.time()-begin))
 
-        #begin = time.time()
-        rel_statement = '''
-        USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
-                (s:syllable:{corpus}:speech {{id: csvLine.id}}),
-                (n)-[:spoken_by]->(sp:Speaker),
-                (n)-[:spoken_in]->(d:Discourse)
-        WITH n, w, csvLine, sp, d, s
-        CREATE (s)-[:contained_by]->(w),
-                (n)-[:contained_by]->(s),
-                (s)-[:spoken_by]->(sp),
-                (s)-[:spoken_in]->(d)
-        with csvLine, s
-        MATCH (prev:syllable {{id:csvLine.prev_id}})
-          CREATE (prev)-[:precedes]->(s)
-        '''
-        statement = rel_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_name=corpus_context.word_name,
-                                     phone_name=corpus_context.phone_name)
-        corpus_context.execute_cypher(statement)
-        #print('Relationships took: {} seconds'.format(time.time()-begin))
+            #begin = time.time()
+            rel_statement = '''
+            USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
+                    (s:syllable:{corpus}:speech {{id: csvLine.id}}),
+                    (n)-[:spoken_by]->(sp:Speaker),
+                    (n)-[:spoken_in]->(d:Discourse)
+            WITH n, w, csvLine, sp, d, s
+            CREATE (s)-[:contained_by]->(w),
+                    (n)-[:contained_by]->(s),
+                    (s)-[:spoken_by]->(sp),
+                    (s)-[:spoken_in]->(d)
+            with csvLine, s
+            MATCH (prev:syllable {{id:csvLine.prev_id}})
+              CREATE (prev)-[:precedes]->(s)
+            '''
+            statement = rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            #print('Relationships took: {} seconds'.format(time.time()-begin))
 
-        #begin = time.time()
-        del_rel_statement = '''
-        USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
-        DELETE r
-        '''
-        statement = del_rel_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_name=corpus_context.word_name,
-                                     phone_name=corpus_context.phone_name)
-        corpus_context.execute_cypher(statement)
-        #print('Deleting relationships took: {} seconds'.format(time.time()-begin))
+            #begin = time.time()
+            del_rel_statement = '''
+            USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
+            DELETE r
+            '''
+            statement = del_rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            #print('Deleting relationships took: {} seconds'.format(time.time()-begin))
 
-        #begin = time.time()
-        onset_statement = '''
-        USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (n:{phone_name}:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
-        WITH csvLine, s, w, n
-        OPTIONAL MATCH
-                (onset:{phone_name}:{corpus} {{id: csvLine.onset_id}}),
-                onspath = (onset)-[:precedes*1..10]->(n)
+            #begin = time.time()
+            onset_statement = '''
+            USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MATCH (n:{phone_name}:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
+            WITH csvLine, s, w, n
+            OPTIONAL MATCH
+                    (onset:{phone_name}:{corpus} {{id: csvLine.onset_id}}),
+                    onspath = (onset)-[:precedes*1..10]->(n)
+    
+            with n, w,s, csvLine, onspath
+            UNWIND (case when onspath is not null then nodes(onspath)[0..-1] else [null] end) as o
+    
+            OPTIONAL MATCH (o)-[r:contained_by]->(w)
+            with n, w,s, csvLine, filter(x in collect(o) WHERE x is not NULL) as ons,
+            filter(x in collect(r) WHERE x is not NULL) as rels
+            FOREACH (o in ons | SET o :onset, o.syllable_position = 'onset')
+            FOREACH (o in ons | CREATE (o)-[:contained_by]->(s))
+            FOREACH (r in rels | DELETE r)
+            '''
+            statement = onset_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            #print('Onsets took: {} seconds'.format(time.time()-begin))
 
-        with n, w,s, csvLine, onspath
-        UNWIND (case when onspath is not null then nodes(onspath)[0..-1] else [null] end) as o
-
-        OPTIONAL MATCH (o)-[r:contained_by]->(w)
-        with n, w,s, csvLine, filter(x in collect(o) WHERE x is not NULL) as ons,
-        filter(x in collect(r) WHERE x is not NULL) as rels
-        FOREACH (o in ons | SET o :onset, o.syllable_position = 'onset')
-        FOREACH (o in ons | CREATE (o)-[:contained_by]->(s))
-        FOREACH (r in rels | DELETE r)
-        '''
-        statement = onset_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_name=corpus_context.word_name,
-                                     phone_name=corpus_context.phone_name)
-        corpus_context.execute_cypher(statement)
-        #print('Onsets took: {} seconds'.format(time.time()-begin))
-
-        #begin = time.time()
-        coda_statment = '''
-        USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (n:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
-        WITH csvLine, s, w, n
-        OPTIONAL MATCH
-                (coda:{phone_name}:{corpus} {{id: csvLine.coda_id}}),
-            codapath = (n)-[:precedes*1..10]->(coda)
-        WITH n, w, s, codapath
-        UNWIND (case when codapath is not null then nodes(codapath)[1..] else [null] end) as c
-
-        OPTIONAL MATCH (c)-[r:contained_by]->(w)
-        WITH n, w,s, filter(x in collect(c) WHERE x is not NULL) as cod,
-        filter(x in collect(r) WHERE x is not NULL) as rels
-        FOREACH (c in cod | SET c :coda, c.syllable_position = 'coda')
-        FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
-        FOREACH (r in rels | DELETE r)
-        '''
-        statement = coda_statment.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_name=corpus_context.word_name,
-                                     phone_name=corpus_context.phone_name)
-        corpus_context.execute_cypher(statement)
-        #print('Codas took: {} seconds'.format(time.time()-begin))
+            #begin = time.time()
+            coda_statment = '''
+            USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MATCH (n:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
+            WITH csvLine, s, w, n
+            OPTIONAL MATCH
+                    (coda:{phone_name}:{corpus} {{id: csvLine.coda_id}}),
+                codapath = (n)-[:precedes*1..10]->(coda)
+            WITH n, w, s, codapath
+            UNWIND (case when codapath is not null then nodes(codapath)[1..] else [null] end) as c
+    
+            OPTIONAL MATCH (c)-[r:contained_by]->(w)
+            WITH n, w,s, filter(x in collect(c) WHERE x is not NULL) as cod,
+            filter(x in collect(r) WHERE x is not NULL) as rels
+            FOREACH (c in cod | SET c :coda, c.syllable_position = 'coda')
+            FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
+            FOREACH (r in rels | DELETE r)
+            '''
+            statement = coda_statment.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            #print('Codas took: {} seconds'.format(time.time()-begin))
 
 
 def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
@@ -811,82 +813,84 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
         if call_back is not None:
             call_back('Importing degenerate syllables for speaker {} of {} ({})...'.format(i, len(speakers), s))
             call_back(i)
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_nonsyl.csv'.format(s))
+        discourses = corpus_context.get_discourses_of_speaker(s)
+        for d in discourses:
+            path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                                '{}_{}_nonsyl.csv'.format(s, d))
 
-        # If on the Docker version, the files live in /site/proj
-        if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
-            csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
-        else:
-            csv_path = 'file:///{}'.format(make_path_safe(path))
+            # If on the Docker version, the files live in /site/proj
+            if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
+                csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+            else:
+                csv_path = 'file:///{}'.format(make_path_safe(path))
 
-        node_statement = '''USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
-        ON CREATE SET s_type.label = csvLine.label
-        WITH s_type, csvLine
-    CREATE (s:syllable:{corpus}:speech {{id: csvLine.id,
-                                    begin: toFloat(csvLine.begin), end: toFloat(csvLine.end),
-                                    label: csvLine.label}}),
-                (s)-[:is_a]->(s_type) 
-        '''
+            node_statement = '''USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
+            ON CREATE SET s_type.label = csvLine.label
+            WITH s_type, csvLine
+        CREATE (s:syllable:{corpus}:speech {{id: csvLine.id,
+                                        begin: toFloat(csvLine.begin), end: toFloat(csvLine.end),
+                                        label: csvLine.label}}),
+                    (s)-[:is_a]->(s_type) 
+            '''
 
-        statement = node_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,)
-        corpus_context.execute_cypher(statement)
+            statement = node_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,)
+            corpus_context.execute_cypher(statement)
 
-        rel_statement = '''
-        USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-    MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
-                (o)-[:spoken_by]->(sp:Speaker),
-                (o)-[:spoken_in]->(d:Discourse),
-                (s:syllable:{corpus}:speech {{id: csvLine.id}})
-        WITH w, csvLine, sp, d, s
-        CREATE (s)-[:contained_by]->(w),
-                (s)-[:spoken_by]->(sp),
-                (s)-[:spoken_in]->(d)
-        with csvLine, s
-        OPTIONAL MATCH (prev:syllable {{id:csvLine.prev_id}})
-        FOREACH (pv IN CASE WHEN prev IS NOT NULL THEN [prev] ELSE [] END |
-          CREATE (pv)-[:precedes]->(s)
-        )
-        with csvLine, s
-        OPTIONAL MATCH (foll:syllable {{prev_id:csvLine.id}})
-        FOREACH (fv IN CASE WHEN foll IS NOT NULL THEN [foll] ELSE [] END |
-          CREATE (s)-[:precedes]->(fv)
-        )
-        '''
-        statement = rel_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_name=corpus_context.word_name,
-                                     phone_name=corpus_context.phone_name)
-        corpus_context.execute_cypher(statement)
+            rel_statement = '''
+            USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+        MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
+                    (o)-[:spoken_by]->(sp:Speaker),
+                    (o)-[:spoken_in]->(d:Discourse),
+                    (s:syllable:{corpus}:speech {{id: csvLine.id}})
+            WITH w, csvLine, sp, d, s
+            CREATE (s)-[:contained_by]->(w),
+                    (s)-[:spoken_by]->(sp),
+                    (s)-[:spoken_in]->(d)
+            with csvLine, s
+            OPTIONAL MATCH (prev:syllable {{id:csvLine.prev_id}})
+            FOREACH (pv IN CASE WHEN prev IS NOT NULL THEN [prev] ELSE [] END |
+              CREATE (pv)-[:precedes]->(s)
+            )
+            with csvLine, s
+            OPTIONAL MATCH (foll:syllable {{prev_id:csvLine.id}})
+            FOREACH (fv IN CASE WHEN foll IS NOT NULL THEN [foll] ELSE [] END |
+              CREATE (s)-[:precedes]->(fv)
+            )
+            '''
+            statement = rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
 
-        phone_statement = '''USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-    MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}}),
-    (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
-    with o, w, csvLine, s
-    OPTIONAL MATCH
-    (c:{phone_name}:{corpus}:speech {{id: csvLine.coda_id}})-[:contained_by]->(w),
-    p = (o)-[:precedes*..10]->(c)
-    with o, w, s, p, csvLine
-        UNWIND (case when p is not null then nodes(p) else [o] end) as c
-
-        OPTIONAL MATCH (c)-[r:contained_by]->(w)
-        with w,s, toInt(csvLine.break) as break, filter(x in collect(c) WHERE x is not NULL) as cod,
-        filter(x in collect(r) WHERE x is not NULL) as rels
-        FOREACH (c in cod[break..] | SET c :coda, c.syllable_position = 'coda')
-        FOREACH (c in cod[..break] | SET c :onset, c.syllable_position = 'onset')
-        FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
-        FOREACH (r in rels | DELETE r)
-        '''
-        statement = phone_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_name=corpus_context.word_name,
-                                     phone_name=corpus_context.phone_name)
-        corpus_context.execute_cypher(statement)
+            phone_statement = '''USING PERIODIC COMMIT 1000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+        MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}}),
+        (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
+        with o, w, csvLine, s
+        OPTIONAL MATCH
+        (c:{phone_name}:{corpus}:speech {{id: csvLine.coda_id}})-[:contained_by]->(w),
+        p = (o)-[:precedes*..10]->(c)
+        with o, w, s, p, csvLine
+            UNWIND (case when p is not null then nodes(p) else [o] end) as c
+    
+            OPTIONAL MATCH (c)-[r:contained_by]->(w)
+            with w,s, toInt(csvLine.break) as break, filter(x in collect(c) WHERE x is not NULL) as cod,
+            filter(x in collect(r) WHERE x is not NULL) as rels
+            FOREACH (c in cod[break..] | SET c :coda, c.syllable_position = 'coda')
+            FOREACH (c in cod[..break] | SET c :onset, c.syllable_position = 'onset')
+            FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
+            FOREACH (r in rels | DELETE r)
+            '''
+            statement = phone_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
 
 
 def import_subannotation_csv(corpus_context, type, annotated_type, props):
