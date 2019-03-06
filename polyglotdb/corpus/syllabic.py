@@ -224,7 +224,7 @@ class SyllabicContext(UtteranceContext):
                     phone_ids = w['phone_id']
 
                     if not phone_ids:
-                        print('The word {} in file {} ({} to {}) did not have any phones.'.format(w['label'], w['discourse'], w['begin'], w['end']))
+                        print('The word {} in file {} ({} to {}) did not have any phones.'.format(w['label'], d, w['begin'], w['end']))
                         continue
                     phone_begins = w['begins']
                     phone_ends = w['ends']
