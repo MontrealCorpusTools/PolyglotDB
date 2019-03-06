@@ -194,119 +194,115 @@ class SyllabicContext(UtteranceContext):
         splits = self.speakers
         process_string = 'Processing speaker {} of {} ({})...'
         if call_back is not None:
-            call_back(0, len(splits))
+            call_back(0, len(self.speakers))
 
-        for i, s in enumerate(splits):
+        for i, s in enumerate(self.speakers):
             if stop_check is not None and stop_check():
                 break
             if call_back is not None:
                 call_back(i)
-                call_back(process_string.format(i, len(splits), s))
-            q = self.query_graph(word_type)
-            q = q.filter(word_type.speaker.name == s)
-            q = q.order_by(word_type.discourse.name.column_name('discourse'))
-            q = q.order_by(word_type.begin)
-            q = q.columns(word_type.id.column_name('id'), phone_type.id.column_name('phone_id'),
-                          word_type.begin.column_name('begin'),
-                          word_type.label.column_name('label'),
-                          word_type.end.column_name('end'),
-                          phone_type.label.column_name('phones'),
-                          phone_type.begin.column_name('begins'),
-                          phone_type.end.column_name('ends'),
-                          word_type.discourse.name.column_name('discourse'))
-            results = q.all()
+                call_back(process_string.format(i, len(self.speakers), s))
+            discourses = self.get_discourses_of_speaker(s)
             speaker_boundaries = {s: []}
             speaker_non_syls = {s: []}
-            prev_id = None
-            cur_discourse = None
-            for w in results:
-                phones = w['phones']
-                phone_ids = w['phone_id']
+            for d in discourses:
+                q = self.query_graph(word_type)
+                q = q.filter(word_type.speaker.name == s)
+                q = q.filter(word_type.discourse.name == d)
+                q = q.order_by(word_type.begin)
+                q = q.columns(word_type.id.column_name('id'), phone_type.id.column_name('phone_id'),
+                              word_type.begin.column_name('begin'),
+                              word_type.label.column_name('label'),
+                              word_type.end.column_name('end'),
+                              phone_type.label.column_name('phones'),
+                              phone_type.begin.column_name('begins'),
+                              phone_type.end.column_name('ends'))
+                results = q.all()
+                prev_id = None
+                for w in results:
+                    phones = w['phones']
+                    phone_ids = w['phone_id']
 
-                if not phone_ids:
-                    print('The word {} in file {} ({} to {}) did not have any phones.'.format(w['label'], w['discourse'], w['begin'], w['end']))
-                    continue
-                phone_begins = w['begins']
-                phone_ends = w['ends']
-                discourse = w['discourse']
-                if discourse != cur_discourse:
-                    prev_id = None
-                    cur_discourse = discourse
-                vow_inds = [i for i, x in enumerate(phones) if x in syllabics]
-                if len(vow_inds) == 0:
-                    cur_id = uuid1()
-                    if algorithm == 'probabilistic':
-                        split = split_nonsyllabic_prob(phones, onsets, codas)
-                    elif algorithm == 'maxonset':
-                        split = split_nonsyllabic_maxonset(phones, onsets)
-                    label = '.'.join(phones)
-                    row = {'id': cur_id, 'prev_id': prev_id,
-                           'onset_id': phone_ids[0],
-                           'break': split,
-                           'coda_id': phone_ids[-1],
-                           'begin': phone_begins[0],
-                           'label': label,
-                           'type_id': make_type_id([label], self.corpus_name),
-                           'end': phone_ends[-1]}
-                    speaker_non_syls[s].append(row)
-                    prev_id = cur_id
-                    continue
-                for j, i in enumerate(vow_inds):
-                    cur_id = uuid1()
-                    cur_vow_id = phone_ids[i]
-                    begin = phone_begins[i]
-                    end = phone_ends[i]
-                    if j == 0:
-                        begin_ind = 0
-                        if i != 0:
-                            cur_ons_id = phone_ids[begin_ind]
-                            begin = phone_begins[begin_ind]
-                        else:
-                            cur_ons_id = None
-                    else:
-                        prev_vowel_ind = vow_inds[j - 1]
-                        cons_string = phones[prev_vowel_ind + 1:i]
+                    if not phone_ids:
+                        print('The word {} in file {} ({} to {}) did not have any phones.'.format(w['label'], w['discourse'], w['begin'], w['end']))
+                        continue
+                    phone_begins = w['begins']
+                    phone_ends = w['ends']
+                    vow_inds = [i for i, x in enumerate(phones) if x in syllabics]
+                    if len(vow_inds) == 0:
+                        cur_id = uuid1()
                         if algorithm == 'probabilistic':
-                            split = split_ons_coda_prob(cons_string, onsets, codas)
+                            split = split_nonsyllabic_prob(phones, onsets, codas)
                         elif algorithm == 'maxonset':
-                            split = split_ons_coda_maxonset(cons_string, onsets)
-                        if split is None:
-                            cur_ons_id = None
-                            begin_ind = i
+                            split = split_nonsyllabic_maxonset(phones, onsets)
+                        label = '.'.join(phones)
+                        row = {'id': cur_id, 'prev_id': prev_id,
+                               'onset_id': phone_ids[0],
+                               'break': split,
+                               'coda_id': phone_ids[-1],
+                               'begin': phone_begins[0],
+                               'label': label,
+                               'type_id': make_type_id([label], self.corpus_name),
+                               'end': phone_ends[-1]}
+                        speaker_non_syls[s].append(row)
+                        prev_id = cur_id
+                        continue
+                    for j, i in enumerate(vow_inds):
+                        cur_id = uuid1()
+                        cur_vow_id = phone_ids[i]
+                        begin = phone_begins[i]
+                        end = phone_ends[i]
+                        if j == 0:
+                            begin_ind = 0
+                            if i != 0:
+                                cur_ons_id = phone_ids[begin_ind]
+                                begin = phone_begins[begin_ind]
+                            else:
+                                cur_ons_id = None
                         else:
-                            begin_ind = prev_vowel_ind + 1 + split
-                            cur_ons_id = phone_ids[begin_ind]
+                            prev_vowel_ind = vow_inds[j - 1]
+                            cons_string = phones[prev_vowel_ind + 1:i]
+                            if algorithm == 'probabilistic':
+                                split = split_ons_coda_prob(cons_string, onsets, codas)
+                            elif algorithm == 'maxonset':
+                                split = split_ons_coda_maxonset(cons_string, onsets)
+                            if split is None:
+                                cur_ons_id = None
+                                begin_ind = i
+                            else:
+                                begin_ind = prev_vowel_ind + 1 + split
+                                cur_ons_id = phone_ids[begin_ind]
 
-                    if j == len(vow_inds) - 1:
-                        end_ind = len(phones) - 1
-                        if i != len(phones) - 1:
-                            cur_coda_id = phone_ids[end_ind]
-                            end = phone_ends[end_ind]
+                        if j == len(vow_inds) - 1:
+                            end_ind = len(phones) - 1
+                            if i != len(phones) - 1:
+                                cur_coda_id = phone_ids[end_ind]
+                                end = phone_ends[end_ind]
+                            else:
+                                cur_coda_id = None
                         else:
-                            cur_coda_id = None
-                    else:
-                        foll_vowel_ind = vow_inds[j + 1]
-                        cons_string = phones[i + 1:foll_vowel_ind]
-                        if algorithm == 'probabilistic':
-                            split = split_ons_coda_prob(cons_string, onsets, codas)
-                        elif algorithm == 'maxonset':
-                            split = split_ons_coda_maxonset(cons_string, onsets)
-                        if split is None:
-                            cur_coda_id = None
-                            end_ind = i
-                        else:
-                            end_ind = i + split
-                            cur_coda_id = phone_ids[end_ind]
-                    begin = phone_begins[begin_ind]
-                    end = phone_ends[end_ind]
-                    label = '.'.join(phones[begin_ind:end_ind + 1])
-                    row = {'id': cur_id, 'prev_id': prev_id,
-                           'vowel_id': cur_vow_id, 'onset_id': cur_ons_id,
-                           'label': label,
-                           'type_id': make_type_id([label], self.corpus_name),
-                           'coda_id': cur_coda_id, 'begin': begin, 'end': end}
-                    speaker_boundaries[s].append(row)
-                    prev_id = cur_id
+                            foll_vowel_ind = vow_inds[j + 1]
+                            cons_string = phones[i + 1:foll_vowel_ind]
+                            if algorithm == 'probabilistic':
+                                split = split_ons_coda_prob(cons_string, onsets, codas)
+                            elif algorithm == 'maxonset':
+                                split = split_ons_coda_maxonset(cons_string, onsets)
+                            if split is None:
+                                cur_coda_id = None
+                                end_ind = i
+                            else:
+                                end_ind = i + split
+                                cur_coda_id = phone_ids[end_ind]
+                        begin = phone_begins[begin_ind]
+                        end = phone_ends[end_ind]
+                        label = '.'.join(phones[begin_ind:end_ind + 1])
+                        row = {'id': cur_id, 'prev_id': prev_id,
+                               'vowel_id': cur_vow_id, 'onset_id': cur_ons_id,
+                               'label': label,
+                               'type_id': make_type_id([label], self.corpus_name),
+                               'coda_id': cur_coda_id, 'begin': begin, 'end': end}
+                        speaker_boundaries[s].append(row)
+                        prev_id = cur_id
             syllables_data_to_csvs(self, speaker_boundaries)
             nonsyls_data_to_csvs(self, speaker_non_syls)
         import_syllable_csv(self, call_back, stop_check)
