@@ -118,30 +118,38 @@ class SyllabicContext(UtteranceContext):
             number = self.execute_cypher(
                 '''MATCH (n:syllable:%s) return count(*) as number ''' % (self.cypher_safe_name)).single()['number']
             call_back(0, number)
+        for s in self.speakers:
+            discourses = self.get_discourses_of_speaker(s)
+            for d in discourses:
+                statement = '''
+                        MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s:syllable:{corpus}),
+                        (s)-[:contained_by]->(w:{word_name}:{corpus}),
+                        (s)-[:spoken_by]->(sp:Speaker:{corpus}),
+                        (s)-[:spoken_in]->(d:Discourse:{corpus})
+                        WHERE sp.name = {{speaker_name}}
+                        AND d.name = {{discourse_name}}
+                        with p,s,w
+                        CREATE (p)-[:contained_by]->(w)
+                        with p, s
+                        DETACH DELETE s
+                        with p,s
+                        REMOVE p:onset, p:nucleus, p:coda, p.syllable_position
+                        RETURN count(s) as deleted_count'''.format(corpus=self.cypher_safe_name,
+                                                                   word_name=self.word_name,
+                                                                   phone_name=self.phone_name)
+                num_deleted = 0
+                deleted = 1000
+                while deleted > 0:
+                    if stop_check is not None and stop_check():
+                        break
+                    deleted = self.execute_cypher(statement, speaker_name=s, discourse_name=d).single()['deleted_count']
+                    num_deleted += deleted
+                    if call_back is not None:
+                        call_back(num_deleted)
         statement = '''MATCH (st:syllable_type:{corpus})
-                WITH st
-                LIMIT 1
-                MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s),
-                (s:syllable:{corpus})-[:is_a]->(st),
-                (s)-[:contained_by]->(w:{word_name}:{corpus})
-                with p,s,st,w
-                CREATE (p)-[:contained_by]->(w)
-                with p, s, st
-                DETACH DELETE s, st
-                with p,s
-                REMOVE p:onset, p:nucleus, p:coda, p.syllable_position
-                RETURN count(s) as deleted_count'''.format(corpus=self.cypher_safe_name,
-                                                           word_name=self.word_name,
-                                                           phone_name=self.phone_name)
-        num_deleted = 0
-        deleted = 1000
-        while deleted > 0:
-            if stop_check is not None and stop_check():
-                break
-            deleted = self.execute_cypher(statement).single()['deleted_count']
-            num_deleted += deleted
-            if call_back is not None:
-                call_back(num_deleted)
+                               WITH st
+                               DETACH DELETE st'''.format(corpus=self.cypher_safe_name)
+        self.execute_cypher(statement)
         try:
             self.hierarchy.remove_annotation_type('syllable')
             self.hierarchy.remove_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
