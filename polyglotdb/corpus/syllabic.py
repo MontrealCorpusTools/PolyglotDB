@@ -121,36 +121,40 @@ class SyllabicContext(UtteranceContext):
         for s in self.speakers:
             discourses = self.get_discourses_of_speaker(s)
             for d in discourses:
-                statement = '''
-                        MATCH (st:syllable_type:{corpus})<-[:is_a]-(syl:syllable:{corpus}),
+                phone_rel_statement = '''
+                        MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s:syllable:{corpus}),
+                        (s)-[:contained_by]->(w:{word_name}:{corpus}),
                         (s)-[:spoken_by]->(sp:Speaker:{corpus}),
                         (s)-[:spoken_in]->(d:Discourse:{corpus})
                         WHERE sp.name = {{speaker_name}}
                         AND d.name = {{discourse_name}}
-                        with st, sp, d
-                        LIMIT 1
-                        MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s:syllable:{corpus}),
-                        (s)-[:contained_by]->(w:{word_name}:{corpus}),
-                        (s)-[:spoken_by]->(sp),
-                        (s)-[:spoken_in]->(d)
-                        with p,s,w
+                        with p,w
                         CREATE (p)-[:contained_by]->(w)
-                        with p, s
-                        DETACH DELETE s
-                        with p,s
-                        REMOVE p:onset, p:nucleus, p:coda, p.syllable_position
-                        RETURN count(s) as deleted_count'''.format(corpus=self.cypher_safe_name,
+                '''.format(corpus=self.cypher_safe_name,
                                                                    word_name=self.word_name,
                                                                    phone_name=self.phone_name)
-                num_deleted = 0
-                deleted = 1000
-                while deleted > 0:
-                    if stop_check is not None and stop_check():
-                        break
-                    deleted = self.execute_cypher(statement, speaker_name=s, discourse_name=d).single()['deleted_count']
-                    num_deleted += deleted
-                    if call_back is not None:
-                        call_back(num_deleted)
+                self.execute_cypher(phone_rel_statement, speaker_name=s, discourse_name=d)
+                phone_label_statement = '''
+                        MATCH (p:{phone_name}:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
+                        (p)-[:spoken_in]->(d:Discourse:{corpus})
+                        WHERE sp.name = {{speaker_name}}
+                        AND d.name = {{discourse_name}}
+                        with p
+                        REMOVE p:onset, p:nucleus, p:coda, p.syllable_position
+                '''.format(corpus=self.cypher_safe_name,
+                                                                   word_name=self.word_name,
+                                                                   phone_name=self.phone_name)
+                self.execute_cypher(phone_label_statement, speaker_name=s, discourse_name=d)
+
+                delete_statement = '''
+                MATCH (s:syllable:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
+                        (s)-[:spoken_in]->(d:Discourse:{corpus})
+                        WHERE sp.name = {{speaker_name}}
+                        AND d.name = {{discourse_name}}
+                        DETACH DELETE s
+                '''.format(corpus=self.cypher_safe_name)
+                self.execute_cypher(delete_statement, speaker_name=s, discourse_name=d)
+
         statement = '''MATCH (st:syllable_type:{corpus})
                                WITH st
                                DETACH DELETE st'''.format(corpus=self.cypher_safe_name)
