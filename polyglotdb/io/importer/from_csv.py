@@ -644,6 +644,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
     corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
@@ -684,7 +685,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
             ON CREATE SET s_type.label = csvLine.label
             WITH s_type, csvLine
-            CREATE (s:syllable:{corpus}:speech {{id: csvLine.id,
+            CREATE (s:syllable:{corpus}:speech {{id: csvLine.id, prev_id: csvLine.prev_id,
                                 label: csvLine.label,
                                 begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}}),
                     (s)-[:is_a]->(s_type)
@@ -831,7 +832,7 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
             ON CREATE SET s_type.label = csvLine.label
             WITH s_type, csvLine
-        CREATE (s:syllable:{corpus}:speech {{id: csvLine.id,
+        CREATE (s:syllable:{corpus}:speech {{id: csvLine.id, prev_id: csvLine.prev_id,
                                         begin: toFloat(csvLine.begin), end: toFloat(csvLine.end),
                                         label: csvLine.label}}),
                     (s)-[:is_a]->(s_type) 
@@ -854,16 +855,6 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             CREATE (s)-[:contained_by]->(w),
                     (s)-[:spoken_by]->(sp),
                     (s)-[:spoken_in]->(d)
-            with csvLine, s
-            OPTIONAL MATCH (prev:syllable {{id:csvLine.prev_id}})
-            FOREACH (pv IN CASE WHEN prev IS NOT NULL THEN [prev] ELSE [] END |
-              CREATE (pv)-[:precedes]->(s)
-            )
-            with csvLine, s
-            OPTIONAL MATCH (foll:syllable {{prev_id:csvLine.id}})
-            FOREACH (fv IN CASE WHEN foll IS NOT NULL THEN [foll] ELSE [] END |
-              CREATE (s)-[:precedes]->(fv)
-            )
             '''
             statement = rel_statement.format(path=csv_path,
                                          corpus=corpus_context.cypher_safe_name,
@@ -871,6 +862,38 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
             print('Relationships took: {} seconds'.format(time.time()-begin))
+
+            begin = time.time()
+            rel_statement = '''
+            USING PERIODIC COMMIT 2000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+        MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
+            with csvLine, s
+            MATCH (prev:syllable {{id:csvLine.prev_id}})
+              CREATE (prev)-[:precedes]->(s)
+            '''
+            statement = rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            print('Prev relationships took: {} seconds'.format(time.time()-begin))
+
+            begin = time.time()
+            rel_statement = '''
+            USING PERIODIC COMMIT 2000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+        MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
+            with csvLine, s
+            MATCH (foll:syllable {{prev_id:csvLine.id}})
+              CREATE (s)-[:precedes]->(foll)
+            '''
+            statement = rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            print('Foll relationships took: {} seconds'.format(time.time()-begin))
 
             begin = time.time()
             phone_statement = '''USING PERIODIC COMMIT 2000
