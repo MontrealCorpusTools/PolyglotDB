@@ -145,15 +145,28 @@ class SyllabicContext(UtteranceContext):
                                                                    word_name=self.word_name,
                                                                    phone_name=self.phone_name)
                 self.execute_cypher(phone_label_statement, speaker_name=s, discourse_name=d)
-
+                num_deleted = 0
+                deleted = 1000
                 delete_statement = '''
-                MATCH (s:syllable:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
+                MATCH (st:syllable_type:{corpus})<-[:is_a]-(syl:syllable:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
                         (s)-[:spoken_in]->(d:Discourse:{corpus})
                         WHERE sp.name = {{speaker_name}}
                         AND d.name = {{discourse_name}}
+                        WITH st, sp, d
+                        LIMIT 1
+                        MATCH (st)<-[:is_a]-(s:syllable:{corpus})-[:spoken_by]->(sp),
+                        (s)-[:spoken_in]->(d)
                         DETACH DELETE s
+                        RETURN count(s) as deleted_count
                 '''.format(corpus=self.cypher_safe_name)
-                self.execute_cypher(delete_statement, speaker_name=s, discourse_name=d)
+                while deleted > 0:
+                    if stop_check is not None and stop_check():
+                        break
+                    deleted = self.execute_cypher(delete_statement, speaker_name=s, discourse_name=d).single()['deleted_count']
+
+                    num_deleted += deleted
+                    if call_back is not None:
+                        call_back(num_deleted)
 
         statement = '''MATCH (st:syllable_type:{corpus})
                                WITH st
