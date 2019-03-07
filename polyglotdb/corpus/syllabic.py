@@ -122,12 +122,17 @@ class SyllabicContext(UtteranceContext):
             discourses = self.get_discourses_of_speaker(s)
             for d in discourses:
                 statement = '''
-                        MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s:syllable:{corpus}),
-                        (s)-[:contained_by]->(w:{word_name}:{corpus}),
+                        MATCH (st:syllable_type:{corpus})<-[:is_a]-(syl:syllable:{corpus}),
                         (s)-[:spoken_by]->(sp:Speaker:{corpus}),
                         (s)-[:spoken_in]->(d:Discourse:{corpus})
                         WHERE sp.name = {{speaker_name}}
                         AND d.name = {{discourse_name}}
+                        with st, sp, d
+                        LIMIT 1
+                        MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s:syllable:{corpus}),
+                        (s)-[:contained_by]->(w:{word_name}:{corpus}),
+                        (s)-[:spoken_by]->(sp),
+                        (s)-[:spoken_in]->(d)
                         with p,s,w
                         CREATE (p)-[:contained_by]->(w)
                         with p, s
