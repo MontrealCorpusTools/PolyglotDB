@@ -313,10 +313,13 @@ class SyllabicContext(UtteranceContext):
         if call_back is not None:
             call_back('Cleaning up...')
         for s in self.speakers:
-            self.execute_cypher(
-                '''MATCH (s:{corpus_name}:Speaker)<-[:spoken_by]-(n:{corpus_name}:syllable) 
-                where s.name = {{speaker_name}} and n.prev_id is not Null 
-                REMOVE n.prev_id'''.format(corpus_name = self.cypher_safe_name), speaker_name=s)
+            discourses = self.get_discourses_of_speaker(s)
+            for d in discourses:
+                self.execute_cypher(
+                    '''MATCH (s:{corpus_name}:Speaker)<-[:spoken_by]-(n:{corpus_name}:syllable)-[:spoken_in]->(d:{corpus_name}:Discourse)
+                    where s.name = {{speaker_name}} 
+                    AND d.name = {{discourse_name}} and n.prev_id is not Null 
+                    REMOVE n.prev_id'''.format(corpus_name = self.cypher_safe_name), speaker_name=s, discourse_name=d)
 
         self.hierarchy.add_annotation_type('syllable', above=self.phone_name, below=self.word_name)
         self.hierarchy.add_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
