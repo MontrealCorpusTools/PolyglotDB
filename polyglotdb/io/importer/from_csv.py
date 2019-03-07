@@ -657,15 +657,15 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
         for d in discourses:
             path = os.path.join(corpus_context.config.temporary_directory('csv'),
                                 '{}_{}_syllable.csv'.format(s, d))
-
+            print('syl', s, d, path)
             # If on the Docker version, the files live in /site/proj
             if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
                 csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
             else:
                 csv_path = 'file:///{}'.format(make_path_safe(path))
-            #begin = time.time()
+            begin = time.time()
             nucleus_statement = '''
-            USING PERIODIC COMMIT 1000
+            USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
             MATCH (n:{phone_name}:{corpus}:speech {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
             SET n :nucleus, n.syllable_position = 'nucleus'
@@ -675,11 +675,11 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                          word_name=corpus_context.word_name,
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
-            #print('Nucleus took: {} seconds'.format(time.time()-begin))
+            print('Nucleus took: {} seconds'.format(time.time()-begin))
 
-            #begin = time.time()
+            begin = time.time()
             node_statement = '''
-            USING PERIODIC COMMIT 1000
+            USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
             MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
             ON CREATE SET s_type.label = csvLine.label
@@ -692,11 +692,11 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             statement = node_statement.format(path=csv_path,
                                          corpus=corpus_context.cypher_safe_name,)
             corpus_context.execute_cypher(statement)
-            #print('Nodes took: {} seconds'.format(time.time()-begin))
+            print('Nodes took: {} seconds'.format(time.time()-begin))
 
-            #begin = time.time()
+            begin = time.time()
             rel_statement = '''
-            USING PERIODIC COMMIT 1000
+            USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
             MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
                     (s:syllable:{corpus}:speech {{id: csvLine.id}}),
@@ -716,11 +716,11 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                          word_name=corpus_context.word_name,
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
-            #print('Relationships took: {} seconds'.format(time.time()-begin))
+            print('Relationships took: {} seconds'.format(time.time()-begin))
 
-            #begin = time.time()
+            begin = time.time()
             del_rel_statement = '''
-            USING PERIODIC COMMIT 1000
+            USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
             MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
             DELETE r
@@ -730,11 +730,11 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                          word_name=corpus_context.word_name,
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
-            #print('Deleting relationships took: {} seconds'.format(time.time()-begin))
+            print('Deleting relationships took: {} seconds'.format(time.time()-begin))
 
-            #begin = time.time()
+            begin = time.time()
             onset_statement = '''
-            USING PERIODIC COMMIT 1000
+            USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
             MATCH (n:{phone_name}:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
             WITH csvLine, s, w, n
@@ -757,11 +757,11 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                          word_name=corpus_context.word_name,
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
-            #print('Onsets took: {} seconds'.format(time.time()-begin))
+            print('Onsets took: {} seconds'.format(time.time()-begin))
 
-            #begin = time.time()
+            begin = time.time()
             coda_statment = '''
-            USING PERIODIC COMMIT 1000
+            USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
             MATCH (n:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
             WITH csvLine, s, w, n
@@ -783,7 +783,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                          word_name=corpus_context.word_name,
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
-            #print('Codas took: {} seconds'.format(time.time()-begin))
+            print('Codas took: {} seconds'.format(time.time()-begin))
 
 
 def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
@@ -817,6 +817,7 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
         for d in discourses:
             path = os.path.join(corpus_context.config.temporary_directory('csv'),
                                 '{}_{}_nonsyl.csv'.format(s, d))
+            print('nonsyl', s, d, path)
 
             # If on the Docker version, the files live in /site/proj
             if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
@@ -824,7 +825,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             else:
                 csv_path = 'file:///{}'.format(make_path_safe(path))
 
-            node_statement = '''USING PERIODIC COMMIT 1000
+            begin = time.time()
+            node_statement = '''USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
             MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
             ON CREATE SET s_type.label = csvLine.label
@@ -838,9 +840,11 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             statement = node_statement.format(path=csv_path,
                                          corpus=corpus_context.cypher_safe_name,)
             corpus_context.execute_cypher(statement)
+            print('Nodes took: {} seconds'.format(time.time()-begin))
 
+            begin = time.time()
             rel_statement = '''
-            USING PERIODIC COMMIT 1000
+            USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
         MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
                     (o)-[:spoken_by]->(sp:Speaker),
@@ -866,8 +870,10 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                          word_name=corpus_context.word_name,
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
+            print('Relationships took: {} seconds'.format(time.time()-begin))
 
-            phone_statement = '''USING PERIODIC COMMIT 1000
+            begin = time.time()
+            phone_statement = '''USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
         MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}}),
         (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
@@ -891,6 +897,7 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                          word_name=corpus_context.word_name,
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
+            print('Phones took: {} seconds'.format(time.time()-begin))
 
 
 def import_subannotation_csv(corpus_context, type, annotated_type, props):
