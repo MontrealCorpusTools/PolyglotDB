@@ -113,6 +113,7 @@ class SyllabicContext(UtteranceContext):
 
     def reset_syllables(self, call_back=None, stop_check=None):
         """ Resets syllables, removes syllable annotation, removes onset, coda, and nucleus labels """
+        import time
         if call_back is not None:
             call_back('Resetting syllables...')
             number = self.execute_cypher(
@@ -121,6 +122,8 @@ class SyllabicContext(UtteranceContext):
         for s in self.speakers:
             discourses = self.get_discourses_of_speaker(s)
             for d in discourses:
+                print(s, d)
+                begin = time.time()
                 phone_rel_statement = '''
                         MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s:syllable:{corpus}),
                         (s)-[:contained_by]->(w:{word_name}:{corpus}),
@@ -134,6 +137,9 @@ class SyllabicContext(UtteranceContext):
                                                                    word_name=self.word_name,
                                                                    phone_name=self.phone_name)
                 self.execute_cypher(phone_rel_statement, speaker_name=s, discourse_name=d)
+                print('Phone relationships took: {} seconds'.format(time.time()-begin))
+
+                begin = time.time()
                 phone_label_statement = '''
                         MATCH (p:{phone_name}:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
                         (p)-[:spoken_in]->(d:Discourse:{corpus})
@@ -145,6 +151,7 @@ class SyllabicContext(UtteranceContext):
                                                                    word_name=self.word_name,
                                                                    phone_name=self.phone_name)
                 self.execute_cypher(phone_label_statement, speaker_name=s, discourse_name=d)
+                print('Phone labels took: {} seconds'.format(time.time()-begin))
                 num_deleted = 0
                 deleted = 1000
                 delete_statement = '''
@@ -162,16 +169,20 @@ class SyllabicContext(UtteranceContext):
                 while deleted > 0:
                     if stop_check is not None and stop_check():
                         break
+                    begin = time.time()
                     deleted = self.execute_cypher(delete_statement, speaker_name=s, discourse_name=d).single()['deleted_count']
+                    print('Deletion took: {} seconds'.format(time.time()-begin))
 
                     num_deleted += deleted
                     if call_back is not None:
                         call_back(num_deleted)
 
+        begin = time.time()
         statement = '''MATCH (st:syllable_type:{corpus})
                                WITH st
                                DETACH DELETE st'''.format(corpus=self.cypher_safe_name)
         self.execute_cypher(statement)
+        print('Type deletion took: {} seconds'.format(time.time()-begin))
         try:
             self.hierarchy.remove_annotation_type('syllable')
             self.hierarchy.remove_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
