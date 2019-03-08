@@ -67,16 +67,16 @@ class UtteranceContext(PauseContext):
             utt_data = self.get_utterance_ids(d, min_pause_length, min_utterance_length)
             speaker_data = {}
             for s, utterances in utt_data.items():
-                speaker_data[s] = []
+                speaker_data = []
                 prev_id = None
                 for u in utterances:
                     cur_id = uuid1()
                     row = {'id': cur_id, 'prev_id': prev_id,
                            'begin_word_id': u[0],
                            'end_word_id': u[1]}
-                    speaker_data[s].append(row)
+                    speaker_data.append(row)
                     prev_id = cur_id
-            utterance_data_to_csvs(self, speaker_data)
+                utterance_data_to_csvs(self, s, d, speaker_data)
         import_utterance_csv(self, call_back, stop_check)
         for m in self.hierarchy.acoustics:
             self.reassess_utterances(m)

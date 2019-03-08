@@ -95,7 +95,7 @@ def data_to_graph_csvs(corpus_context, data):
         x.close()
 
 
-def utterance_data_to_csvs(corpus_context, speaker_data):
+def utterance_data_to_csvs(corpus_context, speaker, discourse, data):
     """
     Convert time data into a CSV file
 
@@ -110,11 +110,10 @@ def utterance_data_to_csvs(corpus_context, speaker_data):
     timed_data : list
         the timing data
     """
-    for s, data in speaker_data.items():
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_utterance.csv'.format(s))
-        header = ['id', 'prev_id', 'begin_word_id', 'end_word_id']
-        write_csv_file(path, header, data, 'a')
+    path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                        '{}_{}_utterance.csv'.format(speaker, discourse))
+    header = ['id', 'prev_id', 'begin_word_id', 'end_word_id']
+    write_csv_file(path, header, data, 'a')
 
 
 def utterance_enriched_data_to_csvs(corpus_context, utterance_data):
@@ -321,11 +320,13 @@ def discourse_data_to_csvs(corpus_context, data):
 def create_utterance_csvs(corpus_context):
     header = ['id', 'prev_id', 'begin_word_id', 'end_word_id']
     for s in corpus_context.speakers:
-        path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                            '{}_utterance.csv'.format(s))
-        with open(path, 'w', newline='', encoding='utf8') as f:
-            writer = csv.DictWriter(f, header, delimiter=',')
-            writer.writeheader()
+        discourses = corpus_context.get_discourses_of_speaker(s)
+        for d in discourses:
+            path = os.path.join(corpus_context.config.temporary_directory('csv'),
+                                '{}_{}_utterance.csv'.format(s, d))
+            with open(path, 'w', newline='', encoding='utf8') as f:
+                writer = csv.DictWriter(f, header, delimiter=',')
+                writer.writeheader()
 
 
 def create_syllabic_csvs(corpus_context):

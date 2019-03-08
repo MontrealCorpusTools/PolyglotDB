@@ -564,65 +564,75 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
         call_back(0, len(speakers))
     corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
     for i, s in enumerate(speakers):
-        if stop_check is not None and stop_check():
-            return
-        if call_back is not None:
-            call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), s))
-            call_back(i)
+        discourses = corpus_context.get_discourses_of_speaker(s)
+        for d in discourses:
+            if stop_check is not None and stop_check():
+                return
+            if call_back is not None:
+                call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), s))
+                call_back(i)
 
-        path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_utterance.csv'.format(s))
-        
-        # If on the Docker version, the files live in /site/proj
-        if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
-            csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
-        else:
-            csv_path = 'file:///{}'.format(make_path_safe(path))
+            path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_{}_utterance.csv'.format(s, d))
 
-        node_statement = '''
-        USING PERIODIC COMMIT 1000
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
-                (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
-                WITH csvLine, begin, end
-                CREATE (utt:utterance:{corpus}:speech {{id: csvLine.id, begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus})
-        '''
+            # If on the Docker version, the files live in /site/proj
+            if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
+                csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+            else:
+                csv_path = 'file:///{}'.format(make_path_safe(path))
 
-        node_statement = node_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_type=corpus_context.word_name)
-        corpus_context.execute_cypher(node_statement)
-        rel_statement = '''USING PERIODIC COMMIT 1000
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus}),
-                (utt:utterance:{corpus}:speech {{id: csvLine.id}})
-                CREATE
-                    (d)<-[:spoken_in]-(utt),
-                    (s)<-[:spoken_by]-(utt)
-                WITH utt,  csvLine
+            node_statement = '''
+            USING PERIODIC COMMIT 1000
+                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                    MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
+                    (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
+                    WITH csvLine, begin, end
+                    CREATE (utt:utterance:{corpus}:speech {{id: csvLine.id, begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus})
+            '''
 
-                MATCH (prev:utterance {{id:csvLine.prev_id}})
-                CREATE (prev)-[:precedes]->(utt)
-        '''
-        rel_statement = rel_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_type=corpus_context.word_name)
-        corpus_context.execute_cypher(rel_statement)
+            node_statement = node_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_type=corpus_context.word_name)
+            corpus_context.execute_cypher(node_statement)
+            rel_statement = '''USING PERIODIC COMMIT 1000
+                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                    MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus}),
+                    (utt:utterance:{corpus}:speech {{id: csvLine.id}})
+                    CREATE
+                        (d)<-[:spoken_in]-(utt),
+                        (s)<-[:spoken_by]-(utt)
+            '''
+            rel_statement = rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_type=corpus_context.word_name)
+            corpus_context.execute_cypher(rel_statement)
 
-        word_statement = '''USING PERIODIC COMMIT 1000
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
-                (utt:utterance:{corpus}:speech {{id: csvLine.id}}),
-                (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}}),
-                path = shortestPath((begin)-[:precedes*0..]->(end))
-                WITH utt, nodes(path) as words
-                UNWIND words as w
-                CREATE (w)-[:contained_by]->(utt)
-        '''
-        word_statement = word_statement.format(path=csv_path,
-                                     corpus=corpus_context.cypher_safe_name,
-                                     word_type=corpus_context.word_name)
-        corpus_context.execute_cypher(word_statement)
-        # os.remove(path) # FIXME Neo4j 2.3 does not release files
+            rel_statement = '''USING PERIODIC COMMIT 1000
+                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                    MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
+                    (utt:utterance:{corpus}:speech {{id: csvLine.id}}),
+                    (prev:utterance {{id:csvLine.prev_id}})
+                    CREATE (prev)-[:precedes]->(utt)
+            '''
+            rel_statement = rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_type=corpus_context.word_name)
+            corpus_context.execute_cypher(rel_statement)
+
+            word_statement = '''USING PERIODIC COMMIT 1000
+                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                    MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
+                    (utt:utterance:{corpus}:speech {{id: csvLine.id}}),
+                    (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}}),
+                    path = shortestPath((begin)-[:precedes*0..]->(end))
+                    WITH utt, nodes(path) as words
+                    UNWIND words as w
+                    CREATE (w)-[:contained_by]->(utt)
+            '''
+            word_statement = word_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_type=corpus_context.word_name)
+            corpus_context.execute_cypher(word_statement)
+            # os.remove(path) # FIXME Neo4j 2.3 does not release files
 
 
 def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
