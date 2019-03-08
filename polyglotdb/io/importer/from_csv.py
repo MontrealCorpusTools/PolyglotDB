@@ -700,13 +700,28 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             USING PERIODIC COMMIT 2000
             LOAD CSV WITH HEADERS FROM "{path}" as csvLine
             MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
+                    (s:syllable:{corpus}:speech {{id: csvLine.id}})
+            WITH n, w, s
+            CREATE (s)-[:contained_by]->(w),
+                    (n)-[:contained_by]->(s)
+            '''
+            statement = rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            print('Hierarchical relationships took: {} seconds'.format(time.time()-begin))
+
+            begin = time.time()
+            rel_statement = '''
+            USING PERIODIC COMMIT 2000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}}),
                     (s:syllable:{corpus}:speech {{id: csvLine.id}}),
                     (n)-[:spoken_by]->(sp:Speaker),
                     (n)-[:spoken_in]->(d:Discourse)
-            WITH n, w, csvLine, sp, d, s
-            CREATE (s)-[:contained_by]->(w),
-                    (n)-[:contained_by]->(s),
-                    (s)-[:spoken_by]->(sp),
+            WITH sp, d, s
+            CREATE (s)-[:spoken_by]->(sp),
                     (s)-[:spoken_in]->(d)
             '''
             statement = rel_statement.format(path=csv_path,
@@ -714,7 +729,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                          word_name=corpus_context.word_name,
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
-            print('Relationships took: {} seconds'.format(time.time()-begin))
+            print('Spoken relationships took: {} seconds'.format(time.time()-begin))
 
             begin = time.time()
             prev_rel_statement = '''
