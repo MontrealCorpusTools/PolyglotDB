@@ -708,9 +708,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                     (n)-[:contained_by]->(s),
                     (s)-[:spoken_by]->(sp),
                     (s)-[:spoken_in]->(d)
-            with csvLine, s
-            MATCH (prev:syllable {{id:csvLine.prev_id}})
-              CREATE (prev)-[:precedes]->(s)
             '''
             statement = rel_statement.format(path=csv_path,
                                          corpus=corpus_context.cypher_safe_name,
@@ -718,6 +715,22 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                          phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
             print('Relationships took: {} seconds'.format(time.time()-begin))
+
+            begin = time.time()
+            prev_rel_statement = '''
+            USING PERIODIC COMMIT 2000
+            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
+            with csvLine, s
+            MATCH (prev:syllable {{id:csvLine.prev_id}})
+              CREATE (prev)-[:precedes]->(s)
+            '''
+            statement = prev_rel_statement.format(path=csv_path,
+                                         corpus=corpus_context.cypher_safe_name,
+                                         word_name=corpus_context.word_name,
+                                         phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
+            print('Prev relationships took: {} seconds'.format(time.time()-begin))
 
             begin = time.time()
             del_rel_statement = '''
