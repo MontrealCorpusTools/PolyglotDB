@@ -155,14 +155,12 @@ class SyllabicContext(UtteranceContext):
                 num_deleted = 0
                 deleted = 1000
                 delete_statement = '''
-                MATCH (st:syllable_type:{corpus})<-[:is_a]-(syl:syllable:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
+                MATCH (s:syllable:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
                         (s)-[:spoken_in]->(d:Discourse:{corpus})
                         WHERE sp.name = {{speaker_name}}
                         AND d.name = {{discourse_name}}
-                        WITH st, sp, d
-                        LIMIT 1
-                        MATCH (st)<-[:is_a]-(s:syllable:{corpus})-[:spoken_by]->(sp),
-                        (s)-[:spoken_in]->(d)
+                        WITH s
+                        LIMIT 1000
                         DETACH DELETE s
                         RETURN count(s) as deleted_count
                 '''.format(corpus=self.cypher_safe_name)
