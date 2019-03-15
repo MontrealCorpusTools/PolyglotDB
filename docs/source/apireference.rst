@@ -10,7 +10,7 @@ Contents:
    :maxdepth: 2
 
    api_corpus.rst
-   api_graph.rst
+   api_query.rst
    api_io.rst
 
 

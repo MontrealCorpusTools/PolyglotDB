@@ -13,7 +13,6 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   concepts.rst
    neo4j_implementation.rst
    influxdb_implementation.rst
    io.rst
