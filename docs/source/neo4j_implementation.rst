@@ -102,7 +102,7 @@ The following is a list of all the relationship types in the Neo4j database:
     :speaks_in (relation between speakers and discourses)
     :annotates (relation between annotations and subannotations)
 
-
+.. _dev_hierarchy:
 
 Corpus hierarchy representation
 ===============================
