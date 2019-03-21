@@ -16,16 +16,42 @@ from polyglotdb.io.parsers.speaker import DirectorySpeakerParser
 
 
 class AlignerParser(TextgridParser):
+    """
+    Base class for parsing TextGrid output from forced aligners.
+
+    Parameters
+    ----------
+    annotation_tiers : list
+        List of the annotation tiers to store data from the TextGrid
+    hierarchy : Hierarchy
+        Basic hierarchy of the TextGrid
+    make_transcription : bool
+        Flag for whether to add a transcription property to words based on phones they contain
+    stop_check : callable
+        Function to check for whether parsing should stop
+    call_back : callable
+        Function to report progress in parsing
+
+    Attributes
+    ----------
+    word_label : str
+        Label identifying word tiers
+    phone_label : str
+        Label identifying phone tiers
+    name : str
+        Name of the aligner the TextGrids are from
+    speaker_first : bool
+        Whether speaker names precede tier types in the TextGrid when multiple speakers are present
+    """
     word_label = 'word'
     phone_label = 'phone'
     name = 'aligner'
     speaker_first = True
 
     def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
-                 make_label=False,
                  stop_check=None, call_back=None):
         super(AlignerParser, self).__init__(annotation_tiers, hierarchy, make_transcription,
-                                        make_label, stop_check, call_back)
+                                        False, stop_check, call_back)
         self.speaker_parser = DirectorySpeakerParser()
 
     def _is_valid(self, tg):
@@ -68,8 +94,8 @@ class AlignerParser(TextgridParser):
         return multiple_speakers, found_word and found_phone
 
     def parse_discourse(self, path, types_only=False):
-        '''
-        Parse a TextGrid file for later importing.
+        """
+        Parse a forced aligned TextGrid file for later importing.
 
         Parameters
         ----------
@@ -80,7 +106,7 @@ class AlignerParser(TextgridParser):
         -------
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
-        '''
+        """
 
         tg = self.load_textgrid(path)
         multiple_speakers, is_valid = self._is_valid(tg)

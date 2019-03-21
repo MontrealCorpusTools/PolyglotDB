@@ -44,6 +44,35 @@ TextGrids
 
    inspect_textgrid
 
+.. _io_aligner_inspect_api:
+
+TextGrids from forced alignment
+-------------------------------
+
+.. currentmodule:: polyglotdb.io.inspect.mfa
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+   inspect_mfa
+
+.. currentmodule:: polyglotdb.io.inspect.fave
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+   inspect_fave
+
+.. currentmodule:: polyglotdb.io.inspect.maus
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+   inspect_maus
+
 .. _io_timit_inspect_api:
 
 TIMIT

@@ -3,6 +3,8 @@
 
 .. _FAVE-align: https://github.com/JoFrhwld/FAVE
 
+.. _Web-MAUS: https://clarin.phonetik.uni-muenchen.de/BASWebServices/interface/WebMAUSGeneral
+
 .. _LaBB-CAT: http://labbcat.sourceforge.net/
 
 .. _TIMIT: https://catalog.ldc.upenn.edu/LDC93S1
@@ -44,7 +46,7 @@ which are then imported into the database.
 Currently the following formats are supported:
 
 - Praat TextGrids (:ref:`inspect_textgrids`)
-- Output from forced aligners (`Montreal Forced Aligner`_ and `FAVE-align`_)
+- TextGrid output from forced aligners (`Montreal Forced Aligner`_, `FAVE-align`_, and `Web-MAUS`_)
 - Output from other corpus management software (`LaBB-CAT`_)
 - `BAS Partitur`_ format
 - Corpus-specific formats
@@ -106,29 +108,25 @@ that have the :code:`label` of "<SIL>", which can then be marked as pause later 
    points of words.
 
 
-Inspect MFA formatted TextGrids
-```````````````````````````````
+Inspect forced aligned TextGrids
+````````````````````````````````
 
-The Montreal Forced Aligner generates TextGrids for files in two formats that PolyglotDB can parse.  The first format
-is for files with a single speaker.  These files will have two tiers, one for words (named :code:`words`) and one for phones (named :code:`phones`).
+Both the Montreal Forced Aligner and FAVE-aligner generate TextGrids for files in two formats that PolyglotDB can parse.  The first format
+is for files with a single speaker.  These files will have two tiers, one for words (named :code:`words` or :code:`word`)
+and one for phones (named :code:`phones` or :code:`phone`).
 The second format is for files with multiple speakers, where each speaker will have a pair of tiers for words (formatted as :code:`Speaker name - words`)
 and phones (formatted as :code:`Speaker name - phones`).
 
-.. note::
-
-   See :ref:`io_mfa_parser_api` for full API of the MFA Parser
-
-Inspect FAVE formatted TextGrids
-````````````````````````````````
-
-The FAVE aligner generates TextGrids for files in two formats that PolyglotDB can parse.  The first format
-is for files with a single speaker.  These files will have two tiers, one for words (named :code:`word`) and one for phones (named :code:`phone`).
-The second format is for files with multiple speakers, where each speaker will have a pair of tiers for words (formatted as :code:`Speaker name - word`)
-and phones (formatted as :code:`Speaker name - phone`).
+TextGrids generated from `Web-MAUS`_ have a single format with a tier for words (named :code:`ORT`), a tier for the canonical
+transcription (named :code:`KAN`) and a tier for phones (named :code:`MAU`).  In parsing, just the tiers for words and
+phones are used, as the transcription will be generated automatically.
 
 .. note::
 
-   See :ref:`io_mfa_parser_api` for full API of the FAVE Parser
+   See :ref:`io_mfa_parser_api` for full API of the MFA Parser, :ref:`io_fave_parser_api` for full API of the FAVE Parser,
+   and :ref:`io_maus_parser_api` for the full API of the MAUS Parser.
+
+
 
 Inspect LaBB-CAT formatted TextGrids
 ````````````````````````````````````
@@ -181,7 +179,7 @@ TextGrid parser (see :ref:`inspect_textgrids`), as in the following TextGrid:
 
 Here we have properties for each word's part of speech (POS tier) and transcription.  The transcription tier will overwrite
 the automatic calculation of transcription based on contained segments.  Each of these will be properties will be type properties
-by default (see :ref:`type_token` for more details).  If these properties are meant to be token level properties (i.e.,
+by default (see :ref:`neo4j_implementation` for more details).  If these properties are meant to be token level properties (i.e.,
 the part of speech of a word varies depending on the token produced), it can changed as follows:
 
 .. code-block:: python
@@ -269,6 +267,13 @@ Second, the :code:`__init__` function should be implemented if anything above an
 Finally, the :code:`parse_discourse` function should be overwritten to implement some way of populating data on the annotation tiers
 from the source data files and ultimately create a :code:`DiscourseData` object (intermediate data representation for straight-forward importing
 into the Polyglot databases).
+
+Creating new parsers for forced aligned TextGrids requires simply extending the :class:`polyglotdb.io.parsers.aligner.AlignerParser`
+and overwriting the :code:`word_label` and :code:`phone_label` class properties.  The :code:`name` property should also be
+set to something descriptive, and the :code:`speaker_first` should be set to False if speakers follow word/phone labels in
+the TextGrid tiers (i.e., :code:`words -Speaker name` rather than :code:`Speaker name - words`). See :class:`polyglotdb.io.parsers.mfa.MfaParser`,
+:class:`polyglotdb.io.parsers.fave.FaveParser`, :class:`polyglotdb.io.parsers.maus.MausParser`, and
+:class:`polyglotdb.io.parsers.labbcat.LabbcatParser` for examples.
 
 Exporters
 =========
