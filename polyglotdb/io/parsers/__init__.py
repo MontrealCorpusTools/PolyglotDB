@@ -8,6 +8,8 @@ from .mfa import MfaParser
 
 from .fave import FaveParser
 
+from .maus import MausParser
+
 from .text_orthography import OrthographyTextParser
 
 from .text_transcription import TranscriptionTextParser

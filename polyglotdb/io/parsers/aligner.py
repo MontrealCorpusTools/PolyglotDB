@@ -81,13 +81,8 @@ class AlignerParser(TextgridParser):
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
         '''
-        tg = TextGrid(strict=False)
-        try:
-            tg.read(path)
-        except Exception as e:
-            print('There was an issue parsing {}:'.format(path))
-            raise
 
+        tg = self.load_textgrid(path)
         multiple_speakers, is_valid = self._is_valid(tg)
 
         if not is_valid:

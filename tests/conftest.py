@@ -74,6 +74,11 @@ def mfa_test_dir(textgrid_test_dir):
 
 
 @pytest.fixture(scope='session')
+def maus_test_dir(textgrid_test_dir):
+    return os.path.join(textgrid_test_dir, 'maus')
+
+
+@pytest.fixture(scope='session')
 def labbcat_test_dir(textgrid_test_dir):
     return os.path.join(textgrid_test_dir, 'labbcat')
 

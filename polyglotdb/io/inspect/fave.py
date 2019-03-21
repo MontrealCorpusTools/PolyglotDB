@@ -20,8 +20,8 @@ def inspect_fave(path):
     :class:`~polyglotdb.io.parsers.ilg.FaveParser`
         Autodetected parser for the text file
     """
-    annotation_types = [OrthographyTier('word', 'word'),
-                        OrthographyTier('phone', 'phone')]
+    annotation_types = [OrthographyTier(FaveParser.word_label, 'word'),
+                        OrthographyTier(FaveParser.phone_label, 'phone')]
 
     annotation_types[0].label = True
     annotation_types[1].label = True

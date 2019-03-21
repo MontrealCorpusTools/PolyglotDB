@@ -7,8 +7,8 @@ from ..parsers import MfaParser
 
 def inspect_mfa(path):
     """
-    Generate an :class:`~polyglotdb.io.parsers.ilg.MfaParser`
-    for a specified text file for parsing it as a Mfa file
+    Generate an :class:`~polyglotdb.io.parsers.mfa.MfaParser`
+    for a specified text file for parsing it as a MFA file
 
     Parameters
     ----------
@@ -17,12 +17,12 @@ def inspect_mfa(path):
 
     Returns
     -------
-    :class:`~polyglotdb.io.parsers.ilg.Mfa`
-        Autodetected parser for Mfa
+    :class:`~polyglotdb.io.parsers.mfa.MfaParser`
+        Autodetected parser for MFA
     """
 
-    annotation_types = [OrthographyTier('words', 'word'),
-                        OrthographyTier('phones', 'phone')]
+    annotation_types = [OrthographyTier(MfaParser.word_label, 'word'),
+                        OrthographyTier(MfaParser.phone_label, 'phone')]
 
     annotation_types[0].label = True
     annotation_types[1].label = True

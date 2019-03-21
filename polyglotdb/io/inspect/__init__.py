@@ -6,6 +6,8 @@ from .labbcat import inspect_labbcat
 
 from .mfa import inspect_mfa
 
+from .maus import inspect_maus
+
 from .partitur import inspect_partitur
 
 from .text_orthography import inspect_orthography
