@@ -95,3 +95,11 @@ run:
 The above query will get all pitch points for the utterance of the word in question, and create Python objects for the
 track (:class:`polyglotdb.acoustics.classes.Track`) and each time point (:class:`polyglotdb.acoustics.classes.TimePoint`).
 With the ``begin`` and ``end`` properties of the word, a slice of the track is added to the output row.
+
+Aggregation
+-----------
+
+Unlike for aggregation of properties in the Neo4j database (see :ref:`dev_aggregation_query`), aggregation of acoustic
+properties occurs in Python rather than being implemented in a query to InfluxDB, for the same performance reasons above.
+By caching utterance tracks as needed, and then performing aggregation over necessary slices (i.e., words or phones), the
+overall query is much faster.

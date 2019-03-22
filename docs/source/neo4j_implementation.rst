@@ -474,3 +474,49 @@ will generate the following Cypher query:
    MATCH (node_Speaker)-[speaks:speaks_in]->(node_Speaker_Discourse:Discourse:corpus)
    WITH node_Speaker, collect(node_Speaker_Discourse) AS node_Speaker_Discourse
    RETURN extract(n in node_Speaker_Discourse|n.name) AS discourses
+
+.. _dev_aggregation_query:
+
+Aggregation functions
+---------------------
+
+In the simplest case, aggregation queries give a way to get an aggregate over the full query.  For instance, given the
+following PolyglotDB query:
+
+.. code-block:: python
+
+   from polyglotdb.query.base.func import Average
+   with CorpusContext('corpus') as c:
+        q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
+        result = q.aggregate(Average(g.phone.duration))
+
+Will generate a resulting Cypher query like the following:
+
+.. code-block:: cypher
+
+   MATCH (node_phone:phone:corpus)-[:is_a]->(type_node_phone:phone_type:corpus)
+   WHERE node_phone.label = "aa"
+   RETURN avg(node_phone.end - node_phone.begin) AS average_duration
+
+In this case, there will be one result returned: the average duration of all phones in the query.  If, however, you wanted
+to get the average duration per phone type (i.e., for each of ``aa``, ``iy``, ``ih``, and so on), then aggregation functions
+can be combined with ``group_by`` clauses:
+
+.. code-block:: python
+
+   from polyglotdb.query.base.func import Average
+   with CorpusContext('corpus') as c:
+        q = g.query_graph(g.phone).filter(g.phone.label.in_(['aa', 'iy', 'ih']))
+        results = q.group_by(g.phone.label.column_name('label')).aggregate(Average(g.phone.duration))
+
+
+.. code-block:: cypher
+
+   MATCH (node_phone:phone:corpus)-[:is_a]->(type_node_phone:phone_type:corpus)
+   WHERE node_phone.label IN ["aa", "iy", "ih"]
+   RETURN node_phone.label AS label, avg(node_phone.end - node_phone.begin) AS average_duration
+
+
+.. note::
+
+   See :ref:`base_aggregates_api` for more details on the aggregation functions available.
