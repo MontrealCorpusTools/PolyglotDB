@@ -86,7 +86,7 @@ item []:
             text = "" 
     item [4]:
         class = "IntervalTier" 
-        name = "Speaker 2 - word" 
+        name = "Speaker's 2 - word"
         xmin = 0 
         xmax = 7.15 
         intervals: size = 9 
@@ -128,7 +128,7 @@ item []:
             text = "" 
     item [5]:
         class = "IntervalTier" 
-        name = "Speaker 2 - phone" 
+        name = "Speaker's 2 - phone"
         xmin = 0 
         xmax = 7.15 
         intervals: size = 9 

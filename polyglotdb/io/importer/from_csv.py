@@ -4,7 +4,7 @@ import time
 
 
 def make_path_safe(path):
-    return path.replace('\\', '/').replace(' ', '%20')
+    return path.replace('\\', '/').replace(' ', '%20').replace("'", "\\'")
 
 
 # Use planner=rule to avoid non-use of unique constraints
@@ -126,7 +126,6 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
                     rel_path = 'file:///site/proj/{}'.format(make_path_safe(path))
                 else:
                     rel_path = 'file:///{}'.format(make_path_safe(path))
-
                 session.write_transaction(unique_function, at)
 
                 properties = []

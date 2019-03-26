@@ -60,7 +60,7 @@ item []:
             text = "" 
     item [3]:
         class = "IntervalTier" 
-        name = "Speaker 2 - phone" 
+        name = "Speaker's 2 - phone"
         xmin = 0 
         xmax = 1 
         intervals: size = 6 
@@ -90,7 +90,7 @@ item []:
             text = "" 
     item [4]:
         class = "IntervalTier" 
-        name = "Speaker 2 - word" 
+        name = "Speaker 2's - word"
         xmin = 0 
         xmax = 1 
         intervals: size = 4 
