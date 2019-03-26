@@ -17,4 +17,5 @@ Contents:
    queries_lexicon.rst
    queries_speakers.rst
    queries_discourse.rst
+   queries_export.rst
    queries_reference.rst
