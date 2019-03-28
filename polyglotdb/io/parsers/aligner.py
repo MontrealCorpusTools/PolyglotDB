@@ -65,9 +65,9 @@ class AlignerParser(TextgridParser):
                 break
         if multiple_speakers:
             if self.speaker_first:
-                speakers = {x.name.split(' - ')[0].strip() for x in tg.tiers if ' - ' in x.name}
+                speakers = {x.name.split(' - ')[0].strip().replace('/', '_').replace('\\', '_') for x in tg.tiers if ' - ' in x.name}
             else:
-                speakers = {x.name.split(' - ')[1].strip() for x in tg.tiers if ' - ' in x.name}
+                speakers = {x.name.split(' - ')[1].strip().replace('/', '_').replace('\\', '_') for x in tg.tiers if ' - ' in x.name}
             found_words = {x: False for x in speakers}
             found_phones = {x: False for x in speakers}
             for ti in tg.tiers:
@@ -77,7 +77,7 @@ class AlignerParser(TextgridParser):
                     speaker, name = ti.name.split(' - ')
                 else:
                     name, speaker = ti.name.split(' - ')
-                speaker = speaker.strip()
+                speaker = speaker.strip().replace('/', '_').replace('\\', '_')
                 name = name.strip()
                 if name.lower().startswith(self.word_label):
                     found_words[speaker] = True
@@ -163,6 +163,7 @@ class AlignerParser(TextgridParser):
                                 speaker, type = ti.name.split(' - ')
                             else:
                                 type, speaker = ti.name.split(' - ')
+                            speaker = speaker.strip().replace('/', '_').replace('\\', '_')
                         except ValueError:
                             continue
                         if speaker in speaker_channel_mapping:
@@ -182,6 +183,7 @@ class AlignerParser(TextgridParser):
                         speaker, type = ti.name.split(' - ')
                     else:
                         type, speaker = ti.name.split(' - ')
+                    speaker = speaker.strip().replace('/', '_').replace('\\', '_')
                 except ValueError:
                     continue
                 if type.lower().startswith(self.word_label):

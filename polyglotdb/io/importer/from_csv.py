@@ -4,7 +4,12 @@ import time
 
 
 def make_path_safe(path):
-    return path.replace('\\', '/').replace(' ', '%20').replace("'", "\\'")
+    replacements = [('%', '%25'), ('\\', '/'), (' ', '%20'), ("'", "\\'"), ('?', '%3F'), (';', '%3B'),
+                    ('<', '%3C'), ('=', '%3D'), ('>', '%3E'), (':', '%3A'), ('*', '%2A'), ('&', '%26'),
+                    ('(', '%28'), (')', '%29'), ('@', '%40'), ('!', '%21'), ('#', '%23')]
+    for o, r in replacements:
+        path = path.replace(o, r)
+    return path
 
 
 # Use planner=rule to avoid non-use of unique constraints

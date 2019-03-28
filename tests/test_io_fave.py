@@ -84,7 +84,7 @@ def test_load_fave_stereo(fave_test_dir, graph_db):
         assert (len(s['channels']) == 1)
         assert (s['channels'] == [0])
 
-        q = c.query_speakers().filter(c.speaker.name == "Speaker's 2")
+        q = c.query_speakers().filter(c.speaker.name == "Speaker's+2?&!#$%()*:;<=>@__")
         q = q.columns(c.speaker.discourses.name.column_name('discourses'),
                       c.speaker.discourses.channel.column_name('channels'))
 
