@@ -5,6 +5,7 @@ import polyglotdb.io as pgio
 corpus_root = '/mnt/e/Data/pg_tutorial'
 
 parser = pgio.inspect_mfa(corpus_root)
+parser.call_back = print
 
 with CorpusContext('pg_tutorial') as c:
     c.load(parser, corpus_root)

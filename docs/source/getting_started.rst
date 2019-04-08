@@ -34,7 +34,8 @@ To install from source (primarily for development):
 
 #. Clone or download the Git repository (https://github.com/MontrealCorpusTools/PolyglotDB).
 #. Navigate to the directory via command line and install the dependencies via :code:`pip install -r requirements.txt`
-#. Install PolyglotDB via :code:`python setup.py install`
+#. Install PolyglotDB via :code:`python setup.py install`, which will install the ``pgdb`` utility that can be run anywhere
+   and manages a local database.
 
 .. note::
 
@@ -55,32 +56,32 @@ that is installed with the PolyglotDB package.
 Mac
 ```
 
-1. Ensure that Homebrew is installed.
-2. Ensure Java 8 is installed (``brew cask install java``)
-3. Once PolyglotDB is installed, run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
-   :code:`pgdb.py install` to save data in the default directory.
+#. Ensure Java 8 is installed inside Anaconda distribution (``conda install -c anaconda openjdk``) if using Anaconda, or
+   via Homebrew otherwise (``brew cask install java``)
+#. Once PolyglotDB is installed, run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
+   :code:`pgdb install` to save data in the default directory.
 
 .. warning::
 
    Do not use ``sudo`` with this command on Macs, as it will lead to permissions issues later on.
 
-Once you have installed PolyglotDB, to start it run :code:`pgdb.py start`.
-Likewise, you can close PolyglotDB by running :code:`pgdb.py stop`.
+Once you have installed PolyglotDB, to start it run :code:`pgdb start`.
+Likewise, you can close PolyglotDB by running :code:`pgdb stop`.
 
-To uninstall, run :code:`pgdb.py uninstall`
+To uninstall, run :code:`pgdb uninstall`
 
 Windows
 ```````
 
-1. Ensure Java is installed (https://www.java.com/) and on the path (``java --version`` works in the command prompt)
-2. Start an Administrator command prompt (right click on cmd.exe and select "Run as administrator"), as Neo4j will be installed as a Windows service.
-3. Run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
-   :code:`pgdb.py install` to save data in the default directory.
+#. Ensure Java is installed (https://www.java.com/) and on the path (``java --version`` works in the command prompt)
+#. Start an Administrator command prompt (right click on cmd.exe and select "Run as administrator"), as Neo4j will be installed as a Windows service.
+#. Run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
+   :code:`pgdb install` to save data in the default directory.
 
-To start the database, you likewise have to use an administrator command prompt before entering the commands :code:`pgdb.py start`
-or :code:`pgdb.py stop`.
+To start the database, you likewise have to use an administrator command prompt before entering the commands :code:`pgdb start`
+or :code:`pgdb stop`.
 
-To uninstall, run :code:`pgdb.py uninstall` (also requires an administrator command prompt).
+To uninstall, run :code:`pgdb uninstall` (also requires an administrator command prompt).
 
 Linux
 `````
@@ -93,10 +94,10 @@ Ensure Java 8 is installed. On Ubuntu:
    sudo apt-get update
    sudo apt-get install oracle-java8-installer
 
-Once installed, run :code:`pgdb.py install /path/to/where/you/want/data/to/be/stored`, or
-:code:`pgdb.py install` to save data in the default directory.
+Once installed, run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
+:code:`pgdb install` to save data in the default directory.
 
-Once you have installed PolyglotDB, to start it run :code:`pgdb.py start`.
-Likewise, you can close PolyglotDB by running :code:`pgdb.py stop`.
+Once you have installed PolyglotDB, to start it run :code:`pgdb start`.
+Likewise, you can close PolyglotDB by running :code:`pgdb stop`.
 
-To uninstall, navigate to the PolyglotDB directory and type :code:`pgdb.py uninstall`
+To uninstall, navigate to the PolyglotDB directory and type :code:`pgdb uninstall`
