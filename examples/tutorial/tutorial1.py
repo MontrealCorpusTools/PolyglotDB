@@ -2,9 +2,13 @@
 from polyglotdb import CorpusContext
 import polyglotdb.io as pgio
 
+# change this path to where you put the pg_tutorial directory after downloading, unzipping from tutorial site
 corpus_root = '/mnt/e/Data/pg_tutorial'
 
 parser = pgio.inspect_mfa(corpus_root)
+
+# for verbose output during corpus import:
+parser.call_back = print
 
 with CorpusContext('pg_tutorial') as c:
     c.load(parser, corpus_root)
@@ -12,7 +16,7 @@ with CorpusContext('pg_tutorial') as c:
 
 # Simple queries
 
-
+## uncomment the following to carry out the "Testing some simple queries" part:
 with CorpusContext('pg_tutorial') as c:
     print('Speakers:', c.speakers)
     print('Discourses:', c.discourses)
