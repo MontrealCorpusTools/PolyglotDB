@@ -7,9 +7,9 @@
 
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1_first_steps.ipynb
 
-.. _full version of the script:
+.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial1.py
 
-.. _tutorial_first_steps: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial1.py
+.. _tutorial_first_steps:
 
 ***********************
 Tutorial 1: First steps

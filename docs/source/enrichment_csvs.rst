@@ -14,9 +14,9 @@ identify which element should be enriched, and all subsequent columns are used a
    first_item,first_item_value_one,first_item_value_two
    second_item,,second_item_value_two
 
-Enriching using this file would look up elements based on the `ID_column`, and the one matching `first_item` would get
-both `property_one` and `property_two` (with the respective values).  The one matching `second_item` would only get a
-`property_two` (because the value for `property_one` is empty.
+Enriching using this file would look up elements based on the ``ID_column``, and the one matching ``first_item`` would get
+both ``property_one`` and `property_two` (with the respective values).  The one matching ``second_item`` would only get a
+``property_two`` (because the value for ``property_one`` is empty.
 
 .. _enrich_lexicon:
 
@@ -32,7 +32,7 @@ Enriching the lexicon
 
 .. note::
 
-   The function `enrich_lexicon_from_csv` accepts an optional keyword `case_sensitive` and defaults to `False`.  Changing this
+   The function ``enrich_lexicon_from_csv`` accepts an optional keyword ``case_sensitive`` and defaults to ``False``.  Changing this
    will respect capitalization when looking up words.
 
 

@@ -15,6 +15,7 @@ Contents:
 
    enrichment_syllables.rst
    enrichment_utterances.rst
+   enrichment_hierarchical.rst
    enrichment_csvs.rst
    enrichment_queries.rst
    acoustics.rst
