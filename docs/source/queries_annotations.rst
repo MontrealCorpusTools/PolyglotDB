@@ -88,7 +88,7 @@ The above query will find all the 'aa' phones that are followed by an 'r'
 phone.  Similarly, :code:`c.phone.previous` would provide access to filtering on
 preceding phones.
 
-.. _subsetting:
+.. _query_annotation_subset:
 
 Subsetting annotations
 ----------------------
@@ -99,23 +99,38 @@ their manner/place of articulation, and vowel height/backness/rounding, and
 words are grouped by their parts of speech.
 
 
-Suppose a subset has been created as in :ref:`enrichment_queries`, so that the phones 'aa' and 'ih' have been marked as `+syllabic`.
+Suppose a subset has been created as in :ref:`enrichment_subset`, so that the phones 'aa' and 'ih' have been marked as `syllabic`.
 Once this category is encoded in the database, it can be used in filters.
 
 .. code-block:: python
 
-   with CorpusContext(config) as c:
+   with CorpusContext('corpus') as c:
        q = c.query_graph(c.phone)
-       q = q.filter(c.phone.subset=='+syllabic')
+       q = q.filter(c.phone.subset=='syllabic')
        results = q.all()
        print(results)
+
+.. note::
+
+   The results returned by the above query will be identical to the similar query:
+
+   .. code-block:: python
+
+       with CorpusContext('corpus') as c:
+           q = c.query_graph(c.phone)
+           q = q.filter(c.phone.label.in_(['aa', 'ih']))
+           results = q.all()
+           print(results)
+
+   The primary benefits of using subsets are performance based due to the inner workings of Neo4j.  See :ref:`neo4j_implementation`
+   for more details.
 
 Another way to specify subsets is on the phone annotations themselves, as follows:
 
 .. code-block:: python
 
    with CorpusContext(config) as c:
-       q = c.query_graph(c.phone.filter_by_subset('+syllabic'))
+       q = c.query_graph(c.phone.filter_by_subset('syllabic'))
        results = q.all()
        print(results)
 
@@ -129,7 +144,7 @@ is generally for use in :ref:`hierarchical_queries`.
    .. code-block:: python
 
       with CorpusContext(config) as c:
-          syl = c.phone.filter_by_subset('+syllabic')
+          syl = c.phone.filter_by_subset('syllabic')
           q = c.query_graph(syl)
           q = q.filter(syl.end == syl.word.end)
           results = q.all()

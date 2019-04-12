@@ -1,5 +1,4 @@
 
-
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_2_enrichment.ipynb
 
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial2.py
@@ -29,7 +28,7 @@ Encoding syllables
 
 To create syllables requires two steps.  The first is to specify the subset of phones in the corpus that are syllabic segments
 and function as syllabic nuclei.  In general these will be vowels, but can also include syllabic consonants.  Subsets in
-PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references, see :ref:`` for
+PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references, see :ref:`enrichment_subsets` for
 more details.
 
 .. code-block:: python
@@ -115,7 +114,7 @@ Once enrichment is complete, we can then query information and extract informati
 
 .. note::
 
-   See :ref:`enrich_speakers` for more details on utterance enrichment.
+   See :ref:`enrich_speakers` for more details on enrichment from csvs.
 
 
 .. _tutorial_stress_enrichment:
@@ -157,7 +156,7 @@ Additional enrichment
    Speech rate enrichment requires that both the :ref:`tutorial_syllable_enrichment` and :ref:`tutorial_utterance_enrichment`
    steps have been completed.
 
-The final enrichment in this tutorial is to encode speech rate onto utterance annotations.  The speech rate measure used
+One of the final enrichment in this tutorial is to encode speech rate onto utterance annotations.  The speech rate measure used
 here is going to to be syllables per second.
 
 .. code-block:: python
@@ -165,8 +164,15 @@ here is going to to be syllables per second.
     with CorpusContext('pg_tutorial') as c:
         c.encode_rate('utterance', 'syllable', 'speech_rate')
 
-Once the enrichment completes, a token property of ``speech_rate`` will be available for query and export on utterance
-annotations.
+Next we will encode the number of syllables per word:
+
+.. code-block:: python
+
+    with CorpusContext('pg_tutorial') as c:
+        c.encode_count('word', 'syllable', 'num_syllables')
+
+Once the enrichments complete, a token property of ``speech_rate`` will be available for query and export on utterance
+annotations, as well as one for ``num_syllables`` on word tokens.
 
 .. note::
 

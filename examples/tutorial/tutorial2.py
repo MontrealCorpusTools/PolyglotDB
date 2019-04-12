@@ -42,3 +42,4 @@ with CorpusContext('pg_tutorial') as c:
 
 with CorpusContext('pg_tutorial') as c:
     c.encode_rate('utterance', 'syllable', 'speech_rate')
+    c.encode_count('word', 'syllable', 'num_syllables')
