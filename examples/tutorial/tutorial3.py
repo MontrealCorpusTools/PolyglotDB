@@ -20,7 +20,7 @@ with CorpusContext('pg_tutorial') as c:
                   c.syllable.word.stress_pattern.column_name('word_stress_pattern'),
                   c.syllable.word.utterance.speech_rate.column_name('utterance_speech_rate'),
                   c.syllable.speaker.name.column_name('speaker'),
-                  c.syllable.speaker.gender.column_name('speaker_gender'),
+                  c.syllable.speaker.sex.column_name('speaker_sex'),
                   c.syllable.discourse.name.column_name('file'),
                   )
 
@@ -31,6 +31,7 @@ with CorpusContext('pg_tutorial') as c:
 
 # Export query
 
+## CHANGE FOR YOUR SYSTEM
 export_path = '/mnt/e/pg_tutorial.csv'
 
 with CorpusContext('pg_tutorial') as c:
@@ -50,7 +51,7 @@ with CorpusContext('pg_tutorial') as c:
                   c.syllable.word.stress_pattern.column_name('word_stress_pattern'),
                   c.syllable.word.utterance.speech_rate.column_name('utterance_speech_rate'),
                   c.syllable.speaker.name.column_name('speaker'),
-                  c.syllable.speaker.gender.column_name('speaker_gender'),
+                  c.syllable.speaker.sex.column_name('speaker_sex'),
                   c.syllable.discourse.name.column_name('file'),
                   )
     q.to_csv(export_path)
