@@ -18,9 +18,17 @@ This tutorial is available as a `Jupyter notebook`_ as well.
 Creating an initial query
 =========================
 
-The first steps for generating a CSV file is to create a query that selects just the annotations of interest to our study.
-In this case, we want all syllables that are `stressed` (defined here as having a ``stress`` value equal to ``'1'``), at the beginning of
-words that are at the end of utterances.
+The first steps for generating a CSV file is to create a query that
+selects just the linguistic objects ("annotations") of a particular
+type (e.g. words, syllables) that are of interest to our study.
+
+For this example, we will query for all *syllables*, which are:
+
+  - `stressed` (defined here as having a ``stress`` value equal to
+    ``'1'``)
+  - At the beginning of the word,
+  - In words that are at the end of utterances.
+    
 
 .. code-block:: python
 
@@ -54,7 +62,7 @@ Next, we want to specify the particular information to extract for each syllable
 With the above, we extract information of interest about the syllable, the word it is in, the utterance it is in, the
 speaker and the sound file (``discourse`` in PolyglotDB's API).
 
-To test out the query, we can ``limit`` the results and print them:
+To test out the query, we can ``limit`` the results (for readability) and print them:
 
 
 .. code-block:: python

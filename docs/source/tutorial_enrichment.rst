@@ -16,10 +16,14 @@ This tutorial is available as a `Jupyter notebook`_ as well.
 
 .. note::
 
-   In general, enrichment can be performed in any order (i.e., speaker enrichment is independent of syllable encoding),
-   so you can perform the major sections in any order and the result
-   is the same.  Within a section, however (i.e., :ref:`tutorial_syllable_enrichment`), the ordering of the steps is necessary (i.e., syllabic
-   segments must be specified before syllables can be encoded).
+   Different kinds of enrichment, corresponding to different
+   subsections of this section, can be performed in any order. For
+   example, speaker enrichment is independent of syllable encoding, so
+   you can perform either one before the other and the resulting
+   database will be the same. Within a section, however (i.e.,
+   :ref:`tutorial_syllable_enrichment`), the ordering of steps matters. For example, syllabic segments must be specified before
+   syllables can be encoded, because the syllable encoding algorithm
+   builds up syllalbes around syllabic phones. 
 
 .. _tutorial_syllable_enrichment:
 
@@ -28,7 +32,7 @@ Encoding syllables
 
 To create syllables requires two steps.  The first is to specify the subset of phones in the corpus that are syllabic segments
 and function as syllabic nuclei.  In general these will be vowels, but can also include syllabic consonants.  Subsets in
-PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references, see :ref:`enrichment_subsets` for
+PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references; see :ref:`enrichment_subsets` for
 more details.
 
 .. code-block:: python
@@ -42,7 +46,13 @@ more details.
         c.encode_type_subset('phone', syllabics, 'syllabic')
 
 
-Once the syllabic segments have been marked as such in the phone inventory, the next step is to actually create the syllable
+The database now contains the information that each phone type above
+("ER0", etc.) is a member of a subset called "syllabics".  Thus, each
+phone token, which belongs to one of these phone types, is also a
+syllabic.
+
+Once the syllabic segments have been marked as such in the phone
+inventory, the next step is to actually create the syllable
 annotations as follows:
 
 .. code-block:: python
@@ -52,7 +62,7 @@ annotations as follows:
 
 
 The ``encode_syllables`` function uses a maximum onset algorithm based on all existing word-initial sequences of phones not
-marked as ``syllabic`` in this case, and then maximizes onsets between syllabic segments.  As an example, something like
+marked as ``syllabic`` in this case, and then maximizes onsets between syllabic phones.  As an example, something like
 ``astringent`` would have a phone sequence of ``AH0 S T R IH1 N JH EH0 N T``.  In any reasonably-sized corpus of English, the
 list of possible onsets would in include ``S T R`` and ``JH``, but not ``N JH``, so the sequence would be syllabified as
 ``AH0 . S T R IH1 N . JH EH0 N T``.
@@ -68,8 +78,9 @@ Encoding utterances
 ===================
 
 As with syllables, encoding utterances consists of two steps.  The first is marking the "words" that are actually non-speech
-elements within the transcript.  When a corpus is first imported, every annotation is treated as speech.  As such, encoding
-labels like ``<SIL>`` as pause elements and not actual speech sounds is a crucial first step.
+elements within the transcript.  When a corpus is first imported,
+every annotation is treated as speech.  So we muist first encode
+labels like ``<SIL>`` as pause elements and not actual speech sounds:
 
 .. code-block:: python
 
@@ -79,6 +90,10 @@ labels like ``<SIL>`` as pause elements and not actual speech sounds is a crucia
         c.encode_pauses(pause_labels)
 
 
+(Note that in the tutorial corpus ``<SIL>`` happens to be the only
+possible non-speech "word", but in other corpora there will probably
+be others, so you'd use a different ``pause_labels`` list.)
+
 Once pauses are encoded, the next step is to actually create the utterance annotations as follows:
 
 .. code-block:: python
@@ -86,9 +101,11 @@ Once pauses are encoded, the next step is to actually create the utterance annot
     with CorpusContext('pg_tutorial') as c:
         c.encode_utterances(min_pause_length=0.15)
 
-In many cases, it is desirable
-to not split groups of words for all pauses, i.e., small pauses might be inserted due to forced alignment, or can signify a
-smaller break than an utterance break.  Thus usually there is a minimum pause length to determine the breaks between utterances, as above.
+The `min_puase_length` argument specifies how long (in seconds) a non-speech
+element has to be to act as an utterance boundary.  In many cases,
+"pauses" that are short enough, such as those inserted by a forced
+alignment error, are not good utterance boundaries (or just signal a
+smaller unit than an "utterance").
 
 .. note::
 
@@ -110,6 +127,10 @@ than the numeric code used in LibriSpeech.  This information can be imported int
     with CorpusContext('pg_tutorial') as c:
         c.enrich_speakers_from_csv(speaker_enrichment_path)
 
+Note that the CSV file could have an arbitrary name and location, in
+general.   The command above assumes the name and location for the
+tutorial corpus.
+	
 Once enrichment is complete, we can then query information and extract information about these characteristics of speakers.
 
 .. note::
@@ -182,7 +203,8 @@ annotations, as well as one for ``num_syllables`` on word tokens.
 Next steps
 ==========
 
-You can see a `full version of the script`_.
+You can see a `full version of the script`_ which carries out all
+steps shown in code above.
 
 See :ref:`tutorial_query` for the next tutorial covering how to create and export interesting queries using the information
 enriched above.  See :ref:`enrichment` for a full list and example usage of the various enrichments possible in PolyglotDB.

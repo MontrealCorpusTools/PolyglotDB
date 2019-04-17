@@ -45,52 +45,108 @@ Introduction
 
 .. _SPADE GitHub repo: https://github.com/MontrealCorpusTools/SPADE
 
+.. _ISCAN conference paper: https://spade.glasgow.ac.uk/wp-content/uploads/2019/04/iscan-icphs2019-revised.pdf
+
+.. _SPADE project: https://spade.glasgow.ac.uk
+
+.. _MCQLL lab: http://mcqll.org/
+
+
 General Background
 ==================
 
 **PolyglotDB** is a Python package that focuses on representing linguistic
-data in scalable, high-performance databases to apply acoustic analysis and other algorithms to large speech corpora.
+data in scalable, high-performance databases (called "Polyglot"
+databases here) to apply acoustic
+analysis and other algorithms to large speech corpora.  
 
-In general there are two ways to leverage PolyglotDB for analyzing a dataset.  The first and more advanced way is through writing Python scripts
-that import functions and classes from PolyglotDB (see :ref:`tutorial` for a walk through of an example after setting up PolyglotDB in
-:ref:`installation`).  The second is through setting up an ISCAN (Integreated Speech Corpus ANalysis) server
-(see the `ISCAN documentation`_ for more details).  ISCAN servers allow users to view information and perform most functions
-of PolyglotDB through a web browser, as well as allowing for advanced features such as permission levels and managing multiple
-Polyglot databases.
+In general there are two ways to leverage PolyglotDB for analyzing a
+dataset:
 
+1. The first way, more appropriate for technically skilled users, is
+   through a Python API: writing Python scripts that import functions
+   and classes from PolyglotDB.  (For this route, see
+   :ref:`installation` for setting up PolyglotDB, followed by
+   :ref:`tutorial` for walk-through examples.)  This way also makes
+   more sense for users in an individual lab, where it can be assumed
+   that all users have the same level of access to datasets (without
+   any ethical issues).
+
+2.  The second way, more appropriate for a user group dispersed across
+    multiple sites and where some users are less comfortable with
+    Python scripting, is by setting up an ISCAN (Integrated Speech
+    Corpus ANalysis) server---see the `ISCAN documentation`_ for more
+    details.  ISCAN servers allow users to view information and
+    perform most functions of PolyglotDB through a web browser.  In
+    addition, ISCAN servers include features for the use case of
+    multiple datasets with differential access: by user/corpus
+    permissions level, and functionality for managing multiple
+    Polyglot databases.  
+
+This documentation site is relevant for ways PolyglotDB canbeused, but
+is geared towards a technically-skilled user and thus focuses more on
+the use case of using PolyglotDB "by script" (#1).
+    
 The general workflow for working with PolyglotDB is:
 
 * **Import**
 
-  - Parse and load initial data from corpus files into a Polyglot database
-  - Can take a while, from a couple of minutes to hours depending on corpus size
-  - Done once per corpus
+  - Parse and load initial data from corpus files into a Polyglot
+    database
+
+    * This step can take a while, from a couple of minutes to hours depending on corpus size.
+
+    * Intended to be done once per corpus
+      
   - See :ref:`tutorial_import` for an example
+    
   - See :ref:`importing` for more details on the import process
+
 * **Enrichment**
 
   - Add further information through analysis algorithms or from CSV files
-  - Can take a while, from a couple of minutes to hours depending on enrichment and corpus size
-  - Done once per corpus
-  - See :ref:`tutorial_enrichment` for an example
-  - See :ref:`enrichment` for more details on the import process
-* **Query**
 
+    * Can take a while, from a couple of minutes to hours depending on
+      enrichment and corpus size
+
+    * Intended to be done once per corpus
+
+  - See :ref:`tutorial_enrichment` for an example
+
+  - See :ref:`enrichment` for more details on the enrichment process
+
+* **Query**
+  
   - Find specific linguistic units
-  - Should be quick, from a couple of minutes to ~10 minutes depending on corpus size
+    
+    * Should be quick, from a couple of minutes to ~10 minutes
+      depending on corpus size
+      
+    * Intended to be done many times per corpus, for different queries
+    
   - See :ref:`tutorial_query` for an example
-  - See :ref:`queries` for more details on the import process
+  
+  - See :ref:`queries` for more details on the query process
+
+  
 * **Export**
 
   - Generate a CSV file for data analysis with specific information extracted from the previous query
-  - Should be quick
+
+    * Should be quick, and intended to be done many times per corpus
+      (like Query)
+
   - See :ref:`tutorial_export` for an example
-  - See :ref:`export` for more details on the import process
+  
+  - See :ref:`export` for more details on the export process
 
 
+The thinking behind this workflow is explained in more detail in the
+`ISCAN conference paper`_.
+    
 .. note::
 
-   There are also many PolyglotDB scripts written for the SPADE project that can be used as examples.  These scripts are
+   There are also many PolyglotDB scripts written for the `SPADE project`_ that can be used as examples.  These scripts are
    available in the `SPADE GitHub repo`_.
 
 High level overview
@@ -132,11 +188,16 @@ Development history
 PolyglotDB was originally conceptualized for use in `Phonological CorpusTools`_, developed at the
 University of British Columbia.  However, primary development shifted to the
 umbrella of `Montreal Corpus Tools`_, developed by members of the `Montreal
-Language Modelling Lab`_ at McGill University.
+Language Modelling Lab`_ at McGill University (now part of `MCQLL Lab`_).
 
-A graphical program named `Speech Corpus Tools`_ was originally developed to allow users to interact with Polyglot without
-writing scripts.  However, with the advent of the Speech Across Dialects of English (SPADE) project, ISCAN was conceived of
-as a better address the situation with multiple users and differing levels of permission across datasets.
+A graphical program named `Speech Corpus Tools`_ was originally
+developed to allow users to interact with Polyglot without writing
+scripts.  However, in the context of the the Speech Across Dialects of
+English (SPADE) project, a more flexible solution was needed to
+accommodate use cases involving multiple users, with physical
+separation between users and data, and differing levels of permission
+across datasets.  ISCAN has been developed within the SPADE project
+with these requirements in mind.
 
 Contributors
 ------------
@@ -147,6 +208,7 @@ Contributors
 * Michael Goodale (`@MichaelGoodale`_)
 * Jeff Mielke (`@jeffmielke`_)
 * Arlie Coles (`@a-coles`_)
+
 
 Citation
 --------
