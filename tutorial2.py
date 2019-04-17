@@ -2,7 +2,7 @@ import os
 from polyglotdb import CorpusContext
 
 ## CHANGE THIS PATH to location of pg_tutorial corpus on your system
-corpus_root = '/mnt/e/Data/pg_tutorial'
+corpus_root = '/Users/morgan/corpora/pg_tutorial'
 
 # Syllable enrichment
 
