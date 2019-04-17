@@ -6,6 +6,7 @@ import polyglotdb.io as pgio
 corpus_root = '/mnt/e/Data/pg_tutorial'
 
 parser = pgio.inspect_mfa(corpus_root)
+parser.call_back = print
 
 # for verbose output during corpus import:
 parser.call_back = print
