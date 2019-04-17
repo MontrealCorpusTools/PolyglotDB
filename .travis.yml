@@ -14,14 +14,15 @@ sudo: required
 addons:
   apt:
     packages:
-      - oracle-java8-installer
+      #- oracle-java8-installer
       - sox
 
 before_install:
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
   # install Neo4j locally:
-  #- sudo apt-get update && sudo apt-get install oracle-java8-installer
+  - sudo add-apt-repository ppa:webupd8team/java -y
+  - sudo apt-get update && sudo apt-get install oracle-java8-installer
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - bash continuous-integration/travis/install.sh
   - ls -al $HOME/tools/autovot/autovot/bin
