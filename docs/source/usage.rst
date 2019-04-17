@@ -1,6 +1,10 @@
 
 .. _SPADE analysis repository: https://github.com/MontrealCorpusTools/SPADE
 
+.. _admin section of the ISCAN server: https://iscan.readthedocs.io/en/latest/administration.html
+
+.. _basic_queries.py: https://github.com/MontrealCorpusTools/SPADE/blob/master/basic_queries.py
+
 .. _local:
 
 Interacting with a local Polyglot database
@@ -11,8 +15,8 @@ command line utility :code:`pgdb`.  The other option is to connect to
 a locally running ISCAN server instance.
 
 
-pgdb.py utility
----------------
+pgdb utility
+------------
 
 This utility provides a basic way to install/start/stop all of the required databases in a Polyglot database (see
 :ref:`local_setup` for more details on setting up a Polyglot instance this way).
@@ -58,7 +62,18 @@ CorpusContext objects (or CorpusConfig objects):
         pass # replace with some task, i.e., import, enrichment, or query
 
 
+These port settings are used by default and so connecting to a vanilla install of the ``pgdb`` utility can be done more simply
+through the following:
 
+.. code-block:: python
+
+    from polyglotdb import CorpusContext
+
+    with CorpusContext('corpus_name') as c:
+        pass # replace with some task, i.e., import, enrichment, or query
+
+
+See the tutorial scripts for examples that use this style of connecting to a local ``pgdb`` instance.
 
 .. _local_iscan_server:
 
@@ -79,6 +94,12 @@ will need to connect a locally running server.  For this, there is a utility fun
         config = CorpusConfig('corpus_name', **connection_params)
         with CorpusContext(config) as c:
             pass # replace with some task, i.e., import, enrichment, or query
+
+.. important::
+
+   Replace the ``database``, ``auth_token_from_iscan``, and ``corpus_name`` with relevant values.  In the use case of one
+   corpus per database,
+   ``database`` and ``corpus_name`` can be the same name, as in the `SPADE analysis repository`_.
 
 As compared to the example above, the only difference is the context manager use of :code:`ensure_local_database_running`.
 What this function does is first try to connect to a ISCAN server running on the local machine.
@@ -111,6 +132,6 @@ document that git does not track, and load it via a function like:
 This utility is thus best for isolated work by a single user, where only they will be interacting
 with the particular database specified and the database only needs to be available during the running of the script.
 
-You can see an example of this type of script in the :code:`examples/formant_analysis/refined_formants_example.py` script,
-or in the scripts in the `SPADE analysis repository`_.
+You can see an example of connecting to local ISCAN server used in the scripts for the `SPADE analysis repository`_,
+for instance the `basic_queries.py`_ script.
 

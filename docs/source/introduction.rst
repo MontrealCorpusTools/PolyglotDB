@@ -52,6 +52,9 @@ Introduction
 .. _MCQLL lab: http://mcqll.org/
 
 
+
+.. _InterSpeech proceedings paper: https://pdfs.semanticscholar.org/ddc4/5a4c828a248d34cc92275fff5ba7e23d1a32.pdf
+
 General Background
 ==================
 
@@ -180,7 +183,8 @@ The idea of using multiple languages or technologies that suit individual
 problems has been known, particularly in the realm of merging SQL and NoSQL
 databases, as "polyglot persistence."
 
-More detailed information on specific implementation details is available in the :ref:`developer`.
+More detailed information on specific implementation details is available in the :ref:`developer`, as well as in the
+`InterSpeech proceedings paper`_.
 
 Development history
 ===================

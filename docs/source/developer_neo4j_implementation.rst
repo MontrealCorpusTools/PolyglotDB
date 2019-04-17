@@ -7,6 +7,8 @@
 
 .. _Cypher documentation: https://neo4j.com/developer/cypher-query-language/
 
+.. _Neo4j's introductory materials: https://neo4j.com/developer/graph-database/
+
 .. _neo4j_implementation:
 
 ********************
@@ -44,7 +46,8 @@ Neo4j is a NoSQL graph database where nodes and edges are fundamental elements i
 Given its active development and use in enterprise systems, it is the best choice for meeting the scalability and performance
 considerations.
 
-However, Neo4j prioritizes nodes far more than edges.  In general, their use case is primarily something like IMDB, for instance.
+However, Neo4j prioritizes nodes far more than edges (see `Neo4j's introductory materials`_ for more details).
+In general, their use case is primarily something like IMDB, for instance.
 In such a case, you'll have nodes for movies, shows, actors, directors, crew, etc, each with different labels associated with them.
 Edges represent relationships like "acted in", or "directed".  The nodes have the majority of the properties, like names, dates of birth,
 gender, etc, and relationships are sparse/empty.  The annotation graph formalism has nodes being relatively sparse (just time point),

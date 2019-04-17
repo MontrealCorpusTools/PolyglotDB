@@ -6,20 +6,19 @@
 Getting started
 ***************
 
-.. _prerequisites:
+PolyglotDB is the Python API for interacting with Polyglot databases and is installed through ``pip``. There are other
+dependencies that must be installed prior to using a Polyglot database, depending on the user's platform.
 
-Prerequisites
-=============
+.. note::
 
-PolyglotDB is the Python API for interacting with PolyglotDB databases.  The easiest way to set up and interface with
-a PolyglotDB database is through setting up an `ISCAN server`_.
-An Integrated Speech Corpus Analysis (ISCAN) server can be set up on a lab's central server, or you can run it on your
-local computer as well (though many
-of PolyglotDB's algorithms benefit from having more processors and memory available).  Please see the ISCAN
-documentation for more information on setting it up (http://iscan.readthedocs.io/en/latest/getting_started.html).
-
-PolyglotDB provides a lightweight Python client for connecting to remote servers without any external prerequisites
-(these are handled by the Polyglot server) besides Python packages.
+   Another way to use Polyglot functionality is through setting up an `ISCAN server`_.
+   An Integrated Speech Corpus Analysis (ISCAN) server can be set up on a lab's central server, or you can run it on your
+   local computer as well (though many
+   of PolyglotDB's algorithms benefit from having more processors and memory available).  Please see the ISCAN
+   documentation for more information on setting it up (http://iscan.readthedocs.io/en/latest/getting_started.html).
+   The main feature benefits of ISCAN are multiple Polyglot databases (separating out different corpora and allowing any
+   of them to be started or shutdown), graphical interfaces for inspecting data, and a user authentication system with different levels
+   of permission for remote access through a web application.
 
 .. _actual_install:
 
@@ -47,11 +46,13 @@ To install from source (primarily for development):
 Set up local database
 ---------------------
 
-Please be aware that this way to set up a database is not recommended for larger groups.  See the `ISCAN server`_ for a more fully featured
-solution.
-
-If you do not have access to an ISCAN server, or just want a lightweight version of the server instead, you can use a utility script
-that is installed with the PolyglotDB package.
+Installing the PolyglotDB package also installs a utility script (``pgdb``) that is then callable from the command line
+anywhere on the system.  The ``pgdb`` command allows for the administration of a single Polyglot database (install/start/stop/uninstall).
+Using ``pgdb`` requires that several prerequisites be installed first, and the remainder of this section will detail how
+to install these on various platforms.
+Please be aware that using the ``pgdb`` utility to set up a database is not recommended for larger groups or those needing
+remote access.
+See the `ISCAN server`_ for a more fully featured solution.
 
 Mac
 ```
