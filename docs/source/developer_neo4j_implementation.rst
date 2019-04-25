@@ -19,7 +19,7 @@ This section details how PolyglotDB saves and structures data within Neo4j.
 
 .. note::
 
-   This section assumes some familiarity with Cypher and Neo4j, see the `Cypher documentation`_ for more details and
+   This section assumes some familiarity with the Cypher query language and Neo4j, see the `Cypher documentation`_ for more details and
    reference.
 
 .. _dev_annotation_graphs:
@@ -33,12 +33,24 @@ time points in the audio file and edges between the nodes represent annotations 
 style of graph is illustrated below.
 
 
+.. note::
+
+   Annotation is a broad term in this conceptual framework and basically represents anything that can be defined as a label,
+   and begin/end time points.  Single time point annotations (something like ToBI) are not strictly covered in this framework.
+   Annotations as phoneticians typically think of annotation (i.e., extra information annotated by the researcher like VOT or categorization by listener) is
+   modelled in PolyglotDB as Subannotations (annotations of annotations) and are handled differently than the principle annotations
+   which are linguistic units.
+
+.. _annotation_graph_polyglot:
 
 .. figure:: _static/img/annotation_graph.png
     :align: center
     :alt: Image cannot be displayed in your browser
 
-The annotation graph formalism has been implemented in other speech corpus management systems, in either SQL
+    Annotation graph representation of the word "polyglot" spoken over the course of one second.
+
+The annotation graph framework is a conceptual way to model linear time signals and interval annotations, independent of
+a specific implementation. The annotation graph formalism has been implemented in other speech corpus management systems, in either SQL
 (`LaBB-CAT`_) or custom file-based storage systems (`EMU-SDMS`_).  One of the principle goals in developing PolyglotDB
 was to be scalable to large datasets (potentially hundreds of hours) and still have good performance in querying the database.
 Initial implementations in SQL were not as fast as I would have liked, so Neo4j was selected as the storage backend.
@@ -55,10 +67,13 @@ and the edges containing the properties (label, token properties, speaker inform
 but these are focused on node properties rather than edge properties (or were at the beginning of development).  As such,
 the storage model was modified from the annotation graph formalism into something more node-based, seen below.
 
+.. _polyglotdb_polyglot:
 
 .. figure:: _static/img/neo4j_annotations.png
     :align: center
     :alt: Image cannot be displayed in your browser
+
+    PolyglotDB implementation of the annotation graph formalism for a production of the word "polyglot".
 
 Rather than time points as nodes, the actual annotations are nodes, and relationships between them are either hierarchical
 (i.e., the phone :code:`P` is contained by the syllable :code:`P.AA1`, represented by solid lines in the figure above)
@@ -67,7 +82,11 @@ Each node has properties for begin and end time points, as well as any arbitrary
 (i.e., part of speech tags).  Each node of a given annotation type (word, syllable, phone) is labelled as such in Neo4j,
 speeding up queries.
 
-A full list of node types in a fresh PolyglotDB Neo4j database is as follows:
+All interaction with corpus data is done through the :class:`~polyglotdb.corpus.CorpusContext` class.  When this class
+is instantiated, and then used as a context manager, it connects to both a Neo4j database and an InfluxDB database (described
+in more detail in :ref:`influxdb_implementation`).  When a corpus is imported (see :ref:`importing`), nodes and edges in
+the Neo4j database are created, along with appropriate labels on the nodes to organize and aid querying.  By default, from
+a simple import of forced aligned TextGrids, the full list of node types in a fresh PolyglotDB Neo4j database is as follows:
 
 .. code-block:: text
 
@@ -79,12 +98,22 @@ A full list of node types in a fresh PolyglotDB Neo4j database is as follows:
     :Discourse
     :speech
 
+In the previous figure (:numref:`polyglotdb_polyglot`), for instance, all green nodes would have the Neo4j label ``:phone``, all orange nodes would have the Neo4j label ``:syllable``,
+and the purple node would have the Neo4j label ``:word``.  All nodes would also have the Neo4j label ``:speech``.  Each of the nodes in figure
+would additionally have links to other aspects of the graph.  The word node would have a link to a node with the Neo4j label of ``:word_type``,
+the syllables nodes would each link a node with the Neo4j label ``:syllable_type``, and the phone nodes would link to nodes with Neo4j label of ``:phone_type``.
+These type nodes would then contain any type information that is not dependent on the particular production.  Each node in the figure would also
+link to a ``:Speaker`` node for whoever produced the word, as well as a ``:Discourse`` node for whichever file it was recorded in.
+
 .. note::
 
     A special tag for the corpus name is added to every node in the corpus, in case multiple corpora are imported in the
-    same database
+    same database.  For instance, if the CorpusContext is instantiated as ``CorpusContext('buckeye')``, then any imported
+    annotations would have a Neo4j label of ``:buckeye`` associated with them.  If another CorpusContext was instantiated
+    as ``CorpusContext('not_buckeye')``, then any queries for annotations in the ``buckeye`` corpus would not be found, as
+    it would be looking only at annotations tagged with the Neo4j label ``:not_buckeye``.
 
-The following node types can further be added to via enrichment:
+The following node types can further be added to via enrichment (see :ref:`enrichment`):
 
 .. code-block:: text
 
@@ -94,6 +123,10 @@ The following node types can further be added to via enrichment:
     :syllable
     :syllable_type
 
+In addition to node labels, Neo4j and Cypher use relationship labels on edges in queries.  In the above example, all solid
+lines would have the label of ``:contained_by``, as the lower annotation is *contained by* the higher one (see :ref:`dev_hierarchy` below
+for details of the hierarchy implementation).  All the dashed lines would have the Neo4j label of ``:precedes`` as the previous annotation
+*precedes* the following one.
 The following is a list of all the relationship types in the Neo4j database:
 
 .. code-block:: text
@@ -112,9 +145,20 @@ The following is a list of all the relationship types in the Neo4j database:
 Corpus hierarchy representation
 ===============================
 
-Metadata about the corpus is stored in a graph hierarchy, which corresponds to a :class:`polyglotdb.structure.Hierarchy` object belonging to
-:class:`polyglotdb.corpus.CorpusContext`
-objects.  In the Neo4j graph, there is a :code:`Corpus` root node, with all encoded annotations linked as they would be
+Neo4j is a schemaless database, each node can have arbitrary information added to it without requiring that information on any other node.
+However, enforcing a bit of a schema on the Neo4j is helpful for dealing with corpora which are more structured than an arbitrary graph.
+For a user, knowing that a typo leads to a property name that doesn't exist on any annotations that they're querying is useful.  Additionally,
+knowing the type of the data stored (string, boolean, float, etc) allows for restricting certain operations (for instance, calculating a by
+speaker z-score is only relevant for numeric properties).  As such a schema in the form of a Hierarchy is explicitly defined and used in PolyglotDB.
+
+Each :class:`~polyglotdb.corpus.CorpusContext` has a :class:`polyglotdb.structure.Hierarchy` object which stores metadata about the corpus.
+Hierarchy objects are basically schemas for the Neo4j database, telling the user what information annotations of a given type
+should have (i.e., do ``word`` annotations have ``frequency`` as a type property? ``part_of_speech`` as a token property?).
+Additionally it also gives the strict hierarchy between levels of annotation.  A freshly imported corpus with just words and phones
+will have a simple hierarchy that phones are *contained by* words.  Enrichment can add more levels to the hierarchy for syllables
+and utterances.  All aspects of the Hierarchy object are stored in the Neo4j database and synced with the :class:`~polyglotdb.corpus.CorpusContext` object.
+
+In the Neo4j graph, there is a :code:`Corpus` root node, with all encoded annotations linked as they would be
 in an annotation graph for a given discourse (i.e., Utterance -> Word -> Syllable -> Phone in orange below).  These nodes contain
 a list of properties that will be found on each node in the annotation graphs (i.e., :code:`label`, :code:`begin`, :code:`end`),
 along with what type of data each property is (i.e., string, numeric, boolean, etc).  There will also be a property for :code:`subsets` that
@@ -130,15 +174,32 @@ have :code:`label`, :code:`transcription` and :code:`frequency`).
 In addition, if subannotations are encoded, they will be represented in the hierarchy graph as well (i.e., :code:`Burst`,
 :code:`Closure`, and :code:`Intonation` in yellow above), along with all the properties they contain.  :code:`Speaker`
 and :code:`Discourse` properties are encoded in the graph hierarchy object as well as any acoustics that have been encoded
-and are stored in the InfluxDB portion of the database.
+and are stored in the InfluxDB portion of the database (see :ref:`influxdb_low_level_saving` for details on encoding acoustic measures).
 
 .. _dev_query:
 
 Query implementation
 ====================
 
+One of the primary functions of PolyglotDB is querying information in the Neo4j databases. The fundamental function of the ``polyglotdb.query`` module
+is to convert Python syntax and objects (referred to as PolyglotDB queries below) into Cypher strings that extract the correct
+elements from the Neo4j database. There is a fair bit of "magic" behind the scenes as much of this conversion is done by hijacking
+built in Python functionality.  For instance ``c.phone.label == 'AA1'`` does not actually return a boolean, but rather
+a ``Clause`` object.  This ``Clause`` object has functionality for generating a Cypher string like ``node_phone.label = 'AA1'``, which
+would then be slotted into the appropriate place in the larger Cypher query.  There is a larger Query object that has many subobjects,
+such a filters, and columns to return, and uses these subobjects to slot into a query template to generate the final Cypher query.
+This section attempts to break down the individual pieces that get added together to create the final Cypher query.
+
+There are 4 principle types
+of queries currently implemented in PolyglotDB based on the information desired (annotations, lexicon, speaker, and discourse
+queries).  Annotation queries are the most common, as they will search over the produced annotation tokens in discourses.  For instance,
+finding all stops in a particular environment and returning relevant information is going to be an annotation query with each
+matching token having its own result.
+Lexicon queries are queries over annotation types rather than tokens.  Speaker and Discourse queries are those over their
+respective entities.
 Queries are constructed as Python objects (descended from :class:`polyglotdb.query.base.query.BaseQuery`) and are generated
-from methods on a CorpusContext object, as below.
+from methods on a :class:`~polyglotdb.corpus.CorpusContext` object, as below.  Each of the four types of queries has their
+own submodule within the ``polyglotdb.query`` module.
 
 +-------------+-----------------------------------------------------------+-----------------------------------------------------------+
 | Data type   | CorpusContext method                                      | Query class                                               |

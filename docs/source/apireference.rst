@@ -12,6 +12,7 @@ Contents:
    api_corpus.rst
    api_query.rst
    api_io.rst
+   api_acoustics.rst
 
 
 

@@ -12,9 +12,7 @@ from ..classes import Track, TimePoint
 from ..utils import PADDING
 
 
-def analyze_vot(corpus_context,
-                  stop_label='stops',
-                  classifier="/autovot/experiments/models/bb_jasa.classifier",
+def analyze_vot(corpus_context, classifier, stop_label='stops',
                   vot_min=5,
                   vot_max=100,
                   window_min=-30,
@@ -22,17 +20,29 @@ def analyze_vot(corpus_context,
                   call_back=None,
                   stop_check=None, multiprocessing=False):
     """
+    Analyze VOT for stops using a pretrained AutoVOT classifier.
 
     Parameters
     ----------
-    corpus_context : :class:`~polyglotdb.CorpusContext`
-    source
-    call_back
-    stop_check
-
-    Returns
-    -------
-
+    corpus_context : :class:`~polyglotdb.corpus.AudioContext`
+    classifier : str
+        Path to an AutoVOT classifier model
+    stop_label : str
+        Label of subset to analyze
+    vot_min : int
+        Minimum VOT in ms
+    vot_max : int
+        Maximum VOT in ms
+    window_min : int
+        Window minimum in ms
+    window_max : int
+        Window maximum in Ms
+    call_back : callable
+        call back function, optional
+    stop_check : callable
+        stop check function, optional
+    multiprocessing : bool
+        Flag to use multiprocessing, otherwise will use threading
     """
     if not corpus_context.hierarchy.has_token_subset('phone', stop_label) and not corpus_context.hierarchy.has_type_subset('phone', stop_label):
         raise Exception('Phones do not have a "{}" subset.'.format(stop_label))

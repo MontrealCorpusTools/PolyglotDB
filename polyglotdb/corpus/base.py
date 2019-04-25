@@ -304,7 +304,7 @@ class BaseContext(object):
         '''
         Reset the graph databases for a corpus.
         '''
-        self.reset_acoustics(call_back, stop_check)
+        self.reset_acoustics()
         self.reset_graph(call_back, stop_check)
 
     def query_graph(self, annotation_type):

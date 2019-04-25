@@ -190,7 +190,7 @@ Other acoustic measures can be encoded by passing a Praat script to :code:`analy
 The requirements for the Praat script are:
 
 * exactly one input: the full path to the sound file containing (only) the phone. (Any other parameters can be set manually
-within your script, and an existing script may need some other modifications in order to work on this type of input)
+  within your script, and an existing script may need some other modifications in order to work on this type of input)
 * print the resulting acoustic measurements (or other properties) to the Praat Info window in the following format:
 
   * The first line should be a space-separated list of column names. These are the names of the properties that will be

@@ -6,38 +6,30 @@ Corpus API
 
 Corpus class
 ------------
-.. currentmodule:: polyglotdb.corpus
 
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
+.. autoclass:: polyglotdb.corpus.BaseContext
 
-   BaseContext
+.. autoclass:: polyglotdb.corpus.PhonologicalContext
 
-   PhonologicalContext
+.. autoclass:: polyglotdb.corpus.SyllabicContext
 
-   SyllabicContext
+.. autoclass:: polyglotdb.corpus.LexicalContext
 
-   LexicalContext
+.. autoclass:: polyglotdb.corpus.UtteranceContext
 
-   UtteranceContext
+.. autoclass:: polyglotdb.corpus.PauseContext
 
-   PauseContext
+.. autoclass:: polyglotdb.corpus.AudioContext
 
-   AudioContext
+.. autoclass:: polyglotdb.corpus.SummarizedContext
 
-   ImportContext
+.. autoclass:: polyglotdb.corpus.SpokenContext
 
-   SummarizedContext
+.. autoclass:: polyglotdb.corpus.StructuredContext
 
-   SpokenContext
+.. autoclass:: polyglotdb.corpus.AnnotatedContext
 
-   StructuredContext
-
-   AnnotatedContext
-
-   CorpusContext
-
+.. autoclass:: polyglotdb.corpus.CorpusContext
 
 Corpus structure class
 ----------------------

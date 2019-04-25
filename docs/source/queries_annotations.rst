@@ -99,7 +99,7 @@ their manner/place of articulation, and vowel height/backness/rounding, and
 words are grouped by their parts of speech.
 
 
-Suppose a subset has been created as in :ref:`enrichment_subset`, so that the phones 'aa' and 'ih' have been marked as `syllabic`.
+Suppose a subset has been created as in :ref:`enrichment_subsets`, so that the phones 'aa' and 'ih' have been marked as `syllabic`.
 Once this category is encoded in the database, it can be used in filters.
 
 .. code-block:: python

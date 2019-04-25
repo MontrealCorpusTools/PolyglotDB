@@ -24,6 +24,5 @@ Contents:
 
    developer_neo4j_implementation.rst
    developer_influxdb_implementation.rst
-   developer_acoustics.rst
    io.rst
    apireference.rst

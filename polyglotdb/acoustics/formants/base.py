@@ -57,7 +57,7 @@ def analyze_formant_tracks(corpus_context, vowel_label=None, source='praat', cal
     corpus_context : CorpusContext
         corpus context to use
     vowel_label : str, optional
-        The subset of phones to analyze.
+        Optional subset of phones to compute tracks over.  If None, then tracks over utterances are computed.
     call_back : callable
         call back function, optional
     stop_check : callable

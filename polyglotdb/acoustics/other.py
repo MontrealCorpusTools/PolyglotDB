@@ -46,10 +46,11 @@ def analyze_script(corpus_context,
 
     Saves the measurement results from the praat script into the database under the same names as the Praat output columns
     Praat script requirements:
-        -the only input is the full path to the soundfile containing (only) the phone
-        -the script prints the output to the Praat Info window in two rows (i.e. two lines).
-            -the first row is a space-separated list of measurement names: these are the names that will be saved into the database
-            -the second row is a space-separated list of the value for each measurement
+
+    - the only input is the full path to the sound file containing (only) the phone
+    - the script prints the output to the Praat Info window in two rows (i.e. two lines).
+    - the first row is a space-separated list of measurement names: these are the names that will be saved into the database
+    - the second row is a space-separated list of the value for each measurement
 
     Parameters
     ----------
@@ -59,12 +60,18 @@ def analyze_script(corpus_context,
         the name of an already encoded phone class, on which the analysis will be run
     script_path : str
         full path to the praat script
+    duration_threshold : float
+        Minimum duration of segments to be analyzed
+    file_type : str
+        File type to use for the script (consonant = 16kHz sample rate, vowel = 11kHz, low_freq = 1200 Hz)
     arguments : list
         a list containing any arguments to the praat script (currently not working)
     call_back : callable
         call back function, optional
     stop_check : callable
         stop check function, optional
+    multiprocessing : bool
+        Flag to use multiprocessing, otherwise will use threading
     """
     if file_type not in ['consonant', 'vowel', 'low_freq']:
         raise ValueError('File type must be one of: consonant, vowel, or low_freq')

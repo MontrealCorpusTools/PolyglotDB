@@ -118,27 +118,86 @@ class AudioContext(SyllabicContext):
     def update_utterance_pitch_track(self, utterance, new_track):
         return update_utterance_pitch_track(self, utterance, new_track)
 
-    def analyze_vot(self,
+    def analyze_vot(self, classifier,
                     stop_label="stops",
                     stop_check=None,
                     call_back=None,
                     multiprocessing=False,
-                    classifier=None,
                     vot_min=5,
                     vot_max=100,
                     window_min=-30,
                     window_max=30):
-        analyze_vot(self, stop_label=stop_label, stop_check=stop_check,
+        """
+        Compute VOTs for stops and save them to the database.
+
+        See :meth:`polyglotdb.acoustics.vot.base.analyze_vot` for more details.
+
+        Parameters
+        ----------
+        classifier : str
+            Path to an AutoVOT classifier model
+        stop_label : str
+            Label of subset to analyze
+        vot_min : int
+            Minimum VOT in ms
+        vot_max : int
+            Maximum VOT in ms
+        window_min : int
+            Window minimum in ms
+        window_max : int
+            Window maximum in Ms
+        call_back : callable
+            call back function, optional
+        stop_check : callable
+            stop check function, optional
+        multiprocessing : bool
+            Flag to use multiprocessing, otherwise will use threading
+        """
+        analyze_vot(self, classifier, stop_label=stop_label, stop_check=stop_check,
                     call_back=call_back, multiprocessing=multiprocessing,
                     vot_min=vot_min, vot_max=vot_max, window_min=window_min,
-                    window_max=window_max, classifier=classifier)
+                    window_max=window_max)
 
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True,
                                vowel_label=None):
+        """
+        Compute formant tracks and save them to the database
+
+        See :meth:`polyglotdb.acoustics.formants.base.analyze_formant_tracks` for more details.
+
+        Parameters
+        ----------
+        source : str
+            Program to compute formants
+        stop_check : callable
+            Function to check whether to terminate early
+        call_back : callable
+            Function to report progress
+        multiprocessing : bool
+            Flag to use multiprocessing, defaults to True, if False uses threading
+        vowel_label : str, optional
+            Optional subset of phones to compute tracks over.  If None, then tracks over utterances are computed.
+        """
         analyze_formant_tracks(self, source=source, stop_check=stop_check, call_back=call_back,
                                multiprocessing=multiprocessing, vowel_label=vowel_label)
 
     def analyze_intensity(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
+        """
+        Compute intensity tracks and save them to the database
+
+        See :meth:`polyglotdb.acoustics.intensity..analyze_intensity` for more details.
+
+        Parameters
+        ----------
+        source : str
+            Program to compute intensity (only ``praat`` is supported)
+        stop_check : callable
+            Function to check whether to terminate early
+        call_back : callable
+            Function to report progress
+        multiprocessing : bool
+            Flag to use multiprocessing, defaults to True, if False uses threading
+        """
         analyze_intensity(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
     def analyze_script(self, phone_class, script_path, duration_threshold=0.01, arguments=None, stop_check=None,
@@ -151,9 +210,13 @@ class AudioContext(SyllabicContext):
                              arguments=None, stop_check=None, call_back=None, multiprocessing=True, file_type='consonant'):
         return analyze_track_script(self, acoustic_name, properties, script_path, duration_threshold=duration_threshold,
                               arguments=arguments, phone_class=phone_class,
-                              stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing, file_type='consonant')
+                              stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing, file_type=file_type)
 
     def reset_formant_points(self):
+        """
+        Reset formant point measures encoded in the corpus
+
+        """
         encoded_props = []
         for prop in ['F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3']:
             if self.hierarchy.has_token_property('phone', prop):
@@ -171,13 +234,27 @@ class AudioContext(SyllabicContext):
             genders.add(g)
         return sorted(genders)
 
-    def reset_acoustics(self, call_back=None, stop_check=None):
+    def reset_acoustics(self):
+        """
+        Reset all acoustic measures currently encoded
+
+        """
         self.acoustic_client().drop_database(self.corpus_name)
         if self.hierarchy.acoustics:
             self.hierarchy.acoustic_properties = {}
             self.encode_hierarchy()
 
     def reset_acoustic_measure(self, acoustic_type):
+        """
+        Reset a given acoustic measure
+
+        Parameters
+        ----------
+        acoustic_type : str
+            Name of the acoustic measurement to reset
+
+
+        """
         self.acoustic_client().query('''DROP MEASUREMENT "{}";'''.format(acoustic_type))
         if acoustic_type in self.hierarchy.acoustics:
             self.hierarchy.acoustic_properties = {k: v for k, v in self.hierarchy.acoustic_properties.items() if
@@ -185,6 +262,11 @@ class AudioContext(SyllabicContext):
             self.encode_hierarchy()
 
     def reset_vot(self):
+        """
+        Reset all VOT measurements in the corpus
+
+
+        """
         self.execute_cypher('''MATCH (v:vot:{corpus_name}) DETACH DELETE v'''.format(corpus_name=self.cypher_safe_name))
         if 'phone' in self.hierarchy.subannotations:
             if 'vot' in self.hierarchy.subannotations["phone"]:
@@ -193,6 +275,15 @@ class AudioContext(SyllabicContext):
                 self.encode_hierarchy()
 
     def acoustic_client(self):
+        """
+        Generate a client to connect to the InfluxDB for the corpus
+
+        Returns
+        -------
+        InfluxDBClient
+            Client through which to run queries and writes
+
+        """
         client = InfluxDBClient(**self.config.acoustic_conncetion_kwargs)
         databases = client.get_list_database()
         if self.corpus_name not in databases:
@@ -390,6 +481,7 @@ class AudioContext(SyllabicContext):
             else:
                 set_label = None
                 q = self.query_graph(phone_type).filter(phone_type.discourse.name == discourse)
+                q = q.filter(phone_type.utterance.id == utterance_id)
                 q = q.filter(phone_type.end >= min_time).filter(phone_type.begin <= max_time)
                 q = q.columns(phone_type.label.column_name('label'),
                               phone_type.begin.column_name('begin'),
@@ -501,8 +593,8 @@ class AudioContext(SyllabicContext):
             Name of the acoustic type
         discourse : str
             Name of the discourse
-        track : :class:`polyglotdb.acoustics.classes.Track`
-            Dictionary with times as keys and tuples of F1, F2, and F3 values as values
+        track : :class:`~polyglotdb.acoustics.classes.Track`
+            Track to save
         kwargs: kwargs
             Tags to save for acoustic measurements
         """
@@ -516,10 +608,10 @@ class AudioContext(SyllabicContext):
         ----------
         acoustic_name : str
             Name of the acoustic type
+        tracks : iterable
+            Iterable of :class:`~polyglotdb.acoustics.classes.Track` objects to save
         speaker : str
             Name of the speaker of the tracks
-        tracks : dict
-            Dictionary with times as keys and tuples of F1, F2, and F3 values as values
         """
         self._save_measurement_tracks(acoustic_name, tracks, speaker)
 
