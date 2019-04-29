@@ -8,6 +8,7 @@ from .attributes import (HierarchicalAnnotation, SubPathAnnotation,
                          SubAnnotation as QuerySubAnnotation,
                          SpeakerAnnotation, DiscourseAnnotation,
                          Track as TrackAnnotation)
+from .attributes.precedence import FollowingAnnotation, PreviousAnnotation
 from ...acoustics.classes import Track
 from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 
@@ -64,6 +65,36 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
                     pa._subannotations[sa._type].append(sa)
                 subbed.append(pa)
             a._subs[pre.collected_node.node_type] = subbed
+    follows = sorted([x for x in to_preload if isinstance(x, FollowingAnnotation)], key=lambda x: x.pos)
+    current = a
+    for pre in follows:
+        if r[pre.alias] is None:
+            current._following = 'empty'
+            break
+        pa = LinguisticAnnotation(corpus)
+        pa._preloaded = True
+        pa = LinguisticAnnotation(corpus)
+        pa.node = r[pre.alias]
+        pa.type_node = r[pre.type_alias]
+        pa._discourse = a._discourse
+        pa._speaker = a._speaker
+        current._following = pa
+        current = pa
+
+    prevs = sorted([x for x in to_preload if isinstance(x, PreviousAnnotation)], key=lambda x: x.pos, reverse=True)
+    current = a
+    for pre in prevs:
+        if r[pre.alias] is None:
+            current._previous = 'empty'
+            break
+        pa = LinguisticAnnotation(corpus)
+        pa._preloaded = True
+        pa.node = r[pre.alias]
+        pa.type_node = r[pre.type_alias]
+        pa._discourse = a._discourse
+        pa._speaker = a._speaker
+        current._previous = pa
+        current = pa
     for pre in to_preload_acoustics:
         if a._type == 'utterance':
             utterance_id = a.id
