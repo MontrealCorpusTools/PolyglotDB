@@ -200,7 +200,7 @@ class ImportContext(StructuredContext):
         type_headers = None
         token_headers = None
         subannotations = None
-        could_not_parse = []
+        could_not_parse = {}
         for i, t in enumerate(file_tuples):
             if parser.stop_check is not None and parser.stop_check():
                 return
@@ -217,14 +217,16 @@ class ImportContext(StructuredContext):
                 type_headers = information['type_headers']
                 token_headers = information['token_headers']
                 subannotations = information['subannotations']
-            except ParseError:
-                could_not_parse.append(path)
+            except ParseError as e:
+                could_not_parse[path] = str(e)
                 continue
             for k, v in information['types'].items():
                 types[k].update(v)
         if could_not_parse:
+            error_template = '{}: {}'
+            errors = [error_template.format(k, v) for k,v in could_not_parse.items()]
             raise ParseError('There were issues parsing the following files with {} parser: {}'.format(
-                ', '.join(could_not_parse), parser.name))
+                parser.name, '\n\n'.join(errors)))
         if call_back is not None:
             call_back('Importing types...')
         self.initialize_import(speakers, token_headers, subannotations)
