@@ -15,6 +15,17 @@ The main objective of this tutorial is to export a CSV file using a query on an 
 enriched (:ref:`tutorial_enrichment`) corpus.
 This tutorial is available as a `Jupyter notebook`_ as well.
 
+As in the other tutorials, import statements and the location of the corpus root must be set for the code in this tutorial
+to be runnable:
+
+.. code-block:: python
+
+    from polyglotdb import CorpusContext
+
+
+    ## CHANGE FOR YOUR SYSTEM
+    export_path = '/path/to/export/pg_tutorial.csv'
+
 Creating an initial query
 =========================
 
@@ -45,7 +56,13 @@ Next, we want to specify the particular information to extract for each syllable
 
 .. code-block:: python
 
-        # ... continued from above
+    # duplicated from above
+    with CorpusContext('pg_tutorial') as c:
+        q = c.query_graph(c.syllable)
+
+        q = q.filter(c.syllable.stress == '1') # Stressed syllables...
+        q = q.filter(c.syllable.begin == c.syllable.word.begin) # That are at the beginning of words...
+        q = q.filter(c.syllable.word.end == c.syllable.word.utterance.end) # that are at the end of utterances.
 
         q = q.columns(c.syllable.label.column_name('syllable'),
                       c.syllable.duration.column_name('syllable_duration'),
@@ -67,7 +84,25 @@ To test out the query, we can ``limit`` the results (for readability) and print 
 
 .. code-block:: python
 
-        # ... continued from above
+    # duplicated from above
+    with CorpusContext('pg_tutorial') as c:
+        q = c.query_graph(c.syllable)
+
+        q = q.filter(c.syllable.stress == '1') # Stressed syllables...
+        q = q.filter(c.syllable.begin == c.syllable.word.begin) # That are at the beginning of words...
+        q = q.filter(c.syllable.word.end == c.syllable.word.utterance.end) # that are at the end of utterances.
+
+        q = q.columns(c.syllable.label.column_name('syllable'),
+                      c.syllable.duration.column_name('syllable_duration'),
+                      c.syllable.word.label.column_name('word'),
+                      c.syllable.word.begin.column_name('word_begin'),
+                      c.syllable.word.end.column_name('word_end'),
+                      c.syllable.word.num_syllables.column_name('word_num_syllables'),
+                      c.syllable.word.stress_pattern.column_name('word_stress_pattern'),
+                      c.syllable.word.utterance.speech_rate.column_name('utterance_speech_rate'),
+                      c.syllable.speaker.name.column_name('speaker'),
+                      c.syllable.discourse.name.column_name('file'),
+                      )
 
         q = q.limit(10)
         results = q.all()
@@ -84,8 +119,6 @@ Once the query is constructed with filters and columns, exporting to a CSV is a 
 For completeness, the full code for the query and export is given below.
 
 .. code-block:: python
-
-    export_path = '/path/to/export/pg_tutorial.csv'
 
     with CorpusContext('pg_tutorial') as c:
         q = c.query_graph(c.syllable)

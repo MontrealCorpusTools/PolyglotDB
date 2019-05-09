@@ -23,7 +23,18 @@ This tutorial is available as a `Jupyter notebook`_ as well.
    database will be the same. Within a section, however (i.e.,
    :ref:`tutorial_syllable_enrichment`), the ordering of steps matters. For example, syllabic segments must be specified before
    syllables can be encoded, because the syllable encoding algorithm
-   builds up syllalbes around syllabic phones. 
+   builds up syllalbes around syllabic phones.
+
+As in the other tutorials, import statements and the location of the corpus root must be set for the code in this tutorial
+to be runnable:
+
+.. code-block:: python
+
+    import os
+    from polyglotdb import CorpusContext
+
+    ## CHANGE THIS PATH to location of pg_tutorial corpus on your system
+    corpus_root = '/mnt/e/Data/pg_tutorial'
 
 .. _tutorial_syllable_enrichment:
 
