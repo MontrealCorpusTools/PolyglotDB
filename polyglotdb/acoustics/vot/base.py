@@ -17,6 +17,7 @@ def analyze_vot(corpus_context, classifier, stop_label='stops',
                   vot_max=100,
                   window_min=-30,
                   window_max=30,
+                  overwrite_edited=False,
                   call_back=None,
                   stop_check=None, multiprocessing=False):
     """
@@ -37,6 +38,8 @@ def analyze_vot(corpus_context, classifier, stop_label='stops',
         Window minimum in ms
     window_max : int
         Window maximum in Ms
+    overwrite_edited:
+        Whether to updated VOTs which have edited set to True
     call_back : callable
         call back function, optional
     stop_check : callable
@@ -63,12 +66,22 @@ def analyze_vot(corpus_context, classifier, stop_label='stops',
             speaker_mapped_stops = {}
             for x in stop_mapping[(discourse,)]:
                 if already_encoded_vots:
-                    if has_vot:
-                        stop_info = (x["begin"], x["end"], x["id"], x["subannotations"]["vot"]["id"])
+                    if "vot" in x["subannotations"]:
+                        vot = x["subannotations"]["vot"]
+                    else:
+                        vot = None 
+
+                    if vot is not None:
+                        #Skip "edited" vots unless we're given the go-ahead to overwrite them
+                        if not overwrite_edited and hasattr(vot, "edited") and vot.edited:
+                            continue
+
+                        stop_info = (x["begin"], x["end"], x["id"], x["subannotations"]["vot"].id)
                     else:
                         stop_info = (x["begin"], x["end"], x["id"], "new_vot")
                 else:
                     stop_info = (x["begin"], x["end"], x["id"])
+
                 if x["speaker"] in speaker_mapped_stops:
                     speaker_mapped_stops[x["speaker"]].append(stop_info)
                 else:
@@ -80,18 +93,16 @@ def analyze_vot(corpus_context, classifier, stop_label='stops',
     output = analyze_segments(segment_mapping.segments, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
 
 
-    list_of_stops = []
-    property_types = [("begin", float), ("end", float), ("confidence", float)]
     if already_encoded_vots:
         new_data = []
         updated_data = []
         for discourse, discourse_output in output.items():
             for (begin, end, confidence, stop_id, vot_id) in discourse_output:
                 if vot_id == "new_vot":
-                    new_data.append({"id":uuid1(),
+                    new_data.append({"id":str(uuid1()),
                                      "begin":begin,
                                      "end":begin+end,
-                                     "annotated_id":stop_id
+                                     "annotated_id":stop_id,
                                      "confidence":confidence})
                 else:
                     updated_data.append({"id":vot_id,
@@ -100,15 +111,24 @@ def analyze_vot(corpus_context, classifier, stop_label='stops',
                                              "confidence":confidence}})
         if updated_data:
             statement = """
-            MATCH (n:{subannotation}:{corpus_name})
-            SET n.{prop} = {default}
-            """.format(subannotation=subannotation, corpus_name=c.cypher_safe_name, 
-                    prop=prop, default=default)
-            c.execute_cypher(statement)
+            UNWIND {{data}} as d
+            MATCH (n:vot:{corpus_name} {{id: d.id}})
+            SET n += d.props
+            """.format(corpus_name=corpus_context.cypher_safe_name)
+            corpus_context.execute_cypher(statement, data=updated_data)
+
         if new_data:
-            #CREATE VOTs
-            c.execute_cypher(statement)
+            statement = """
+            UNWIND {{data}} as d
+            MATCH (annotated:phone:{corpus_name} {{id: d.annotated_id}})
+            CREATE (annotated) <-[:annotates]-(annotation:vot:{corpus_name}
+                {{id: d.id, begin: d.begin,
+                end: d.end, confidence:d.confidence}})
+            """.format(corpus_name=corpus_context.cypher_safe_name)
+            corpus_context.execute_cypher(statement, data=new_data)
     else:
+        list_of_stops = []
+        property_types = [("begin", float), ("end", float), ("confidence", float)]
         for discourse, discourse_output in output.items():
             for (begin, end, confidence, stop_id) in discourse_output:
                 list_of_stops.append({"begin":begin,
