@@ -2,7 +2,7 @@ from conch.analysis.segments import SegmentMapping
 
 
 def generate_segments(corpus_context, annotation_type='utterance', subset=None, file_type='vowel',
-                      duration_threshold=0.001, padding=0):
+                      duration_threshold=0.001, padding=0, fetch_subannotations=False):
     """
     Generate segment vectors for an annotation type, to be used as input to analyze_file_segments.
 
@@ -70,9 +70,19 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                         utt_id = None
                     else:
                         utt_id = a.utterance.id
-                    segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label, id=a.id,
-                                                     utterance_id=utt_id, discourse=discourse, channel=channel, speaker=s,
-                                                     annotation_type=annotation_type, padding=padding)
+                    if fetch_subannotations:
+                        #Get subannotations too
+                        subannotations = {}
+
+
+                        segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label, id=a.id,
+                                                         utterance_id=utt_id, discourse=discourse, channel=channel, speaker=s,
+                                                         annotation_type=annotation_type, padding=padding,
+                                                         subannotations=subannotations)
+                    else:
+                        segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label, id=a.id,
+                                                         utterance_id=utt_id, discourse=discourse, channel=channel, speaker=s,
+                                                         annotation_type=annotation_type, padding=padding)
     return segment_mapping
 
 
