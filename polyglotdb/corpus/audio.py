@@ -123,6 +123,7 @@ class AudioContext(SyllabicContext):
                     stop_check=None,
                     call_back=None,
                     multiprocessing=False,
+                    overwrite_edited=False,
                     vot_min=5,
                     vot_max=100,
                     window_min=-30,
@@ -155,6 +156,7 @@ class AudioContext(SyllabicContext):
         """
         analyze_vot(self, classifier, stop_label=stop_label, stop_check=stop_check,
                     call_back=call_back, multiprocessing=multiprocessing,
+                    overwrite_edited=overwrite_edited,
                     vot_min=vot_min, vot_max=vot_max, window_min=window_min,
                     window_max=window_max)
 
