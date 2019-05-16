@@ -82,9 +82,10 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                     if fetch_subannotations:
                         #Get subannotations too
                         subannotations = {}
-                        if corpus_context.hierarchy.subannotations[annotation_type]:
+                        if annotation_type in corpus_context.hierarchy.subannotations and corpus_context.hierarchy.subannotations[annotation_type]:
                             for s in corpus_context.hierarchy.subannotations[annotation_type]:
-                                 subannotations[s] = getattr(a, s)[0]
+                                if getattr(a, s):
+                                    subannotations[s] = getattr(a, s)[0]
                         segment_mapping.add_file_segment(file_path, a.begin, a.end, label=a.label, id=a.id,
                                                          utterance_id=utt_id, discourse=discourse, channel=channel, speaker=s,
                                                          annotation_type=annotation_type, padding=padding,

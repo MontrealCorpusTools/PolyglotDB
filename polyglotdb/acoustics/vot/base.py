@@ -12,6 +12,18 @@ from ..classes import Track, TimePoint
 from ..utils import PADDING
 
 
+def get_default_for_type(t):
+    if t == float:
+        return 0.0
+    elif t == str:
+        return ""
+    elif t == int:
+        return 0
+    elif t == bool:
+        return False
+    return None
+
+
 def analyze_vot(corpus_context, classifier, stop_label='stops',
                   vot_min=5,
                   vot_max=100,
@@ -96,35 +108,45 @@ def analyze_vot(corpus_context, classifier, stop_label='stops',
     if already_encoded_vots:
         new_data = []
         updated_data = []
+        custom_props = [(prop, get_default_for_type(val)) for prop, val in corpus_context.hierarchy.subannotation_properties["vot"] \
+                if prop not in ["begin", "id", "end", "confidence"]]
+        all_props = [x[0] for x in custom_props]+["id", "begin", "end", "confidence"]
+
         for discourse, discourse_output in output.items():
             for (begin, end, confidence, stop_id, vot_id) in discourse_output:
                 if vot_id == "new_vot":
-                    new_data.append({"id":str(uuid1()),
-                                     "begin":begin,
-                                     "end":begin+end,
-                                     "annotated_id":stop_id,
-                                     "confidence":confidence})
+                    props = {"id":str(uuid1()),
+                             "begin":begin,
+                             "end":begin+end,
+                             "annotated_id":stop_id,
+                             "confidence":confidence}
+                    for prop, val in custom_props:
+                        props[prop] = val
+                    new_data.append(props)
                 else:
-                    updated_data.append({"id":vot_id,
-                                         "props":{"begin":begin,
-                                             "end":begin+end,
-                                             "confidence":confidence}})
+                    props = {"id":vot_id,
+                             "props":{"begin":begin,
+                                 "end":begin+end,
+                                 "confidence":confidence}}
+                    for prop, val in custom_props:
+                        props["props"][prop] = val
+                    updated_data.append(props)
         if updated_data:
             statement = """
             UNWIND {{data}} as d
-            MATCH (n:vot:{corpus_name} {{id: d.id}})
+            MERGE (n:vot:{corpus_name} {{id: d.id}})
             SET n += d.props
             """.format(corpus_name=corpus_context.cypher_safe_name)
             corpus_context.execute_cypher(statement, data=updated_data)
 
         if new_data:
+            default_node = ", ".join(["{}: d.{}".format(p, p) for p in all_props])
             statement = """
             UNWIND {{data}} as d
             MATCH (annotated:phone:{corpus_name} {{id: d.annotated_id}})
             CREATE (annotated) <-[:annotates]-(annotation:vot:{corpus_name}
-                {{id: d.id, begin: d.begin,
-                end: d.end, confidence:d.confidence}})
-            """.format(corpus_name=corpus_context.cypher_safe_name)
+                {{{default_node}}})
+            """.format(corpus_name=corpus_context.cypher_safe_name, default_node=default_node)
             corpus_context.execute_cypher(statement, data=new_data)
     else:
         list_of_stops = []
