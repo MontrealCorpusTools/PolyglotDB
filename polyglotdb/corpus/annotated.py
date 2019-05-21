@@ -1,6 +1,6 @@
 from .summarized import SummarizedContext
 
-from ..io.importer import (subannotations_data_to_csv, import_subannotation_csv)
+from ..io.importer import (subannotations_data_to_csv, import_subannotation_csv, import_token_csv)
 
 
 class AnnotatedContext(SummarizedContext):
@@ -13,3 +13,6 @@ class AnnotatedContext(SummarizedContext):
             self.encode_hierarchy()
         subannotations_data_to_csv(self, subannotation_name, data)
         import_subannotation_csv(self, subannotation_name, annotation_type, ["id", "annotated_id"] + [x[0] for x in property_data])
+
+    def enrich_tokens_with_csv(self, path, annotated_type, id_column, properties=None):
+        enrich_tokens_with_csv(self, path, annotated_type, id_column, properties=None)
