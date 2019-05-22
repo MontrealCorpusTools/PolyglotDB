@@ -15,4 +15,4 @@ class AnnotatedContext(SummarizedContext):
         import_subannotation_csv(self, subannotation_name, annotation_type, ["id", "annotated_id"] + [x[0] for x in property_data])
 
     def enrich_tokens_with_csv(self, path, annotated_type, id_column, properties=None):
-        enrich_tokens_with_csv(self, path, annotated_type, id_column, properties=None)
+        import_token_csv(self, path, annotated_type, id_column, properties=properties)

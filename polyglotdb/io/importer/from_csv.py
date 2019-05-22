@@ -1057,23 +1057,24 @@ def import_token_csv(corpus_context, path, annotated_type, id_column, properties
     for p in properties:
         if is_subann:
             if not corpus_context.hierarchy.has_subannotation_property(annotated_type, p):
-                props_to_add.append((prop, str))
+                props_to_add.append((p, str))
         else:
             if not corpus_context.hierarchy.has_token_property(annotated_type, p):
-                props_to_add.append((prop, str))
+                props_to_add.append((p, str))
 
     if props_to_add:
         if is_subann:
-            corpus_context.hierarchy.add_subannotation_properties(annotation_types, props_to_add)
+            corpus_context.hierarchy.add_subannotation_properties(corpus_context, annotated_type, props_to_add)
         else:
-            corpus_context.hierarchy.add_token_properties(annotation_types, props_to_add)
+            corpus_context.hierarchy.add_token_properties(corpus_context, annotated_type, props_to_add)
         corpus_context.encode_hierarchy()
 
     property_update = ', '.join(["x.{} = csvLine.{}".format(p, p) for p in properties])
     statement = '''CYPHER planner=rule USING PERIODIC COMMIT 500
-            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
             MATCH (x:{a_type}:{corpus} {{id: csvLine.{id_column}}})
             SET {property_update}
             '''.format(path=path, a_type=annotated_type, corpus=corpus_context.cypher_safe_name,
                     id_column=id_column, property_update=property_update)
+    print(statement)
     corpus_context.execute_cypher(statement)
