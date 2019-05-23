@@ -10,4 +10,5 @@ from .from_csv import (import_type_csvs, import_csvs, import_lexicon_csvs,
                        import_utterance_csv, import_subannotation_csv,
                        import_syllable_csv, import_nonsyl_csv,
                        import_feature_csvs, import_speaker_csvs,
-                       import_discourse_csvs, import_syllable_enrichment_csvs, import_utterance_enrichment_csvs)
+                       import_discourse_csvs, import_syllable_enrichment_csvs, import_utterance_enrichment_csvs,
+                       import_token_csv)
