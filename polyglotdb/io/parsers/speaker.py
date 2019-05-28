@@ -8,20 +8,20 @@ class SpeakerParser(object):
 
 class FilenameSpeakerParser(SpeakerParser):
     """
-    Class for parsing a speaker name from a path that gets a specified number of characters from either the left of the right of the
-    base file name.
+    Class for parsing a speaker name from a path that gets a specified number of characters from either the left or
+    the right of the base file name.
 
     Parameters
     ----------
     number_of_characters : int
-        Number of characters to include in the speaker designation
-    orientation : str
-        Whether to pull characters from the left or right of the base file name, defaults to 'left'
+        Number of characters to include in the speaker designation, set to 0 to get the full file name
+    left_orientation : bool
+        Whether to pull characters from the left or right of the base file name, defaults to True
 
     """
-    def __init__(self, number_of_characters, orientation='left'):
+    def __init__(self, number_of_characters, left_orientation=True):
         self.number_of_characters = number_of_characters
-        self.orientation = orientation
+        self.left_orientation = left_orientation
 
     def parse_path(self, path):
         """
@@ -39,7 +39,9 @@ class FilenameSpeakerParser(SpeakerParser):
         """
         name = os.path.basename(path)
         name, ext = os.path.splitext(name)
-        if self.orientation == 'left':
+        if not self.number_of_characters:
+            return name
+        if self.left_orientation:
             return name[:self.number_of_characters]
         else:
             return name[-1 * self.number_of_characters:]
