@@ -1020,3 +1020,61 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
             continue
         corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (type, p))
         # os.remove(path) # FIXME Neo4j 2.3 does not release files
+
+def import_token_csv(corpus_context, path, annotated_type, id_column, properties=None):
+    """
+    Adds new properties to a list of tokens of a given type.
+
+    Parameters
+    ----------
+    corpus_context: :class:`~polyglotdb.corpus.AnnotatedContext`
+        the corpus to load into
+    path : str
+        the file name of the csv
+    annotated_type : str
+        the type of the tokens that are being updated
+    id_column : str
+        the header name for the column containing IDs
+    properties : list
+        a list of column names to update, if None, assume all columns will be updated(default)
+    """
+    if properties is None:
+        with open(path, 'r') as f:
+            properties = [x.strip() for x in f.readline().split(',') if x.strip() != id_column]
+
+
+    is_subann = not annotated_type in corpus_context.hierarchy.annotation_types
+
+    if is_subann:
+        found_subann = False
+        for k, v in corpus_context.hierarchy.subannotations.items():
+            if annotated_type in v:
+                found_subann = True
+        if not found_subann:
+            raise KeyError("Subannotation {} does not exist in this corpus".format(annotated_type))
+
+    props_to_add = []
+    for p in properties:
+        if is_subann:
+            if not corpus_context.hierarchy.has_subannotation_property(annotated_type, p):
+                props_to_add.append((p, str))
+        else:
+            if not corpus_context.hierarchy.has_token_property(annotated_type, p):
+                props_to_add.append((p, str))
+
+    if props_to_add:
+        if is_subann:
+            corpus_context.hierarchy.add_subannotation_properties(corpus_context, annotated_type, props_to_add)
+        else:
+            corpus_context.hierarchy.add_token_properties(corpus_context, annotated_type, props_to_add)
+        corpus_context.encode_hierarchy()
+
+    property_update = ', '.join(["x.{} = csvLine.{}".format(p, p) for p in properties])
+    statement = '''CYPHER planner=rule USING PERIODIC COMMIT 500
+            LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
+            MATCH (x:{a_type}:{corpus} {{id: csvLine.{id_column}}})
+            SET {property_update}
+            '''.format(path=path, a_type=annotated_type, corpus=corpus_context.cypher_safe_name,
+                    id_column=id_column, property_update=property_update)
+    print(statement)
+    corpus_context.execute_cypher(statement)
