@@ -87,6 +87,7 @@ def parse_multiple_formant_output(output):
 
 def generate_variable_formants_point_function(corpus_context, min_formants, max_formants):
     """Generates a function used to call Praat to measure formants and bandwidths with variable num_formants.
+    This specific function returns a single point per formant at a third of the way through the segment
 
     Parameters
     ----------
@@ -106,6 +107,35 @@ def generate_variable_formants_point_function(corpus_context, min_formants, max_
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     script = os.path.join(script_dir, 'multiple_num_formants.praat')
+    formant_function = PraatAnalysisFunction(script, praat_path=corpus_context.config.praat_path,
+                                             arguments=[0.01, 0.025, min_formants, max_formants, max_freq])
+
+    formant_function._function._output_parse_function = parse_multiple_formant_output
+    return formant_function
+
+
+def generate_variable_formants_track_function(corpus_context, min_formants, max_formants):
+    """Generates a function used to call Praat to measure formants and bandwidths with variable num_formants.
+    This function returns the formants and bandwidths as a track, rather than a single point
+
+    Parameters
+    ----------
+    corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        The CorpusContext object of the corpus.
+    min_formants : int
+        The minimum number of formants to measure with on subsequent passes (default is 4).
+    max_formants : int
+        The maximum number of formants to measure with on subsequent passes (default is 7).
+
+    Returns
+    -------
+    formant_function : Partial function object
+        The function used to call Praat.
+    """
+    max_freq = 5500
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    script = os.path.join(script_dir, 'multiple_num_formants_with_tracks.praat')
     formant_function = PraatAnalysisFunction(script, praat_path=corpus_context.config.praat_path,
                                              arguments=[0.01, 0.025, min_formants, max_formants, max_freq])
 
