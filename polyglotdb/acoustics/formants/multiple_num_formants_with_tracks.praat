@@ -64,7 +64,7 @@ for ncoefficients from minformants*2 to maxformants*2
     frames = Get number of frames
 
 
-    output$ = ""
+    output$ = "n_formants"+ tab$  + "'halfcoefficients'" + newline$
     output$ = output$ + "time" + tab$
 
     for i from 1 to nformants
