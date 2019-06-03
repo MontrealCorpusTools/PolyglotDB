@@ -81,7 +81,7 @@ for ncoefficients from minformants*2 to maxformants*2
         t = Get time from frame number... 'f'
         t$ = fixed$(t, 3)
 
-        output$ = output$ + t$
+        output$ = output$ + t$ + tab$
         for j from 1 to nformants
             selectObject: "Formant segment_of_interest"
             formant = Get value at time... 'j' 't' Hertz Linear
