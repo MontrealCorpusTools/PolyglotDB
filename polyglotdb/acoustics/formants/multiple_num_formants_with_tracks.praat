@@ -10,7 +10,7 @@ form Variables
 	positive maxformants
 	integer ceiling
 endform
-
+#MULTIPLE_TRACKS
 Open long sound file... 'filename$'
 
 duration = Get total duration
@@ -135,7 +135,7 @@ for ncoefficients from minformants*2 to maxformants*2
         endfor
     output$ = output$ + newline$
     endfor
-    final_output$ = final_output$ + newline$ + output$
+    final_output$ = final_output$ + output$ + newline$
 endfor
 
 echo 'final_output$'
