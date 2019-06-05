@@ -7,7 +7,7 @@ from polyglotdb.io.parsers.speaker import FilenameSpeakerParser
 
 class LabbCatParser(AlignerParser):
     name = 'LabbCat'
-    word_label = 'orthography'
+    word_label = 'transcript'
     phone_label = 'segment'
     speaker_first = False
 
