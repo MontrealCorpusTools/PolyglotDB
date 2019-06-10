@@ -7,7 +7,9 @@ from statistics import mean, stdev
 import numpy as np
 import scipy
 
+from conch import analyze_segments
 from conch.analysis.praat import PraatAnalysisFunction
+from conch.analysis.segments import SegmentMapping
 from conch.analysis.formants import PraatSegmentFormantTrackFunction, FormantTrackFunction, \
     PraatSegmentFormantPointFunction
 
@@ -133,11 +135,10 @@ def generate_variable_formants_track_function(corpus_context, n_formants):
     max_freq = 5500
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    script = os.path.join(script_dir, 'multiple_num_formants_with_tracks.praat')
+    script = os.path.join(script_dir, 'formant_tracks.praat')
     formant_function = PraatAnalysisFunction(script, praat_path=corpus_context.config.praat_path,
                                              arguments=[0.01, 0.025, n_formants, max_freq])
 
-    formant_function._function._output_parse_function = parse_multiple_formant_output
     return formant_function
 
 
@@ -260,9 +261,35 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
     point_measures_from_csv(corpus_context, header_info)
 
 def extract_and_save_formant_tracks(corpus_context, data, num_formants=False):
-    header = ['id', 'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3', 'Ax', 'drop_formant']
-    if num_formants:
-        header += ['num_formants']
+    #Dictionary of segment mapping objects where each n_formants has its own segment mapping object
+    segment_mappings = {}
+    for k, v in data.items():
+        vowel_id = k.properties["id"]
+        file_path = k["file_path"]
+        begin = k["begin"]
+        end = k["end"]
+        if "num_formants" in v:
+            n_formants = v["num_formants"]
+        else:
+            #There was not enough samples, so we use the default n
+            n_formants = 5
+        if not n_formants in segment_mappings:
+            segment_mappings[n_formants] = SegmentMapping()
+        segment_mappings[n_formants].add_file_segment(file_path, begin, end, 0, id=vowel_id, n_formants=n_formants)
+    outputs = {}
+    for n_formants in segment_mappings:
+        func = generate_variable_formants_track_function(corpus_context, n_formants)
+
+        output = analyze_segments(segment_mappings[n_formants], func)
+        outputs.update(output)
+    formant_tracks = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
+    for k, v in output.items():
+        vowel_id = k.properties["id"]
+        tracks = {x:[] for x in formant_tracks+["time"]}
+        for t, formants in v.items():
+            tracks["time"].append(t)
+            for f in formant_tracks:
+                tracks[f].append(formants[f])
 
 
 def generate_base_formants_function(corpus_context, gender=None, source='praat'):

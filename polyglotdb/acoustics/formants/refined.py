@@ -5,7 +5,7 @@ import numpy as np
 from conch import analyze_segments
 
 from ..segments import generate_vowel_segments
-from .helper import generate_variable_formants_point_function, get_mahalanobis, get_mean_SD, save_formant_point_data
+from .helper import generate_variable_formants_point_function, get_mahalanobis, get_mean_SD, save_formant_point_data, extract_and_save_formant_tracks
 
 
 def read_prototypes(vowel_prototypes_path):
@@ -45,7 +45,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                                       vowel_prototypes_path='',
                                       drop_formant=False,
                                       multiprocessing=True,
-                                      output_tracks=False
+                                      output_tracks=True
                                       ):
     """Extracts F1, F2, F3 and B1, B2, B3.
 
