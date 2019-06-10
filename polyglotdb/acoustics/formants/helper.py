@@ -114,18 +114,16 @@ def generate_variable_formants_point_function(corpus_context, min_formants, max_
     return formant_function
 
 
-def generate_variable_formants_track_function(corpus_context, min_formants, max_formants):
-    """Generates a function used to call Praat to measure formants and bandwidths with variable num_formants.
+def generate_variable_formants_track_function(corpus_context, n_formants):
+    """Generates a function used to call Praat to measure formants and bandwidths with a single num_formants.
     This function returns the formants and bandwidths as a track, rather than a single point
 
     Parameters
     ----------
     corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
         The CorpusContext object of the corpus.
-    min_formants : int
-        The minimum number of formants to measure with on subsequent passes (default is 4).
-    max_formants : int
-        The maximum number of formants to measure with on subsequent passes (default is 7).
+    n_formants : int
+        The minimum number of formants to measure with on subsequent passes (default is 5).
 
     Returns
     -------
@@ -137,7 +135,7 @@ def generate_variable_formants_track_function(corpus_context, min_formants, max_
 
     script = os.path.join(script_dir, 'multiple_num_formants_with_tracks.praat')
     formant_function = PraatAnalysisFunction(script, praat_path=corpus_context.config.praat_path,
-                                             arguments=[0.01, 0.025, min_formants, max_formants, max_freq])
+                                             arguments=[0.01, 0.025, n_formants, max_freq])
 
     formant_function._function._output_parse_function = parse_multiple_formant_output
     return formant_function
@@ -260,6 +258,11 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
         else:
             header_info[h] = int
     point_measures_from_csv(corpus_context, header_info)
+
+def extract_and_save_formant_tracks(corpus_context, data, num_formants=False):
+    header = ['id', 'F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3', 'Ax', 'drop_formant']
+    if num_formants:
+        header += ['num_formants']
 
 
 def generate_base_formants_function(corpus_context, gender=None, source='praat'):

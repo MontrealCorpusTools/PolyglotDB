@@ -6,12 +6,9 @@ form Variables
 	real padding
 	real timestep
 	real windowlen
-    positive minformants
-	positive maxformants
+    positive nformants
 	integer ceiling
-    positive number_of_points
 endform
-#MULTIPLE_TRACKS
 Open long sound file... 'filename$'
 
 duration = Get total duration
@@ -35,54 +32,41 @@ Rename... segment_of_interest
 #Measure a third of the way through
 
 segDur = end - begin
-r = segDur * (0.33)
-r = r + begin
-r$ = fixed$(r, 3)
 
 
-final_output$ = ""
 
+selectObject: "Sound segment_of_interest"
+To Formant (burg)... 'timestep' 'nformants' 'ceiling' 'windowlen' 50
+frames = Get number of frames
 
-for ncoefficients from minformants*2 to maxformants*2
-    halfcoefficients = ncoefficients / 2
-    nformants = floor(halfcoefficients)
+output$ = "time"
+output$ = output$ + tab$
 
-    selectObject: "Sound segment_of_interest"
-    To Formant (burg)... 'timestep' 'halfcoefficients' 'ceiling' 'windowlen' 50
+for i from 1 to nformants
+    formNum$ = string$(i)
+    output$ = output$ + "F" + formNum$ + tab$ + "B" + formNum$ 
+    if i <> nformants
+        output$ = output$ + tab$
+    endif
+endfor
+output$ = output$ + newline$
 
+for f from 1 to frames
+    t = Get time from frame number... 'f'
+    t$ = fixed$(t, 3)
+    output$ = output$ + t$ + tab$
+    for j from 1 to nformants
+        formant = Get value at time... 'j' 't' Hertz Linear
+        formant$ = fixed$(formant, 2)
 
-    output$ = "n_formants"+ tab$  + "'halfcoefficients'" + newline$
-    output$ = output$ + "time" + tab$
-
-    for i from 1 to nformants
-    	formNum$ = string$(i)
-    	output$ = output$ + "F" + formNum$ + tab$ + "B" + formNum$ 
-        if i <> nformants
+        bw = Get bandwidth at time... 'j' 't' Hertz Linear
+        bw$ = fixed$(log10(bw), 4)
+        output$ = output$ + formant$ + tab$ + bw$
+        if j <> nformants
             output$ = output$ + tab$
         endif
     endfor
     output$ = output$ + newline$
-
-    for n from 1 to number_of_points
-        selectObject: "Formant segment_of_interest"
-        t = n*(segDur/number_of_points) + begin
-        t$ = fixed$(t, 3)
-
-        output$ = output$ + t$ + tab$
-        for j from 1 to nformants
-            formant = Get value at time... 'j' 't' Hertz Linear
-            formant$ = fixed$(formant, 2)
-
-            bw = Get bandwidth at time... 'j' 't' Hertz Linear
-            bw$ = fixed$(log10(bw), 4)
-            output$ = output$ + formant$ + tab$ + bw$
-            if j <> nformants
-                output$ = output$ + tab$
-            endif
-        endfor
-    output$ = output$ + newline$
-    endfor
-    final_output$ = final_output$ + output$ + newline$
 endfor
 
-echo 'final_output$'
+echo 'output$'
