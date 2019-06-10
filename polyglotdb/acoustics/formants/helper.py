@@ -15,9 +15,12 @@ from conch.analysis.formants import PraatSegmentFormantTrackFunction, FormantTra
 
 from pyraat.parse_outputs import parse_point_script_output
 
+
 from ...exceptions import AcousticError
 
 from ..io import point_measures_from_csv, point_measures_to_csv
+
+from ..classes import Track, TimePoint
 
 
 def sanitize_bandwidths(value):
@@ -283,13 +286,17 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False):
         output = analyze_segments(segment_mappings[n_formants], func)
         outputs.update(output)
     formant_tracks = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
+    tracks = []
     for k, v in output.items():
         vowel_id = k.properties["id"]
-        tracks = {x:[] for x in formant_tracks+["time"]}
-        for t, formants in v.items():
-            tracks["time"].append(t)
+        track = Track()
+        for time, formants in v.items():
+            tp = TimePoint(time)
             for f in formant_tracks:
-                tracks[f].append(formants[f])
+                tp.add_value(f, formants[f])
+            track.add(tp)
+        print(track)
+    #corpus_context.save_acoustic_tracks('formants', output, speaker)
 
 
 def generate_base_formants_function(corpus_context, gender=None, source='praat'):
