@@ -278,7 +278,7 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False):
             n_formants = 5
         if not n_formants in segment_mappings:
             segment_mappings[n_formants] = SegmentMapping()
-        segment_mappings[n_formants].add_file_segment(file_path, begin, end, 0, id=vowel_id, n_formants=n_formants)
+        segment_mappings[n_formants].segments.append(k)
     outputs = {}
     for n_formants in segment_mappings:
         func = generate_variable_formants_track_function(corpus_context, n_formants)
@@ -286,7 +286,7 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False):
         output = analyze_segments(segment_mappings[n_formants], func)
         outputs.update(output)
     formant_tracks = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
-    tracks = []
+    tracks = {}
     for k, v in output.items():
         vowel_id = k.properties["id"]
         track = Track()
@@ -295,8 +295,16 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False):
             for f in formant_tracks:
                 tp.add_value(f, formants[f])
             track.add(tp)
-        print(track)
-    #corpus_context.save_acoustic_tracks('formants', output, speaker)
+        if not k["speaker"] in tracks:
+            tracks[k["speaker"]] = {}
+        tracks[k["speaker"]][k] = track
+
+    if 'formants' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.add_acoustic_properties(corpus_context, 'formants', [(x, float) for x in formant_tracks])
+        corpus_context.encode_hierarchy()
+
+    for speaker, track_dict in tracks.items():
+        corpus_context.save_acoustic_tracks('formants', track_dict, speaker)
 
 
 def generate_base_formants_function(corpus_context, gender=None, source='praat'):
