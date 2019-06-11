@@ -5,7 +5,7 @@ import numpy as np
 from conch import analyze_segments
 
 from ..segments import generate_vowel_segments
-from .helper import generate_variable_formants_point_function, get_mahalanobis, get_mean_SD, save_formant_point_data
+from .helper import generate_variable_formants_point_function, get_mahalanobis, get_mean_SD, save_formant_point_data, extract_and_save_formant_tracks
 
 
 def read_prototypes(vowel_prototypes_path):
@@ -44,7 +44,8 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                                       stop_check=None,
                                       vowel_prototypes_path='',
                                       drop_formant=False,
-                                      multiprocessing=True
+                                      multiprocessing=True,
+                                      output_tracks=False
                                       ):
     """Extracts F1, F2, F3 and B1, B2, B3.
 
@@ -182,7 +183,6 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                 for candidate, measurements in data.items():
                     output[s][candidate]['Ax'] = output[s][candidate]['A4']
         output = {k: v for k,v in output.items() if v}
-
         for s, data in output.items():
             for candidate, measurements in data.items():
                 try:
@@ -255,7 +255,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                 if 'x' in str(best_number):
                     best_data[s]['drop_formant'] = int(str(best_number).split('x')[-1])
                 else:
-                    best_data[s]['drop_formant'] = 0
+                        best_data[s]['drop_formant'] = 0
 
                 best_numbers.append(best_number)
 
@@ -273,11 +273,12 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                     break
             last_iteration_best_numbers = best_numbers
         log_output.append(','.join([speaker, vowel, str(len(output)), str(_ + 1)]))
-
     with open('iterations_log.csv', 'a') as f:
         for i in log_output:
             f.write(i + '\n')
-
-    save_formant_point_data(corpus_context, best_data, num_formants=True)
+    if output_tracks:
+        extract_and_save_formant_tracks(corpus_context, best_data, num_formants=True)
+    else:
+        save_formant_point_data(corpus_context, best_data, num_formants=True)
     corpus_context.cache_hierarchy()
     return best_prototype_metadata

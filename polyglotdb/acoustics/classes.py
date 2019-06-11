@@ -59,6 +59,10 @@ class Track(object):
         for p in sorted(self.points, key=lambda x: x.time):
             yield p
 
+    def items(self):
+        for p in sorted(self.points, key=lambda x: x.time):
+            yield p.time, p.values
+
     def slice(self, begin, end):
         """
         Create a slice of the acoustic track between two times

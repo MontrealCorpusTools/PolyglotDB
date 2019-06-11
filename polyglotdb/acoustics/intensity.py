@@ -33,7 +33,7 @@ def analyze_intensity(corpus_context,
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         intensity_function = generate_base_intensity_function(corpus_context)
         output = analyze_segments(v, intensity_function, stop_check=stop_check, multiprocessing=multiprocessing)
-        corpus_context.save_acoustic_tracks('intensity',output, speaker)
+        corpus_context.save_acoustic_tracks('intensity', output, speaker)
 
 
 def generate_base_intensity_function(corpus_context):
