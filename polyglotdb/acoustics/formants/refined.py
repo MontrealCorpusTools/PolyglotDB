@@ -45,7 +45,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                                       vowel_prototypes_path='',
                                       drop_formant=False,
                                       multiprocessing=True,
-                                      output_tracks=True
+                                      output_tracks=False
                                       ):
     """Extracts F1, F2, F3 and B1, B2, B3.
 
