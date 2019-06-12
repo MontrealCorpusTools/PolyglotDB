@@ -263,7 +263,7 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
             header_info[h] = int
     point_measures_from_csv(corpus_context, header_info)
 
-def extract_and_save_formant_tracks(corpus_context, data, num_formants=False):
+def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, stop_check=None, multiprocessing=True):
     #Dictionary of segment mapping objects where each n_formants has its own segment mapping object
     segment_mappings = {}
     for k, v in data.items():
@@ -283,7 +283,9 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False):
     for n_formants in segment_mappings:
         func = generate_variable_formants_track_function(corpus_context, n_formants)
 
-        output = analyze_segments(segment_mappings[n_formants], func)
+        output = analyze_segments(segment_mappings[n_formants], func,
+                            stop_check=stop_check,
+                            multiprocessing=multiprocessing)  # Analyze the phone
         outputs.update(output)
     formant_tracks = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
     tracks = {}

@@ -277,7 +277,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
         for i in log_output:
             f.write(i + '\n')
     if output_tracks:
-        extract_and_save_formant_tracks(corpus_context, best_data, num_formants=True)
+        extract_and_save_formant_tracks(corpus_context, best_data, num_formants=True, multiprocessing=multiprocessing, stop_check=stop_check)
     else:
         save_formant_point_data(corpus_context, best_data, num_formants=True)
     corpus_context.cache_hierarchy()
