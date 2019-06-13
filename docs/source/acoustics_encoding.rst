@@ -1,3 +1,4 @@
+
 **************************
 Encoding acoustic measures
 **************************
@@ -181,6 +182,44 @@ Following encoding, phone types that were analyzed will have properties for :cod
 :code:`B1`, :code:`B2`, and :code:`B3` available for query and export. See :ref:`point_measure_query` for more details.
 
 .. _script_encoding:
+
+Encoding Voice Onset Time(VOT) 
+==============================
+
+Currently there is only one method to encode Voice Onset Times(VOTs) into PolyglotDB.
+This makes use of the `AutoVOT <https://github.com/mlml/autovot>`_ program which automatically calculates VOTs based on various acoustic properties.
+
+VOTs are encoded over a specific subset of phones using :code: `analyze_vot` as follows:
+
+.. code-block:: python
+
+    with CorpusContext(config) as c:
+        c.analyze_vot(self, classifier,
+                    stop_label="stops",
+                    vot_min=5,
+                    vot_max=100,
+                    window_min=-30,
+                    window_max=30):
+
+.. note::
+
+   The function :code:`analyze_vot` requires that utterances and any subsets be encoded prior to being run. See
+   :ref:`enrichment_utterances` for further details on encoding utterances and :ref:`enrichment_subset` for subsets.
+
+Parameters
+----------
+The :code: `analyze_vot` function has a variety of parameters that are important for running the function properly.
+`classifier` is a string which has a paht to an AutoVOT classifier directory. 
+A default classifier is available in `/tests/data/classifier/sotc_classifiers`.
+
+`stop_label` refers to the name of the subset of phones that you intend to calculate VOTs for. 
+
+`vot_min` and `vot_max` refer to the minimum and maximum duration of any VOT that is calculated. 
+The `AutoVOT repo <https://github.com/mlml/autovot>` has some sane defaults for English voiced and voiceless stops.
+
+`window_min` and `window_max` refer to the edges of a given phone's duration.
+So, a `window_min` of -30 means that AutoVOT will look up to 30 milliseconds before the start of a phone for the burst, and
+a `window_max` of 30 means that it will look up to 30 milliseconds after the end of a phone.
 
 Encoding other measures using a Praat script
 ============================================
