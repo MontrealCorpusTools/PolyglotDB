@@ -264,6 +264,8 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
     point_measures_from_csv(corpus_context, header_info)
 
 def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, stop_check=None, multiprocessing=True):
+    '''This function takes a dictionary with the best parameters for each vowels, then recalculates the formants
+    as tracks rather than as points'''
     #Dictionary of segment mapping objects where each n_formants has its own segment mapping object
     segment_mappings = {}
     for k, v in data.items():
