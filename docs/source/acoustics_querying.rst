@@ -43,3 +43,18 @@ Example: querying for :code:`cog` (center of gravity)
 		q = q.columns(c.phone.begin, c.phone.end, c.phone.cog)
 		results = q.all()
 		q.to_csv('path/to/output.csv')
+
+Querying Voice Onset Time
+-------------------------
+
+Querying voice onset time is done in the same method as acoustic point measures, however, the `vot` object itself has different measures associated with it.
+
+So, you must also include what you would like from the `vot` measurement as shown below.
+
+.. code-block:: python
+
+	with CorpusContext(config) as c:
+		q = c.query_graph(c.phone)
+		q = q.columns(c.phone.vot.begin, c.phone.vot.end, c.phone.vot.confidence)
+		results = q.all()
+		q.to_csv('path/to/output.csv')
