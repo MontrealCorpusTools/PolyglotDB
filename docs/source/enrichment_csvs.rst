@@ -74,3 +74,25 @@ Metadata about the discourses or sound files can be added via:
    discourse_csv_path = '/full/path/to/discourse/data.csv'
    with CorpusContext(config) as c:
        c.enrich_discourses_from_csv(discourse_csv_path)
+
+Enriching arbitrary tokens
+==========================
+
+Often it's necessary or useful to encode a new property on tokens of an annotation without directly interfacing the database.
+This could happen, for example, if you wanted to use a different language or tool for a certain phonetic analysis than Python.
+In this case, it is possible to enrich any type of token via CSV. 
+This can be done using the  :code:`corpus_context.enrich_tokens_with_csv` function.
+
+.. code-block:: python
+
+   token_csv_path = '/full/path/to/discourse/data.csv'
+   with CorpusContext(config) as c:
+       c.enrich_tokens_from_csv(token_csv_path,
+               annotation_type="phone",
+               id_column="phone_id"
+               properties=["measurement_1", "measurement_2"])
+
+The only requirement for the CSV is that there is a column which contains the IDs of the tokens you wish to update. 
+You can get these IDs(along with other parameters) by querying the tokens before hand, and exporting a CSV, see: #link.
+The only columns from the CSV that will be added as token properties, are those which are included in the `properties` parameter.
+If this parameter is left as `None`, then all the columns of the CSV except the `id_column` will be included.
