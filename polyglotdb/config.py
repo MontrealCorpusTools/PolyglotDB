@@ -1,7 +1,5 @@
 import os
-import sys
 import logging
-import socket
 import configparser
 
 CONFIG_DIR = os.path.expanduser('~/.pgdb')
@@ -17,6 +15,18 @@ if os.path.exists(CONFIG_PATH):
 
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
+    """
+    Set up a Python logger to use for error/debug/info messages
+
+    Parameters
+    ----------
+    logger_name : str
+        Name of the logger
+    log_file : str
+        Path to the log file to save into
+    level : int
+        Minimum level to log
+    """
     l = logging.getLogger(logger_name)
     formatter = logging.Formatter('%(asctime)s : %(message)s')
     fileHandler = logging.FileHandler(log_file, mode='a')
@@ -58,7 +68,7 @@ class CorpusConfig(object):
         Type of SQL database
     base_dir : str
         Base directory to store information and temporary files for the corpus
-        defaults to "Documents/SCT" under the current user's home directory
+        defaults to ".pgdb" under the current user's home directory
     """
 
     def __init__(self, corpus_name, data_dir=None, **kwargs):
@@ -115,14 +125,16 @@ class CorpusConfig(object):
         os.makedirs(temp, exist_ok=True)
         return temp
 
-    def init(self):
-        if self.corpus_name:
-            os.makedirs(self.log_dir, exist_ok=True)
-            os.makedirs(self.temp_dir, exist_ok=True)
-            os.makedirs(self.audio_dir, exist_ok=True)
-
     @property
-    def acoustic_conncetion_kwargs(self):
+    def acoustic_connection_kwargs(self):
+        """
+        Return connection parameters to use for connecting to an InfluxDB database
+
+        Returns
+        -------
+        dict
+            Connection parameters
+        """
         kwargs = {'host': self.host,
                   'port': self.acoustic_http_port,
                   'database': self.corpus_name}
@@ -134,5 +146,13 @@ class CorpusConfig(object):
 
     @property
     def graph_connection_string(self):
+        """
+        Construct a connection string to use for Neo4j
+
+        Returns
+        -------
+        str
+            Connection string
+        """
         return "bolt://{}:{}".format(self.host, self.graph_bolt_port)
 

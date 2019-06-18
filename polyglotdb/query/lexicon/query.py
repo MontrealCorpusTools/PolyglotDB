@@ -15,14 +15,14 @@ class LexiconQuery(BaseQuery):
             labels_to_add.append(label)
         super(LexiconQuery, self).create_subset(label)
         if labels_to_add:
-            self.corpus.hierarchy.add_type_labels(self.corpus, self.to_find.node_type, labels_to_add)
+            self.corpus.hierarchy.add_type_subsets(self.corpus, self.to_find.node_type, labels_to_add)
         self.corpus.encode_hierarchy()
 
     def remove_subset(self, label):
         """ removes all token labels"""
 
         super(LexiconQuery, self).remove_subset(label)
-        self.corpus.hierarchy.remove_type_labels(self.corpus, self.to_find.node_type, [label])
+        self.corpus.hierarchy.remove_type_subsets(self.corpus, self.to_find.node_type, [label])
 
     def set_properties(self, **kwargs):
         """

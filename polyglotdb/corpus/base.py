@@ -41,7 +41,6 @@ class BaseContext(object):
             self.config = args[0]
         else:
             self.config = CorpusConfig(*args, **kwargs)
-        self.config.init()
         self.graph_driver = GraphDatabase.driver(self.config.graph_connection_string)
         self.corpus_name = self.config.corpus_name
 

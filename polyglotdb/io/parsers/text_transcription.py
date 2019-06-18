@@ -46,7 +46,7 @@ class TranscriptionTextParser(BaseParser):
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         if self.speaker_parser is not None:
-            speaker = self.speaker_parser.parse_path(word_path)
+            speaker = self.speaker_parser.parse_path(path)
             name = speaker + '_' + name
         else:
             speaker = None

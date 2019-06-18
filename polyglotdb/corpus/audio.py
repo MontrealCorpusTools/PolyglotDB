@@ -286,7 +286,7 @@ class AudioContext(SyllabicContext):
             Client through which to run queries and writes
 
         """
-        client = InfluxDBClient(**self.config.acoustic_conncetion_kwargs)
+        client = InfluxDBClient(**self.config.acoustic_connection_kwargs)
         databases = client.get_list_database()
         if self.corpus_name not in databases:
             client.create_database(self.corpus_name)

@@ -334,7 +334,7 @@ class AnnotationNode(Node):
         elif key in self.hierarchy.acoustics:
             from .acoustic import AcousticAttribute
             return AcousticAttribute(self, key)
-        elif self.hierarchy is not None and key in self.hierarchy.contained_by(self.node_type):
+        elif self.hierarchy is not None and key in self.hierarchy.get_higher_types(self.node_type):
             from .hierarchical import HierarchicalAnnotation
             types = self.hierarchy.get_higher_types(self.node_type)
             prev_node = self
@@ -346,7 +346,7 @@ class AnnotationNode(Node):
                 if t == key:
                     break
             return cur_node
-        elif self.hierarchy is not None and key in self.hierarchy.contains(self.node_type):
+        elif self.hierarchy is not None and key in self.hierarchy.get_lower_types(self.node_type):
             from .path import SubPathAnnotation
             return SubPathAnnotation(self, AnnotationNode(key, corpus=self.corpus))
         elif self.hierarchy is not None \

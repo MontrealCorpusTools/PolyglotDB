@@ -122,7 +122,6 @@ class SyllabicContext(UtteranceContext):
         for s in self.speakers:
             discourses = self.get_discourses_of_speaker(s)
             for d in discourses:
-                print(s, d)
                 begin = time.time()
                 phone_rel_statement = '''
                         MATCH (p:{phone_name}:{corpus})-[:contained_by]->(s:syllable:{corpus}),
@@ -137,7 +136,6 @@ class SyllabicContext(UtteranceContext):
                                                                    word_name=self.word_name,
                                                                    phone_name=self.phone_name)
                 self.execute_cypher(phone_rel_statement, speaker_name=s, discourse_name=d)
-                print('Phone relationships took: {} seconds'.format(time.time()-begin))
 
                 begin = time.time()
                 phone_label_statement = '''
@@ -151,7 +149,6 @@ class SyllabicContext(UtteranceContext):
                                                                    word_name=self.word_name,
                                                                    phone_name=self.phone_name)
                 self.execute_cypher(phone_label_statement, speaker_name=s, discourse_name=d)
-                print('Phone labels took: {} seconds'.format(time.time()-begin))
                 num_deleted = 0
                 deleted = 1000
                 delete_statement = '''
@@ -169,7 +166,6 @@ class SyllabicContext(UtteranceContext):
                         break
                     begin = time.time()
                     deleted = self.execute_cypher(delete_statement, speaker_name=s, discourse_name=d).single()['deleted_count']
-                    print('Deletion took: {} seconds'.format(time.time()-begin))
 
                     num_deleted += deleted
                     if call_back is not None:
@@ -180,10 +176,9 @@ class SyllabicContext(UtteranceContext):
                                WITH st
                                DETACH DELETE st'''.format(corpus=self.cypher_safe_name)
         self.execute_cypher(statement)
-        print('Type deletion took: {} seconds'.format(time.time()-begin))
         try:
             self.hierarchy.remove_annotation_type('syllable')
-            self.hierarchy.remove_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
+            self.hierarchy.remove_token_subsets(self, self.phone_name, ['onset', 'coda', 'nucleus'])
             self.hierarchy.remove_token_properties(self, self.phone_name, ['syllable_position'])
             # self.reset_to_old_label()
             self.encode_hierarchy()
@@ -361,7 +356,7 @@ class SyllabicContext(UtteranceContext):
                     REMOVE n.prev_id'''.format(corpus_name = self.cypher_safe_name), speaker_name=s, discourse_name=d)
 
         self.hierarchy.add_annotation_type('syllable', above=self.phone_name, below=self.word_name)
-        self.hierarchy.add_token_labels(self, self.phone_name, ['onset', 'coda', 'nucleus'])
+        self.hierarchy.add_token_subsets(self, self.phone_name, ['onset', 'coda', 'nucleus'])
         self.hierarchy.add_token_properties(self, self.phone_name, [('syllable_position', str)])
         self.encode_hierarchy()
         if call_back is not None:
@@ -387,7 +382,7 @@ class SyllabicContext(UtteranceContext):
             #  syllable_data = {k: v for k,v in syllable_data.items() if k in labels}
         syllables_enrichment_data_to_csvs(self, syllable_data)
         import_syllable_enrichment_csvs(self, type_data)
-        # self.hierarchy.add_type_labels(self, 'syllable', ['test'])
+        # self.hierarchy.add_type_subsets(self, 'syllable', ['test'])
         self.hierarchy.add_type_properties(self, 'syllable', type_data.items())
 
         self.encode_hierarchy()

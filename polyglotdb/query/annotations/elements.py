@@ -167,7 +167,7 @@ class AlignmentClauseElement(AnnotationClauseElement):
         self.depth = 1
         lower = self.first.node_type
         higher = self.second.node_type
-        if lower not in self.first.hierarchy.contains(higher):
+        if lower not in self.first.hierarchy.get_lower_types(higher):
             lower, higher = higher, lower
         t = self.first.hierarchy.get_higher_types(lower)
         for i in t:

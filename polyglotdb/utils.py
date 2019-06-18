@@ -5,6 +5,19 @@ from .client.client import PGDBClient, ClientError, ConnectionError
 
 
 def get_corpora_list(config):
+    """
+    Get a list of all corpora on using a database configuration
+
+    Parameters
+    ----------
+    config : :class:`~polyglot.config.CorpusConfig`
+        Config to connect with
+
+    Returns
+    -------
+    list
+        List of all corpora on the specified connected database
+    """
     with CorpusContext(config) as c:
         statement = '''MATCH (n:Corpus) RETURN n.name as name ORDER BY name'''
         results = c.execute_cypher(statement)
@@ -12,9 +25,25 @@ def get_corpora_list(config):
 
 
 @contextmanager
-def ensure_local_database_running(database_name, port=None, token=None):
-    if port is None:
-        port = 8080
+def ensure_local_database_running(database_name, port=8080, token=None):
+    """
+    Context manager function to ensure a locally running database exists (either ISCAN server or the pgdb utility is running)
+
+    Parameters
+    ----------
+    database_name : str
+        Name of the database
+    port: int
+        Port to try to connect to ISCAN server, defaults to 8080
+    token : str
+        Authentication token to use for ISCAN server
+
+    Yields
+    ------
+    dict
+        Connection parameters for a :class:`~polyglot.corpus.context.CorpusContext` object
+    """
+
     host = 'http://localhost:{}'.format(port)
     client = PGDBClient(host, token=token)
 

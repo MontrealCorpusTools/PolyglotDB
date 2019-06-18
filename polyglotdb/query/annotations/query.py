@@ -234,7 +234,7 @@ class GraphQuery(BaseQuery):
             labels_to_add.append(label)
         super(GraphQuery, self).create_subset(label)
         if labels_to_add:
-            self.corpus.hierarchy.add_token_labels(self.corpus, self.to_find.node_type, labels_to_add)
+            self.corpus.hierarchy.add_token_subsets(self.corpus, self.to_find.node_type, labels_to_add)
 
     def set_properties(self, **kwargs):
         props_to_remove = []
@@ -253,7 +253,7 @@ class GraphQuery(BaseQuery):
 
     def remove_subset(self, label):
         super(GraphQuery, self).remove_subset(label)
-        self.corpus.hierarchy.remove_token_labels(self.corpus, self.to_find.node_type, [label])
+        self.corpus.hierarchy.remove_token_subsets(self.corpus, self.to_find.node_type, [label])
 
     def cache(self, *args):
         self._cache.extend(args)

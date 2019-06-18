@@ -68,7 +68,7 @@ class PauseContext(ImportContext):
                                        word_type=self.word_name)
 
                 results = self.execute_cypher(statement, speaker=s, discourse=d)
-        self.hierarchy.add_token_labels(self, self.word_name, ['pause'])
+        self.hierarchy.add_token_subsets(self, self.word_name, ['pause'])
         self.hierarchy.add_discourse_properties(self, [('speech_begin', float), ('speech_end', float)])
         self.encode_hierarchy()
 
@@ -108,5 +108,5 @@ class PauseContext(ImportContext):
             self.hierarchy.annotation_types.remove('pause')
             self.hierarchy.subset_tokens[self.word_name].remove('pause')
             self.encode_hierarchy()
-        except KeyError:
+        except (KeyError, ValueError):
             pass

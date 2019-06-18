@@ -2,12 +2,12 @@ import os
 import sys
 import traceback
 
+# Base exception classes
 
-## Base exception classes
 
 class PGError(Exception):
     """
-    Base class for all exceptions explicitly raised in corpustools.
+    Base class for all exceptions explicitly raised in PolyglotDB.
     """
 
     def __init__(self, value):
@@ -20,7 +20,7 @@ class PGError(Exception):
         return self.value
 
 
-## Context Manager exceptions
+# Context Manager exceptions
 
 class PGContextError(PGError):
     """
@@ -29,9 +29,12 @@ class PGContextError(PGError):
     pass
 
 
-## Corpus loading exceptions
+# Corpus loading exceptions
 
 class ParseError(PGError):
+    """
+    Exception class for parsing errors
+    """
     pass
 
 
@@ -115,10 +118,13 @@ class ILGLinesMismatchError(ParseError):
 
 
 class TextGridError(ParseError):
+    """
+    Exception class for parsing TextGrids
+    """
     pass
 
 
-class TextGridTierError(ParseError):
+class TextGridTierError(TextGridError):
     """
     Exception for when a specified tier was not found in a TextGrid.
 
@@ -142,6 +148,9 @@ class TextGridTierError(ParseError):
 
 
 class BuckeyeParseError(ParseError):
+    """
+    Exception class for parsing Buckeye formatted files
+    """
     def __init__(self, path, misparsed_lines):
         if len(misparsed_lines) == 1:
             self.main = 'One line in \'{}\' was not parsed correctly.'.format(path)
@@ -155,82 +164,130 @@ class BuckeyeParseError(ParseError):
         self.value = '\n'.join([self.main, self.details])
 
 
-## Acoustic exceptions
-
-class NoSoundFileError(PGError):
-    pass
+# Acoustic exceptions
 
 
 class AcousticError(PGError):
+    """
+    Exception class for errors in acoustic processing
+    """
+    pass
+
+
+class NoSoundFileError(AcousticError):
+    """
+    Exception class for when no sound file exists
+    """
     pass
 
 
 class GraphQueryError(PGError):
+    """
+    Exception class for errors in querying the Neo4j database
+    """
     pass
 
 
 class CorpusConfigError(PGError):
+    """
+    Exception class for misconfigured CorpusContext objects
+    """
     pass
 
 
 class SubannotationError(PGError):
+    """
+    Exception class for subannotations
+    """
     pass
 
 
 class GraphModelError(PGError):
+    """
+    Exception class for generating Python objects from Neo4j queries
+    """
     pass
 
 
 class ConnectionError(PGError):
+    """
+    Exception class for connection failures
+    """
     pass
 
 
 class AuthorizationError(PGError):
+    """
+    Exception class for authentication failures
+    """
     pass
 
 
 class NetworkAddressError(PGError):
+    """
+    Exception class for malformed network addresses
+    """
     pass
 
 
 class TemporaryConnectionError(PGError):
+    """
+    Exception class for transient connection errors
+    """
     pass
 
 
 class SubsetError(PGError):
+    """
+    Exception class for not finding a specified subset
+    """
     pass
 
 
-class AlphabetError(PGError):
-    def __init__(self):
-        self.value = "None of these phones appear to be in the corpus alphabet. " \
-                     "Please check to make sure the alphabet you are using corresponds " \
-                     "to that of the corpus\n\n"
-
-
 class HierarchyError(PGError):
+    """
+    Exception class for Hierarchy errors
+    """
     pass
 
 
 class ClientError(PGError):
+    """
+    Exception class for connecting to remote/local ISCAN servers
+    """
     pass
 
 
 class NodeAttributeError(GraphQueryError):
+    """
+    Exception class for errors in attributes for base nodes in constructing queries
+    """
     pass
 
 
 class SpeakerAttributeError(NodeAttributeError):
+    """
+    Exception class for errors in attributes for speakers in constructing queries
+    """
     pass
 
 
 class DiscourseAttributeError(NodeAttributeError):
+    """
+    Exception class for errors in attributes for discourses in constructing queries
+    """
     pass
 
 
 class AnnotationAttributeError(NodeAttributeError):
+    """
+    Exception class for errors in attributes for annotations in constructing queries
+    """
     pass
 
 
 class LexiconAttributeError(NodeAttributeError):
+    """
+    Exception class for errors in attributes for type annotations in constructing queries
+    """
     pass
