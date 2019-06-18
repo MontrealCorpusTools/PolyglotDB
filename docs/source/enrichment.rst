@@ -20,3 +20,4 @@ Contents:
    enrichment_csvs.rst
    enrichment_queries.rst
    acoustics.rst
+   enrichment_subannotations.rst
