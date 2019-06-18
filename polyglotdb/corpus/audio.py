@@ -15,6 +15,9 @@ from ..acoustics.utils import load_waveform, generate_spectrogram
 
 
 def sanitize_value(value, type):
+    '''Takes a value and a type, and makes sure that that value is of that type
+    either by getting the first value in the list or coercing the value to the type
+    Returns the value as the correct type'''
     if not isinstance(value, type):
         if isinstance(value, (list, tuple)):
             value = value[0]
@@ -46,18 +49,24 @@ def generate_filter_string(discourse, begin, end, channel, num_points, kwargs):
 
 
 def to_nano(seconds):
+    '''Takes a float or decimal representing seconds and
+    converts it to nanoseconds as an int'''
     if not isinstance(seconds, Decimal):
         seconds = Decimal(seconds).quantize(Decimal('0.001'))
     return int(seconds * Decimal('1e9'))
 
 
 def s_to_ms(seconds):
+    '''Takes a float or decimal representing seconds and converts
+    it to milliseconds as an int'''
     if not isinstance(seconds, Decimal):
         seconds = Decimal(seconds).quantize(Decimal('0.001'))
     return int(seconds * Decimal('1e3'))
 
 
 def to_seconds(time_string):
+    '''Converts a string representing a date and time to a 
+    decimal representing number of seconds into the day'''
     try:
         d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%S.%fZ')
         s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
@@ -81,6 +90,8 @@ class AudioContext(SyllabicContext):
     """
 
     def load_audio(self, discourse, file_type):
+        '''Returns the signal and sample rate of a given discourse
+        at a chosen quality(consonant, vowel or low_freq)'''
         sound_file = self.discourse_sound_file(discourse)
         if file_type == 'consonant':
             path = os.path.expanduser(sound_file.consonant_file_path)

@@ -7,15 +7,20 @@ from statistics import mean, stdev
 import numpy as np
 import scipy
 
+from conch import analyze_segments
 from conch.analysis.praat import PraatAnalysisFunction
+from conch.analysis.segments import SegmentMapping
 from conch.analysis.formants import PraatSegmentFormantTrackFunction, FormantTrackFunction, \
     PraatSegmentFormantPointFunction
 
 from pyraat.parse_outputs import parse_point_script_output
 
+
 from ...exceptions import AcousticError
 
 from ..io import point_measures_from_csv, point_measures_to_csv
+
+from ..classes import Track, TimePoint
 
 
 def sanitize_bandwidths(value):
@@ -87,6 +92,7 @@ def parse_multiple_formant_output(output):
 
 def generate_variable_formants_point_function(corpus_context, min_formants, max_formants):
     """Generates a function used to call Praat to measure formants and bandwidths with variable num_formants.
+    This specific function returns a single point per formant at a third of the way through the segment
 
     Parameters
     ----------
@@ -110,6 +116,32 @@ def generate_variable_formants_point_function(corpus_context, min_formants, max_
                                              arguments=[0.01, 0.025, min_formants, max_formants, max_freq])
 
     formant_function._function._output_parse_function = parse_multiple_formant_output
+    return formant_function
+
+
+def generate_variable_formants_track_function(corpus_context, n_formants):
+    """Generates a function used to call Praat to measure formants and bandwidths with a single num_formants.
+    This function returns the formants and bandwidths as a track, rather than a single point
+
+    Parameters
+    ----------
+    corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        The CorpusContext object of the corpus.
+    n_formants : int
+        The minimum number of formants to measure with on subsequent passes (default is 5).
+
+    Returns
+    -------
+    formant_function : Partial function object
+        The function used to call Praat.
+    """
+    max_freq = 5500
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    script = os.path.join(script_dir, 'formant_tracks.praat')
+    formant_function = PraatAnalysisFunction(script, praat_path=corpus_context.config.praat_path,
+                                             arguments=[0.01, 0.025, n_formants, max_freq])
+
     return formant_function
 
 
@@ -230,6 +262,51 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
         else:
             header_info[h] = int
     point_measures_from_csv(corpus_context, header_info)
+
+def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, stop_check=None, multiprocessing=True):
+    #Dictionary of segment mapping objects where each n_formants has its own segment mapping object
+    segment_mappings = {}
+    for k, v in data.items():
+        vowel_id = k.properties["id"]
+        file_path = k["file_path"]
+        begin = k["begin"]
+        end = k["end"]
+        if "num_formants" in v:
+            n_formants = v["num_formants"]
+        else:
+            #There was not enough samples, so we use the default n
+            n_formants = 5
+        if not n_formants in segment_mappings:
+            segment_mappings[n_formants] = SegmentMapping()
+        segment_mappings[n_formants].segments.append(k)
+    outputs = {}
+    for n_formants in segment_mappings:
+        func = generate_variable_formants_track_function(corpus_context, n_formants)
+
+        output = analyze_segments(segment_mappings[n_formants], func,
+                            stop_check=stop_check,
+                            multiprocessing=multiprocessing)  # Analyze the phone
+        outputs.update(output)
+    formant_tracks = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
+    tracks = {}
+    for k, v in output.items():
+        vowel_id = k.properties["id"]
+        track = Track()
+        for time, formants in v.items():
+            tp = TimePoint(time)
+            for f in formant_tracks:
+                tp.add_value(f, formants[f])
+            track.add(tp)
+        if not k["speaker"] in tracks:
+            tracks[k["speaker"]] = {}
+        tracks[k["speaker"]][k] = track
+
+    if 'formants' not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.add_acoustic_properties(corpus_context, 'formants', [(x, float) for x in formant_tracks])
+        corpus_context.encode_hierarchy()
+
+    for speaker, track_dict in tracks.items():
+        corpus_context.save_acoustic_tracks('formants', track_dict, speaker)
 
 
 def generate_base_formants_function(corpus_context, gender=None, source='praat'):

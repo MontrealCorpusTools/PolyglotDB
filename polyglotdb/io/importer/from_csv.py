@@ -4,6 +4,7 @@ import time
 
 
 def make_path_safe(path):
+    '''Takes a path and returns it with the associated Javascript URL-safe characters'''
     replacements = [('%', '%25'), ('\\', '/'), (' ', '%20'), ("'", "\\'"), ('?', '%3F'), (';', '%3B'),
                     ('<', '%3C'), ('=', '%3D'), ('>', '%3E'), (':', '%3A'), ('*', '%2A'), ('&', '%26'),
                     ('(', '%28'), (')', '%29'), ('@', '%40'), ('!', '%21'), ('#', '%23')]
