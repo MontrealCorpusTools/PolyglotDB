@@ -252,7 +252,9 @@ Annotations can have subannotations associated with them.  Subannotations
 are not independent linguistic types, but have more information associated
 with them than just a single property.  For instance, voice onset time (VOT)
 would be a subannotation of stops (as it has a begin time and an end time
-that are of interest).  Querying such subannotations would be performed as follows:
+that are of interest).
+For mor information on subannotations, see :ref:`enrichment_subannotations`.
+Querying such subannotations would be performed as follows:
 
 
 .. code-block:: python
