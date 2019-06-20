@@ -72,7 +72,7 @@ extensions = [
     'numpydoc',]
 
 autosummary_generate = True
-autodoc_default_flags = ['members', 'inherited-members']
+autodoc_default_flags = ['members']
 
 numfig = True
 

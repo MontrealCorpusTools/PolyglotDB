@@ -84,6 +84,7 @@ class SummarizedContext(PhonologicalContext):
         ----------
         speaker : str
             a speaker name, if desired (defaults to None)
+
         Returns
         -------
         word_totals : dict

@@ -72,7 +72,6 @@ Omnibus class
 Corpus structure class
 ----------------------
 
-
 .. autoclass:: polyglotdb.structure.Hierarchy
 
 .. _config_api:
