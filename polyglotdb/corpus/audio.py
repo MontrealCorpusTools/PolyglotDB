@@ -158,6 +158,8 @@ class AudioContext(SyllabicContext):
             Window minimum in ms
         window_max : int
             Window maximum in Ms
+        overwrite_edited : bool
+            Overwrite VOTs with the "edited" property set to true, if this is true
         call_back : callable
             call back function, optional
         stop_check : callable

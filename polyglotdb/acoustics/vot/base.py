@@ -51,7 +51,7 @@ def analyze_vot(corpus_context, classifier, stop_label='stops',
     window_max : int
         Window maximum in Ms
     overwrite_edited:
-        Whether to updated VOTs which have edited set to True
+        Whether to updated VOTs which have the property, edited set to True
     call_back : callable
         call back function, optional
     stop_check : callable

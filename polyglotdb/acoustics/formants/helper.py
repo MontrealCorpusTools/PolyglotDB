@@ -264,6 +264,8 @@ def save_formant_point_data(corpus_context, data, num_formants=False):
     point_measures_from_csv(corpus_context, header_info)
 
 def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, stop_check=None, multiprocessing=True):
+    '''This function takes a dictionary with the best parameters for each vowels, then recalculates the formants
+    as tracks rather than as points'''
     #Dictionary of segment mapping objects where each n_formants has its own segment mapping object
     segment_mappings = {}
     for k, v in data.items():
@@ -310,6 +312,24 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, st
 
 
 def generate_base_formants_function(corpus_context, gender=None, source='praat'):
+    """
+
+    Parameters
+    ----------
+    corpus_context : :class:`polyglot.corpus.context.CorpusContext`
+        The CorpusContext object of the corpus.
+    gender : str  
+        The gender to use for the function, if "M"(male) then 
+        the max frequency is 5000 Hz, otherwise 5500
+    source : str
+        The source of the function, if it is "praat" then the formants
+        will be calculated with Praat over each segment otherwise 
+        it will simply be tracks
+    Returns
+    -------
+    formant_function : Partial function object
+        The function used to call Praat.
+    """
     max_freq = 5500
     if gender == 'M':
         max_freq = 5000

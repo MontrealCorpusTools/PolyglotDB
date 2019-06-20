@@ -32,6 +32,8 @@ Formants
 
 .. autofunction:: polyglotdb.acoustics.formants.base.analyze_formant_points
 
+.. autofunction:: polyglotdb.acoustics.formants.refined.analyze_formant_points_refinement
+
 Conch function generators
 -------------------------
 

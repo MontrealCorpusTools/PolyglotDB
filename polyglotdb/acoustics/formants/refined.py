@@ -59,6 +59,9 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
         Segments with length shorter than this value (in milliseconds) will not be analyzed.
     num_iterations : int, optional
         How many times the algorithm should iterate before returning values.
+    output_tracks : bool, optional
+        Whether to save only the formant values as a point at 0.33 if false or have a track over the entire
+        vowel duration if true.
 
     Returns
     -------
