@@ -36,6 +36,9 @@ install:
   - python bin/pgdb install -q
   - python bin/pgdb start
 
+before_script:
+  - sleep 15
+
 # Run test
 script:
   - source activate test-environment

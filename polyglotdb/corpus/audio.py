@@ -15,9 +15,21 @@ from ..acoustics.utils import load_waveform, generate_spectrogram
 
 
 def sanitize_value(value, type):
-    '''Takes a value and a type, and makes sure that that value is of that type
-    either by getting the first value in the list or coercing the value to the type
-    Returns the value as the correct type'''
+    """
+    Ensure a given value is of the correct type, if the value is in a list or tuple, the first element will be coerced
+
+    Parameters
+    ----------
+    value : object
+        Value to be coerced
+    type : Type
+        One of ``int``, ``float``, ``str``, ``bool``
+
+    Returns
+    -------
+    object
+        Value coerced to specified type
+    """
     if not isinstance(value, type):
         if isinstance(value, (list, tuple)):
             value = value[0]
@@ -29,6 +41,30 @@ def sanitize_value(value, type):
 
 
 def generate_filter_string(discourse, begin, end, channel, num_points, kwargs):
+    """
+    Constructs a filter string in InfluxDB query language (i.e., WHERE clause) based on relevant information from
+    the Neo4j database
+
+    Parameters
+    ----------
+    discourse : str
+        Name of the audio file
+    begin : float
+        Beginning of the track in seconds
+    end : float
+        End of the track in seconds
+    channel : int
+        Which channel of the audio file
+    num_points : int
+        Number of points in the track to return, if 0 will return all raw measurements
+    kwargs : dict
+        Any extra filters
+
+    Returns
+    -------
+    str
+        InfluxDB query language WHERE clause to specify a track
+    """
     extra_filters = ['''"{}" = '{}' '''.format(k, v) for k, v in kwargs.items()]
     filter_string = '''WHERE "discourse" = '{}'
                             AND "time" >= {}
@@ -44,29 +80,64 @@ def generate_filter_string(discourse, begin, end, channel, num_points, kwargs):
         end += time_step / 2
         time_step *= 1000
         filter_string += '\ngroup by time({}ms) fill(null)'.format(int(time_step))
-    filter_string = filter_string.format(discourse, to_nano(begin), to_nano(end), channel)
+    filter_string = filter_string.format(discourse, s_to_nano(begin), s_to_nano(end), channel)
     return filter_string
 
 
-def to_nano(seconds):
-    '''Takes a float or decimal representing seconds and
-    converts it to nanoseconds as an int'''
+def s_to_nano(seconds):
+    """
+    Converts seconds (as a float or Decimal) to nanoseconds (as an int)
+
+    Parameters
+    ----------
+    seconds : float or Decimal
+        Seconds
+
+    Returns
+    -------
+    int
+        Nanoseconds
+    """
     if not isinstance(seconds, Decimal):
         seconds = Decimal(seconds).quantize(Decimal('0.001'))
     return int(seconds * Decimal('1e9'))
 
 
 def s_to_ms(seconds):
-    '''Takes a float or decimal representing seconds and converts
-    it to milliseconds as an int'''
+    """
+    Converts seconds (as a float or Decimal) to milliseconds (as an int)
+
+    Parameters
+    ----------
+    seconds : float or Decimal
+        Seconds
+
+    Returns
+    -------
+    int
+        Milliseconds
+    """
     if not isinstance(seconds, Decimal):
         seconds = Decimal(seconds).quantize(Decimal('0.001'))
     return int(seconds * Decimal('1e3'))
 
 
 def to_seconds(time_string):
-    '''Converts a string representing a date and time to a 
-    decimal representing number of seconds into the day'''
+    """
+    Converts a time string from InfluxDB into number of seconds to generate a time point in an audio file
+
+    Parameters
+    ----------
+    time_string : str
+        Formatted time string (either ``%Y-%m-%dT%H:%M:%S.%fZ`` or ``%Y-%m-%dT%H:%M:%SZ``
+
+    Returns
+    -------
+    Decimal
+        Time stamp quantized to the nearest millisecond
+    """
+    """Converts a string representing a date and time to a
+    decimal representing number of seconds into the day"""
     try:
         d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%S.%fZ')
         s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
@@ -90,8 +161,25 @@ class AudioContext(SyllabicContext):
     """
 
     def load_audio(self, discourse, file_type):
-        '''Returns the signal and sample rate of a given discourse
-        at a chosen quality(consonant, vowel or low_freq)'''
+        """
+        Loads a given audio file at the specified sampling rate type (``consonant``, ``vowel`` or ``low_freq``).
+        Consonant files have a sampling rate of 16 kHz, vowel files a sampling rate of 11 kHz, and low frequency files
+        a sampling rate of 1.2 kHz.
+
+        Parameters
+        ----------
+        discourse : str
+            Name of the audio file to load
+        file_type : str
+            One of ``consonant``, ``vowel`` or ``low_freq``
+
+        Returns
+        -------
+        numpy.array
+            Audio signal
+        int
+            Sampling rate of the file
+        """
         sound_file = self.discourse_sound_file(discourse)
         if file_type == 'consonant':
             path = os.path.expanduser(sound_file.consonant_file_path)
@@ -105,6 +193,28 @@ class AudioContext(SyllabicContext):
         return signal, sr
 
     def load_waveform(self, discourse, file_type='consonant', begin=None, end=None):
+        """
+        Loads a segment of a larger audio file.  If ``begin`` is unspecified, the segment will start at the beginning of
+        the audio file, and if ``end`` is unspecified, the segment will end at the end of the audio file.
+
+        Parameters
+        ----------
+        discourse : str
+            Name of the audio file to load
+        file_type : str
+            One of ``consonant``, ``vowel`` or ``low_freq``
+        begin : float, optional
+            Timestamp in seconds
+        end : float, optional
+            Timestamp in seconds
+
+        Returns
+        -------
+        numpy.array
+            Audio signal
+        int
+            Sampling rate of the file
+        """
         sf = self.discourse_sound_file(discourse)
         if file_type == 'consonant':
             file_path = sf['consonant_file_path']
@@ -117,16 +227,94 @@ class AudioContext(SyllabicContext):
         return load_waveform(file_path, begin, end)
 
     def generate_spectrogram(self, discourse, file_type='consonant', begin=None, end=None):
+        """
+        Generate a spectrogram from an audio file. If ``begin`` is unspecified, the segment will start at the beginning of
+        the audio file, and if ``end`` is unspecified, the segment will end at the end of the audio file.
+
+        Parameters
+        ----------
+        discourse : str
+            Name of the audio file to load
+        file_type : str
+            One of ``consonant``, ``vowel`` or ``low_freq``
+        begin : float
+            Timestamp in seconds
+        end : float
+            Timestamp in seconds
+
+        Returns
+        -------
+        numpy.array
+            Spectrogram information
+        float
+            Time step between each window
+        float
+            Frequency step between each frequency bin
+        """
         signal, sr = self.load_waveform(discourse, file_type, begin, end)
         return generate_spectrogram(signal, sr)
 
     def analyze_pitch(self, source='praat', algorithm='base', stop_check=None, call_back=None, multiprocessing=True):
+        """
+        Analyze pitch tracks and save them to the database.
+
+        See :meth:`polyglotdb.acoustics.pitch.base.analyze_pitch` for more details.
+
+        Parameters
+        ----------
+        source : str
+            Program to use for analyzing pitch, either ``praat`` or ``reaper``
+        algorithm : str
+            Algorithm to use, ``base``, ``gendered``, or ``speaker_adjusted``
+        stop_check : callable
+            Function to check whether processing should stop early
+        call_back : callable
+            Function to report progress
+        multiprocessing : bool
+            Flag whether to use multiprocessing or threading
+        """
         analyze_pitch(self, source, algorithm, stop_check, call_back, multiprocessing=multiprocessing)
 
     def analyze_utterance_pitch(self, utterance, source='praat', **kwargs):
+        """
+        Analyze a single utterance's pitch track.
+
+        See :meth:`polyglotdb.acoustics.pitch.base.analyze_utterance_pitch` for more details.
+
+        Parameters
+        ----------
+        utterance : str
+            Utterance ID from Neo4j
+        source : str
+            Program to use for analyzing pitch, either ``praat`` or ``reaper``
+        kwargs
+            Additional settings to use in analyzing pitch
+
+        Returns
+        -------
+        :class:`~polyglotdb.acoustics.classes.Track`
+            Pitch track
+        """
         return analyze_utterance_pitch(self, utterance, source, **kwargs)
 
     def update_utterance_pitch_track(self, utterance, new_track):
+        """
+        Save a pitch track for the specified utterance.
+
+        See :meth:`polyglotdb.acoustics.pitch.base.update_utterance_pitch_track` for more details.
+
+        Parameters
+        ----------
+        utterance : str
+            Utterance ID from Neo4j
+        new_track : list or :class:`~polyglotdb.acoustics.classes.Track`
+            Pitch track
+
+        Returns
+        -------
+        int
+            Time stamp of update
+        """
         return update_utterance_pitch_track(self, utterance, new_track)
 
     def analyze_vot(self, classifier,
@@ -216,13 +404,72 @@ class AudioContext(SyllabicContext):
         analyze_intensity(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
     def analyze_script(self, phone_class, script_path, duration_threshold=0.01, arguments=None, stop_check=None,
-                       call_back=None, multiprocessing=True):
+                       call_back=None, multiprocessing=True, file_type='consonant'):
+        """
+        Use a Praat script to analyze phones in the corpus.  The Praat script must return properties per phone (i.e.,
+        point measures, not a track), and these properties will be saved to the Neo4j database.
+
+        See :meth:`polyglotdb.acoustics.other..analyze_script` for more details.
+
+        Parameters
+        ----------
+        phone_class : str
+            Name of the phone subset to analyze
+        script_path : str
+            Path to the Praat script
+        duration_threshold : float
+            Minimum duration that phones should be to be analyzed
+        arguments : list
+            Arguments to pass to the Praat script
+        stop_check : callable
+            Function to check whether to terminate early
+        call_back : callable
+            Function to report progress
+        multiprocessing : bool
+            Flag to use multiprocessing, defaults to True, if False uses threading
+        file_type : str
+            Sampling rate type to use, one of ``consonant``, ``vowel``, or ``low_freq``
+
+        Returns
+        -------
+        list
+            List of the names of newly added properties to the Neo4j database
+        """
         return analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold,
                               arguments=arguments,
                               stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
 
     def analyze_track_script(self, acoustic_name, properties, script_path, duration_threshold=0.01,phone_class=None,
                              arguments=None, stop_check=None, call_back=None, multiprocessing=True, file_type='consonant'):
+        """
+        Use a Praat script to analyze phones in the corpus.  The Praat script must return a track, and these tracks will
+        be saved to the InfluxDB database.
+
+        See :meth:`polyglotdb.acoustics.other..analyze_track_script` for more details.
+
+        Parameters
+        ----------
+        acoustic_name : str
+            Name of the acoustic measure
+        properties : list
+            List of tuples of the form (``property_name``, ``Type``)
+        script_path : str
+            Path to the Praat script
+        duration_threshold : float
+            Minimum duration that phones should be to be analyzed
+        phone_class : str
+            Name of the phone subset to analyze
+        arguments : list
+            Arguments to pass to the Praat script
+        stop_check : callable
+            Function to check whether to terminate early
+        call_back : callable
+            Function to report progress
+        multiprocessing : bool
+            Flag to use multiprocessing, defaults to True, if False uses threading
+        file_type : str
+            Sampling rate type to use, one of ``consonant``, ``vowel``, or ``low_freq``
+        """
         return analyze_track_script(self, acoustic_name, properties, script_path, duration_threshold=duration_threshold,
                               arguments=arguments, phone_class=phone_class,
                               stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing, file_type=file_type)
@@ -230,7 +477,6 @@ class AudioContext(SyllabicContext):
     def reset_formant_points(self):
         """
         Reset formant point measures encoded in the corpus
-
         """
         encoded_props = []
         for prop in ['F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3']:
@@ -239,6 +485,14 @@ class AudioContext(SyllabicContext):
         q = self.query_graph(getattr(self, self.phone_name)).set_properties(**{x: None for x in encoded_props})
 
     def genders(self):
+        """
+        Gets all values of speaker property named ``gender`` in the Neo4j database
+
+        Returns
+        -------
+        list
+            List of gender values
+        """
         res = self.execute_cypher(
             '''MATCH (s:Speaker:{corpus_name}) RETURN s.gender as gender'''.format(corpus_name=self.cypher_safe_name))
         genders = set()
@@ -252,7 +506,6 @@ class AudioContext(SyllabicContext):
     def reset_acoustics(self):
         """
         Reset all acoustic measures currently encoded
-
         """
         self.acoustic_client().drop_database(self.corpus_name)
         if self.hierarchy.acoustics:
@@ -267,8 +520,6 @@ class AudioContext(SyllabicContext):
         ----------
         acoustic_type : str
             Name of the acoustic measurement to reset
-
-
         """
         self.acoustic_client().query('''DROP MEASUREMENT "{}";'''.format(acoustic_type))
         if acoustic_type in self.hierarchy.acoustics:
@@ -279,8 +530,6 @@ class AudioContext(SyllabicContext):
     def reset_vot(self):
         """
         Reset all VOT measurements in the corpus
-
-
         """
         self.execute_cypher('''MATCH (v:vot:{corpus_name}) DETACH DELETE v'''.format(corpus_name=self.cypher_safe_name))
         if 'phone' in self.hierarchy.subannotations:
@@ -297,7 +546,6 @@ class AudioContext(SyllabicContext):
         -------
         InfluxDBClient
             Client through which to run queries and writes
-
         """
         client = InfluxDBClient(**self.config.acoustic_connection_kwargs)
         databases = client.get_list_database()
@@ -312,6 +560,19 @@ class AudioContext(SyllabicContext):
         return os.path.join(self.config.audio_dir, discourse)
 
     def discourse_sound_file(self, discourse):
+        """
+        Get details for the audio file paths for a specified discourse.
+
+        Parameters
+        ----------
+        discourse : str
+            Name of the audio file in the corpus
+
+        Returns
+        -------
+        dict
+            Information for the audio file path
+        """
         statement = '''MATCH (d:Discourse:{corpus_name}) WHERE d.name = {{discourse_name}} return d'''.format(
             corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(statement, discourse_name=discourse).records()
@@ -322,17 +583,32 @@ class AudioContext(SyllabicContext):
             raise Exception('Could not find discourse {}'.format(discourse))
         return d
 
-    def utterance_sound_file(self, utterance_id, type='consonant'):
+    def utterance_sound_file(self, utterance_id, file_type='consonant'):
+        """
+        Generate an audio file just for a single utterance in an audio file.
+
+        Parameters
+        ----------
+        utterance_id : str
+            Utterance ID from Neo4j
+        file_type : str
+            Sampling rate type to use, one of ``consonant``, ``vowel``, or ``low_freq``
+
+        Returns
+        -------
+        str
+            Path to the generated sound file
+        """
         q = self.query_graph(self.utterance).filter(self.utterance.id == utterance_id).columns(
             self.utterance.begin.column_name('begin'),
             self.utterance.end.column_name('end'),
             self.utterance.discourse.name.column_name('discourse'))
         utterance_info = q.all()[0]
         path = os.path.join(self.discourse_audio_directory(utterance_info['discourse']),
-                            '{}_{}.wav'.format(utterance_id, type))
+                            '{}_{}.wav'.format(utterance_id, file_type))
         if os.path.exists(path):
             return path
-        fname = self.discourse_sound_file(utterance_info['discourse'])["{}_file_path".format(type)]
+        fname = self.discourse_sound_file(utterance_info['discourse'])["{}_file_path".format(file_type)]
         subprocess.call(['sox', fname, path, 'trim', str(utterance_info['begin']),
                          str(utterance_info['end'] - utterance_info['begin'])])
         return path
@@ -592,7 +868,7 @@ class AudioContext(SyllabicContext):
             fields['phone'] = label
             d = {'measurement': acoustic_name,
                  'tags': t_dict,
-                 'time': to_nano(time_point),
+                 'time': s_to_nano(time_point),
                  'fields': fields
                  }
             data.append(d)
@@ -841,7 +1117,6 @@ class AudioContext(SyllabicContext):
         ----------
         acoustic_name : str
             Name of the acoustic type
-
         """
         if acoustic_name not in self.hierarchy.acoustics:
             raise (ValueError('Acoustic measure must be one of: {}.'.format(', '.join(self.hierarchy.acoustics))))

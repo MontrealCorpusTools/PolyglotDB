@@ -5,7 +5,8 @@ from ..io.importer import (subannotations_data_to_csv, import_subannotation_csv,
 
 class AnnotatedContext(SummarizedContext):
     """
-    Class that contains methods for dealing specifically with annotations on linguistic items
+    Class that contains methods for dealing specifically with annotations on linguistic items (termed "subannotations"
+    in PolyglotDB
     """
     def import_subannotations(self, data, property_data, subannotation_name, annotation_type):
         if not self.hierarchy.has_subannotation_type(subannotation_name):

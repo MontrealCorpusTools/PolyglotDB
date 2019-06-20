@@ -59,7 +59,7 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
 
 
 def update_utterance_pitch_track(corpus_context, utterance, new_track):
-    from ...corpus.audio import s_to_ms, to_nano
+    from ...corpus.audio import s_to_ms, s_to_nano
     if isinstance(utterance, str):
         utterance_id = utterance
     else:
@@ -90,7 +90,7 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
                     where "discourse" = '{}' 
                     and "speaker" = '{}' 
                     and "time" >= {} 
-                    and "time" <= {};'''.format(discourse, speaker, to_nano(u['begin']), to_nano(u['end']))
+                    and "time" <= {};'''.format(discourse, speaker, s_to_nano(u['begin']), s_to_nano(u['end']))
     result = client.query(query)
 
     data = []
