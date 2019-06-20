@@ -1,7 +1,8 @@
 from contextlib import contextmanager
 import sys
 from . import CorpusContext
-from .client.client import PGDBClient, ClientError, ConnectionError
+from .client.client import PGDBClient, ClientError
+from requests.exceptions import ConnectionError
 
 
 def get_corpora_list(config):
@@ -27,7 +28,8 @@ def get_corpora_list(config):
 @contextmanager
 def ensure_local_database_running(database_name, port=8080, token=None):
     """
-    Context manager function to ensure a locally running database exists (either ISCAN server or the pgdb utility is running)
+    Context manager function to ensure a locally running database exists (either ISCAN server or the pgdb
+    utility is running)
 
     Parameters
     ----------

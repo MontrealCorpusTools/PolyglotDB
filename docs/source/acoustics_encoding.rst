@@ -215,7 +215,7 @@ VOTs are encoded over a specific subset of phones using :code: `analyze_vot` as 
 .. note::
 
    The function :code:`analyze_vot` requires that utterances and any subsets be encoded prior to being run. See
-   :ref:`enrichment_utterances` for further details on encoding utterances and :ref:`enrichment_subset` for subsets.
+   :ref:`enrichment_utterances` for further details on encoding utterances and :ref:`enrichment_subsets` for subsets.
 
 Parameters
 ----------

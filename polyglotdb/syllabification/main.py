@@ -3,7 +3,7 @@ from .maxonset import split_nonsyllabic_maxonset, split_ons_coda_maxonset
 from .probabilistic import split_nonsyllabic_prob, split_ons_coda_prob
 
 
-def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
+def syllabify(phones, syllabics, onsets, codas, algorithm='maxonset'):
     """
     Given a list of phones, groups them into syllables
 
@@ -19,7 +19,7 @@ def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
         a list of codas
     algorithm : str
         the type of algorithm being used to determine syllables 
-        Defaults to 'probabilistic'
+        Defaults to 'maxonset'
 
     Returns
     -------
@@ -37,8 +37,7 @@ def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
         else:
             split=None
         label = '.'.join(phones)
-        row = {'id': cur_id, 'prev_id': prev_id,
-               'onset_id': phones[0],
+        row = {'onset_id': phones[0],
                'break': split,
                'coda': phones[-1],
                'label': label}
@@ -55,7 +54,7 @@ def syllabify(phones, syllabics, onsets, codas, algorithm='probabilistic'):
         else:
             prev_vowel_ind = vow_inds[j - 1]
             cons_string = phones[prev_vowel_ind + 1:i]
-            print(cons_string)
+
             if algorithm == 'probabilistic':
                 split = split_ons_coda_prob(cons_string, onsets, codas)
             elif algorithm == 'maxonset':

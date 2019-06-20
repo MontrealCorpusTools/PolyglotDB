@@ -78,6 +78,14 @@ class DiscourseData(object):
 
     @property
     def token_headers(self):
+        """
+        Get the headers for the CSV file for importing annotation tokens
+
+        Returns
+        -------
+        list
+            Token headers
+        """
         headers = {}
         for x in self.annotation_types:
             token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse', 'label']
@@ -117,12 +125,21 @@ class DiscourseData(object):
         return ((x, self.data[x]) for x in self.keys())
 
     def types(self, corpus_name):
-        """ Returns tuple of types and type headers
+        """
+        Get all the types in the discourse and return them along with header information
 
         Parameters
         ----------
         corpus_name : str
-            the name of the corpus"""
+            the name of the corpus
+
+        Returns
+        -------
+        dict
+            Type data
+        list
+            Type headers
+        """
         types = {}
         type_headers = {}
         for k, v in self.items():

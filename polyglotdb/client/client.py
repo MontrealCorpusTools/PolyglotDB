@@ -1,10 +1,5 @@
 import requests
-
-from requests.exceptions import ConnectionError
-
 from ..exceptions import ClientError
-from ..structure import Hierarchy
-from ..query.annotations import GraphQuery, SplitQuery
 
 
 class PGDBClient(object):
@@ -21,12 +16,41 @@ class PGDBClient(object):
         self.query_behavior = 'speaker'
 
     def login(self, user_name, password):
+        """
+        Get an authentication token from the ISCAN server using the specified credentials
+
+        Parameters
+        ----------
+        user_name : str
+            User name
+        password : str
+            Password
+
+        Returns
+        -------
+        str
+            Authentication token to use in future requests
+        """
         end_point = '/'.join([self.host, 'api', 'rest-auth', 'login', ''])
         resp = requests.post(end_point, {'username': user_name, 'password': password})
         token = resp.json()['key']
+        self.token = token
         return token
 
     def create_database(self, database_name):
+        """
+        Create a new database with the specified name
+
+        Parameters
+        ----------
+        database_name : str
+            Name of the database to be created
+
+        Returns
+        -------
+        dict
+            Database information
+        """
         databases = self.list_databases()
         for d in databases:
             if d['name'] == database_name:
@@ -40,6 +64,14 @@ class PGDBClient(object):
         return resp.json()
 
     def delete_database(self, database_name):
+        """
+        Delete a database and all associated content
+
+        Parameters
+        ----------
+        database_name : str
+            Name of database to be deleted
+        """
         databases = self.list_databases()
         for d in databases:
             if d['name'] == database_name:
@@ -54,6 +86,19 @@ class PGDBClient(object):
             raise ClientError('Could not delete database.')
 
     def database_status(self, database_name=None):
+        """
+        Get the current status of a specified database, or all databases on the server.
+
+        Parameters
+        ----------
+        database_name : str
+            Name of database to get status of, if not specified, will get status of all databases
+
+        Returns
+        -------
+        dict
+            Database status JSON
+        """
         if database_name is not None:
             databases = self.list_databases()
             for d in databases:
@@ -71,6 +116,19 @@ class PGDBClient(object):
             return resp.json()
 
     def get_directory(self, database_name):
+        """
+        Get the directory of a local database
+
+        Parameters
+        ----------
+        database_name : str
+            Name of database
+
+        Returns
+        -------
+        str
+            Database data directory
+        """
         databases = self.list_databases()
         for d in databases:
             if d['name'] == database_name:
@@ -81,10 +139,22 @@ class PGDBClient(object):
 
         end_point = '/'.join([self.host, 'api', 'databases', str(database_id), 'data_directory', ''])
         resp = requests.get(end_point, headers={'Authorization': 'Token {}'.format(self.token)})
-
         return resp.json()
 
     def get_ports(self, database_name):
+        """
+        Get the ports of a locally running database
+
+        Parameters
+        ----------
+        database_name : str
+            Name of database
+
+        Returns
+        -------
+        dict
+            Ports of the database
+        """
         databases = self.list_databases()
         for d in databases:
             if d['name'] == database_name:
@@ -97,6 +167,14 @@ class PGDBClient(object):
         return resp.json()
 
     def list_databases(self):
+        """
+        Get a list of all databases
+
+        Returns
+        -------
+        list
+            Database information
+        """
         end_point = '/'.join([self.host, 'api', 'databases', ''])
         resp = requests.get(end_point, headers={'Authorization': 'Token {}'.format(self.token)})
         if resp.status_code != 200:
@@ -104,6 +182,19 @@ class PGDBClient(object):
         return resp.json()
 
     def list_corpora(self, database_name=None):
+        """
+        Get a list of all corpora
+
+        Parameters
+        ----------
+        database_name : str
+            Name of the database to restrict corpora list to, optional
+
+        Returns
+        -------
+        list
+            Corpora information
+        """
         if database_name is not None:
             databases = self.list_databases()
             for d in databases:
@@ -120,6 +211,14 @@ class PGDBClient(object):
         return resp.json()
 
     def start_database(self, database_name):
+        """
+        Start a database
+
+        Parameters
+        ----------
+        database_name : str
+            Database to start
+        """
         databases = self.list_databases()
         for d in databases:
             if d['name'] == database_name:
@@ -133,6 +232,14 @@ class PGDBClient(object):
             raise ClientError('Could not start database: {}'.format(resp.text))
 
     def stop_database(self, database_name):
+        """
+        Stop a database
+
+        Parameters
+        ----------
+        database_name : str
+            Database to stop
+        """
         databases = self.list_databases()
         for d in databases:
             if d['name'] == database_name:

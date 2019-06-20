@@ -7,14 +7,10 @@ class CorpusContext(AnnotatedContext):
 
     Parameters
     ----------
-
-    *args
+    args : args
         Either a CorpusConfig object or sequence of arguments to be
         passed to a CorpusConfig object
-    **kwargs
+    kwargs : kwargs
         sequence of keyword arguments to be passed to a CorpusConfig object
-
-
     """
-
     pass

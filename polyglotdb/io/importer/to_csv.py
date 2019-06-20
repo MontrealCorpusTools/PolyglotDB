@@ -25,7 +25,6 @@ def data_to_type_csvs(corpus_context, types, type_headers):
         headers for types
     """
     directory = corpus_context.config.temporary_directory('csv')
-    tfs = {}
 
     for k, v in type_headers.items():
         path = os.path.join(directory, '{}_type.csv'.format(k))
@@ -65,7 +64,6 @@ def data_to_graph_csvs(corpus_context, data):
                 header = ['id', 'begin', 'end', 'annotation_id', 'label']
                 subanno_writers[sp, k, s] = csv.DictWriter(subanno_files[sp, k, s], header, delimiter=',')
 
-    segment_type = data.segment_type
     for level in data.highest_to_lowest():
         for d in data[level]:
             if d.begin is None or d.end is None:
@@ -271,7 +269,7 @@ def speaker_data_to_csvs(corpus_context, data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.spoken.SpokenContext`
         the corpus object
     data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph
@@ -292,7 +290,7 @@ def discourse_data_to_csvs(corpus_context, data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.spoken.SpokenContext`
         the corpus object
     data : :class:`~polyglotdb.io.helper.DiscourseData`
         Data to load into a graph

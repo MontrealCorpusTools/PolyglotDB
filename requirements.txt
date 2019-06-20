@@ -6,3 +6,4 @@ influxdb
 tqdm
 conch_sounds
 future
+requests

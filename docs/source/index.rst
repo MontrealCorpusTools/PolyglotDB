@@ -17,6 +17,7 @@ Contents:
    enrichment.rst
    queries.rst
    developer.rst
+   changelog.rst
 
 See `the PolyglotDB wiki`_ for the changelog.
 

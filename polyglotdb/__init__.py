@@ -4,7 +4,7 @@ __ver_patch__ = 16
 __ver_tuple__ = (__ver_major__, __ver_minor__, __ver_patch__)
 __version__ = "%d.%d.%d" % __ver_tuple__
 
-__all__ = ['query', 'io', 'corpus', 'config', 'exceptions']
+__all__ = ['query', 'io', 'corpus', 'config', 'exceptions', 'CorpusContext', 'CorpusConfig']
 
 import polyglotdb.query.annotations as graph
 

@@ -18,7 +18,7 @@ class ImportContext(StructuredContext):
     Class that contains methods for dealing with the initial import of corpus data
     """
     def add_types(self, types, type_headers):
-        '''
+        """
         This function imports types of annotations into the corpus.
 
         Parameters
@@ -26,7 +26,7 @@ class ImportContext(StructuredContext):
         parsed_data: dict
             Dictionary with keys for discourse names and values of :class:`~polyglotdb.io.helper.DiscourseData`
             objects
-        '''
+        """
         data_to_type_csvs(self, types, type_headers)
         import_type_csvs(self, type_headers)
 
@@ -67,19 +67,32 @@ class ImportContext(StructuredContext):
             session.write_transaction(corpus_create, self.corpus_name)
 
     def finalize_import(self, data, call_back=None, stop_check=None):
-        """ generates hierarchy and saves variables"""
+        """
+        Finalize import of discourses through importing CSVs and saving the Hierarchy to the Neo4j database.
+
+        See :meth:`~polyglotdb.io.importer.from_csv.import_csvs` for more details.
+
+        Parameters
+        ----------
+        data : :class:`~polyglotdb.io.helper.DiscourseData`
+            Data from a parsed discourse to ensure proper importing
+        call_back : callable
+            Function to monitor progress
+        stop_check : callable
+            Function to check whether process should be terminated early
+        """
         import_csvs(self, data, call_back, stop_check)
         self.encode_hierarchy()
 
     def add_discourse(self, data):
-        '''
-        Add a discourse to the graph database for corpus.
+        """
+        Set up a discourse to be imported to the Neo4j database
 
         Parameters
         ----------
         data : :class:`~polyglotdb.io.helper.DiscourseData`
             Data for the discourse to be added
-        '''
+        """
         if data.name in self.discourses:
             raise (ParseError('The discourse \'{}\' already exists in this corpus.'.format(data.name)))
         log = logging.getLogger('{}_loading'.format(self.corpus_name))

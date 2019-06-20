@@ -10,18 +10,30 @@ from conch.utils import write_wav
 from ..io.importer.from_csv import make_path_safe
 
 
-def resample_audio(filepath, new_filepath, new_sr):
-    if os.path.exists(new_filepath):
+def resample_audio(file_path, new_file_path, new_sr):
+    """
+    Resample an audio file using either ``sox`` if available or librosa.  Will not overwrite if file already exists.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to audio file
+    new_file_path : str
+        Path to save new audio file
+    new_sr : int
+        Sampling rate of new audio file
+    """
+    if os.path.exists(new_file_path):
         return
     sox_path = shutil.which('sox')
     if sox_path is not None:
-        subprocess.call(['sox', filepath.replace('\\', '/'), new_filepath.replace('\\', '/'),
+        subprocess.call(['sox', file_path.replace('\\', '/'), new_file_path.replace('\\', '/'),
                          'gain', '-1', 'rate', '-I', str(new_sr)])
     else:
-        sig, sr = librosa.load(filepath, sr=new_sr, mono=False)
+        sig, sr = librosa.load(file_path, sr=new_sr, mono=False)
         if len(sig.shape) > 1:
             sig = sig.T
-        write_wav(sig, sr, new_filepath)
+        write_wav(sig, sr, new_file_path)
 
 
 def add_discourse_sound_info(corpus_context, discourse, filepath):

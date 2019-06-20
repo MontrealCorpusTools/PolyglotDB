@@ -8,7 +8,7 @@ from .speaker import DirectorySpeakerParser
 
 
 class TimitParser(BaseParser):
-    '''
+    """
     Parser for the TIMIT corpus.
 
     Has annotation types for word labels and surface transcription labels.
@@ -23,7 +23,7 @@ class TimitParser(BaseParser):
         Function to check whether to halt parsing
     call_back : callable, optional
         Function to output progress messages
-    '''
+    """
     _extensions = ['.wrd']
 
     def __init__(self, annotation_tiers, hierarchy,
@@ -34,19 +34,21 @@ class TimitParser(BaseParser):
         self.speaker_parser = DirectorySpeakerParser()
 
     def parse_discourse(self, word_path, types_only=False):
-        '''
+        """
         Parse a TIMIT file for later importing.
 
         Parameters
         ----------
         word_path : str
             Path to TIMIT .wrd file
+        types_only : bool
+            Flag for whether to only save type information, ignoring the token information
 
         Returns
         -------
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
-        '''
+        """
 
         name, ext = os.path.splitext(os.path.split(word_path)[1])
         if ext == '.WRD':
@@ -97,7 +99,7 @@ class TimitParser(BaseParser):
 
 def read_phones(path):
     """
-    From a timit file, reads the phone lines, appends label, begin, and end to output
+    From a TIMIT file, reads the phone lines, appends label, begin, and end to output
     
     Parameters
     ----------
@@ -124,7 +126,7 @@ def read_phones(path):
 
 def read_words(path):
     """
-    From a timit file, reads the word info
+    From a TIMIT file, reads the word info
     
     Parameters
     ----------

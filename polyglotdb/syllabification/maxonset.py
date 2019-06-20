@@ -11,7 +11,7 @@ def split_ons_coda_maxonset(string, onsets):
 
     Returns
     -------
-    i : int
+    int
         the index in the string where the onset ends and coda begins
     """
     if len(string) == 0:
@@ -38,7 +38,7 @@ def split_nonsyllabic_maxonset(string, onsets):
 
     Returns
     -------
-    i : int
+    int
         the index in the string where the onset ends and coda begins
     """
     if len(string) == 0:

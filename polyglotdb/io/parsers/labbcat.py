@@ -6,6 +6,22 @@ from polyglotdb.io.parsers.speaker import FilenameSpeakerParser
 
 
 class LabbCatParser(AlignerParser):
+    """
+    Parser for TextGrids exported from LaBB-CAT
+
+    Parameters
+    ----------
+    annotation_tiers : list
+        List of the annotation tiers to store data from the TextGrid
+    hierarchy : Hierarchy
+        Basic hierarchy of the TextGrid
+    make_transcription : bool
+        Flag for whether to add a transcription property to words based on phones they contain
+    stop_check : callable
+        Function to check for whether parsing should stop
+    call_back : callable
+        Function to report progress in parsing
+    """
     name = 'LabbCat'
     word_label = 'transcript'
     phone_label = 'segment'
@@ -18,6 +34,20 @@ class LabbCatParser(AlignerParser):
         self.speaker_parser = FilenameSpeakerParser(0)
 
     def load_textgrid(self, path):
+        """
+        Load a TextGrid file.  Additionally ignore duplicated tier names as they can sometimes be exported erroneously
+        from LaBB-CAT.
+
+        Parameters
+        ----------
+        path : str
+            Path to the TextGrid file
+
+        Returns
+        -------
+        :class:`~textgrid.TextGrid`
+            TextGrid object
+        """
         tg = TextGrid(strict=False)
         try:
             tg.read(path)

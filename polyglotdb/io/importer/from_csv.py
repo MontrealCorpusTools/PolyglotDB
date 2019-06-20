@@ -81,7 +81,7 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.importable.ImportContext`
         the corpus to load into
     data : :class:`~polyglotdb.io.helper.DiscourseData`
         the data object
@@ -458,7 +458,7 @@ def import_speaker_csvs(corpus_context, typed_data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.spoken.SpokenContext`
         the corpus to load into
     typed_data : dict
         the data
@@ -508,7 +508,7 @@ def import_discourse_csvs(corpus_context, typed_data):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.spoken.SpokenContext`
         the corpus to load into
     typed_data : dict
         the data

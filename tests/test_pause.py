@@ -4,40 +4,37 @@ from polyglotdb import CorpusContext
 def test_encode_pause(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.reset_pauses()
-        discourse = g.discourse_annotations('acoustic_corpus')
         g.encode_pauses(['sil'])
         q = g.query_graph(g.pause)
         print(q.cypher())
         assert (len(q.all()) == 11)
+        assert g.has_pauses
 
-        paused = g.discourse_annotations('acoustic_corpus')
-        expected = [x for x in discourse if x.label != 'sil']
-        for i, d in enumerate(expected):
-            print(d.label, paused[i].label)
-            assert (d.label == paused[i].label)
+        q = g.query_graph(g.word).filter(g.word.label.in_(['sil']), g.word.subset != 'pause')
+        print(q.cypher())
+        assert q.count() == 0
 
         g.reset_pauses()
-        new_discourse = g.discourse_annotations('acoustic_corpus')
-        for i, d in enumerate(discourse):
-            assert (d.label == new_discourse[i].label)
+        q = g.query_graph(g.pause)
+        assert len(q.all()) == 0
+        q = g.query_graph(g.word).filter(g.word.label.in_(['sil', 'um', 'uh']), g.word.subset != 'pause')
+        print(q.cypher())
+        assert q.count() != 0
+        assert not g.has_pauses
 
         g.encode_pauses(['sil', 'um', 'uh'])
         q = g.query_graph(g.pause)
         print(q.cypher())
         assert (len(q.all()) == 14)
+        assert g.has_pauses
 
-        paused = g.discourse_annotations('acoustic_corpus')
-        expected = [x for x in discourse if x.label not in ['sil', 'um', 'uh']]
-        for i, d in enumerate(expected):
-            print(d.label, paused[i].label)
-            assert (d.label == paused[i].label)
+        q = g.query_graph(g.word).filter(g.word.label.in_(['sil', 'um', 'uh']), g.word.subset != 'pause')
+        assert q.count() == 0
 
         g.reset_pauses()
-        new_discourse = g.discourse_annotations('acoustic_corpus')
-        print(discourse)
-        print(new_discourse)
-        for i, d in enumerate(discourse):
-            assert (d.label == new_discourse[i].label)
+        q = g.query_graph(g.word).filter(g.word.label.in_(['sil', 'um', 'uh']), g.word.subset != 'pause')
+        assert q.count() != 0
+        assert not g.has_pauses
 
 
 def test_query_with_pause(acoustic_config):

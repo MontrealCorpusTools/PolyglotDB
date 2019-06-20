@@ -64,6 +64,14 @@ class BaseContext(object):
             self.config.praat_path = shutil.which(praat_exe)
 
     def exists(self):
+        """
+        Check whether the corpus has a Hierarchy schema in the Neo4j database
+
+        Returns
+        -------
+        bool
+            True if the corpus Hierarchy has been saved to the database
+        """
         statement = '''MATCH (c:Corpus) where c.name = '{}' return c '''.format(self.corpus_name)
         res = list(self.execute_cypher(statement))
         return len(res) > 0
@@ -76,15 +84,13 @@ class BaseContext(object):
         ----------
         statement : str
             the cypher statement
-        parameters : dict
+        parameters : kwargs
             keyword arguments to execute a cypher statement
 
         Returns
         -------
-        query result :
-        or
-        raises error
-
+        :class:`~neo4j.BoltStatementResult`
+            Result of Cypher query
         """
         from neo4j.exceptions import ServiceUnavailable
         for k, v in parameters.items():
@@ -92,8 +98,8 @@ class BaseContext(object):
                 parameters[k] = float(v)
         try:
             with self.graph_driver.session() as session:
-                #print(statement)
-                #print(parameters)
+                # print(statement)
+                # print(parameters)
                 results = session.run(statement, **parameters)
             return results
         except Exception as e:
@@ -101,13 +107,26 @@ class BaseContext(object):
 
     @property
     def cypher_safe_name(self):
+        """
+        Escape the corpus name for use in Cypher queries
+
+        Returns
+        -------
+        str
+            Corpus name made safe for Cypher
+        """
         return '`{}`'.format(self.corpus_name)
 
     @property
     def discourses(self):
-        '''
-        Return a list of all discourses in the corpus.
-        '''
+        """
+        Gets a list of discourses in the corpus
+
+        Returns
+        -------
+        list
+            Discourse names in the corpus
+        """
         res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(
             corpus_name=self.cypher_safe_name))
         return [x['discourse'] for x in res]
@@ -119,8 +138,8 @@ class BaseContext(object):
 
         Returns
         -------
-        names : list
-            all the speaker names
+        list
+            Speaker names in the corpus
         """
         res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(
             corpus_name=self.cypher_safe_name))
@@ -137,14 +156,28 @@ class BaseContext(object):
 
     @property
     def hierarchy_path(self):
+        """
+        Get the path to cached hierarchy information
+
+        Returns
+        -------
+        str
+            Path to the cached hierarchy data on disk
+        """
         return os.path.join(self.config.base_dir, 'hierarchy')
 
     def cache_hierarchy(self):
+        """
+        Save corpus Hierarchy to the disk
+        """
         import json
         with open(self.hierarchy_path, 'w', encoding='utf8') as f:
             json.dump(self.hierarchy.to_json(), f)
 
     def load_hierarchy(self):
+        """
+        Load Hierarchy object from the cached version
+        """
         import json
         with open(self.hierarchy_path, 'r', encoding='utf8') as f:
             self.hierarchy = Hierarchy(corpus_name=self.corpus_name)
@@ -225,7 +258,7 @@ class BaseContext(object):
 
         Returns
         -------
-        word : str
+        str
             word name
         """
         for at in self.hierarchy.annotation_types:
@@ -240,7 +273,7 @@ class BaseContext(object):
 
         Returns
         -------
-        phone : str
+        str
             phone name
         """
         name = self.hierarchy.lowest
@@ -249,9 +282,9 @@ class BaseContext(object):
         return name
 
     def reset_graph(self, call_back=None, stop_check=None):
-        '''
+        """
         Remove all nodes and relationships in the corpus.
-        '''
+        """
 
         delete_statement = '''MATCH (n:{corpus}:{anno})-[:spoken_by]->(s:{corpus}:Speaker)
         where s.name = {{speaker}}
@@ -300,98 +333,112 @@ class BaseContext(object):
         self.cache_hierarchy()
 
     def reset(self, call_back=None, stop_check=None):
-        '''
-        Reset the graph databases for a corpus.
-        '''
+        """
+        Reset the Neo4j and InfluxDB databases for a corpus
+
+        Parameters
+        ----------
+        call_back : callable
+            Function to monitor progress
+        stop_check : callable
+            Function the check whether the process should terminate early
+        """
         self.reset_acoustics()
         self.reset_graph(call_back, stop_check)
 
-    def query_graph(self, annotation_type):
-        '''
-        Return a Query object for the specified annotation type.
+    def query_graph(self, annotation_node):
+        """
+        Start a query over the tokens of a specified annotation type (i.e. ``corpus.word``)
 
         Parameters
         ----------
-        annotation_type : :class:`polyglotdb.query.attributes.AnnotationNode`
+        annotation_node : :class:`polyglotdb.query.attributes.AnnotationNode`
             The type of annotation to look for in the corpus
 
         Returns
         -------
-        GraphQuery
-            Query object
+        :class:`~polyglotdb.query.annotations.query.SplitQuery`
+            SplitQuery object
 
-        '''
-        if annotation_type.node_type not in self.hierarchy.annotation_types \
-                and annotation_type.node_type != 'pause':  # FIXME make more general
+        """
+        if annotation_node.node_type not in self.hierarchy.annotation_types \
+                and annotation_node.node_type != 'pause':  # FIXME make more general
             raise (GraphQueryError(
                 'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(
-                    annotation_type.name, ', '.join(sorted(self.hierarchy.annotation_types)))))
+                    annotation_node.name, ', '.join(sorted(self.hierarchy.annotation_types)))))
 
-        return SplitQuery(self, annotation_type)
+        return SplitQuery(self, annotation_node)
 
-    def query_lexicon(self, annotation_type):
-        '''
-        Return a Query object for the specified annotation type.
+    def query_lexicon(self, annotation_node):
+        """
+        Start a query over types of a specified annotation type (i.e. ``corpus.lexicon_word``)
 
         Parameters
         ----------
-        annotation_type : :class:`polyglotdb.query.attributes.AnnotationNode`
-            The type of annotation to look for in the corpus
+        annotation_node : :class:`polyglotdb.query.attributes.AnnotationNode`
+            The type of annotation to look for in the corpus's lexicon
 
         Returns
         -------
-        GraphQuery
-            Query object
+        :class:`~polyglotdb.query.lexicon.query.LexiconQuery`
+            LexiconQuery object
 
-        '''
-        if annotation_type.node_type not in self.hierarchy.annotation_types \
-                and annotation_type.node_type != 'pause':  # FIXME make more general
+        """
+        if annotation_node.node_type not in self.hierarchy.annotation_types \
+                and annotation_node.node_type != 'pause':  # FIXME make more general
             raise (GraphQueryError(
                 'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(
-                    annotation_type.node_type, ', '.join(sorted(self.hierarchy.annotation_types)))))
-        return LexiconQuery(self, annotation_type)
+                    annotation_node.node_type, ', '.join(sorted(self.hierarchy.annotation_types)))))
+        return LexiconQuery(self, annotation_node)
 
     def query_discourses(self):
         """
-        query for an individual speaker's property
+        Start a query over discourses in the corpus
 
-        Parameters
-        ----------
-        name : str
-            the speaker's name
-        property : str
-            the name of the property
+        Returns
+        -------
+        :class:`~polyglotdb.query.discourse.query.DiscourseQuery`
+            DiscourseQuery object
         """
         return DiscourseQuery(self)
 
     def query_speakers(self):
         """
-        query for an individual speaker's property
+        Start a query over speakers in the corpus
 
-        Parameters
-        ----------
-        name : str
-            the speaker's name
-        property : str
-            the name of the property
+        Returns
+        -------
+        :class:`~polyglotdb.query.speaker.query.SpeakerQuery`
+            SpeakerQuery object
         """
         return SpeakerQuery(self)
 
-
     @property
     def annotation_types(self):
+        """
+        Get a list of all the annotation types in the corpus's Hierarchy
+
+        Returns
+        -------
+        list
+            Annotation types
+        """
         return self.hierarchy.annotation_types
 
     @property
     def lowest_annotation(self):
-        '''
-        Returns the annotation type that is the lowest in the hierarchy
-        of containment.
-        '''
+        """
+        Returns the annotation type that is the lowest in the Hierarchy.
+
+        Returns
+        -------
+        str
+            Lowest annotation type in the Hierarchy
+        """
         return self.hierarchy.lowest
 
     def remove_discourse(self, name):
-        '''
+        """
         Remove the nodes and relationships associated with a single
         discourse in the corpus.
 
@@ -399,27 +446,19 @@ class BaseContext(object):
         ----------
         name : str
             Name of the discourse to remove
-        '''
+        """
         self.execute_cypher('''MATCH (n:{}:{})-[r]->() DELETE n, r'''.format(self.cypher_safe_name, name))
-
-    def discourse_annotations(self, name, annotations=None):
-        '''
-        Get all words spoken in a discourse.
-
-        Parameters
-        ----------
-        name : str
-            Name of the discourse
-        '''
-
-        w = getattr(self, self.word_name)  # FIXME make more general
-        q = GraphQuery(self, w)
-        q = q.filter(w.discourse.name == name)
-        q = q.order_by(w.begin)
-        return q.all()
 
     @property
     def phones(self):
+        """
+        Get a list of all phone labels in the corpus.
+
+        Returns
+        -------
+        list
+            All phone labels in the corpus
+        """
         statement = '''MATCH (p:{phone_name}_type:{corpus_name}) return p.label as label'''.format(
             phone_name=self.phone_name, corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(statement)
@@ -427,6 +466,14 @@ class BaseContext(object):
 
     @property
     def words(self):
+        """
+        Get a list of all word labels in the corpus.
+
+        Returns
+        -------
+        list
+            All word labels in the corpus
+        """
         statement = '''MATCH (p:{word_name}_type:{corpus_name}) return p.label as label'''.format(
             word_name=self.word_name, corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(statement)

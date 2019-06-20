@@ -11,7 +11,7 @@ from ..helper import find_wav_path
 
 
 class TextgridParser(BaseParser):
-    '''
+    """
     Parser for Praat TextGrid files.
 
     Parameters
@@ -27,7 +27,7 @@ class TextgridParser(BaseParser):
         Function to check whether to halt parsing
     call_back : callable, optional
         Function to output progress messages
-    '''
+    """
     _extensions = ['.textgrid']
 
     def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
@@ -38,6 +38,19 @@ class TextgridParser(BaseParser):
                                              stop_check=stop_check, call_back=call_back)
 
     def load_textgrid(self, path):
+        """
+        Load a TextGrid file
+
+        Parameters
+        ----------
+        path : str
+            Path to the TextGrid file
+
+        Returns
+        -------
+        :class:`~textgrid.TextGrid`
+            TextGrid object
+        """
         tg = TextGrid()
         try:
             tg.read(path)
@@ -46,19 +59,21 @@ class TextgridParser(BaseParser):
         return tg
 
     def parse_discourse(self, path, types_only=False):
-        '''
+        """
         Parse a TextGrid file for later importing.
 
         Parameters
         ----------
         path : str
             Path to TextGrid file
+        types_only : bool
+            Flag for whether to only save type information, ignoring the token information
 
         Returns
         -------
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
-        '''
+        """
         tg = self.load_textgrid(path)
 
         if len(tg.tiers) != len(self.annotation_tiers):

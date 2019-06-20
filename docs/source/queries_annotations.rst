@@ -161,8 +161,8 @@ Hierarchical queries
 
 A key facet of language is that it is hierarchical.  Words contain phones,
 and can be contained in larger utterances.  There are several ways to
-query hierarchical information.  If we want to find all "aa" phones in the
-word "dogs", then we can perform the following query:
+query hierarchical information.  If we want to find all ``aa`` phones in the
+word ``dogs``, then we can perform the following query:
 
 .. code-block:: python
 
@@ -183,10 +183,10 @@ contains.
        results = q.all()
        print(results)
 
-In the output of the above query, there would be a column labeled "phones"
+In the output of the above query, there would be a column labeled ``phones``
 that contains a list of the labels of phones that belong to the word
 (``['d', 'aa', 'g', 'z']``). Any property of phones can be queried this
-way (i.e., 'begin', 'end', 'duration', etc).
+way (i.e., ``begin``, ``end``, ``duration``, etc).
 
 Going down the hierarchy, we can also find all words that contain a certain phone.
 
@@ -200,11 +200,11 @@ Going down the hierarchy, we can also find all words that contain a certain phon
 
 
 In this example, it will find all instances of the three words that contain
-an 'aa' phone.
+an ``aa`` phone.
 
-Special keywords exist for these containment columns. The keyword 'rate'
+Special keywords exist for these containment columns. The keyword ``rate``
 will return the elements per second for the word (i.e., phones per second).
-The keyword 'count' will return the number of elements.
+The keyword ``count`` will return the number of elements.
 
 .. code-block:: python
 
@@ -227,7 +227,7 @@ These keywords can also leverage subsets, as above:
        results = q.all()
        print(results)
 
-Additionally, there is a special keyword can be used to query the position
+Additionally, there is a special keyword can be used to query the ``position``
 of a contained element in a containing one.
 
 .. code-block:: python
@@ -239,14 +239,14 @@ of a contained element in a containing one.
        results = q.all()
        print(results)
 
-The above query should return ``2`` for the value of 'position_in_word',
-as the "aa" phone would be the second phone.
+The above query should return ``2`` for the value of ``position_in_word``,
+as the ``aa`` phone would be the second phone.
 
 
-.. _subannotations:
+.. _queries_subannotations:
 
-Subannotations
---------------
+Subannotation queries
+---------------------
 
 Annotations can have subannotations associated with them.  Subannotations
 are not independent linguistic types, but have more information associated
@@ -301,7 +301,7 @@ Miscellaneous
 Aggregates and groups
 ---------------------
 
-Aggregate functions are available in :code:`polyglotdb.query.func`.  Aggregate
+Aggregate functions are available in :code:`polyglotdb.query.base.func`.  Aggregate
 functions available are:
 
 * Average
@@ -316,6 +316,7 @@ only one that does not follow this pattern is :code:`Count`.
 
 .. code-block:: python
 
+   from polyglotdb.query.base.func import Count
    with CorpusContext(config) as c:
        q = c.query_graph(c.phone).filter(c.phone.label == 'aa')
        q = q.filter(c.phone.following.label == 'r')
@@ -329,6 +330,7 @@ number of rows matching this query.
 
 .. code-block:: python
 
+   from polyglotdb.query.base.func import Average
    with CorpusContext(config) as c:
        q = c.query_graph(c.phone).filter(c.phone.label == 'aa')
        q = q.filter(c.phone.following.label == 'r')
@@ -343,6 +345,7 @@ Aggregates are particularly useful with grouping.  For instance:
 
 .. code-block:: python
 
+   from polyglotdb.query.base.func import Average
    with CorpusContext(config) as c:
        q = c.query_graph(c.phone).filter(c.phone.label == 'aa')
        q = q.filter(c.phone.following.label.in_(['r','l']))

@@ -9,6 +9,20 @@ from .base import DiscourseData
 
 
 class PartiturParser(BaseParser):
+    """
+    Parser for Partitur formatted text files.
+
+    Parameters
+    ----------
+    annotation_tiers : list
+        List of the annotation tiers to store data from the TextGrid
+    hierarchy : Hierarchy
+        Basic hierarchy of the TextGrid
+    stop_check : callable
+        Function to check for whether parsing should stop
+    call_back : callable
+        Function to report progress in parsing
+    """
     _extensions = ['.par,2']
 
     def __init__(self, annotation_tiers, hierarchy,
@@ -26,6 +40,8 @@ class PartiturParser(BaseParser):
         ----------
         path : str
             Path to Partitur file
+        types_only : bool
+            Flag for whether to only save type information, ignoring the token information
 
         Returns
         -------
@@ -71,6 +87,7 @@ def parse_speaker(path):
     ----------
     path : str
         a path to the file
+
     Returns
     -------
     str or None
@@ -95,6 +112,7 @@ def read_words(path):
     ----------
     path : str
         a path to the file
+
     Returns
     -------
     dict
@@ -129,6 +147,7 @@ def read_phones(path):
     ----------
     path : str
         a path to the file
+
     Returns
     -------
     dict

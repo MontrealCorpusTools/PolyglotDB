@@ -8,6 +8,7 @@ class SpokenContext(AudioContext):
     """
     Class that contains methods for dealing specifically with speaker and sound file metadata
     """
+
     def enrich_speakers_from_csv(self, path):
         """
         Enriches speakers from a csv file
@@ -20,6 +21,14 @@ class SpokenContext(AudioContext):
         enrich_speakers_from_csv(self, path)
 
     def reset_speaker_csv(self, path):
+        """
+        Remove properties that were encoded via a CSV file
+
+        Parameters
+        ----------
+        path : str
+            CSV file to get property names from
+        """
         data, type_data = parse_file(path, [])
         q = self.query_speakers()
         property_names = [x for x in type_data.keys()]
@@ -30,6 +39,14 @@ class SpokenContext(AudioContext):
         self.encode_hierarchy()
 
     def reset_discourse_csv(self, path):
+        """
+        Remove properties that were encoded via a CSV file
+
+        Parameters
+        ----------
+        path : str
+            CSV file to get property names from
+        """
         data, type_data = parse_file(path, [])
         q = self.query_discourses()
         property_names = [x for x in type_data.keys()]
@@ -48,19 +65,45 @@ class SpokenContext(AudioContext):
         """
         enrich_discourses_from_csv(self, path)
 
-    def get_speakers_in_discourse(self,discourse):
+    def get_speakers_in_discourse(self, discourse):
+        """
+        Get a list of all speakers that spoke in a given discourse
+
+        Parameters
+        ----------
+        discourse : str
+            Audio file to query over
+
+        Returns
+        -------
+        list
+            All speakers who spoke in the discourse
+        """
         query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE d.name = {{discourse_name}}
                 RETURN s.name as speaker'''.format(corpus_name=self.cypher_safe_name)
-        results = self.execute_cypher(query, discourse_name = discourse)
+        results = self.execute_cypher(query, discourse_name=discourse)
         speakers = [x['speaker'] for x in results]
         return speakers
 
-    def get_discourses_of_speaker(self,speaker):
+    def get_discourses_of_speaker(self, speaker):
+        """
+        Get a list of all discourses that a given speaker spoke in
+
+        Parameters
+        ----------
+        speaker : str
+            Speaker to query over
+
+        Returns
+        -------
+        list
+            All discourses the speaker spoke in
+        """
         query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE s.name = {{speaker_name}}
                 RETURN d.name as discourse'''.format(corpus_name=self.cypher_safe_name)
-        results = self.execute_cypher(query, speaker_name = speaker)
+        results = self.execute_cypher(query, speaker_name=speaker)
         discourses = [x['discourse'] for x in results]
         return discourses
 
@@ -102,9 +145,6 @@ class SpokenContext(AudioContext):
         """
         return {speaker: {property: data}}
 
-    def reset_speakers(self):
-        pass
-
     def enrich_discourses(self, discourse_data, type_data=None):
         """
         Add properties about discourses to the corpus, allowing them to
@@ -128,6 +168,3 @@ class SpokenContext(AudioContext):
         import_discourse_csvs(self, type_data)
         self.hierarchy.add_discourse_properties(self, type_data.items())
         self.encode_hierarchy()
-
-    def reset_discourses(self):
-        pass

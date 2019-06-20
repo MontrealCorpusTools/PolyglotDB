@@ -10,7 +10,7 @@ from ...exceptions import ParseError
 
 
 class BaseParser(object):
-    '''
+    """
     Base parser, extend this class for new parsers.
 
     Parameters
@@ -26,7 +26,7 @@ class BaseParser(object):
         Function to check whether to halt parsing
     call_back : callable, optional
         Function to output progress messages
-    '''
+    """
     _extensions = ['.txt']
 
     def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
@@ -216,19 +216,21 @@ class BaseParser(object):
         return return_dict
 
     def parse_discourse(self, name, types_only=False):
-        '''
+        """
         Parse annotations for later importing.
 
         Parameters
         ----------
         name : str
             Name of the discourse
+        types_only : bool
+            Flag for whether to only save type information, ignoring the token information
 
         Returns
         -------
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data
-        '''
+        """
 
         pg_annotations = self._parse_annotations(types_only)
         data = DiscourseData(name, pg_annotations, self.hierarchy)

@@ -1,12 +1,12 @@
 class Track(object):
-    '''
+    """
     Track class to contain, select, and manage :class:`~polyglotdb.acoustics.classes.TimePoint` objects
 
     Attributes
     ----------
-    points : iteraable of :class:`~polyglotdb.acoustics.classes.TimePoint`
+    points : iterable of :class:`~polyglotdb.acoustics.classes.TimePoint`
         Time points with values of the acoustic track
-    '''
+    """
     def __init__(self):
         self.points = []
 
@@ -17,12 +17,28 @@ class Track(object):
         return '<TrackObject with {} points'.format(len(self.points))
 
     def keys(self):
+        """
+        Get a list of all keys for TimePoints that the Track has
+
+        Returns
+        -------
+        list
+            All keys on TimePoint objects
+        """
         keys = set()
         for point in self:
             keys.update(point.values.keys())
         return sorted(keys)
 
     def times(self):
+        """
+        Get a list of all time points in the track
+
+        Returns
+        -------
+        list
+            Sorted time points
+        """
         times = set()
         for point in self:
             times.add(point.time)
@@ -44,7 +60,7 @@ class Track(object):
         return False
 
     def add(self, point):
-        '''
+        """
         Add a :class:`~polyglotdb.acoustics.classes.TimePoint` to the track
 
         Parameters
@@ -52,7 +68,7 @@ class Track(object):
         point : :class:`~polyglotdb.acoustics.classes.TimePoint`
             Time point to add
 
-        '''
+        """
         self.points.append(point)
 
     def __iter__(self):
@@ -60,6 +76,14 @@ class Track(object):
             yield p
 
     def items(self):
+        """
+        Generator for returning tuples of the time point and values
+
+        Returns
+        -------
+        generator
+            Tuples of time points and values
+        """
         for p in sorted(self.points, key=lambda x: x.time):
             yield p.time, p.values
 

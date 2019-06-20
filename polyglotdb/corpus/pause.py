@@ -7,6 +7,14 @@ class PauseContext(ImportContext):
     """
     @property
     def has_pauses(self):
+        """
+        Check whether corpus has encoded pauses
+
+        Returns
+        -------
+        bool
+            True if pause is in the subsets available for words
+        """
         return 'pause' in self.hierarchy.subset_tokens[self.word_name]
 
     def encode_pauses(self, pause_words, call_back=None, stop_check=None):
@@ -18,6 +26,10 @@ class PauseContext(ImportContext):
         pause_words : str, list, tuple, or set
             Either a list of words that are pauses or a string containing
             a regular expression that specifies pause words
+        call_back : callable
+            Function to monitor progress
+        stop_check : callable
+            Function to check whether process should be terminated early
         """
         self.reset_pauses()
         word = getattr(self, self.word_name)
@@ -105,7 +117,6 @@ class PauseContext(ImportContext):
                 REMOVE n:pause'''.format(corpus=self.cypher_safe_name)
                 self.execute_cypher(statement, speaker=s, discourse=d)
         try:
-            self.hierarchy.annotation_types.remove('pause')
             self.hierarchy.subset_tokens[self.word_name].remove('pause')
             self.encode_hierarchy()
         except (KeyError, ValueError):

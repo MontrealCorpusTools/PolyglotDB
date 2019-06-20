@@ -1,21 +1,31 @@
 import os
 import re
-import sys
-import hashlib
 
 from polyglotdb.exceptions import BuckeyeParseError
-
 from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
-
 from .speaker import FilenameSpeakerParser
-
-FILLERS = set(['uh', 'um', 'okay', 'yes', 'yeah', 'oh', 'heh', 'yknow', 'um-huh',
-               'uh-uh', 'uh-huh', 'uh-hum', 'mm-hmm'])
-
 from ..helper import find_wav_path
+
+FILLERS = {'uh', 'um', 'okay', 'yes', 'yeah', 'oh', 'heh', 'yknow', 'um-huh',
+               'uh-uh', 'uh-huh', 'uh-hum', 'mm-hmm'}
 
 
 def contained_by(word, phone):
+    """
+    Check whether a word contains a phone based on time points
+
+    Parameters
+    ----------
+    word : dict
+        Word information
+    phone : dict
+        Phone information
+
+    Returns
+    -------
+    bool
+        True if phone midpoint is within the bounds of the word
+    """
     phone_midpoint = phone[1] + (phone[2] - phone[1]) / 2
     word_midpoint = word['begin'] + (word['end'] - word['begin']) / 2
     if (phone_midpoint > word['begin'] and phone_midpoint < word['end']) or (
@@ -25,7 +35,7 @@ def contained_by(word, phone):
 
 
 class BuckeyeParser(BaseParser):
-    '''
+    """
     Parser for the Buckeye corpus.
 
     Has annotation types for word labels, word transcription, word part of
@@ -41,7 +51,7 @@ class BuckeyeParser(BaseParser):
         Function to check whether to halt parsing
     call_back : callable, optional
         Function to output progress messages
-    '''
+    """
     _extensions = ['.words']
 
     def __init__(self, annotation_tiers, hierarchy,
@@ -52,19 +62,21 @@ class BuckeyeParser(BaseParser):
         self.speaker_parser = FilenameSpeakerParser(3)
 
     def parse_discourse(self, word_path, types_only=False):
-        '''
+        """
         Parse a Buckeye file for later importing.
 
         Parameters
         ----------
         word_path : str
             Path to Buckeye .words file
+        types_only : bool
+            Flag for whether to only save type information, ignoring the token information
 
         Returns
         -------
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data
-        '''
+        """
         self.make_transcription = False
         phone_ext = ''
         name, ext = os.path.splitext(os.path.split(word_path)[1])
@@ -161,7 +173,6 @@ def read_phones(path):
     -------
     output : list of tuples
         each tuple is label, begin, end for a phone
-
     """
     output = []
     with open(path, 'r') as file_handle:
@@ -235,10 +246,3 @@ def read_words(path):
     if misparsed_lines:
         raise (BuckeyeParseError(path, misparsed_lines))
     return output
-
-
-def phone_match(one, two):
-    """ matches phone one to phone two, returns true if phone one is phone two or is part of phone two"""
-    if one != two and one not in two:
-        return False
-    return True

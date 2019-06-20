@@ -1,4 +1,4 @@
-#from __future__ import absolute_import
+# from __future__ import absolute_import
 import os
 
 from textgrid import TextGrid, IntervalTier
@@ -51,7 +51,7 @@ class AlignerParser(TextgridParser):
     def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
                  stop_check=None, call_back=None):
         super(AlignerParser, self).__init__(annotation_tiers, hierarchy, make_transcription,
-                                        False, stop_check, call_back)
+                                            False, stop_check, call_back)
         self.speaker_parser = DirectorySpeakerParser()
 
     def _is_valid(self, tg):
@@ -65,9 +65,11 @@ class AlignerParser(TextgridParser):
                 break
         if multiple_speakers:
             if self.speaker_first:
-                speakers = {x.name.split(' - ')[0].strip().replace('/', '_').replace('\\', '_') for x in tg.tiers if ' - ' in x.name}
+                speakers = {x.name.split(' - ')[0].strip().replace('/', '_').replace('\\', '_') for x in tg.tiers if
+                            ' - ' in x.name}
             else:
-                speakers = {x.name.split(' - ')[1].strip().replace('/', '_').replace('\\', '_') for x in tg.tiers if ' - ' in x.name}
+                speakers = {x.name.split(' - ')[1].strip().replace('/', '_').replace('\\', '_') for x in tg.tiers if
+                            ' - ' in x.name}
             found_words = {x: False for x in speakers}
             found_phones = {x: False for x in speakers}
             for ti in tg.tiers:
@@ -101,6 +103,8 @@ class AlignerParser(TextgridParser):
         ----------
         path : str
             Path to TextGrid file
+        types_only : bool
+            Flag for whether to only save type information, ignoring the token information
 
         Returns
         -------

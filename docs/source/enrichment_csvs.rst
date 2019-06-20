@@ -96,6 +96,6 @@ This can be done using the  :code:`corpus_context.enrich_tokens_with_csv` functi
                properties=["measurement_1", "measurement_2"])
 
 The only requirement for the CSV is that there is a column which contains the IDs of the tokens you wish to update. 
-You can get these IDs(along with other parameters) by querying the tokens before hand, and exporting a CSV, see :ref:`_export_tokens`.
+You can get these IDs (along with other parameters) by querying the tokens before hand, and exporting a CSV, see :ref:`export_tokens`.
 The only columns from the CSV that will be added as token properties, are those which are included in the `properties` parameter.
-If this parameter is left as `None`, then all the columns of the CSV except the `id_column` will be included.
+If this parameter is left as ``None``, then all the columns of the CSV except the ``id_column`` will be included.

@@ -22,6 +22,14 @@ class PhonologicalContext(LexicalContext):
         enrich_features_from_csv(self, path)
 
     def reset_inventory_csv(self, path):
+        """
+        Remove properties that were encoded via a CSV file
+
+        Parameters
+        ----------
+        path : str
+            CSV file to get property names from
+        """
         data, type_data = parse_file(path, labels=[])
 
         property_names = [x for x in type_data.keys()]
@@ -42,7 +50,12 @@ class PhonologicalContext(LexicalContext):
 
     def reset_class(self, label):
         """
-        resets the class
+        Reset and remove a subset
+
+        Parameters
+        ----------
+        label : str
+            Subset name to remove
         """
         self.reset_type_subset('phone', label)
 

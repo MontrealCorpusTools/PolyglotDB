@@ -26,7 +26,7 @@ class PyTest(TestCommand):
 
 if __name__ == '__main__':
     setup(name='polyglotdb',
-          version='0.1.19',
+          version='1.0.0',
           description='',
           long_description=readme(),
           classifiers=[
@@ -75,7 +75,8 @@ if __name__ == '__main__':
               'conch_sounds',
               'librosa',
               'influxdb',
-              'tqdm'
+              'tqdm',
+              'requests'
           ],
           scripts=['bin/pgdb'],
           cmdclass={'test': PyTest},

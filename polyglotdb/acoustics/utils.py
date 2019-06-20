@@ -9,6 +9,25 @@ PADDING = 0.1
 
 
 def load_waveform(file_path, begin=None, end=None):
+    """
+    Load a waveform segment from an audio file
+
+    Parameters
+    ----------
+    file_path : str
+        Path to audio file
+    begin : float
+        Time stamp of beginning of segment
+    end : float
+        Time stamp of end of segment
+
+    Returns
+    -------
+    numpy.array
+        Signal data
+    int
+        Sample rate
+    """
     if begin is None:
         begin = 0.0
     duration = None
@@ -19,7 +38,28 @@ def load_waveform(file_path, begin=None, end=None):
     return signal, sr
 
 
-def generate_spectrogram(signal, sr, color_scale='log'):
+def generate_spectrogram(signal, sr, log_color_scale=True):
+    """
+    Generate a spectrogram
+
+    Parameters
+    ----------
+    signal : numpy.array
+        Signal to generate spectrogram from
+    sr : int
+        Sample rate of the signal
+    log_color_scale : bool
+        Flag to make the color scale logarithmic
+
+    Returns
+    -------
+    numpy.array
+        Spectrogram data
+    float
+        Time step between frames
+    float
+        Frequency step between bins
+    """
     n_fft = 256
     # if len(self._signal) / self._sr > 30:
     window_length = 0.005
@@ -40,12 +80,26 @@ def generate_spectrogram(signal, sr, color_scale='log'):
     window = 'gaussian'
     # win_len = None
     if window == 'gaussian':
-        window = partial(gaussian, std=0.45 * (win_len) / 2)
+        window = partial(gaussian, std=0.45 * win_len / 2)
     data = stft(signal, n_fft, step_samp, center=True, win_length=win_len, window=window)
     data = np.abs(data)
-    data = 20 * np.log10(data) if color_scale == 'log' else data
+    if log_color_scale:
+        data = 20 * np.log10(data)
     return data, time_step, freq_step
 
 
 def make_path_safe(path):
+    """
+    Make a path safe for use in Cypher
+
+    Parameters
+    ----------
+    path : str
+        Path to sanitize
+
+    Returns
+    -------
+    str
+        Cypher-safe path
+    """
     return path.replace('\\', '/').replace(' ', '%20')

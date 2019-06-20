@@ -8,13 +8,11 @@ from polyglotdb.structure import Hierarchy
 
 from ..helper import guess_type, ilg_text_to_lines
 
-from ..discoursedata import DiscourseData
-
 from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
 
 
 class IlgParser(BaseParser):
-    '''
+    """
     Parser for interlinear gloss (ILG) files.
 
     Parameters
@@ -25,7 +23,7 @@ class IlgParser(BaseParser):
         Function to check whether to halt parsing
     call_back : callable, optional
         Function to output progress messages
-    '''
+    """
 
     def __init__(self, annotation_tiers,
                  stop_check=None, call_back=None):
@@ -35,19 +33,21 @@ class IlgParser(BaseParser):
                                         stop_check=stop_check, call_back=call_back)
 
     def parse_discourse(self, path, types_only=False):
-        '''
+        """
         Parse an ILG file for later importing.
 
         Parameters
         ----------
         path : str
             Path to ILG file
+        types_only : bool
+            Flag for whether to only save type information, ignoring the token information
 
         Returns
         -------
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
-        '''
+        """
         lines = ilg_text_to_lines(path)
 
         if len(lines) % len(self.annotation_tiers) != 0:
@@ -60,7 +60,7 @@ class IlgParser(BaseParser):
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         if self.speaker_parser is not None:
-            speaker = self.speaker_parser.parse_path(word_path)
+            speaker = self.speaker_parser.parse_path(path)
             name = speaker + '_' + name
         else:
             speaker = None

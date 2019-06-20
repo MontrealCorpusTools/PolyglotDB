@@ -19,6 +19,19 @@ morph_delimiters = set('-=')
 
 
 def get_n_channels(file_path):
+    """
+    Get the number of channels in an audio file
+
+    Parameters
+    ----------
+    file_path : str
+        Path to audio file
+
+    Returns
+    -------
+    int
+        Number of channels
+    """
     with wave.open(file_path, 'rb') as soundf:
         n_channels = soundf.getnchannels()
     return n_channels
@@ -26,7 +39,7 @@ def get_n_channels(file_path):
 
 def normalize_values_for_neo4j(dictionary):
     """
-    Sanitizes dictionary for neo4j format by making non-existant values be the string 'NULL'
+    Sanitizes dictionary for neo4j format by making non-existent values be the string 'NULL'
 
     Parameters
     ----------
@@ -35,7 +48,7 @@ def normalize_values_for_neo4j(dictionary):
 
     Returns
     -------
-    out : dict
+    dict
         sanitized dictionary
     """
     out = {}
@@ -56,10 +69,12 @@ def guess_type(values, trans_delimiters=None):
     ----------
     values : dict
         a dictionary of the possible values
+    trans_delimiters : list
+        List of transcription delimiters, optional
     
     Returns
     -------
-    type : string
+    str
         most probable type (highest count)
     """
     if trans_delimiters is None:
@@ -90,7 +105,8 @@ def guess_type(values, trans_delimiters=None):
 
 
 def guess_trans_delimiter(values):
-    """" Given a set of values, guess the transition delimiter
+    """"
+    Given a set of values, guess the transition delimiter
     
     Parameters
     ----------
@@ -99,7 +115,7 @@ def guess_trans_delimiter(values):
 
     Returns
     -------
-    type : int
+    str
         the most probable delimiter (highest count)
 
     """
@@ -197,7 +213,7 @@ def most_frequent_value(dictionary):
 
     Returns
     -------
-    max : value
+    object
         the most frequent value
     """
     c = Counter(dictionary.values())
@@ -215,7 +231,7 @@ def calculate_lines_per_gloss(lines):
 
     Returns
     -------
-    number : int
+    int
         the count of lines per gloss
     """
     line_counts = [len(x[1]) for x in lines]
@@ -253,7 +269,7 @@ def calculate_lines_per_gloss(lines):
 
 def ilg_text_to_lines(path):
     """
-    converts an ilg file to text lines
+    Converts an ilg file to text lines
 
     Parameters
     ----------
@@ -262,7 +278,7 @@ def ilg_text_to_lines(path):
 
     Returns 
     -------
-    lines : list
+    list
         a sanitized list of lines in the file
     """
     delimiter = None
@@ -323,7 +339,7 @@ def log_annotation_types(annotation_types):
 
 def make_type_id(type_values, corpus):
     """
-    Constructs hash table of values and corpus
+    Construct a type ID from the type values and the corpus name
 
     Parameters
     ----------
@@ -335,7 +351,7 @@ def make_type_id(type_values, corpus):
     Returns
     -------
     str
-        a hex string containing the digest of the values as hexadecimal numbers
+        a hex string for the type ID
     """
     m = hashlib.sha1()
     value = ' '.join(map(str, type_values))
@@ -346,21 +362,21 @@ def make_type_id(type_values, corpus):
 
 def guess_textgrid_format(path):
     """
-    Given a directory, tries to guess what format the textgrids are in
+    Given a directory, tries to guess what format the TextGrid files are in
 
     Parameters
     ----------
     path : str
-        the path of the directory containing the textgrids
+        the path of the directory containing the TextGrid files
 
     Returns
     -------
     str or None
-        textgrid format or None if file is not textgrid and directory doesn't contain textgrids
+        textgrid format or None if file is not textgrid and directory doesn't contain TextGrid files
     """
-    from .inspect import inspect_labbcat, inspect_mfa, inspect_fave
+    from .inspect import inspect_labbcat, inspect_mfa, inspect_fave, inspect_maus
     if os.path.isdir(path):
-        counts = {'mfa': 0, 'labbcat': 0, 'fave': 0, None: 0}
+        counts = {'mfa': 0, 'labbcat': 0, 'fave': 0, 'maus': 0, None: 0}
         for root, subdirs, files in os.walk(path):
             for f in files:
                 if not f.lower().endswith('.textgrid'):
@@ -375,12 +391,15 @@ def guess_textgrid_format(path):
                 labbcat_parser = inspect_labbcat(tg_path)
                 mfa_parser = inspect_mfa(tg_path)
                 fave_parser = inspect_fave(tg_path)
+                maus_parser = inspect_maus(path)
                 if labbcat_parser._is_valid(tg):
                     counts['labbcat'] += 1
                 elif mfa_parser._is_valid(tg):
                     counts['mfa'] += 1
                 elif fave_parser._is_valid(tg):
                     counts['fave'] += 1
+                elif maus_parser._is_valid(tg):
+                    counts['maus'] += 1
                 else:
                     counts[None] += 1
         return max(counts.keys(), key=lambda x: counts[x])
@@ -390,10 +409,13 @@ def guess_textgrid_format(path):
         labbcat_parser = inspect_labbcat(path)
         mfa_parser = inspect_mfa(path)
         fave_parser = inspect_fave(path)
+        maus_parser = inspect_maus(path)
         if labbcat_parser._is_valid(tg):
             return 'labbcat'
         elif mfa_parser._is_valid(tg):
             return 'mfa'
         elif fave_parser._is_valid(tg):
             return 'fave'
+        elif maus_parser._is_valid(tg):
+            return 'maus'
     return None

@@ -15,7 +15,7 @@ def norm_count_dict(counts, onset=True):
     
     Returns
     -------
-    counts : dict
+    dict
         the updated dictionary
     """
     if onset:
@@ -46,7 +46,7 @@ def split_ons_coda_prob(string, onsets, codas):
 
     Returns
     -------
-    best : int
+    int
         best guess for the index in the string where the onset ends and coda begins
     """
     if len(string) == 0:
@@ -86,7 +86,7 @@ def split_nonsyllabic_prob(string, onsets, codas):
 
     Returns
     -------
-    best : int
+    int
         best guess for the index in the string where the onset ends and coda begins
     """
     if len(string) == 0:

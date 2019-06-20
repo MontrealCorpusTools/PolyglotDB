@@ -6,15 +6,19 @@ from ..structure import Hierarchy
 from .base import BaseContext
 
 
-
 def generate_cypher_property_list(property_set):
     """
-    Generates a list of properies of cypher queries
+    Generates a Cypher claus for setting properties
+
+    Parameters
+    ----------
+    property_set : list
+        List of tuples of form (`property_name`, `property_value`)
 
     Returns
     -------
-    properties : str
-        list of properties
+    str
+        Cypher string for setting properties
     """
     props = []
     for name, t in property_set:
@@ -37,7 +41,7 @@ class StructuredContext(BaseContext):
     """
     def generate_hierarchy(self):
         """
-        Creates the hierarchy, which is information on how the corpus is structured
+        Get hierarchy schema information from the Neo4j database
 
         Returns
         -------
@@ -113,11 +117,23 @@ class StructuredContext(BaseContext):
         return h
 
     def query_metadata(self, annotation):
+        """
+        Start a query over metadata
+
+        Parameters
+        ----------
+        annotation : :class:`~polyglotdb.query.base.attributes.Node`
+
+        Returns
+        -------
+        :class:`~polyglotdb.query.metadata.query.MetaDataQuery`
+            MetaDataQuery object
+        """
         return MetaDataQuery(self, annotation)
 
     def refresh_hierarchy(self):
         """
-        Updates the hierarchy
+        Save the Neo4j database schema to the disk
 
         """
         h = self.generate_hierarchy()
@@ -127,7 +143,7 @@ class StructuredContext(BaseContext):
 
     def reset_hierarchy(self):
         """
-        Resets the hierarchy
+        Delete the Hierarchy schema in the Neo4j database
         """
         self.execute_cypher('''MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t),
                                 (c)-[:spoken_by]->(s:Speaker),
@@ -141,7 +157,7 @@ class StructuredContext(BaseContext):
 
     def encode_hierarchy(self):
         """
-        encodes hierarchy
+        Sync the current Hierarchy to the Neo4j database and to the disk
         """
 
         self.reset_hierarchy()
@@ -302,7 +318,7 @@ class StructuredContext(BaseContext):
 
         Parameters
         ----------
-        annnotation_type : str
+        annotation_type : str
             what is being removed
         name : str
             the column name

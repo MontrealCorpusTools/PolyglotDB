@@ -194,6 +194,25 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         return finalDict
 
     def encode_measure(self, property_name, statistic, annotation_type, by_speaker=False):
+        """
+        Compute and save an aggregate measure for annotation types
+
+        Available statistic names:
+
+        * mean/average/avg
+        * sd/stdev
+
+        Parameters
+        ----------
+        property_name : str
+            Name of the property
+        statistic : str
+            Name of the statistic to use for aggregation
+        annotation_type : str
+            Name of the annotation type
+        by_speaker : bool
+            Flag for whether to compute aggregation by speaker
+        """
         if property_name == 'duration':
             property = 'a.end - a.begin'
         else:
@@ -222,11 +241,25 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         self.encode_hierarchy()
 
     def encode_baseline(self, annotation_type, property_name, by_speaker=False):
+        """
+        Encode a baseline measure of a property, that is, the expected value of a higher annotation given the average
+        property value of the phones that make it up.  For instance, the expected duration of a word or syllable given
+        its phonological content.
+
+        Parameters
+        ----------
+        annotation_type : str
+            Name of annotation type to compute for
+        property_name : str
+            Property of phones to compute based off of (i.e., ``duration``)
+        by_speaker : bool
+            Flag for whether to use by-speaker means
+        """
         if by_speaker:
             exists_statement = '''MATCH (a_type:{annotation_type}_type:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
                             RETURN 1 LIMIT 1'''.format(annotation_type=annotation_type, corpus_name=self.cypher_safe_name)
             if len(list(self.execute_cypher(exists_statement))) == 0:
-                self.encode_measure('duration', 'mean', 'phone', by_speaker)
+                self.encode_measure(property_name, 'mean', 'phone', by_speaker)
             statement = '''MATCH (a:{annotation_type}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name})
             with a, s
             MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})-[r:spoken_by]->(s)
@@ -236,10 +269,10 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
                                                                            property_name=property_name,
                                                                            annotation_type=annotation_type)
             self.execute_cypher(statement)
-            self.hierarchy.add_token_properties(self, annotation_type, [('baseline_duration_by_speaker', float)])
+            self.hierarchy.add_token_properties(self, annotation_type, [('baseline_{}_by_speaker'.format(property_name), float)])
         else:
-            if not self.hierarchy.has_type_property('phone', 'mean_duration'):
-                self.encode_measure('duration', 'mean', 'phone', by_speaker)
+            if not self.hierarchy.has_type_property('phone', 'mean_'+ property_name):
+                self.encode_measure(property_name, 'mean', 'phone', by_speaker)
             statement = '''MATCH (a:{annotation_type}:{corpus_name})
             with a
             MATCH (a)<-[:contained_by*]-(p:{phone_name}:{corpus_name})-[:is_a]->(pt:{phone_name}_type:{corpus_name})
@@ -249,10 +282,23 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
                                                                 property_name=property_name,
                                                                 annotation_type=annotation_type)
             self.execute_cypher(statement)
-            self.hierarchy.add_token_properties(self, annotation_type, [('baseline_duration', float)])
+            self.hierarchy.add_token_properties(self, annotation_type, [('baseline_{}'.format(property_name), float)])
         self.encode_hierarchy()
 
     def encode_relativized(self, annotation_type, property_name, by_speaker=False):
+        """
+        Compute and save to the database a relativized measure (i.e., the property value z-scored using a mean and
+        standard deviation computed from the corpus).  The computation of means and standard deviations can be by-speaker.
+
+        Parameters
+        ----------
+        annotation_type : str
+            Name of the annotation type
+        property_name : str
+            Name of the property to relativize
+        by_speaker : bool
+            Flag to use by-speaker means and standard deviations
+        """
         if property_name == 'duration':
             property_descriptor = '(p.end - p.begin)'
         else:

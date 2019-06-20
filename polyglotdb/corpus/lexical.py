@@ -31,12 +31,9 @@ class LexicalContext(SpokenContext):
         self.hierarchy.add_type_properties(self, self.word_name, type_data.items())
         self.encode_hierarchy()
 
-    def reset_lexicon(self):
-        pass
-
     def enrich_lexicon_from_csv(self, path, case_sensitive=False):
         """
-        Enriches lexicon from a csv file
+        Enriches lexicon from a CSV file
 
         Parameters
         ----------
@@ -48,6 +45,14 @@ class LexicalContext(SpokenContext):
         enrich_lexicon_from_csv(self, path, case_sensitive)
 
     def reset_lexicon_csv(self, path):
+        """
+        Remove properties that were encoded via a CSV file
+
+        Parameters
+        ----------
+        path : str
+            CSV file to get property names from
+        """
         data, type_data = parse_file(path, labels=[])
         word = getattr(self, 'lexicon_' + self.word_name)
         q = self.query_lexicon(word)

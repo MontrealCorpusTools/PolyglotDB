@@ -3,6 +3,19 @@ from collections import defaultdict
 
 
 def sanitize_name(string):
+    """
+    Sanitize name by removing trailing whitespace and replacing any string-internal whitespace with underscores
+
+    Parameters
+    ----------
+    string : str
+        Name to be sanitized
+
+    Returns
+    -------
+    str
+        Sanitized string
+    """
     return string.strip().replace(' ', '_').lower()
 
 
@@ -46,6 +59,8 @@ def parse_file(path, labels=None, case_sensitive=True):
     ----------
     path : str
         the path to the file
+    labels : list, optional
+        List of labels to limit file parsing to
     case_sensitive : boolean
         Defaults to true
 
@@ -53,7 +68,6 @@ def parse_file(path, labels=None, case_sensitive=True):
     -------
     tuple
         data and type_data for a csv file
-
     """
     with open(path, 'r', encoding='utf-8-sig') as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read())
@@ -66,7 +80,7 @@ def parse_file(path, labels=None, case_sensitive=True):
         sanitized_names = [sanitize_name(x) for x in header]
         data = {}
         type_data = {}
-        if labels == []:
+        if not labels:
             for line in reader:
                 p = line[key_name]
 
@@ -88,7 +102,6 @@ def parse_file(path, labels=None, case_sensitive=True):
                     k = sanitized_names[i]
                     v = parse_string(line[f])
                     data[p][k] = v
-                return data, type_data
         else:
             for line in reader:
                 p = line[key_name]
