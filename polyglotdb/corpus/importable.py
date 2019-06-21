@@ -165,6 +165,10 @@ class ImportContext(StructuredContext):
 
         """
         data = parser.parse_discourse(path)
+
+        #If there is no data, e.g. empty TextGrid, return the empty list early.
+        if data is None:
+            return []
         self.initialize_import(data.speakers, data.token_headers, data.hierarchy.subannotations)
         self.add_types(*data.types(self.corpus_name))
         self.add_discourse(data)
