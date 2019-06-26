@@ -105,7 +105,7 @@ def point_measures_to_csv(corpus_context, data, header):
             writer.writerow(row)
 
 
-def point_measures_from_csv(corpus_context, header_info):
+def point_measures_from_csv(corpus_context, header_info, annotation_type="phone"):
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
     int_set_template = 'n.{name} = toInt(csvLine.{name})'
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
@@ -134,18 +134,18 @@ def point_measures_from_csv(corpus_context, header_info):
         import_statement = '''
                 USING PERIODIC COMMIT 2000
                 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                MATCH (n:{phone_type}:{corpus_name}) where n.id = csvLine.id
+                MATCH (n:{annotation_type}:{corpus_name}) where n.id = csvLine.id
                 SET {new_properties}'''
 
         statement = import_statement.format(path=import_path,
                                             corpus_name=corpus_context.cypher_safe_name,
-                                            phone_type=corpus_context.phone_name,
+                                            annotation_type=annotation_type,
                                             new_properties=properties)
         corpus_context.execute_cypher(statement)
     for h in header_info.keys():
         if h == 'id':
             continue
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name, h))
-    corpus_context.hierarchy.add_token_properties(corpus_context, corpus_context.phone_name,
+        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (annotation_type, h))
+    corpus_context.hierarchy.add_token_properties(corpus_context, annotation_type,
                                                   [(h, t) for h, t in header_info.items() if h != 'id'])
     corpus_context.encode_hierarchy()
