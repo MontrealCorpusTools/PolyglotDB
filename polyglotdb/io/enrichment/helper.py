@@ -1,5 +1,6 @@
 import csv
 from collections import defaultdict
+from ..exceptions import ParseError
 
 
 def sanitize_name(string):
@@ -16,6 +17,8 @@ def sanitize_name(string):
     str
         Sanitized string
     """
+    if "." in string:
+        raise ParseError("Column name, \"{}\" contains a period which is not permitted in CSVs used by PolyglotDB".format(string))
     return string.strip().replace(' ', '_').lower()
 
 
