@@ -1,6 +1,6 @@
 import csv
 from collections import defaultdict
-from ..exceptions import ParseError
+from ...exceptions import ParseError
 
 
 def sanitize_name(string):
