@@ -100,9 +100,13 @@ class TextgridParser(BaseParser):
                 self.annotation_tiers[i].add(((x.mark.strip(), x.time) for x in ti))
 
         is_empty_textgrid = True
+        with open("/tmp/goddamn", "w") as f:
+            for t in self.annotation_tiers:
+                for interval in t:
+                    f.write(interval.label)
         for t in self.annotation_tiers:
             for interval in t:
-                if interval[0] != "":
+                if interval.label != "":
                     is_empty_textgrid = False
                     break
         if is_empty_textgrid:
