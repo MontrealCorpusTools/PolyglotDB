@@ -4,6 +4,7 @@ from textgrid import TextGrid, IntervalTier
 
 from polyglotdb.exceptions import TextGridError
 from polyglotdb.structure import Hierarchy
+from polyglotdb.io.types.parsing import Orthography, Transcription
 
 from .base import BaseParser, DiscourseData
 
