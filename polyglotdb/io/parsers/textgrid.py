@@ -109,7 +109,7 @@ class TextgridParser(BaseParser):
                         is_empty_textgrid = False
                         break
                 if isinstance(interval, Transcription):
-                    if interval.segments != [] or not interval.segments is None: 
+                    if interval._list != []:
                         is_empty_textgrid = False
                         break
         if is_empty_textgrid:
