@@ -403,10 +403,10 @@ class AudioContext(SyllabicContext):
         """
         analyze_intensity(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
-    def analyze_script(self, phone_class, script_path, duration_threshold=0.01, arguments=None, stop_check=None,
+    def analyze_script(self, phone_class=None, subset=None, annotation_type=None, script_path=None, duration_threshold=0.01, arguments=None, stop_check=None,
                        call_back=None, multiprocessing=True, file_type='consonant'):
         """
-        Use a Praat script to analyze phones in the corpus.  The Praat script must return properties per phone (i.e.,
+        Use a Praat script to analyze annotation types in the corpus.  The Praat script must return properties per phone (i.e.,
         point measures, not a track), and these properties will be saved to the Neo4j database.
 
         See :meth:`polyglotdb.acoustics.other..analyze_script` for more details.
@@ -414,7 +414,11 @@ class AudioContext(SyllabicContext):
         Parameters
         ----------
         phone_class : str
-            Name of the phone subset to analyze
+            DEPRECATED, the name of an already encoded subset of phones on which the analysis will be run
+        subset : str, optional
+            the name of an already encoded subset of an annotation type, on which the analysis will be run
+        annotation_type : str
+            the type of annotation that the analysis will go over
         script_path : str
             Path to the Praat script
         duration_threshold : float
@@ -435,7 +439,7 @@ class AudioContext(SyllabicContext):
         list
             List of the names of newly added properties to the Neo4j database
         """
-        return analyze_script(self, phone_class, script_path, duration_threshold=duration_threshold,
+        return analyze_script(self, subset=subset, annotation_type=annotation_type, phone_class=phone_class, script_path=script_path, duration_threshold=duration_threshold,
                               arguments=arguments,
                               stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
 

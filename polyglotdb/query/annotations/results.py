@@ -101,12 +101,7 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
         else:
             utterance_id = a.utterance.id
         if utterance_id not in pre.attribute.cache:
-            if pre.attribute.label == 'pitch':
-                data = corpus.get_utterance_pitch(utterance_id, a.discourse.name, a.speaker.name)
-            elif pre.attribute.label == 'intensity':
-                data = corpus.get_utterance_intensity(utterance_id, a.discourse.name, a.speaker.name)
-            elif pre.attribute.label == 'formants':
-                data = corpus.get_utterance_formants(utterance_id, a.discourse.name, a.speaker.name)
+            data = corpus.get_utterance_acoustics(pre.attribute.label, utterance_id, a.discourse.name, a.speaker.name)
             pre.attribute.cache[utterance_id] = data
         a._load_track(pre)
     return a

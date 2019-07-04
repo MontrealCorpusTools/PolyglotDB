@@ -171,7 +171,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type: str
             Annotation type to add subsets for
@@ -196,7 +196,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type: str
             Annotation type to remove subsets for
@@ -221,7 +221,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type: str
             Annotation type to add subsets for
@@ -246,7 +246,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type: str
             Annotation type to remove subsets for
@@ -330,7 +330,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type : str
             Annotation type to add type properties for
@@ -372,7 +372,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type : str
             Annotation type to remove type properties for
@@ -403,7 +403,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         acoustic_type : str
             Acoustic measure to add properties for
@@ -444,7 +444,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         acoustic_type : str
             Acoustic measure to remove properties for
@@ -474,7 +474,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type : str
             Annotation type to add token properties for
@@ -515,7 +515,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type : str
             Annotation type to remove token properties for
@@ -545,7 +545,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
@@ -584,7 +584,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         properties : iterable
             List of property names to remove
@@ -610,7 +610,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
@@ -650,7 +650,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         properties : iterable
             List of property names to remove
@@ -904,7 +904,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         annotation_type : str
             Annotation type to add a subannotation to
@@ -963,7 +963,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         subannotation_type : str
             Subannotation type to remove
@@ -991,7 +991,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         subannotation_type : str
             Name of the subannotation type
@@ -1032,7 +1032,7 @@ class Hierarchy(object):
 
         Parameters
         ----------
-        corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
+        corpus_context : :class:`~polyglotdb.corpus.CorpusContext`
             CorpusContext to use for updating Neo4j database
         subannotation_type : str
             Name of the subannotation type

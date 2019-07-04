@@ -34,8 +34,10 @@ def generate_praat_script_function(praat_path, script_path, arguments=None):
 
 
 def analyze_script(corpus_context,
-                   phone_class,
-                   script_path,
+                   phone_class=None,
+                   subset=None,
+                   annotation_type=None,
+                   script_path=None,
                    duration_threshold=0.01,
                    arguments=None,
                    call_back=None,
@@ -57,7 +59,11 @@ def analyze_script(corpus_context,
     corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
         corpus context to use
     phone_class : str
-        the name of an already encoded phone class, on which the analysis will be run
+        DEPRECATED, the name of an already encoded subset of phones on which the analysis will be run
+    subset : str, optional
+        the name of an already encoded subset of an annotation type, on which the analysis will be run
+    annotation_type : str
+        the type of annotation that the analysis will go over
     script_path : str
         full path to the praat script
     duration_threshold : float
@@ -75,10 +81,16 @@ def analyze_script(corpus_context,
     """
     if file_type not in ['consonant', 'vowel', 'low_freq']:
         raise ValueError('File type must be one of: consonant, vowel, or low_freq')
+
+    if phone_class is not None:
+        raise DeprecationWarning("The phone_class parameter has now been deprecated, please use annotation_type='phone' and subset='{}'".format(phone_class))
+        annotation_type = corpus_context.phone_name
+        subset = phone_class
+
     if call_back is not None:
-        call_back('Analyzing phones...')
+        call_back('Analyzing {}...'.format(annotation_type))
     time_section = time.time()
-    segment_mapping = generate_segments(corpus_context, corpus_context.phone_name, phone_class, file_type=file_type,
+    segment_mapping = generate_segments(corpus_context, annotation_type, subset, file_type=file_type,
                                         padding=0, duration_threshold=duration_threshold)
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
@@ -92,7 +104,7 @@ def analyze_script(corpus_context,
     header = sorted(list(output.values())[0].keys())
     header_info = {h: float for h in header}
     point_measures_to_csv(corpus_context, output, header)
-    point_measures_from_csv(corpus_context, header_info)
+    point_measures_from_csv(corpus_context, header_info, annotation_type=annotation_type)
     return [x for x in header if x != 'id']
 
 
