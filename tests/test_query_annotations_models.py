@@ -130,6 +130,68 @@ def test_preload(acoustic_config):
             assert (r._subs['phone'] is not None)
 
 
+def test_preload_previous(acoustic_config):
+    with CorpusContext(acoustic_config) as c:
+        q = c.query_graph(c.phone).preload(c.phone.previous)
+        print(q.cypher())
+        results = q.all()
+        assert results[0]._previous is not None
+        assert results[0]._following is None
+
+
+def test_preload_following(acoustic_config):
+    with CorpusContext(acoustic_config) as c:
+        q = c.query_graph(c.phone).preload(c.phone.following)
+        print(q.cypher())
+        results = q.all()
+        assert results[0]._following is not None
+        assert results[0]._previous is None
+
+
+def test_preload_following_higher(acoustic_config):
+    with CorpusContext(acoustic_config) as c:
+        q = c.query_graph(c.phone).preload(c.phone.word, c.phone.word.following)
+        print(q.cypher())
+        results = q.all()
+        print(results[0]._supers)
+        assert results[0]._supers['word']._following is not None
+        assert results[0]._supers['word']._previous is None
+        assert results[0]._previous is None
+        assert results[0]._following is None
+
+        q = c.query_graph(c.phone).preload(c.phone.word, c.phone.word.following, c.phone.following)
+        print(q.cypher())
+        results = q.all()
+        print(results[0]._supers)
+        assert results[0]._supers['word']._following is not None
+        assert results[0]._supers['word']._previous is None
+        assert results[0]._previous is None
+        assert results[0]._following is not None
+        assert results[0]._following.id != results[0]._supers['word']._following.id
+
+
+def test_preload_previous_higher(acoustic_config):
+    with CorpusContext(acoustic_config) as c:
+        q = c.query_graph(c.phone).preload(c.phone.word, c.phone.word.previous)
+        print(q.cypher())
+        results = q.all()
+        print(results[0]._supers)
+        assert results[0]._supers['word']._following is None
+        assert results[0]._supers['word']._previous is not None
+        assert results[0]._previous is None
+        assert results[0]._following is None
+
+        q = c.query_graph(c.phone).preload(c.phone.word, c.phone.word.previous, c.phone.previous)
+        print(q.cypher())
+        results = q.all()
+        print(results[0]._supers)
+        assert results[0]._supers['word']._following is None
+        assert results[0]._supers['word']._previous is not None
+        assert results[0]._previous is not None
+        assert results[0]._following is None
+        assert results[0]._previous.id != results[0]._supers['word']._previous.id
+
+
 def test_preload_sub(subannotation_config):
     with CorpusContext(subannotation_config) as c:
         q = c.query_graph(c.phone)

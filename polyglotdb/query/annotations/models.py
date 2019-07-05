@@ -202,6 +202,8 @@ class LinguisticAnnotation(BaseAnnotation):
             if self._previous == 'empty':
                 return None
             if self._previous is None:
+                print('Warning: fetching previous annotation from the database, '
+                      'preload this annotation for faster access.')
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (previous_type)<-[:is_a]-(previous_token)-[:precedes]->(token {id: {id}})
                         RETURN previous_token, previous_type''', id=self._id))
@@ -216,6 +218,8 @@ class LinguisticAnnotation(BaseAnnotation):
             if self._following == 'empty':
                 return None
             if self._following is None:
+                print('Warning: fetching following annotation from the database, '
+                      'preload this annotation for faster access.')
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (following_type)<-[:is_a]-(following_token)<-[:precedes]-(token {id: {id}})
                             RETURN following_token, following_type''', id=self._id))
@@ -242,6 +246,8 @@ class LinguisticAnnotation(BaseAnnotation):
             if self._speaker == 'empty':
                 return None
             if self._speaker is None:
+                print('Warning: fetching speaker information from the database, '
+                      'preload speakers for faster access.')
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (speaker:Speaker)<-[:spoken_by]-(token {id: {id}})
                         RETURN speaker''', id=self._id))
@@ -255,6 +261,8 @@ class LinguisticAnnotation(BaseAnnotation):
             if self._discourse == 'empty':
                 return None
             if self._discourse is None:
+                print('Warning: fetching discourse information from the database, '
+                      'preload discourses for faster access.')
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (discourse:Discourse)<-[:spoken_in]-(token {id: {id}})
                         RETURN discourse''', id=self._id))
@@ -266,6 +274,8 @@ class LinguisticAnnotation(BaseAnnotation):
             return self._discourse
         if key in self.corpus_context.hierarchy.get_lower_types(self._type):
             if key not in self._subs:
+                print('Warning: fetching {0} information from the database, '
+                      'preload {0} annotations for faster access.'.format(key))
                 res = self.corpus_context.execute_cypher(
                     '''MATCH (lower_type)<-[:is_a]-(lower_token:{a_type})-[:contained_by*1..]->(token {{id: {{id}}}})
                         RETURN lower_token, lower_type ORDER BY lower_token.begin'''.format(a_type=key), id=self._id)
@@ -278,6 +288,8 @@ class LinguisticAnnotation(BaseAnnotation):
             return self._subs[key]
         if key in self.corpus_context.hierarchy.get_higher_types(self._type):
             if key not in self._supers:
+                print('Warning: fetching {0} information from the database, '
+                      'preload {0} annotations for faster access.'.format(key))
                 res = list(self.corpus_context.execute_cypher(
                     '''MATCH (higher_type)<-[:is_a]-(higher_token:{a_type})<-[:contained_by*1..]-(token {{id: {{id}}}})
                         RETURN higher_token, higher_type'''.format(a_type=key), id=self._id))
@@ -293,6 +305,8 @@ class LinguisticAnnotation(BaseAnnotation):
                 if self._preloaded and key not in self._subannotations:
                     return []
                 elif key not in self._subannotations:
+                    print('Warning: fetching {0} information from the database, '
+                          'preload {0} annotations for faster access.'.format(key))
                     res = self.corpus_context.execute_cypher(
                         '''MATCH (sub:{a_type})-[:annotates]->(token {{id: {{id}}}})
                             RETURN sub'''.format(a_type=key), id=self._id)

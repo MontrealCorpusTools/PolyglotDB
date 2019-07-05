@@ -53,9 +53,14 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
             if subset is not None:
                 qr = qr.filter(at.subset == subset)
             qr = qr.filter(at.discourse.name == discourse)
+            qr = qr.filter(at.begin != at.end) # Skip zero duration segments if they exist
+            if duration_threshold is not None:
+                qr = qr.filter(at.duration >= duration_threshold)
             qr = qr.filter(at.speaker.name == s)
             if annotation_type != 'utterance' and 'utterance'in corpus_context.hierarchy.annotation_types:
                 qr.preload(at.utterance)
+            else:
+                qr.preload(at.discourse)
             if fetch_subannotations:
                 for t in corpus_context.hierarchy.annotation_types:
                     if t in corpus_context.hierarchy.subannotations:
@@ -64,15 +69,12 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                                 qr = qr.preload(getattr(corpus_context.utterance, s))
                             else:
                                 qr = qr.preload(getattr(getattr(corpus_context.utterance, t), s))
+
             if qr.count() == 0:
                 continue
             annotations = qr.all()
             if annotations is not None:
                 for a in annotations:
-                    if duration_threshold is not None and a.end - a.begin < duration_threshold:
-                        continue
-                    if a.begin == a.end: # Skip zero duration segments if they exist
-                        continue
                     if annotation_type == 'utterance':
                         utt_id = a.id
                     elif 'utterance'not in corpus_context.hierarchy.annotation_types:
