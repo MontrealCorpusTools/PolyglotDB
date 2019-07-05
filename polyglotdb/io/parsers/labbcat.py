@@ -2,7 +2,7 @@ from collections import Counter
 from textgrid import TextGrid, IntervalTier
 from .aligner import AlignerParser
 
-from polyglotdb.io.parsers.speaker import FilenameSpeakerParser
+from polyglotdb.io.parsers.speaker import DirectorySpeakerParser
 
 
 class LabbCatParser(AlignerParser):
@@ -31,7 +31,7 @@ class LabbCatParser(AlignerParser):
                  stop_check=None, call_back=None):
         super(AlignerParser, self).__init__(annotation_tiers, hierarchy, make_transcription,
                                         False, stop_check, call_back)
-        self.speaker_parser = FilenameSpeakerParser(0)
+        self.speaker_parser = DirectorySpeakerParser()
 
     def load_textgrid(self, path):
         """

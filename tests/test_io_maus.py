@@ -21,8 +21,7 @@ def test_load_aus(maus_test_dir, graph_db):
         q = c.query_graph(c.word).filter(c.word.label == 'JURASSIC')
         print(q)
         print(q.all())
-        q = q.filter(c.word.speaker.name == 'maus')
-        #print(c.word.speaker.name)
+        q = q.filter(c.word.speaker.name == 'maus_test')
         print(q.all())
         q = q.order_by(c.word.begin)
         print(q.all())
@@ -36,14 +35,14 @@ def test_load_aus(maus_test_dir, graph_db):
         c.encode_utterances(min_pause_length=0)
 
         q = c.query_graph(c.word).filter(c.word.label == 'PLANET')
-        q = q.filter(c.word.speaker.name == 'maus')
+        q = q.filter(c.word.speaker.name == 'maus_test')
         q = q.order_by(c.word.begin)
         q = q.columns(c.word.label, c.word.following.label.column_name('following'))
         results = q.all()
         assert (len(results) == 1)
         assert (results[0]['following'] == 'JURASSIC')
 
-        q = c.query_speakers().filter(c.speaker.name == 'maus')
+        q = c.query_speakers().filter(c.speaker.name == 'maus_test')
         q = q.columns(c.speaker.discourses.name.column_name('discourses'))
 
         s = q.get()
