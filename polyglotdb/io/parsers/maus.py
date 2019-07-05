@@ -1,6 +1,7 @@
 from collections import Counter
 from textgrid import TextGrid, IntervalTier
 from .aligner import AlignerParser
+from polyglotdb.io.parsers.speaker import FilenameSpeakerParser
 
 
 class MausParser(AlignerParser):
@@ -11,3 +12,8 @@ class MausParser(AlignerParser):
     word_label = 'ort'
     phone_label = 'mau'
 
+    def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
+                 stop_check=None, call_back=None):
+        super(MausParser, self).__init__(annotation_tiers, hierarchy,
+                make_transcription, stop_check, call_back)
+        self.speaker_parser = FilenameSpeakerParser(0)

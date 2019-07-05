@@ -24,7 +24,7 @@ class TimitParser(BaseParser):
     call_back : callable, optional
         Function to output progress messages
     """
-    _extensions = ['.wrd']
+    _extensions = ['.wrd', '.WRD']
 
     def __init__(self, annotation_tiers, hierarchy,
                  stop_check=None, call_back=None):
@@ -83,16 +83,7 @@ class TimitParser(BaseParser):
         for a in self.annotation_tiers:
             a.reset()
 
-        word_path = word_path.replace(".wrd", ".wav")
         data.wav_path = find_wav_path(word_path)
-        if data.wav_path == None:
-            word_split = word_path.split("/")
-            filename = word_split[-1]
-            filename = filename.upper()
-            word_path = "/".join(word_split[:-1]) + "/" + filename
-            print(word_path)
-            data.wav_path = find_wav_path(word_path)
-            print(data.wav_path)
 
         return data
 
