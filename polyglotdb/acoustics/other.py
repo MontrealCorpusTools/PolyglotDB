@@ -91,9 +91,12 @@ def analyze_script(corpus_context,
         call_back('Analyzing {}...'.format(annotation_type))
     time_section = time.time()
     segment_mapping = generate_segments(corpus_context, annotation_type, subset, file_type=file_type,
-                                        padding=0, duration_threshold=duration_threshold)
+                                        padding=0.0, duration_threshold=duration_threshold)
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
+    if len(segment_mapping) == 0:
+        print("The segment_mapping for this subset, {} of {} is empty".format(subset, annotation_type))
+        return []
     praat_path = corpus_context.config.praat_path
     script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
     time_section = time.time()

@@ -50,6 +50,21 @@ def test_analyze_script(acoustic_utt_config, praat_path, praatscript_test_dir):
             assert (r.values)
 
 @acoustic
+def test_analyze_script_non_phone(acoustic_utt_config, praat_path, praatscript_test_dir):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.config.praat_path = praat_path
+        g.encode_type_subset("word", ["just", "some", "speech", "errors"], "test_words")
+        script_path = os.path.join(praatscript_test_dir, 'sibilant_jane.praat')
+        props = g.analyze_script(subset='test_words', annotation_type="word", script_path=script_path, stop_check=None, call_back=None,multiprocessing=False)
+        assert props == sorted(['cog', 'peak', 'slope', 'spread'])
+        q = g.query_graph(g.word).filter(g.word.subset == 'test_words')
+        q = q.columns(g.word.begin, g.word.end, g.word.cog)
+        results = q.all()
+        assert (len(results) > 0)
+        for r in results:
+            assert (r.values)
+
+@acoustic
 def test_analyze_track_script(acoustic_utt_config, praat_path, praatscript_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
