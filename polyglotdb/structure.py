@@ -1,5 +1,6 @@
 from .exceptions import HierarchyError, GraphQueryError
 from .query.annotations.attributes import PauseAnnotation, AnnotationNode
+from datetime import datetime
 
 
 class Hierarchy(object):
@@ -189,6 +190,7 @@ class Hierarchy(object):
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
                                       corpus_name=corpus_context.corpus_name)
         self.subset_types[annotation_type] = updated
+        corpus_context.cache_hierarchy()
 
     def remove_type_subsets(self, corpus_context, annotation_type, subsets):
         """
@@ -214,6 +216,7 @@ class Hierarchy(object):
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
                                       corpus_name=corpus_context.corpus_name)
         self.subset_types[annotation_type] = updated
+        corpus_context.cache_hierarchy()
 
     def add_token_subsets(self, corpus_context, annotation_type, subsets):
         """
@@ -239,6 +242,7 @@ class Hierarchy(object):
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
                                       corpus_name=corpus_context.corpus_name)
         self.subset_tokens[annotation_type] = updated
+        corpus_context.cache_hierarchy()
 
     def remove_token_subsets(self, corpus_context, annotation_type, subsets):
         """
@@ -365,6 +369,7 @@ class Hierarchy(object):
         if annotation_type not in self.type_properties:
             self.type_properties[annotation_type] = {('id', str)}
         self.type_properties[annotation_type].update(k for k in properties)
+        corpus_context.cache_hierarchy()
 
     def remove_type_properties(self, corpus_context, annotation_type, properties):
         """
@@ -394,6 +399,7 @@ class Hierarchy(object):
 
         to_remove = set(x for x in self.type_properties[annotation_type] if x[0] in properties)
         self.type_properties[annotation_type].difference_update(to_remove)
+        corpus_context.cache_hierarchy()
 
     def add_acoustic_properties(self, corpus_context, acoustic_type, properties):
         """
@@ -437,6 +443,7 @@ class Hierarchy(object):
         if acoustic_type not in self.acoustic_properties:
             self.acoustic_properties[acoustic_type] = set()
         self.acoustic_properties[acoustic_type].update(k for k in properties)
+        corpus_context.cache_hierarchy()
 
     def remove_acoustic_properties(self, corpus_context, acoustic_type, properties):
         """
@@ -465,6 +472,7 @@ class Hierarchy(object):
             self.acoustic_properties[acoustic_type] = {}
         to_remove = set(x for x in self.acoustic_properties[acoustic_type] if x[0] in properties)
         self.acoustic_properties[acoustic_type].difference_update(to_remove)
+        corpus_context.cache_hierarchy()
 
     def add_token_properties(self, corpus_context, annotation_type, properties):
         """
@@ -508,6 +516,7 @@ class Hierarchy(object):
         if annotation_type not in self.token_properties:
             self.token_properties[annotation_type] = {('id', str)}
         self.token_properties[annotation_type].update(k for k in properties)
+        corpus_context.cache_hierarchy()
 
     def remove_token_properties(self, corpus_context, annotation_type, properties):
         """
@@ -536,6 +545,7 @@ class Hierarchy(object):
             self.token_properties[annotation_type] = {('id', str)}
         to_remove = set(x for x in self.token_properties[annotation_type] if x[0] in properties)
         self.token_properties[annotation_type].difference_update(to_remove)
+        corpus_context.cache_hierarchy()
 
     def add_speaker_properties(self, corpus_context, properties):
         """
@@ -577,6 +587,7 @@ class Hierarchy(object):
         to_add_names = [x[0] for x in properties]
         self.speaker_properties = {x for x in self.speaker_properties if x[0] not in to_add_names}
         self.speaker_properties.update(k for k in properties)
+        corpus_context.cache_hierarchy()
 
     def remove_speaker_properties(self, corpus_context, properties):
         """
@@ -601,6 +612,7 @@ class Hierarchy(object):
                                       corpus_name=corpus_context.corpus_name)
         to_remove = set(x for x in self.speaker_properties if x[0] in properties)
         self.speaker_properties.difference_update(to_remove)
+        corpus_context.cache_hierarchy()
 
     def add_discourse_properties(self, corpus_context, properties):
         """
@@ -643,6 +655,7 @@ class Hierarchy(object):
         to_add_names = [x[0] for x in properties]
         self.discourse_properties = {x for x in self.discourse_properties if x[0] not in to_add_names}
         self.discourse_properties.update(k for k in properties)
+        corpus_context.cache_hierarchy()
 
     def remove_discourse_properties(self, corpus_context, properties):
         """
@@ -667,6 +680,7 @@ class Hierarchy(object):
                                       corpus_name=corpus_context.corpus_name)
         to_remove = set(x for x in self.discourse_properties if x[0] in properties)
         self.discourse_properties.difference_update(to_remove)
+        corpus_context.cache_hierarchy()
 
     def keys(self):
         """
@@ -1155,10 +1169,7 @@ class Hierarchy(object):
         """
         if annotation_type not in self.subset_types:
             return False
-        for name in self.subset_types[annotation_type]:
-            if name == key:
-                return True
-        return False
+        return key in self.subset_types[annotation_type]
 
     def has_token_subset(self, annotation_type, key):
         """
@@ -1178,10 +1189,7 @@ class Hierarchy(object):
         """
         if annotation_type not in self.subset_tokens:
             return False
-        for name in self.subset_tokens[annotation_type]:
-            if name == key:
-                return True
-        return False
+        return key in self.subset_tokens[annotation_type]
 
     @property
     def word_name(self):

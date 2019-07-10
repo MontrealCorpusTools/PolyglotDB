@@ -276,10 +276,9 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
             last_iteration_best_numbers = best_numbers
         log_output.append([speaker, vowel, str(len(output)), str(_ + 1)])
     for i in log_output:
-        print('Speaker {} for vowel {} had {} tokens and completed refined in {} iterations'.format(*i))
+        print('Speaker {} for vowel {} had {} tokens and completed refinement in {} iterations'.format(*i))
     if output_tracks:
         extract_and_save_formant_tracks(corpus_context, best_data, num_formants=True, multiprocessing=multiprocessing, stop_check=stop_check)
     else:
         save_formant_point_data(corpus_context, best_data, num_formants=True)
-    corpus_context.cache_hierarchy()
     return best_prototype_metadata

@@ -543,3 +543,29 @@ def test_follows_clause(timed_config):
         assert (len(results) == 2)
         assert (results[0].label == 'i')
         assert (results[1].label == 'guess')
+
+
+def test_subsets(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as c:
+        q = c.query_graph(c.phone)
+        q = q.filter(c.phone.label == 's')
+        q = q.filter(c.phone.end == c.phone.word.end)
+        q.create_subset('word_final_s')
+
+        assert c.hierarchy.has_token_subset('phone', 'word_final_s')
+
+    with CorpusContext(acoustic_utt_config) as c1:
+
+        assert c1.hierarchy.has_token_subset('phone', 'word_final_s')
+        qr = c1.query_graph(c.phone)
+        qr = qr.filter(c1.phone.subset == 'word_final_s')
+        assert qr.count() > 0
+
+        qr.remove_subset('word_final_s')
+        assert not c1.hierarchy.has_token_subset('phone', 'word_final_s')
+
+    with CorpusContext(acoustic_utt_config) as c2:
+        assert not c2.hierarchy.has_token_subset('phone', 'word_final_s')
+        qr = c2.query_graph(c2.phone)
+        qr = qr.filter(c2.phone.subset == 'word_final_s')
+        assert qr.count() == 0

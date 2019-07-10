@@ -32,7 +32,6 @@ class SpokenContext(AudioContext):
         data, type_data = parse_file(path, [])
         q = self.query_speakers()
         property_names = [x for x in type_data.keys()]
-        print(property_names)
         q.set_properties(**{x: None for x in property_names})
 
         self.hierarchy.remove_speaker_properties(self, property_names)
@@ -162,7 +161,6 @@ class SpokenContext(AudioContext):
             type_data = {k: type(v) for k, v in next(iter(discourse_data.values())).items()}
 
         discourses = set(self.discourses)
-        print(discourses, discourse_data)
         discourse_data = {k: v for k, v in discourse_data.items() if k in discourses}
         discourse_data_to_csvs(self, discourse_data)
         import_discourse_csvs(self, type_data)

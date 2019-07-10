@@ -5,7 +5,7 @@ import sys
 import time
 from decimal import Decimal
 
-from neo4j.v1 import GraphDatabase
+from neo4j import GraphDatabase
 
 from ..query.annotations.attributes import AnnotationNode, PauseAnnotation
 from ..query.annotations import GraphQuery, SplitQuery

@@ -282,7 +282,6 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, st
 
     if 'formants' not in corpus_context.hierarchy.acoustics:
         corpus_context.hierarchy.add_acoustic_properties(corpus_context, 'formants', [(x, float) for x in formant_tracks])
-        corpus_context.encode_hierarchy()
 
     for speaker, track_dict in tracks.items():
         corpus_context.save_acoustic_tracks('formants', track_dict, speaker)
