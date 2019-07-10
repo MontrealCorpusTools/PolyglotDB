@@ -93,7 +93,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
 
     # print ('columns:', columns)
     # print ('extra_columns:', extra_columns)
-    print('output_columns:', output_columns)
+    # print('output_columns:', output_columns)
 
     log_output = []
     log_output.append(','.join(['speaker', 'vowel', 'n', 'iterations']))
