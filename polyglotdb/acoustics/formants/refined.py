@@ -68,7 +68,7 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
     prototype_metadata : dict
         Means of F1, F2, F3, B1, B2, B3 and covariance matrices per vowel class.
     """
-    if not corpus_context.hierarchy.has_type_subset('phone', vowel_label):
+    if not corpus_context.hierarchy.has_type_subset('phone', vowel_label) and not corpus_context.hierarchy.has_token_subset('phone', vowel_label):
         raise Exception('Phones do not have a "{}" subset.'.format(vowel_label))
     # ------------- Step 2: Varying formants -------------
     # Encodes vowel inventory into a phone class if it's specified
