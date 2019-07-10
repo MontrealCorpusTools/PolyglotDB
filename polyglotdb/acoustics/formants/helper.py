@@ -291,7 +291,7 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, st
         outputs.update(output)
     formant_tracks = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
     tracks = {}
-    for k, v in output.items():
+    for k, v in outputs.items():
         vowel_id = k.properties["id"]
         track = Track()
         for time, formants in v.items():
