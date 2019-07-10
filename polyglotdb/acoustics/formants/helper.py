@@ -119,32 +119,6 @@ def generate_variable_formants_point_function(corpus_context, min_formants, max_
     return formant_function
 
 
-def generate_variable_formants_track_function(corpus_context, n_formants):
-    """Generates a function used to call Praat to measure formants and bandwidths with a single num_formants.
-    This function returns the formants and bandwidths as a track, rather than a single point
-
-    Parameters
-    ----------
-    corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
-        The CorpusContext object of the corpus.
-    n_formants : int
-        The minimum number of formants to measure with on subsequent passes (default is 5).
-
-    Returns
-    -------
-    formant_function : Partial function object
-        The function used to call Praat.
-    """
-    max_freq = 5500
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    script = os.path.join(script_dir, 'formant_tracks.praat')
-    formant_function = PraatAnalysisFunction(script, praat_path=corpus_context.config.praat_path,
-                                             arguments=[0.01, 0.025, n_formants, max_freq])
-
-    return formant_function
-
-
 def generate_formants_point_function(corpus_context, gender=None):
     """Generates a function used to call Praat to measure formants and bandwidths with variable num_formants.
 
@@ -283,7 +257,10 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, st
         segment_mappings[n_formants].segments.append(k)
     outputs = {}
     for n_formants in segment_mappings:
-        func = generate_variable_formants_track_function(corpus_context, n_formants)
+        func = PraatSegmentFormantTrackFunction(praat_path=corpus_context.config.praat_path,
+                                                            max_frequency=5500, num_formants=n_formants,
+                                                            window_length=0.025,
+                                                            time_step=0.01)
 
         output = analyze_segments(segment_mappings[n_formants], func,
                             stop_check=stop_check,

@@ -96,7 +96,6 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
     # print('output_columns:', output_columns)
 
     log_output = []
-    log_output.append(','.join(['speaker', 'vowel', 'n', 'iterations']))
     # Measure with varying levels of formants
     min_formants = 4  # Off by one error, due to how Praat measures it from F0
     # This really measures with 3 formants: F1, F2, F3. And so on.
@@ -275,10 +274,9 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
                 if changed_numbers == 0:
                     break
             last_iteration_best_numbers = best_numbers
-        log_output.append(','.join([speaker, vowel, str(len(output)), str(_ + 1)]))
-    with open('iterations_log.csv', 'a') as f:
-        for i in log_output:
-            f.write(i + '\n')
+        log_output.append([speaker, vowel, str(len(output)), str(_ + 1)])
+    for i in log_output:
+        print('Speaker {} for vowel {} had {} tokens and completed refined in {} iterations'.format(*i))
     if output_tracks:
         extract_and_save_formant_tracks(corpus_context, best_data, num_formants=True, multiprocessing=multiprocessing, stop_check=stop_check)
     else:
