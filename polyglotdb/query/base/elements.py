@@ -62,12 +62,8 @@ class ClauseElement(object):
 
     @property
     def nodes(self):
-        from .attributes import CollectionNode
         n = self.attribute.node
-        if isinstance(n, CollectionNode):
-            ns = n.nodes
-        else:
-            ns = [n]
+        ns = n.nodes
         try:
             ns.append(self.value.node)
         except AttributeError:

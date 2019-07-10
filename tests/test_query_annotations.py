@@ -183,6 +183,7 @@ def test_query_following_preload(timed_config):
         assert results[0].following.label == 'are'
         assert results[0].following.following.label == 'cute'
 
+
 def test_query_time(timed_config):
     with CorpusContext(timed_config) as g:
         q = g.query_graph(g.word).filter(g.word.label == 'are')
@@ -468,6 +469,19 @@ def test_hierarchy_following(acoustic_config):
         print(q.cypher())
         results = q.all()
         assert (len(results) == 3)
+
+
+def test_hierarchy_skips(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.syllable.word.label == 'words')
+        print(g.phone.syllable.word.nodes)
+        print(q.cypher())
+        assert q.required_nodes() == {g.phone, g.phone.syllable, g.phone.syllable.word}
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.word.label == 'words')
+        assert q.required_nodes() == {g.phone, g.phone.syllable, g.phone.syllable.word}
 
 
 def test_or_clause(timed_config):
