@@ -41,6 +41,9 @@ def test_load_discourse(graph_db, mfa_test_dir, textgrid_test_dir):
         q = c.query_speakers().filter(c.speaker.name == 'mfa')
         assert q.count() > 0
 
+        d = c.discourse_sound_file('acoustic_corpus')
+        assert os.path.exists(d['consonant_file_path'])
+
 
 def test_remove_discourse(graph_db):
     with CorpusContext('load_remove_test', **graph_db) as c:
@@ -66,4 +69,10 @@ def test_remove_discourse(graph_db):
         assert q.count() == 0
         q = c.query_speakers().filter(c.speaker.name == 'mfa')
         assert q.count() == 0
+
+        d = c.discourse_sound_file('acoustic_corpus')
+        assert os.path.exists(d['consonant_file_path'])
+
+        c.remove_discourse('acoustic_corpus')
+        assert not os.path.exists(d['consonant_file_path'])
 

@@ -345,6 +345,7 @@ class BaseContext(object):
         """
         self.reset_acoustics()
         self.reset_graph(call_back, stop_check)
+        shutil.rmtree(self.config.base_dir, ignore_errors=True)
 
     def query_graph(self, annotation_node):
         """
@@ -447,6 +448,10 @@ class BaseContext(object):
         name : str
             Name of the discourse to remove
         """
+        d = self.discourse_sound_file(name)
+        if d['consonant_file_path'] is not None and os.path.exists(d['consonant_file_path']):
+            directory = self.discourse_audio_directory(name)
+            shutil.rmtree(directory, ignore_errors=True)
         # Remove tokens in discourse
         statement = '''MATCH (d:{corpus_name}:Discourse)<-[:spoken_in]-(n:{corpus_name})
         WHERE d.name = {{discourse}}

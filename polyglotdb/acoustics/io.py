@@ -64,7 +64,6 @@ def add_discourse_sound_info(corpus_context, discourse, filepath):
     else:
         shutil.copy(filepath, low_freq_path)
         low_freq_rate = sample_rate
-    user_path = os.path.expanduser('~')
     statement = '''MATCH (d:Discourse:{corpus_name}) where d.name = {{discourse_name}}
                     SET d.file_path = {{filepath}},
                     d.consonant_file_path = {{consonant_filepath}},
@@ -74,9 +73,9 @@ def add_discourse_sound_info(corpus_context, discourse, filepath):
                     d.sampling_rate = {{sampling_rate}},
                     d.num_channels = {{n_channels}}'''.format(corpus_name=corpus_context.cypher_safe_name)
     corpus_context.execute_cypher(statement, filepath=filepath,
-                                  consonant_filepath=consonant_path.replace(user_path, '~'),
-                                  vowel_filepath=vowel_path.replace(user_path, '~'),
-                                  low_freq_filepath=low_freq_path.replace(user_path, '~'),
+                                  consonant_filepath=consonant_path,
+                                  vowel_filepath=vowel_path,
+                                  low_freq_filepath=low_freq_path,
                                   duration=duration, sampling_rate=sample_rate,
                                   n_channels=n_channels, discourse_name=discourse)
 
