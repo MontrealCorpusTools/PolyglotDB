@@ -17,12 +17,12 @@ def data_to_type_csvs(corpus_context, types, type_headers):
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
-        the corpus
-    types : obj
-        the types in the corpus
+    corpus_context: :class:`~polyglotdb.corpus.ImportContext`
+        CorpusContext object to use
+    types : dict
+        The type information for annotation types
     type_headers : dict
-        headers for types
+        Header information for the CSV file
     """
     directory = corpus_context.config.temporary_directory('csv')
 

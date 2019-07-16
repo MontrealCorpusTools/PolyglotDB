@@ -7,6 +7,7 @@ omit =
 [report]
 exclude_lines =
     pragma: no cover
+    if corpus_context.config.debug:
     if __name__ == .__main__.:
 
     raise AssertionError

@@ -23,9 +23,10 @@ class ImportContext(StructuredContext):
 
         Parameters
         ----------
-        parsed_data: dict
-            Dictionary with keys for discourse names and values of :class:`~polyglotdb.io.helper.DiscourseData`
-            objects
+        types: dict
+            Dictionary of type information per annotation type (i.e., word, phone, etc)
+        type_headers : dict
+            Dictionary of header information for the CSV files
         """
         data_to_type_csvs(self, types, type_headers)
         import_type_csvs(self, type_headers)
@@ -48,25 +49,25 @@ class ImportContext(StructuredContext):
                             w = csv.DictWriter(f, header, delimiter=',')
                             w.writeheader()
 
-        def corpus_index(tx):
+        def _corpus_index(tx):
             tx.run('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
 
-        def discourse_index(tx):
+        def _discourse_index(tx):
             tx.run('CREATE INDEX ON :Discourse(name)')
 
-        def speaker_index(tx):
+        def _speaker_index(tx):
             tx.run('CREATE INDEX ON :Speaker(name)')
 
-        def corpus_create(tx, corpus_name):
+        def _corpus_create(tx, corpus_name):
             tx.run('MERGE (n:Corpus {name: $corpus_name}) return n', corpus_name=corpus_name)
 
         with self.graph_driver.session() as session:
-            session.write_transaction(corpus_index)
-            session.write_transaction(discourse_index)
-            session.write_transaction(speaker_index)
-            session.write_transaction(corpus_create, self.corpus_name)
+            session.write_transaction(_corpus_index)
+            session.write_transaction(_discourse_index)
+            session.write_transaction(_speaker_index)
+            session.write_transaction(_corpus_create, self.corpus_name)
 
-    def finalize_import(self, data, call_back=None, stop_check=None):
+    def finalize_import(self, data_list, call_back=None, stop_check=None):
         """
         Finalize import of discourses through importing CSVs and saving the Hierarchy to the Neo4j database.
 
@@ -74,14 +75,14 @@ class ImportContext(StructuredContext):
 
         Parameters
         ----------
-        data : :class:`~polyglotdb.io.helper.DiscourseData`
-            Data from a parsed discourse to ensure proper importing
+        data_list : :class:`~polyglotdb.io.helper.DiscourseData` or list
+            DiscourseData object or list of DiscourseData objects to import
         call_back : callable
             Function to monitor progress
-        stop_check : callable
+        stop_check : callable or None
             Function to check whether process should be terminated early
         """
-        import_csvs(self, data, call_back, stop_check)
+        import_csvs(self, data_list, call_back, stop_check)
         self.encode_hierarchy()
 
     def add_discourse(self, data):
@@ -99,7 +100,7 @@ class ImportContext(StructuredContext):
         log.info('Begin adding discourse {}...'.format(data.name))
         begin = time.time()
 
-        def create_speaker_discourse(tx, speaker_name, discourse_name, channel):
+        def _create_speaker_discourse(tx, speaker_name, discourse_name, channel):
             tx.run('''MERGE (n:Speaker:{corpus_name} {{name: $speaker_name}})
                         MERGE (d:Discourse:{corpus_name} {{name: $discourse_name}})
                          MERGE (n)-[r:speaks_in]->(d)
@@ -110,9 +111,9 @@ class ImportContext(StructuredContext):
         with self.graph_driver.session() as session:
             for s in data.speakers:
                 if s in data.speaker_channel_mapping:
-                    session.write_transaction(create_speaker_discourse, s, data.name, data.speaker_channel_mapping[s])
+                    session.write_transaction(_create_speaker_discourse, s, data.name, data.speaker_channel_mapping[s])
                 else:
-                    session.write_transaction(create_speaker_discourse, s, data.name, 0)
+                    session.write_transaction(_create_speaker_discourse, s, data.name, 0)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(self, data)
         self.hierarchy.update(data.hierarchy)
@@ -143,7 +144,6 @@ class ImportContext(StructuredContext):
         if os.path.isdir(path):
             print("loading {} with {}".format(path, parser))
             could_not_parse = self.load_directory(parser, path)
-
         else:
             could_not_parse = self.load_discourse(parser, path)
         return could_not_parse
@@ -166,9 +166,10 @@ class ImportContext(StructuredContext):
         """
         data = parser.parse_discourse(path)
 
-        #If there is no data, e.g. empty TextGrid, return the empty list early.
+        # If there is no data, e.g. empty TextGrid, return the empty list early.
         if data is None:
             return []
+
         self.initialize_import(data.speakers, data.token_headers, data.hierarchy.subannotations)
         self.add_types(*data.types(self.corpus_name))
         self.add_discourse(data)
@@ -207,7 +208,8 @@ class ImportContext(StructuredContext):
                 file_tuples.append((root, filename))
         if len(file_tuples) == 0:
             raise (ParseError(
-                'No files in the specified directory matched the parser. Please check to make sure you have the correct parser.'))
+                'No files in the specified directory matched the parser. '
+                'Please check to make sure you have the correct parser.'))
         if call_back is not None:
             call_back('Parsing types...')
             call_back(0, len(file_tuples))
@@ -253,6 +255,7 @@ class ImportContext(StructuredContext):
             call_back('Parsing files...')
             call_back(0, len(file_tuples))
             cur = 0
+        discourse_datas = []
         for i, t in enumerate(file_tuples):
             if parser.stop_check is not None and parser.stop_check():
                 return
@@ -267,5 +270,6 @@ class ImportContext(StructuredContext):
             except ParseError:
                 continue
             self.add_discourse(data)
-        self.finalize_import(data, call_back, parser.stop_check)
+            discourse_datas.append(data)
+        self.finalize_import(discourse_datas, call_back, parser.stop_check)
         parser.call_back = call_back

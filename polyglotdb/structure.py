@@ -268,6 +268,7 @@ class Hierarchy(object):
         corpus_context.execute_cypher(statement, subsets=sorted(updated),
                                       corpus_name=corpus_context.corpus_name)
         self.subset_tokens[annotation_type] = updated
+        corpus_context.cache_hierarchy()
 
     def add_annotation_type(self, annotation_type, above=None, below=None):
         """

@@ -13,15 +13,13 @@ def make_path_safe(path):
     return path
 
 
-# Use planner=rule to avoid non-use of unique constraints
-
 def import_type_csvs(corpus_context, type_headers):
     """
     Imports types into corpus from csv files
 
     Parameters
     ----------
-    corpus_context: :class:`~polyglotdb.corpus.CorpusContext`
+    corpus_context: :class:`~polyglotdb.corpus.ImportContext`
         the corpus to import into
     type_headers : list
         a list of type files
@@ -52,7 +50,7 @@ def import_type_csvs(corpus_context, type_headers):
             type_prop_string = ', '.join(properties)
         else:
             type_prop_string = ''
-        type_import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 2000
+        type_import_statement = '''USING PERIODIC COMMIT 2000
 LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
 MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         '''
@@ -66,16 +64,16 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
             corpus_context.execute_cypher(statement)
         except:
             raise
-            # finally:
+        finally:
             #    with open(path, 'w'):
             #        pass
-            # os.remove(path) # FIXME Neo4j 2.3 does not release files
+            os.remove(path)
 
         log.info('Finished loading {} types!'.format(at))
         log.debug('{} type loading took: {} seconds.'.format(at, time.time() - begin))
 
 
-def import_csvs(corpus_context, data, call_back=None, stop_check=None):
+def import_csvs(corpus_context, data_list, call_back=None, stop_check=None):
     """
     Loads data from a csv file
 
@@ -83,163 +81,179 @@ def import_csvs(corpus_context, data, call_back=None, stop_check=None):
     ----------
     corpus_context: :class:`~polyglotdb.corpus.importable.ImportContext`
         the corpus to load into
-    data : :class:`~polyglotdb.io.helper.DiscourseData`
-        the data object
+    data_list : :class:`~polyglotdb.io.helper.DiscourseData` or list
+        DiscourseData object or list of DiscourseData objects to import
+    call_back : callable or None
+        Function to report progress
+    stop_check : callable or None
+        Function to check whether to terminate early
     """
-    log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
-    log.info('Beginning to import data into the graph database...')
-    initial_begin = time.time()
-    name, annotation_types = data.name, data.annotation_types
+    if not isinstance(data_list, list):
+        data_list = [data_list]
+    for data in data_list:
+        log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
+        log.info('Beginning to import data into the graph database...')
+        initial_begin = time.time()
+        name, annotation_types = data.name, data.annotation_types
 
-    prop_temp = '''{name}: csvLine.{name}'''
+        prop_temp = '''{name}: csvLine.{name}'''
 
-    directory = corpus_context.config.temporary_directory('csv')
-    speakers = corpus_context.speakers
-    annotation_types = data.highest_to_lowest()
-    if call_back is not None:
-        call_back('Importing data...')
-        call_back(0, len(speakers) * len(annotation_types))
-        cur = 0
-    statements = []
+        directory = corpus_context.config.temporary_directory('csv')
+        speakers = data.speakers
+        annotation_types = data.highest_to_lowest()
+        if call_back is not None:
+            call_back('Importing data...')
+            call_back(0, len(speakers) * len(annotation_types))
+            cur = 0
+        statements = []
 
-    def unique_function(tx, at):
-        tx.run('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
+        def _unique_function(tx, at):
+            tx.run('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
-    def prop_index(tx, at, prop):
-        tx.run('CREATE INDEX ON :%s(%s)' % (at, prop))
+        def _prop_index(tx, at, prop):
+            tx.run('CREATE INDEX ON :%s(%s)' % (at, prop))
 
-    def label_index(tx, at):
-        tx.run('CREATE INDEX ON :%s(label_insensitive)' % at)
+        def _label_index(tx, at):
+            tx.run('CREATE INDEX ON :%s(label_insensitive)' % at)
 
-    def begin_index(tx, at):
-        tx.run('CREATE INDEX ON :%s(begin)' % (at,))
+        def _begin_index(tx, at):
+            tx.run('CREATE INDEX ON :%s(begin)' % (at,))
 
-    def end_index(tx, at):
-        tx.run('CREATE INDEX ON :%s(end)' % (at,))
+        def _end_index(tx, at):
+            tx.run('CREATE INDEX ON :%s(end)' % (at,))
 
-    with corpus_context.graph_driver.session() as session:
-        for i, s in enumerate(speakers):
-            speaker_statements = []
-            for at in annotation_types:
-                if stop_check is not None and stop_check():
-                    return
-                if call_back is not None:
-                    call_back(cur)
-                    cur += 1
-                path = os.path.join(directory, '{}_{}.csv'.format(s, at))
-                # If on the Docker version, the files live in /site/proj
-                if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
-                    rel_path = 'file:///site/proj/{}'.format(make_path_safe(path))
-                else:
-                    rel_path = 'file:///{}'.format(make_path_safe(path))
-                session.write_transaction(unique_function, at)
+        with corpus_context.graph_driver.session() as session:
+            for i, s in enumerate(speakers):
+                speaker_statements = []
+                for at in annotation_types:
+                    if stop_check is not None and stop_check():
+                        return
+                    if call_back is not None:
+                        call_back(cur)
+                        cur += 1
+                    path = os.path.join(directory, '{}_{}.csv'.format(s, at))
+                    if not os.path.exists(path):  # Already imported
+                        continue
+                    # If on the Docker version, the files live in /site/proj
+                    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
+                        rel_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+                    else:
+                        rel_path = 'file:///{}'.format(make_path_safe(path))
+                    session.write_transaction(_unique_function, at)
 
-                properties = []
+                    properties = []
 
-                for x in data[at].token_property_keys:
-                    properties.append(prop_temp.format(name=x))
-                    session.write_transaction(prop_index, at, x)
-                if 'label' in data[at].token_property_keys:
-                    properties.append('label_insensitive: lower(csvLine.label)')
-                    session.write_transaction(label_index, at)
-                st = data[at].supertype
-                if properties:
-                    token_prop_string = ', ' + ', '.join(properties)
-                else:
-                    token_prop_string = ''
-                node_import_statement = '''USING PERIODIC COMMIT 2000
-                LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-                CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                            end: toFloat(csvLine.end){token_property_string} }})
-                '''
-                node_kwargs = {'path': rel_path, 'annotation_type': at,
-                          'token_property_string': token_prop_string,
-                          'corpus_name': corpus_context.cypher_safe_name}
-                if st is not None:
-                    rel_import_statement = '''USING PERIODIC COMMIT 2000
+                    for x in data[at].token_property_keys:
+                        properties.append(prop_temp.format(name=x))
+                        session.write_transaction(_prop_index, at, x)
+                    if 'label' in data[at].token_property_keys:
+                        properties.append('label_insensitive: lower(csvLine.label)')
+                        session.write_transaction(_label_index, at)
+                    st = data[at].supertype
+                    if properties:
+                        token_prop_string = ', ' + ', '.join(properties)
+                    else:
+                        token_prop_string = ''
+                    node_import_statement = '''USING PERIODIC COMMIT 2000
                     LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-                    MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
-                    (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-                    (s:Speaker:{corpus_name} {{name: csvLine.speaker}}),
-                    (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
-                    CREATE (t)-[:is_a]->(n),
-                        (t)-[:contained_by]->(super),
+                    CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                                                end: toFloat(csvLine.end){token_property_string} }})
+                    '''
+                    node_kwargs = {'path': rel_path, 'annotation_type': at,
+                                   'token_property_string': token_prop_string,
+                                   'corpus_name': corpus_context.cypher_safe_name}
+                    if st is not None:
+                        rel_import_statement = '''USING PERIODIC COMMIT 2000
+                        LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                        MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
+                        (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
+                        (s:Speaker:{corpus_name} {{name: csvLine.speaker}}),
+                        (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
+                        CREATE (t)-[:is_a]->(n),
+                            (t)-[:contained_by]->(super),
+                            (t)-[:spoken_in]->(d),
+                            (t)-[:spoken_by]->(s)
+                        WITH t, csvLine
+                        MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+                            CREATE (p)-[:precedes]->(t)
+                        '''
+                        rel_kwargs = {'path': rel_path, 'annotation_type': at,
+                                      'corpus_name': corpus_context.cypher_safe_name,
+                                      'stype': st}
+                    else:
+
+                        rel_import_statement = '''USING PERIODIC COMMIT 2000
+                LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
+                (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
+                (s:Speaker:{corpus_name} {{ name: csvLine.speaker}}),
+                        (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
+                CREATE (t)-[:is_a]->(n),
                         (t)-[:spoken_in]->(d),
                         (t)-[:spoken_by]->(s)
                     WITH t, csvLine
                     MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
                         CREATE (p)-[:precedes]->(t)
-                    '''
-                    rel_kwargs = {'path': rel_path, 'annotation_type': at,
-                              'corpus_name': corpus_context.cypher_safe_name,
-                              'stype': st}
-                else:
+                '''
+                        rel_kwargs = {'path': rel_path, 'annotation_type': at,
+                                      'corpus_name': corpus_context.cypher_safe_name}
+                    node_statement = node_import_statement.format(**node_kwargs)
+                    rel_statement = rel_import_statement.format(**rel_kwargs)
+                    speaker_statements.append((node_statement, rel_statement, path))
+                    begin = time.time()
+                    session.write_transaction(_begin_index, at)
+                    session.write_transaction(_end_index, at)
+                statements.append(speaker_statements)
 
-                    rel_import_statement = '''USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-            MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
-            (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-            (s:Speaker:{corpus_name} {{ name: csvLine.speaker}}),
-                    (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
-            CREATE (t)-[:is_a]->(n),
-                    (t)-[:spoken_in]->(d),
-                    (t)-[:spoken_by]->(s)
-                WITH t, csvLine
-                MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
-                    CREATE (p)-[:precedes]->(t)
-            '''
-                    rel_kwargs = {'path': rel_path, 'annotation_type': at,
-                              'corpus_name': corpus_context.cypher_safe_name}
-                node_statement = node_import_statement.format(**node_kwargs)
-                rel_statement = rel_import_statement.format(**rel_kwargs)
-                speaker_statements.append((node_statement, rel_statement))
-                begin = time.time()
-                session.write_transaction(begin_index, at)
-                session.write_transaction(end_index, at)
-            statements.append(speaker_statements)
-
-    for i, speaker_statements in enumerate(statements):
-        if call_back is not None:
-            call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), speakers[i]))
-        for s in speaker_statements:
-            log.info('Loading {} relationships...'.format(at))
-            corpus_context.execute_cypher(s[0])
-            corpus_context.execute_cypher(s[1])
-            log.info('Finished loading {} relationships!'.format(at))
-            log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
-
-    log.info('Finished importing {} into the graph database!'.format(data.name))
-    log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
-
-    for sp in corpus_context.speakers:
-        for k, v in data.hierarchy.subannotations.items():
-            for s in v:
-                path = os.path.join(directory, '{}_{}_{}.csv'.format(sp, k, s))
-                corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
-                # If on the Docker version, the files live in /site/proj
-                if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
-                    sub_path = 'file:///site/proj/{}'.format(make_path_safe(path))
-                else:
-                    sub_path = 'file:///{}'.format(make_path_safe(path))
-
-                rel_import_statement = '''USING PERIODIC COMMIT 1000
-    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
-    CREATE (t:{subannotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
-    CREATE (t)-[:annotates]->(n)'''
-                kwargs = {'path': sub_path, 'annotation_type': k,
-                          'subannotation_type': s,
-                          'corpus_name': corpus_context.cypher_safe_name}
-                statement = rel_import_statement.format(**kwargs)
+        for i, speaker_statements in enumerate(statements):
+            if call_back is not None:
+                call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), speakers[i]))
+            for s in speaker_statements:
+                log.info('Loading {} relationships...'.format(at))
                 try:
-                    corpus_context.execute_cypher(statement)
+                    corpus_context.execute_cypher(s[0])
+                    corpus_context.execute_cypher(s[1])
                 except:
                     raise
-                    # finally:
+                finally:
                     # with open(path, 'w'):
                     #    pass
-                    # os.remove(path) # FIXME Neo4j 2.3 does not release files
+                    os.remove(s[2])
+                log.info('Finished loading {} relationships!'.format(at))
+                log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
+
+        log.info('Finished importing {} into the graph database!'.format(data.name))
+        log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
+
+        for sp in corpus_context.speakers:
+            for k, v in data.hierarchy.subannotations.items():
+                for s in v:
+                    path = os.path.join(directory, '{}_{}_{}.csv'.format(sp, k, s))
+                    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
+                    # If on the Docker version, the files live in /site/proj
+                    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
+                        sub_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+                    else:
+                        sub_path = 'file:///{}'.format(make_path_safe(path))
+
+                    rel_import_statement = '''USING PERIODIC COMMIT 1000
+        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
+        CREATE (t:{subannotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                                    end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
+        CREATE (t)-[:annotates]->(n)'''
+                    kwargs = {'path': sub_path, 'annotation_type': k,
+                              'subannotation_type': s,
+                              'corpus_name': corpus_context.cypher_safe_name}
+                    statement = rel_import_statement.format(**kwargs)
+                    try:
+                        corpus_context.execute_cypher(statement)
+                    except:
+                        raise
+                    finally:
+                        # with open(path, 'w'):
+                        #    pass
+                        os.remove(path)
 
 
 def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
@@ -298,7 +312,7 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.word_name, h))
-        # os.remove(path) # FIXME Neo4j 2.3 does not release files
+    os.remove(path)
 
 
 def import_feature_csvs(corpus_context, typed_data):
@@ -336,7 +350,7 @@ def import_feature_csvs(corpus_context, typed_data):
         feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
-    
+
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:{phone_type}_type:{corpus_name}) where n.label = csvLine.label
@@ -349,7 +363,7 @@ def import_feature_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name, h))
-        # os.remove(path) # FIXME Neo4j 2.3 does not release files
+    os.remove(path)
 
 
 def import_syllable_enrichment_csvs(corpus_context, typed_data):
@@ -387,7 +401,7 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
         syl_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         syl_path = 'file:///{}'.format(make_path_safe(path))
-    
+
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:syllable_type:{corpus_name}) where n.label = csvLine.label
@@ -437,7 +451,7 @@ def import_utterance_enrichment_csvs(corpus_context, typed_data):
         utt_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         utt_path = 'file:///{}'.format(make_path_safe(path))
-    
+
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:utterance:{corpus_name}) where n.id = csvLine.id
@@ -487,7 +501,7 @@ def import_speaker_csvs(corpus_context, typed_data):
         feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
-    
+
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:Speaker:{corpus_name}) where n.name = toString(csvLine.name)
@@ -499,7 +513,7 @@ def import_speaker_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         corpus_context.execute_cypher('CREATE INDEX ON :Speaker(%s)' % h)
-        # os.remove(path) # FIXME Neo4j 2.3 does not release files
+    os.remove(path)
 
 
 def import_discourse_csvs(corpus_context, typed_data):
@@ -537,7 +551,7 @@ def import_discourse_csvs(corpus_context, typed_data):
         feat_path = 'file:///site/proj/{}'.format(make_path_safe(path))
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
-    
+
     import_statement = '''CYPHER planner=rule
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:Discourse:{corpus_name}) where n.name = toString(csvLine.name)
@@ -549,7 +563,7 @@ def import_discourse_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         corpus_context.execute_cypher('CREATE INDEX ON :Discourse(%s)' % h)
-        # os.remove(path) # FIXME Neo4j 2.3 does not release files
+    os.remove(path)
 
 
 def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
@@ -599,11 +613,11 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
             '''
 
             statement = node_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_type=corpus_context.word_name)
+                                              corpus=corpus_context.cypher_safe_name,
+                                              word_type=corpus_context.word_name)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Utterance node creation took {} seconds.'.format(time.time()-begin))
+                print('Utterance node creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             rel_statement = '''USING PERIODIC COMMIT 1000
@@ -615,11 +629,11 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                         (s)<-[:spoken_by]-(utt)
             '''
             statement = rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_type=corpus_context.word_name)
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_type=corpus_context.word_name)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Spoken relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Spoken relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             rel_statement = '''USING PERIODIC COMMIT 1000
@@ -630,11 +644,11 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                     CREATE (prev)-[:precedes]->(utt)
             '''
             statement = rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_type=corpus_context.word_name)
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_type=corpus_context.word_name)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Precedence relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Precedence relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             word_statement = '''USING PERIODIC COMMIT 1000
@@ -648,14 +662,14 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                     CREATE (w)-[:contained_by]->(utt)
             '''
             statement = word_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_type=corpus_context.word_name)
+                                              corpus=corpus_context.cypher_safe_name,
+                                              word_type=corpus_context.word_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
-            # os.remove(path) # FIXME Neo4j 2.3 does not release files
             if corpus_context.config.debug:
-                print('Hierarchical relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
+            os.remove(path)
 
 
 def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
@@ -705,14 +719,14 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             SET n :nucleus, n.syllable_position = 'nucleus'
             '''
             statement = nucleus_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                                 corpus=corpus_context.cypher_safe_name,
+                                                 word_name=corpus_context.word_name,
+                                                 phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Nucleus definition took {} seconds.'.format(time.time()-begin))
+                print('Nucleus definition took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             node_statement = '''
@@ -727,12 +741,12 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                     (s)-[:is_a]->(s_type)
             '''
             statement = node_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name)
+                                              corpus=corpus_context.cypher_safe_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Syllable node creation took {} seconds.'.format(time.time()-begin))
+                print('Syllable node creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             rel_statement = '''
@@ -745,14 +759,14 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                     (n)-[:contained_by]->(s)
             '''
             statement = rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Hierarchical relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             rel_statement = '''
@@ -767,14 +781,14 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                     (s)-[:spoken_in]->(d)
             '''
             statement = rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Spoken relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Spoken relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             prev_rel_statement = '''
@@ -786,14 +800,14 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
               CREATE (prev)-[:precedes]->(s)
             '''
             statement = prev_rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                                  corpus=corpus_context.cypher_safe_name,
+                                                  word_name=corpus_context.word_name,
+                                                  phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Precedence relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Precedence relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             del_rel_statement = '''
@@ -803,14 +817,14 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             DELETE r
             '''
             statement = del_rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                                 corpus=corpus_context.cypher_safe_name,
+                                                 word_name=corpus_context.word_name,
+                                                 phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Phone-word relationship deletion took {} seconds.'.format(time.time()-begin))
+                print('Phone-word relationship deletion took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             onset_statement = '''
@@ -833,14 +847,14 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             FOREACH (r in rels | DELETE r)
             '''
             statement = onset_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                               corpus=corpus_context.cypher_safe_name,
+                                               word_name=corpus_context.word_name,
+                                               phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Onset hierarchical relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Onset hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             coda_statment = '''
@@ -862,14 +876,15 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             FOREACH (r in rels | DELETE r)
             '''
             statement = coda_statment.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Coda hierarchical relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Coda hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
+            os.remove(path)
 
 
 def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
@@ -906,7 +921,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                 '{}_{}_nonsyl.csv'.format(s, d))
 
             if corpus_context.config.debug:
-                print('Importing degenerate syllables for speaker {} in discourse {}, using import file {}'.format(s, d, path))
+                print('Importing degenerate syllables for speaker {} in discourse {}, using import file {}'.format(s, d,
+                                                                                                                   path))
             # If on the Docker version, the files live in /site/proj
             if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
                 csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
@@ -926,12 +942,12 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             '''
 
             statement = node_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name)
+                                              corpus=corpus_context.cypher_safe_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Syllable node creation took {} seconds.'.format(time.time()-begin))
+                print('Syllable node creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             rel_statement = '''
@@ -947,14 +963,14 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                     (s)-[:spoken_in]->(d)
             '''
             statement = rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Hierarchical and spoken relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Hierarchical and spoken relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             rel_statement = '''
@@ -966,14 +982,14 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
               CREATE (prev)-[:precedes]->(s)
             '''
             statement = rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('First precedence relationship creation took {} seconds.'.format(time.time()-begin))
+                print('First precedence relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             rel_statement = '''
@@ -985,14 +1001,14 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
               CREATE (s)-[:precedes]->(foll)
             '''
             statement = rel_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Second precedence relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Second precedence relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             phone_statement = '''USING PERIODIC COMMIT 2000
@@ -1015,14 +1031,15 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             FOREACH (r in rels | DELETE r)
             '''
             statement = phone_statement.format(path=csv_path,
-                                         corpus=corpus_context.cypher_safe_name,
-                                         word_name=corpus_context.word_name,
-                                         phone_name=corpus_context.phone_name)
+                                               corpus=corpus_context.cypher_safe_name,
+                                               word_name=corpus_context.word_name,
+                                               phone_name=corpus_context.phone_name)
             if corpus_context.config.debug:
                 print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
-                print('Onset/coda hierarchical relationship creation took {} seconds.'.format(time.time()-begin))
+                print('Onset/coda hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
+            os.remove(path)
 
 
 def import_subannotation_csv(corpus_context, type, annotated_type, props):
@@ -1079,7 +1096,8 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
         if p in ['id', 'annotated_id']:
             continue
         corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (type, p))
-        # os.remove(path) # FIXME Neo4j 2.3 does not release files
+    os.remove(path)
+
 
 def import_token_csv(corpus_context, path, annotated_type, id_column, properties=None):
     """
@@ -1101,7 +1119,6 @@ def import_token_csv(corpus_context, path, annotated_type, id_column, properties
     if properties is None:
         with open(path, 'r') as f:
             properties = [x.strip() for x in f.readline().split(',') if x.strip() != id_column]
-
 
     is_subann = not annotated_type in corpus_context.hierarchy.annotation_types
 
@@ -1130,11 +1147,11 @@ def import_token_csv(corpus_context, path, annotated_type, id_column, properties
         corpus_context.encode_hierarchy()
 
     property_update = ', '.join(["x.{} = csvLine.{}".format(p, p) for p in properties])
-    statement = '''CYPHER planner=rule USING PERIODIC COMMIT 500
+    statement = '''USING PERIODIC COMMIT 500
             LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
             MATCH (x:{a_type}:{corpus} {{id: csvLine.{id_column}}})
             SET {property_update}
             '''.format(path=path, a_type=annotated_type, corpus=corpus_context.cypher_safe_name,
-                    id_column=id_column, property_update=property_update)
-    print(statement)
+                       id_column=id_column, property_update=property_update)
     corpus_context.execute_cypher(statement)
+    os.remove(path)
