@@ -464,7 +464,7 @@ class BaseContext(object):
             print(statement)
         result = self.execute_cypher(statement, discourse=name)
         if self.config.debug:
-            print('RESULT', result)
+            print('RESULT', next(result))
 
         # Remove orphaned type nodes
         for a in self.hierarchy.annotation_types:
@@ -475,7 +475,7 @@ class BaseContext(object):
                 print(statement)
             result = self.execute_cypher(statement)
             if self.config.debug:
-                print('RESULT', result)
+                print('RESULT', next(result))
 
         # Remove orphaned speaker nodes
         statement = '''MATCH (s:Speaker:{corpus_name})
@@ -485,7 +485,7 @@ class BaseContext(object):
             print(statement)
         result = self.execute_cypher(statement)
         if self.config.debug:
-            print('RESULT', result)
+            print('RESULT', next(result))
 
     @property
     def phones(self):
