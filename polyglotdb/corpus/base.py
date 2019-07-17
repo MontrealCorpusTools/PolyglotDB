@@ -448,6 +448,8 @@ class BaseContext(object):
         name : str
             Name of the discourse to remove
         """
+        if name not in self.discourses:
+            raise GraphQueryError('{} is not a discourse in this corpus.'.format(name))
         d = self.discourse_sound_file(name)
         if d['consonant_file_path'] is not None and os.path.exists(d['consonant_file_path']):
             directory = self.discourse_audio_directory(name)
