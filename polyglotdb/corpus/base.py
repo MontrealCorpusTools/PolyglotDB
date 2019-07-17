@@ -453,25 +453,39 @@ class BaseContext(object):
         d = self.discourse_sound_file(name)
         if d['consonant_file_path'] is not None and os.path.exists(d['consonant_file_path']):
             directory = self.discourse_audio_directory(name)
+            if self.config.debug:
+                print('Removing', directory)
             shutil.rmtree(directory, ignore_errors=True)
         # Remove tokens in discourse
         statement = '''MATCH (d:{corpus_name}:Discourse)<-[:spoken_in]-(n:{corpus_name})
         WHERE d.name = {{discourse}}
         DETACH DELETE n, d'''.format(corpus_name=self.cypher_safe_name)
-        self.execute_cypher(statement, discourse=name)
+        if self.config.debug:
+            print(statement)
+        result = self.execute_cypher(statement, discourse=name)
+        if self.config.debug:
+            print('RESULT', result)
 
         # Remove orphaned type nodes
         for a in self.hierarchy.annotation_types:
             statement = '''MATCH (t:{type}_type:{corpus_name})
             WHERE NOT (t)<-[:is_a]-()
             DETACH DELETE t'''.format(type=a, corpus_name=self.cypher_safe_name)
-            self.execute_cypher(statement)
+            if self.config.debug:
+                print(statement)
+            result = self.execute_cypher(statement)
+            if self.config.debug:
+                print('RESULT', result)
 
         # Remove orphaned speaker nodes
         statement = '''MATCH (s:Speaker:{corpus_name})
         WHERE NOT (s)<-[:spoken_by]-()
         DETACH DELETE s'''.format(corpus_name=self.cypher_safe_name)
-        self.execute_cypher(statement)
+        if self.config.debug:
+            print(statement)
+        result = self.execute_cypher(statement)
+        if self.config.debug:
+            print('RESULT', result)
 
     @property
     def phones(self):
