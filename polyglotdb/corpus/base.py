@@ -456,18 +456,19 @@ class BaseContext(object):
             if self.config.debug:
                 print('Removing', directory)
             shutil.rmtree(directory, ignore_errors=True)
-        # Remove tokens in discourse
-        statement = '''MATCH (d:{corpus_name}:Discourse)<-[:spoken_in]-(n:{corpus_name})
-        WHERE d.name = {{discourse}}
-        DETACH DELETE n, d'''.format(corpus_name=self.cypher_safe_name)
-        if self.config.debug:
-            print(statement)
-        result = self.execute_cypher(statement, discourse=name)
-        if self.config.debug:
-            print('RESULT', next(result))
 
         # Remove orphaned type nodes
         for a in self.hierarchy.annotation_types:
+            # Remove tokens in discourse
+            statement = '''MATCH (d:{corpus_name}:Discourse)<-[:spoken_in]-(n:{corpus_name}:{atype})
+            WHERE d.name = {{discourse}}
+            DETACH DELETE n, d'''.format(corpus_name=self.cypher_safe_name, atype=a)
+            if self.config.debug:
+                print(statement)
+            result = self.execute_cypher(statement, discourse=name)
+            if self.config.debug:
+                for r in result:
+                    print('RESULT', r)
             statement = '''MATCH (t:{type}_type:{corpus_name})
             WHERE NOT (t)<-[:is_a]-()
             DETACH DELETE t'''.format(type=a, corpus_name=self.cypher_safe_name)
@@ -475,7 +476,8 @@ class BaseContext(object):
                 print(statement)
             result = self.execute_cypher(statement)
             if self.config.debug:
-                print('RESULT', next(result))
+                for r in result:
+                    print('RESULT', r)
 
         # Remove orphaned speaker nodes
         statement = '''MATCH (s:Speaker:{corpus_name})
@@ -485,7 +487,8 @@ class BaseContext(object):
             print(statement)
         result = self.execute_cypher(statement)
         if self.config.debug:
-            print('RESULT', next(result))
+            for r in result:
+                print('RESULT', r)
 
     @property
     def phones(self):
