@@ -462,13 +462,25 @@ class BaseContext(object):
             # Remove tokens in discourse
             statement = '''MATCH (d:{corpus_name}:Discourse)<-[:spoken_in]-(n:{corpus_name}:{atype})
             WHERE d.name = {{discourse}}
-            DETACH DELETE n, d'''.format(corpus_name=self.cypher_safe_name, atype=a)
+            DETACH DELETE n'''.format(corpus_name=self.cypher_safe_name, atype=a)
             if self.config.debug:
                 print(statement)
             result = self.execute_cypher(statement, discourse=name)
             if self.config.debug:
                 for r in result:
                     print('RESULT', r)
+        # Remove discourse node
+        statement = '''MATCH (d:{corpus_name}:Discourse)
+        WHERE d.name = {{discourse}}
+        DETACH DELETE d'''.format(corpus_name=self.cypher_safe_name)
+        if self.config.debug:
+            print(statement)
+        result = self.execute_cypher(statement, discourse=name)
+        if self.config.debug:
+            for r in result:
+                print('RESULT', r)
+
+        for a in self.hierarchy.annotation_types:
             statement = '''MATCH (t:{type}_type:{corpus_name})
             WHERE NOT (t)<-[:is_a]-()
             DETACH DELETE t'''.format(type=a, corpus_name=self.cypher_safe_name)

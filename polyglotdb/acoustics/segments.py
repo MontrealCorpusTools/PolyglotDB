@@ -48,11 +48,13 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
             if file_path is None:
                 print("Skipping discourse {} because no wav file exists.".format(discourse))
                 continue
+            discourse_duration = r['d']['duration']
             at = getattr(corpus_context, annotation_type)
             qr = corpus_context.query_graph(at)
             if subset is not None:
                 qr = qr.filter(at.subset == subset)
             qr = qr.filter(at.discourse.name == discourse)
+            qr = qr.filter(at.end <= discourse_duration)
             qr = qr.filter(at.begin != at.end) # Skip zero duration segments if they exist
             if duration_threshold is not None:
                 qr = qr.filter(at.duration >= duration_threshold)

@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil
+import re
 import csv
 import librosa
 import audioread
@@ -40,7 +41,19 @@ def add_discourse_sound_info(corpus_context, discourse, filepath):
     with audioread.audio_open(filepath) as f:
         sample_rate = f.samplerate
         n_channels = f.channels
-        duration = f.duration
+    try:
+        p = subprocess.Popen(['sox', filepath, '-n', 'stat'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        output, err = p.communicate()
+        err = err.decode('utf8')
+        warnings = re.search(r'(sox WARN.*)', err).groups()
+        if warnings:
+            for w in warnings:
+                print(w)
+        duration = float(re.search(r'Length \(seconds\):\s+([0-9.]+)', err).groups()[0])
+    except:
+        with audioread.audio_open(filepath) as f:
+            duration = f.duration
     audio_dir = corpus_context.discourse_audio_directory(discourse)
     os.makedirs(audio_dir, exist_ok=True)
     consonant_rate = 16000
