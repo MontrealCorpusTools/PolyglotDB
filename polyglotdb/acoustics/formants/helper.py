@@ -242,11 +242,10 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, st
     as tracks rather than as points'''
     #Dictionary of segment mapping objects where each n_formants has its own segment mapping object
     segment_mappings = {}
+    save_padding = 0.015
     for k, v in data.items():
-        vowel_id = k.properties["id"]
-        file_path = k["file_path"]
-        begin = k["begin"]
-        end = k["end"]
+        k.begin -= save_padding
+        k.end += save_padding
         if "num_formants" in v:
             n_formants = v["num_formants"]
         else:

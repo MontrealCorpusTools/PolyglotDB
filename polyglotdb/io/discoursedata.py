@@ -105,7 +105,7 @@ class DiscourseData(object):
         speakers = set()
         for x in self.values():
             speakers.update(x.speakers)
-        return speakers
+        return sorted(speakers)
 
     @property
     def annotation_types(self):
