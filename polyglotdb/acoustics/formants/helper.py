@@ -242,7 +242,7 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, st
     as tracks rather than as points'''
     #Dictionary of segment mapping objects where each n_formants has its own segment mapping object
     segment_mappings = {}
-    save_padding = 0.015
+    save_padding = 0.02
     for k, v in data.items():
         k.begin -= save_padding
         k.end += save_padding
