@@ -26,7 +26,7 @@ def get_corpora_list(config):
 
 
 @contextmanager
-def ensure_local_database_running(database_name, port=8080, token=None):
+def ensure_local_database_running(database_name, port=8080, token=None, ip="localhost"):
     """
     Context manager function to ensure a locally running database exists (either ISCAN server or the pgdb
     utility is running)
@@ -39,6 +39,8 @@ def ensure_local_database_running(database_name, port=8080, token=None):
         Port to try to connect to ISCAN server, defaults to 8080
     token : str
         Authentication token to use for ISCAN server
+    ip : str
+        IP address of the server(useful for Docker installations)
 
     Yields
     ------
@@ -46,7 +48,7 @@ def ensure_local_database_running(database_name, port=8080, token=None):
         Connection parameters for a :class:`~polyglot.corpus.context.CorpusContext` object
     """
 
-    host = 'http://localhost:{}'.format(port)
+    host = 'http://{}:{}'.format(ip, port)
     client = PGDBClient(host, token=token)
 
     databases = client.list_databases()
@@ -63,12 +65,12 @@ def ensure_local_database_running(database_name, port=8080, token=None):
     try:
         db_info = client.get_ports(database_name)
         db_info['data_dir'] = client.get_directory(database_name)
-        db_info['host'] = 'localhost'
+        db_info['host'] = ip
         pgdb = False
     except ConnectionError:
         print('Warning: no Polyglot server available locally, using default ports.')
         db_info = {'graph_http_port': 7474, 'graph_bolt_port': 7687,
-                   'acoustic_http_port': 8086, 'host': 'localhost'}
+                   'acoustic_http_port': 8086, 'host': ip}
         pgdb = True
         try:
             with CorpusContext('test', **db_info) as c:
