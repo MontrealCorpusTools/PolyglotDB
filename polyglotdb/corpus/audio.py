@@ -6,6 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from influxdb import InfluxDBClient
+from influxdb.exceptions import InfluxDBClientError
 
 from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_intensity, \
     analyze_script, analyze_track_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
@@ -661,6 +662,29 @@ class AudioContext(SyllabicContext):
                     break
         return self._has_sound_files
 
+    def execute_influxdb(self, query):
+        """
+        Execute an InfluxDB query for the corpus
+
+        Parameters
+        ----------
+        query : str
+            Query to run
+
+        Returns
+        -------
+        :class:`influxdb.resultset.ResultSet`
+            Results of the query
+        """
+        client = self.acoustic_client()
+        try:
+            result = client.query(query)
+        except InfluxDBClientError:
+            print('There was an issue with the following query:')
+            print(query)
+            raise
+        return result
+
     def get_utterance_acoustics(self, acoustic_name, utterance_id, discourse, speaker):
         """
         Get acoustic for a given utterance and time range
@@ -681,7 +705,6 @@ class AudioContext(SyllabicContext):
         :class:`polyglotdb.acoustics.classes.Track`
             Track object
         """
-        client = self.acoustic_client()
         properties = [x[0] for x in self.hierarchy.acoustic_properties[acoustic_name]]
         property_names = ["{}".format(x) for x in properties]
         columns = '"time", {}'.format(', '.join(property_names))
@@ -689,7 +712,7 @@ class AudioContext(SyllabicContext):
                         WHERE "utterance_id" = '{}'
                         AND "discourse" = '{}'
                         AND "speaker" = '{}';'''.format(columns, acoustic_name, utterance_id, discourse, speaker)
-        result = client.query(query)
+        result = self.execute_influxdb(query)
         track = Track()
         for r in result.get_points(acoustic_name):
             s = to_seconds(r['time'])
@@ -729,7 +752,6 @@ class AudioContext(SyllabicContext):
         end = Decimal(end).quantize(Decimal('0.001'))
         num_points = kwargs.pop('num_points', 0)
         filter_string = generate_filter_string(discourse, begin, end, channel, num_points, kwargs)
-        client = self.acoustic_client()
 
         properties = [x[0] for x in self.hierarchy.acoustic_properties[acoustic_name]]
         property_names = ["{}".format(x) for x in properties]
@@ -739,7 +761,7 @@ class AudioContext(SyllabicContext):
             columns = '"time", {}'.format(', '.join(property_names))
         query = '''select {} from "{}"
                         {};'''.format(columns, acoustic_name, filter_string)
-        result = client.query(query)
+        result = self.execute_influxdb(query)
         track = Track()
         for r in result.get_points(acoustic_name):
             s = to_seconds(r['time'])
@@ -927,9 +949,8 @@ class AudioContext(SyllabicContext):
         """
         if acoustic_name not in self.hierarchy.acoustics:
             return False
-        client = self.acoustic_client()
         query = '''select * from "{}" WHERE "discourse" = '{}' LIMIT 1;'''.format(acoustic_name, discourse)
-        result = client.query(query)
+        result = self.execute_influxdb(query)
         if len(result) == 0:
             return False
         return True
@@ -961,7 +982,6 @@ class AudioContext(SyllabicContext):
         if statistic not in available_statistics:
             raise ValueError('Statistic name should be one of: {}.'.format(', '.join(available_statistics)))
 
-        client = self.acoustic_client()
         acoustic_name = acoustic_name.lower()
         template = statistic + '("{0}") as "{0}"'
         statistic_template = 'n.{statistic}_{measure} = d.{measure}'
@@ -974,7 +994,7 @@ class AudioContext(SyllabicContext):
                                 where "phone" = '{}' group by "speaker";'''.format(
                     ', '.join(measures), acoustic_name, p)
 
-                influx_result = client.query(query)
+                influx_result = self.execute_influxdb(query)
                 for k, v in influx_result.items():
                     result = {'speaker': k[1]['speaker'], 'phone': p}
                     for measure in measures.keys():
@@ -1000,7 +1020,7 @@ class AudioContext(SyllabicContext):
                                 where "phone" = '{}';'''.format(', '.join(measures.values()),
                                                                 acoustic_name, p)
 
-                influx_result = client.query(query)
+                influx_result = self.execute_influxdb(query)
                 result = {'phone': p}
                 for k, v in influx_result.items():
                     for measure in measures.keys():
@@ -1019,7 +1039,7 @@ class AudioContext(SyllabicContext):
                                                [('{}_{}'.format(statistic, x), float) for x in measures.keys()])
         elif by_speaker:
             query = '''select {} from "{}" group by "speaker";'''.format(', '.join(measures), acoustic_name)
-            influx_result = client.query(query)
+            influx_result = self.execute_influxdb(query)
             results = []
 
             for k, v in influx_result.items():
