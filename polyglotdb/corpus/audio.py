@@ -81,6 +81,7 @@ def generate_filter_string(discourse, begin, end, channel, num_points, kwargs):
         end += time_step / 2
         time_step *= 1000
         filter_string += '\ngroup by time({}ms) fill(null)'.format(int(time_step))
+    discourse = discourse.replace("'", r"\'")
     filter_string = filter_string.format(discourse, s_to_nano(begin), s_to_nano(end), channel)
     return filter_string
 
@@ -708,6 +709,8 @@ class AudioContext(SyllabicContext):
         properties = [x[0] for x in self.hierarchy.acoustic_properties[acoustic_name]]
         property_names = ["{}".format(x) for x in properties]
         columns = '"time", {}'.format(', '.join(property_names))
+        speaker = speaker.replace("'", r"\'") # Escape apostrophes
+        discourse = discourse.replace("'", r"\'") # Escape apostrophes
         query = '''select {} from "{}"
                         WHERE "utterance_id" = '{}'
                         AND "discourse" = '{}'
@@ -949,6 +952,7 @@ class AudioContext(SyllabicContext):
         """
         if acoustic_name not in self.hierarchy.acoustics:
             return False
+        discourse = discourse.replace("'", r"\'")
         query = '''select * from "{}" WHERE "discourse" = '{}' LIMIT 1;'''.format(acoustic_name, discourse)
         result = self.execute_influxdb(query)
         if len(result) == 0:
@@ -1216,6 +1220,7 @@ class AudioContext(SyllabicContext):
                 for measure, (mean_name, sd_name) in aliases.items():
                     summary_data[(k[1]['speaker'], measure)] = v[0][mean_name], v[0][sd_name]
         for s in self.speakers:
+            s = s.replace("'", r"\'")
             all_query = '''select * from "{acoustic_type}"
             where "phone" != '' and "speaker" = '{speaker}';'''.format(acoustic_type=acoustic_name, speaker=s)
             all_results = client.query(all_query)
@@ -1284,6 +1289,8 @@ class AudioContext(SyllabicContext):
                               self.utterance.begin.column_name('begin'),
                               self.utterance.end.column_name('end'))
                 utterances = q.all()
+                s = s.replace("'", r"\'")
+                discourse_name = discourse_name.replace("'", r"\'")
                 all_query = '''select * from "{}"
                                 where "phone" != '' and 
                                 "discourse" = '{}' and 
