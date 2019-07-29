@@ -549,14 +549,18 @@ class SyllabicContext(UtteranceContext):
             self.encode_position('word', 'syllable', 'position_in_word')
 
         for s in self.speakers:
-            statement = '''MATCH (s:syllable:{corpus_name})-[:spoken_by]->(speaker:Speaker:{corpus_name}),
-                        (s)-[:contained_by]->(w:word:{corpus_name})-[:is_a]->(wt:word_type:{corpus_name})
-                        WHERE speaker.name = $speaker_name
-                        AND wt.{word_property_name} is not null
-                        WITH s, w, split(wt.{word_property_name}, '-') as stresses
-                        WHERE length(stresses) = w.num_syllables
-                        SET s.stress = stresses[s.position_in_word-1]'''.format(
-                corpus_name=self.cypher_safe_name, word_property_name=word_property_name)
-            self.execute_cypher(statement, speaker_name=s)
+            discourses = self.get_discourses_of_speaker(s)
+            for d in discourses:
+                statement = '''MATCH (s:syllable:{corpus_name})-[:spoken_by]->(speaker:Speaker:{corpus_name}),
+                            (s)-[:spoken_in]->(discourse:Discourse:{corpus_name}),
+                            (s)-[:contained_by]->(w:word:{corpus_name})-[:is_a]->(wt:word_type:{corpus_name})
+                            WHERE speaker.name = $speaker_name
+                            AND discourse.name = $discourse_name
+                            AND wt.{word_property_name} is not null
+                            WITH s, w, split(wt.{word_property_name}, '-') as stresses
+                            WHERE length(stresses) = w.num_syllables
+                            SET s.stress = stresses[s.position_in_word-1]'''.format(
+                    corpus_name=self.cypher_safe_name, word_property_name=word_property_name)
+                self.execute_cypher(statement, speaker_name=s, discourse_name=d)
         self.hierarchy.add_token_properties(self, 'syllable', [('stress', str)])
         self.encode_hierarchy()
