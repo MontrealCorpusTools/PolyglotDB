@@ -73,7 +73,7 @@ MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         log.debug('{} type loading took: {} seconds.'.format(at, time.time() - begin))
 
 
-def import_csvs(corpus_context, data_list, call_back=None, stop_check=None):
+def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=None, stop_check=None):
     """
     Loads data from a csv file
 
@@ -88,101 +88,98 @@ def import_csvs(corpus_context, data_list, call_back=None, stop_check=None):
     stop_check : callable or None
         Function to check whether to terminate early
     """
-    if not isinstance(data_list, list):
-        data_list = [data_list]
-    for data in data_list:
-        log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
-        log.info('Beginning to import data into the graph database...')
-        initial_begin = time.time()
-        name, annotation_types = data.name, data.annotation_types
+    log = logging.getLogger('{}_loading'.format(corpus_context.corpus_name))
+    log.info('Beginning to import data into the graph database...')
+    initial_begin = time.time()
 
-        prop_temp = '''{name}: csvLine.{name}'''
+    prop_temp = '''{name}: csvLine.{name}'''
 
-        directory = corpus_context.config.temporary_directory('csv')
-        speakers = data.speakers
-        annotation_types = data.highest_to_lowest()
-        if call_back is not None:
-            call_back('Importing data...')
-            call_back(0, len(speakers) * len(annotation_types))
-            cur = 0
-        statements = []
+    directory = corpus_context.config.temporary_directory('csv')
+    annotation_types = hierarchy.highest_to_lowest
+    if call_back is not None:
+        call_back('Importing data...')
+        call_back(0, len(speakers) * len(annotation_types))
+        cur = 0
+    statements = []
 
-        def _unique_function(tx, at):
-            tx.run('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
+    def _unique_function(tx, at):
+        tx.run('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
 
-        def _prop_index(tx, at, prop):
-            tx.run('CREATE INDEX ON :%s(%s)' % (at, prop))
+    def _prop_index(tx, at, prop):
+        tx.run('CREATE INDEX ON :%s(%s)' % (at, prop))
 
-        def _label_index(tx, at):
-            tx.run('CREATE INDEX ON :%s(label_insensitive)' % at)
+    def _label_index(tx, at):
+        tx.run('CREATE INDEX ON :%s(label_insensitive)' % at)
 
-        def _begin_index(tx, at):
-            tx.run('CREATE INDEX ON :%s(begin)' % (at,))
+    def _begin_index(tx, at):
+        tx.run('CREATE INDEX ON :%s(begin)' % (at,))
 
-        def _end_index(tx, at):
-            tx.run('CREATE INDEX ON :%s(end)' % (at,))
+    def _end_index(tx, at):
+        tx.run('CREATE INDEX ON :%s(end)' % (at,))
 
-        with corpus_context.graph_driver.session() as session:
-            for i, s in enumerate(speakers):
-                speaker_statements = []
-                for at in annotation_types:
-                    if stop_check is not None and stop_check():
-                        return
-                    if call_back is not None:
-                        call_back(cur)
-                        cur += 1
-                    path = os.path.join(directory, '{}_{}.csv'.format(s, at))
-                    if not os.path.exists(path):  # Already imported
+    with corpus_context.graph_driver.session() as session:
+        for i, s in enumerate(speakers):
+            speaker_statements = []
+            for at in annotation_types:
+                if stop_check is not None and stop_check():
+                    return
+                if call_back is not None:
+                    call_back(cur)
+                    cur += 1
+                path = os.path.join(directory, '{}_{}.csv'.format(s, at))
+                if not os.path.exists(path):  # Already imported
+                    continue
+                # If on the Docker version, the files live in /site/proj
+                if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
+                    rel_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+                else:
+                    rel_path = 'file:///{}'.format(make_path_safe(path))
+                session.write_transaction(_unique_function, at)
+
+                properties = []
+
+                for x in token_headers[at]:
+                    if x in ['type_id', 'id', 'previous_id', 'speaker', 'discourse', 'begin', 'end']:
                         continue
-                    # If on the Docker version, the files live in /site/proj
-                    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
-                        rel_path = 'file:///site/proj/{}'.format(make_path_safe(path))
-                    else:
-                        rel_path = 'file:///{}'.format(make_path_safe(path))
-                    session.write_transaction(_unique_function, at)
-
-                    properties = []
-
-                    for x in data[at].token_property_keys:
-                        properties.append(prop_temp.format(name=x))
-                        session.write_transaction(_prop_index, at, x)
-                    if 'label' in data[at].token_property_keys:
-                        properties.append('label_insensitive: lower(csvLine.label)')
-                        session.write_transaction(_label_index, at)
-                    st = data[at].supertype
-                    if properties:
-                        token_prop_string = ', ' + ', '.join(properties)
-                    else:
-                        token_prop_string = ''
-                    node_import_statement = '''USING PERIODIC COMMIT 2000
+                    properties.append(prop_temp.format(name=x))
+                    session.write_transaction(_prop_index, at, x)
+                if 'label' in token_headers[at]:
+                    properties.append('label_insensitive: lower(csvLine.label)')
+                    session.write_transaction(_label_index, at)
+                st = hierarchy[at]
+                if properties:
+                    token_prop_string = ', ' + ', '.join(properties)
+                else:
+                    token_prop_string = ''
+                node_import_statement = '''USING PERIODIC COMMIT 2000
+                LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                                            end: toFloat(csvLine.end){token_property_string} }})
+                '''
+                node_kwargs = {'path': rel_path, 'annotation_type': at,
+                               'token_property_string': token_prop_string,
+                               'corpus_name': corpus_context.cypher_safe_name}
+                if st is not None:
+                    rel_import_statement = '''USING PERIODIC COMMIT 2000
                     LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-                    CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                                end: toFloat(csvLine.end){token_property_string} }})
+                    MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
+                    (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
+                    (s:Speaker:{corpus_name} {{name: csvLine.speaker}}),
+                    (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
+                    CREATE (t)-[:is_a]->(n),
+                        (t)-[:contained_by]->(super),
+                        (t)-[:spoken_in]->(d),
+                        (t)-[:spoken_by]->(s)
+                    WITH t, csvLine
+                    MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+                        CREATE (p)-[:precedes]->(t)
                     '''
-                    node_kwargs = {'path': rel_path, 'annotation_type': at,
-                                   'token_property_string': token_prop_string,
-                                   'corpus_name': corpus_context.cypher_safe_name}
-                    if st is not None:
-                        rel_import_statement = '''USING PERIODIC COMMIT 2000
-                        LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-                        MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
-                        (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-                        (s:Speaker:{corpus_name} {{name: csvLine.speaker}}),
-                        (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
-                        CREATE (t)-[:is_a]->(n),
-                            (t)-[:contained_by]->(super),
-                            (t)-[:spoken_in]->(d),
-                            (t)-[:spoken_by]->(s)
-                        WITH t, csvLine
-                        MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
-                            CREATE (p)-[:precedes]->(t)
-                        '''
-                        rel_kwargs = {'path': rel_path, 'annotation_type': at,
-                                      'corpus_name': corpus_context.cypher_safe_name,
-                                      'stype': st}
-                    else:
+                    rel_kwargs = {'path': rel_path, 'annotation_type': at,
+                                  'corpus_name': corpus_context.cypher_safe_name,
+                                  'stype': st}
+                else:
 
-                        rel_import_statement = '''USING PERIODIC COMMIT 2000
+                    rel_import_statement = '''USING PERIODIC COMMIT 2000
                 LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
                 MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
                 (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
@@ -195,65 +192,65 @@ def import_csvs(corpus_context, data_list, call_back=None, stop_check=None):
                     MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
                         CREATE (p)-[:precedes]->(t)
                 '''
-                        rel_kwargs = {'path': rel_path, 'annotation_type': at,
-                                      'corpus_name': corpus_context.cypher_safe_name}
-                    node_statement = node_import_statement.format(**node_kwargs)
-                    rel_statement = rel_import_statement.format(**rel_kwargs)
-                    speaker_statements.append((node_statement, rel_statement, path))
-                    begin = time.time()
-                    session.write_transaction(_begin_index, at)
-                    session.write_transaction(_end_index, at)
-                statements.append(speaker_statements)
+                    rel_kwargs = {'path': rel_path, 'annotation_type': at,
+                                  'corpus_name': corpus_context.cypher_safe_name}
+                node_statement = node_import_statement.format(**node_kwargs)
+                rel_statement = rel_import_statement.format(**rel_kwargs)
+                speaker_statements.append((node_statement, rel_statement, path, at, s))
+                begin = time.time()
+                session.write_transaction(_begin_index, at)
+                session.write_transaction(_end_index, at)
+            statements.append(speaker_statements)
 
-        for i, speaker_statements in enumerate(statements):
-            if call_back is not None:
-                call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), speakers[i]))
-            for s in speaker_statements:
-                log.info('Loading {} relationships...'.format(at))
+    for i, speaker_statements in enumerate(statements):
+        if call_back is not None:
+            call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), speakers[i]))
+        for s in speaker_statements:
+            log.info('Loading {} relationships...'.format(s[3]))
+            try:
+                corpus_context.execute_cypher(s[0])
+                corpus_context.execute_cypher(s[1])
+            except:
+                raise
+            finally:
+                # with open(path, 'w'):
+                #    pass
+                os.remove(s[2])
+            log.info('Finished loading {} relationships for speaker {}!'.format(s[3], s[4]))
+            log.debug('{} relationships loading took: {} seconds.'.format(s[3], time.time() - begin))
+
+    log.info('Finished importing into the graph database!')
+    log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
+
+    for sp in speakers:
+        for k, v in hierarchy.subannotations.items():
+            for s in v:
+                path = os.path.join(directory, '{}_{}_{}.csv'.format(sp, k, s))
+                corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
+                # If on the Docker version, the files live in /site/proj
+                if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
+                    sub_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+                else:
+                    sub_path = 'file:///{}'.format(make_path_safe(path))
+
+                rel_import_statement = '''USING PERIODIC COMMIT 1000
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
+    CREATE (t:{subannotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                                end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
+    CREATE (t)-[:annotates]->(n)'''
+                kwargs = {'path': sub_path, 'annotation_type': k,
+                          'subannotation_type': s,
+                          'corpus_name': corpus_context.cypher_safe_name}
+                statement = rel_import_statement.format(**kwargs)
                 try:
-                    corpus_context.execute_cypher(s[0])
-                    corpus_context.execute_cypher(s[1])
+                    corpus_context.execute_cypher(statement)
                 except:
                     raise
                 finally:
                     # with open(path, 'w'):
                     #    pass
-                    os.remove(s[2])
-                log.info('Finished loading {} relationships!'.format(at))
-                log.debug('{} relationships loading took: {} seconds.'.format(at, time.time() - begin))
-
-        log.info('Finished importing {} into the graph database!'.format(data.name))
-        log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
-
-        for sp in corpus_context.speakers:
-            for k, v in data.hierarchy.subannotations.items():
-                for s in v:
-                    path = os.path.join(directory, '{}_{}_{}.csv'.format(sp, k, s))
-                    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
-                    # If on the Docker version, the files live in /site/proj
-                    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
-                        sub_path = 'file:///site/proj/{}'.format(make_path_safe(path))
-                    else:
-                        sub_path = 'file:///{}'.format(make_path_safe(path))
-
-                    rel_import_statement = '''USING PERIODIC COMMIT 1000
-        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-        MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
-        CREATE (t:{subannotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                    end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
-        CREATE (t)-[:annotates]->(n)'''
-                    kwargs = {'path': sub_path, 'annotation_type': k,
-                              'subannotation_type': s,
-                              'corpus_name': corpus_context.cypher_safe_name}
-                    statement = rel_import_statement.format(**kwargs)
-                    try:
-                        corpus_context.execute_cypher(statement)
-                    except:
-                        raise
-                    finally:
-                        # with open(path, 'w'):
-                        #    pass
-                        os.remove(path)
+                    os.remove(path)
 
 
 def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):

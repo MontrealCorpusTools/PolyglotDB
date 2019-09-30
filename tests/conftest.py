@@ -322,7 +322,9 @@ def untimed_config(graph_db, corpus_data_untimed):
                             corpus_data_untimed.token_headers,
                             corpus_data_untimed.hierarchy.subannotations)
         c.add_discourse(corpus_data_untimed)
-        c.finalize_import(corpus_data_untimed)
+        c.finalize_import(corpus_data_untimed.speakers,
+                          corpus_data_untimed.token_headers,
+                          corpus_data_untimed.hierarchy)
     return config
 
 
@@ -336,7 +338,9 @@ def timed_config(graph_db, corpus_data_timed):
                             corpus_data_timed.token_headers,
                             corpus_data_timed.hierarchy.subannotations)
         c.add_discourse(corpus_data_timed)
-        c.finalize_import(corpus_data_timed)
+        c.finalize_import(corpus_data_timed.speakers,
+                          corpus_data_timed.token_headers,
+                          corpus_data_timed.hierarchy)
     return config
 
 
@@ -350,7 +354,9 @@ def syllable_morpheme_config(graph_db, corpus_data_syllable_morpheme_srur):
                             corpus_data_syllable_morpheme_srur.token_headers,
                             corpus_data_syllable_morpheme_srur.hierarchy.subannotations)
         c.add_discourse(corpus_data_syllable_morpheme_srur)
-        c.finalize_import(corpus_data_syllable_morpheme_srur)
+        c.finalize_import(corpus_data_syllable_morpheme_srur.speakers,
+                          corpus_data_syllable_morpheme_srur.token_headers,
+                          corpus_data_syllable_morpheme_srur.hierarchy)
     return config
 
 
@@ -364,7 +370,8 @@ def ursr_config(graph_db, corpus_data_ur_sr):
                             corpus_data_ur_sr.token_headers,
                             corpus_data_ur_sr.hierarchy.subannotations)
         c.add_discourse(corpus_data_ur_sr)
-        c.finalize_import(corpus_data_ur_sr)
+        c.finalize_import(corpus_data_ur_sr.speakers, corpus_data_ur_sr.token_headers,
+                          corpus_data_ur_sr.hierarchy)
     return config
 
 
@@ -378,7 +385,8 @@ def subannotation_config(graph_db, subannotation_data):
                             subannotation_data.token_headers,
                             subannotation_data.hierarchy.subannotations)
         c.add_discourse(subannotation_data)
-        c.finalize_import(subannotation_data)
+        c.finalize_import(subannotation_data.speakers, subannotation_data.token_headers,
+                          subannotation_data.hierarchy)
     return config
 
 

@@ -67,7 +67,7 @@ class ImportContext(StructuredContext):
             session.write_transaction(_speaker_index)
             session.write_transaction(_corpus_create, self.corpus_name)
 
-    def finalize_import(self, data_list, call_back=None, stop_check=None):
+    def finalize_import(self, speakers, token_headers, hierarchy, call_back=None, stop_check=None):
         """
         Finalize import of discourses through importing CSVs and saving the Hierarchy to the Neo4j database.
 
@@ -82,7 +82,7 @@ class ImportContext(StructuredContext):
         stop_check : callable or None
             Function to check whether process should be terminated early
         """
-        import_csvs(self, data_list, call_back, stop_check)
+        import_csvs(self, speakers, token_headers, hierarchy, call_back, stop_check)
         self.encode_hierarchy()
 
     def add_discourse(self, data):
@@ -173,7 +173,9 @@ class ImportContext(StructuredContext):
         self.initialize_import(data.speakers, data.token_headers, data.hierarchy.subannotations)
         self.add_types(*data.types(self.corpus_name))
         self.add_discourse(data)
-        self.finalize_import(data)
+        speakers = data.speakers
+        token_headers = data.token_headers
+        self.finalize_import(speakers, token_headers, parser.hierarchy, parser.call_back, parser.stop_check)
         return []
 
     def load_directory(self, parser, path):
@@ -255,7 +257,6 @@ class ImportContext(StructuredContext):
             call_back('Parsing files...')
             call_back(0, len(file_tuples))
             cur = 0
-        discourse_datas = []
         for i, t in enumerate(file_tuples):
             if parser.stop_check is not None and parser.stop_check():
                 return
@@ -270,6 +271,5 @@ class ImportContext(StructuredContext):
             except ParseError:
                 continue
             self.add_discourse(data)
-            discourse_datas.append(data)
-        self.finalize_import(discourse_datas, call_back, parser.stop_check)
+        self.finalize_import(speakers, token_headers, parser.hierarchy, call_back, parser.stop_check)
         parser.call_back = call_back
