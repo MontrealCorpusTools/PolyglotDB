@@ -51,12 +51,11 @@ def ensure_local_database_running(database_name, port=8080, token=None, ip="loca
     host = 'http://{}:{}'.format(ip, port)
     client = PGDBClient(host, token=token)
 
-    databases = client.list_databases()
-
     try:
         response = client.create_database(database_name)
     except (ClientError, ConnectionError):
         pass
+
     try:
         client.start_database(database_name)
     except (ClientError, ConnectionError):
@@ -68,7 +67,7 @@ def ensure_local_database_running(database_name, port=8080, token=None, ip="loca
         db_info['host'] = ip
         pgdb = False
     except ConnectionError:
-        print('Warning: no Polyglot server available locally, using default ports.')
+        print('Warning: no ISCAN server available locally, using default ports.')
         db_info = {'graph_http_port': 7474, 'graph_bolt_port': 7687,
                    'acoustic_http_port': 8086, 'host': ip}
         pgdb = True
