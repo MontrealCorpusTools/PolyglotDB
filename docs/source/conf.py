@@ -21,7 +21,7 @@ import mock
 MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
                 'py2neo', 'py2neo.database', 'py2neo.database.status',
                 'py2neo.packages', 'py2neo.packages.httpstream',
-                'py2neo.packages.httpstream.http',
+                'py2neo.packages.httpstream.http', 'neo4j',
                 'sqlalchemy', 'influxdb', 'influxdb.exceptions',
                 'sqlalchemy.orm', 'sqlalchemy.sql', 'sqlalchemy.sql.expression',
                 'sqlalchemy.ext', 'sqlalchemy.ext.hybrid','sqlalchemy.ext.declarative', 'sqlalchemy.ext.orderinglist',
