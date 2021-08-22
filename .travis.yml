@@ -16,6 +16,7 @@ addons:
     packages:
       - openjdk-11-jdk
       - sox
+      - libsndfile1
 
 before_install:
   - sudo rm -rf /dev/shm
