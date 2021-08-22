@@ -310,10 +310,8 @@ class SyllabicContext(UtteranceContext):
                               phone_type.begin.column_name('begins'),
                               phone_type.end.column_name('ends'))
                 results = q.all()
-                print('RESULTS', results)
                 prev_id = None
                 for w in results:
-                    print('LINE', w)
                     phones = w['phones']
                     phone_ids = w['phone_id']
 
@@ -432,7 +430,6 @@ class SyllabicContext(UtteranceContext):
         type_data : dict
             By default None
         """
-        print(syllable_data)
         if type_data is None:
             type_data = {k: type(v) for k, v in next(iter(syllable_data.values())).items()}
         syllables_enrichment_data_to_csvs(self, syllable_data)

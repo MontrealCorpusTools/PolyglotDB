@@ -1,9 +1,8 @@
 from uuid import uuid1
-import time
 from decimal import Decimal
 from polyglotdb.exceptions import GraphModelError
 
-from ..base.helper import key_for_cypher, value_for_cypher
+from ..base.helper import value_for_cypher
 
 
 class BaseAnnotation(object):
@@ -52,6 +51,9 @@ class BaseAnnotation(object):
             The objects corpus_context will be set to this parameter
         """
         self._corpus_context = context
+
+    def __getitem__(self, key):
+        return getattr(self, key)
 
     def save(self):
         pass
@@ -117,9 +119,6 @@ class LinguisticAnnotation(BaseAnnotation):
         for k, v in self._subannotations.items():
             for t in v:
                 t.corpus_context = context
-
-    def __getitem__(self, key):
-        return getattr(self, key)
 
     @property
     def properties(self):
@@ -533,11 +532,6 @@ class SubAnnotation(BaseAnnotation):
         if self._annotation._type in self.corpus_context.hierarchy.subannotations and self._node['type'] in \
                 self.corpus_context.hierarchy.subannotations[self._annotation._type]:
             self._type = self._node['type']
-        if self._type is None:
-            print(self._node)
-            print(self._annotation._node)
-            print(self._annotation._type, self.corpus_context.hierarchy.subannotations, self._node['type'])
-            error
 
     def load(self, id):
         """ 

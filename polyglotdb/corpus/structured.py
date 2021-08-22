@@ -1,4 +1,4 @@
-import time
+
 from ..query import value_for_cypher
 from ..query.annotations.query import SplitQuery
 from ..query.metadata.query import MetaDataQuery

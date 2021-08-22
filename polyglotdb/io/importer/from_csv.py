@@ -726,8 +726,6 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
             statement = word_statement.format(path=csv_path,
                                               corpus=corpus_context.cypher_safe_name,
                                               word_type=corpus_context.word_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
@@ -812,8 +810,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                                  corpus=corpus_context.cypher_safe_name,
                                                  word_name=corpus_context.word_name,
                                                  phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Nucleus definition took {} seconds.'.format(time.time() - begin))
@@ -832,8 +828,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             '''
             statement = node_statement.format(path=csv_path,
                                               corpus=corpus_context.cypher_safe_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Syllable node creation took {} seconds.'.format(time.time() - begin))
@@ -852,8 +846,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                              corpus=corpus_context.cypher_safe_name,
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
@@ -874,8 +866,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                              corpus=corpus_context.cypher_safe_name,
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Spoken relationship creation took {} seconds.'.format(time.time() - begin))
@@ -893,8 +883,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                                   corpus=corpus_context.cypher_safe_name,
                                                   word_name=corpus_context.word_name,
                                                   phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Precedence relationship creation took {} seconds.'.format(time.time() - begin))
@@ -910,8 +898,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                                  corpus=corpus_context.cypher_safe_name,
                                                  word_name=corpus_context.word_name,
                                                  phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Phone-word relationship deletion took {} seconds.'.format(time.time() - begin))
@@ -940,8 +926,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                                corpus=corpus_context.cypher_safe_name,
                                                word_name=corpus_context.word_name,
                                                phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Onset hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
@@ -969,8 +953,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                              corpus=corpus_context.cypher_safe_name,
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Coda hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
@@ -1057,8 +1039,6 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             statement = node_statement.format(path=csv_path,
                                               corpus=corpus_context.cypher_safe_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Syllable node creation took {} seconds.'.format(time.time() - begin))
@@ -1080,8 +1060,6 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                              corpus=corpus_context.cypher_safe_name,
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Hierarchical and spoken relationship creation took {} seconds.'.format(time.time() - begin))
@@ -1099,8 +1077,6 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                              corpus=corpus_context.cypher_safe_name,
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('First precedence relationship creation took {} seconds.'.format(time.time() - begin))
@@ -1118,8 +1094,6 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                              corpus=corpus_context.cypher_safe_name,
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Second precedence relationship creation took {} seconds.'.format(time.time() - begin))
@@ -1148,8 +1122,6 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                                corpus=corpus_context.cypher_safe_name,
                                                word_name=corpus_context.word_name,
                                                phone_name=corpus_context.phone_name)
-            if corpus_context.config.debug:
-                print(statement)
             corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Onset/coda hierarchical relationship creation took {} seconds.'.format(time.time() - begin))

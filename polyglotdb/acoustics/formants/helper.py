@@ -1,9 +1,6 @@
 import os
-import sys
-from functools import partial
-import csv
 import re
-from statistics import mean, stdev
+from statistics import mean
 import numpy as np
 import scipy
 
@@ -84,9 +81,7 @@ def parse_multiple_formant_output(output):
     to_return = {}
     for item in listing_list:
         output = parse_point_script_output(item)
-        # print (output)
         reported_nformants = output.pop('num_formants')
-        # to_return[track_nformants(output)] = output
         to_return[reported_nformants] = output
     return to_return
 

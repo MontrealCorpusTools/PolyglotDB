@@ -1,6 +1,5 @@
-import re
+
 import os
-import string
 import logging
 import operator
 import hashlib

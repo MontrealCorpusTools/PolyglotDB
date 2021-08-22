@@ -1,8 +1,6 @@
 import librosa
-from scipy.signal import lfilter
 from functools import partial
 import numpy as np
-from scipy.signal import gaussian
 from librosa.core.spectrum import stft
 
 PADDING = 0.1
@@ -60,6 +58,8 @@ def generate_spectrogram(signal, sr, log_color_scale=True):
     float
         Frequency step between bins
     """
+    from scipy.signal import lfilter
+    from scipy.signal import gaussian
     n_fft = 256
     # if len(self._signal) / self._sr > 30:
     window_length = 0.005

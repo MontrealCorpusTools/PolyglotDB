@@ -3,7 +3,7 @@ from ....exceptions import AnnotationAttributeError, SubsetError
 
 from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
-                        InClauseElement, NotInClauseElement, ContainsClauseElement, RegexClauseElement,
+                        InClauseElement, NotInClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
                         SubsetClauseElement, NotSubsetClauseElement,
@@ -299,7 +299,6 @@ class AnnotationNode(Node):
         return FollowsClauseElement(self, other_annotation)
 
     def __getattr__(self, key):
-        print(key, self.hierarchy.acoustics)
         if key == 'current':
             return self
         elif key in ['previous', 'following']:

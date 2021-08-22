@@ -1,7 +1,6 @@
 import re
 from ..io.importer import feature_data_to_csvs, import_feature_csvs
 from .lexical import LexicalContext
-from ..exceptions import SubsetError
 from ..io.enrichment.features import enrich_features_from_csv, parse_file
 
 
@@ -131,7 +130,6 @@ class PhonologicalContext(LexicalContext):
         newphones = []
         toAdd = {}
         for item in results:
-            print(item)
             phone = item['label']
             if re.search(pattern, phone) is not None:
                 newphone = re.sub(pattern, "", phone)

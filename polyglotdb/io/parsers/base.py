@@ -1,4 +1,3 @@
-import os
 
 from ..types.standardized import PGAnnotation, PGSubAnnotation, PGAnnotationType
 

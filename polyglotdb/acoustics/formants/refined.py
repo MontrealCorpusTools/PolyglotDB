@@ -5,7 +5,8 @@ import numpy as np
 from conch import analyze_segments
 
 from ..segments import generate_vowel_segments
-from .helper import generate_variable_formants_point_function, get_mahalanobis, get_mean_SD, save_formant_point_data, extract_and_save_formant_tracks
+from .helper import generate_variable_formants_point_function, get_mahalanobis, get_mean_SD, \
+    save_formant_point_data, extract_and_save_formant_tracks
 
 
 def read_prototypes(vowel_prototypes_path):
@@ -112,15 +113,13 @@ def analyze_formant_points_refinement(corpus_context, vowel_label='vowel', durat
 
     total_speaker_vowel_pairs = len(segment_mapping.grouped_mapping('speaker', 'label').items())
     for i, ((speaker, vowel), seg) in enumerate(segment_mapping.grouped_mapping('speaker', 'label').items()):
-        print(speaker, vowel)
-        print(seg)
         if len(seg) == 0:
             continue
         print(speaker + ' ' + vowel + ': ' + str(i + 1) + ' of ' + str(total_speaker_vowel_pairs) + ': ' + str(
             len(seg)) + ' tokens')
         output = analyze_segments(seg, formant_function, stop_check=stop_check,
                                   multiprocessing=multiprocessing)  # Analyze the phone
-        print(output)
+
         if len(seg) < 6:
             print("Not enough observations of vowel {}, at least 6 are needed, only found {}.".format(vowel, len(seg)))
             for s, data in output.items():

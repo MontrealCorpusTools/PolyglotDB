@@ -1,4 +1,4 @@
-# from __future__ import absolute_import
+
 import os
 
 
@@ -6,7 +6,7 @@ from .textgrid import TextgridParser
 from ..types.parsing import OrthographyTier
 
 from polyglotdb.exceptions import TextGridError
-from ..helper import find_wav_path, get_n_channels
+from ..helper import get_n_channels
 from polyglotdb.io.helper import find_wav_path
 
 from polyglotdb.io.parsers.base import DiscourseData

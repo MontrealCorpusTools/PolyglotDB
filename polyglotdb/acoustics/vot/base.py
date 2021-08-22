@@ -1,14 +1,10 @@
-import tempfile
 
 from uuid import uuid1
 from conch import analyze_segments
-from conch.analysis.segments import SegmentMapping, FileSegment
+from conch.analysis.segments import SegmentMapping
 from conch.analysis.autovot import AutoVOTAnalysisFunction
 
-from ..segments import generate_utterance_segments, generate_segments
-from ...query.annotations.models import LinguisticAnnotation
-from ...exceptions import SpeakerAttributeError
-from ..classes import Track, TimePoint
+from ..segments import generate_segments
 from ..utils import PADDING
 
 

@@ -716,7 +716,6 @@ class AudioContext(SyllabicContext):
                         AND "discourse" = '{}'
                         AND "speaker" = '{}';'''.format(columns, acoustic_name, utterance_id, discourse, speaker)
         result = self.execute_influxdb(query)
-        print(result)
         track = Track()
         for r in result.get_points(acoustic_name):
             s = to_seconds(r['time'])

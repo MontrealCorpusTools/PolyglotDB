@@ -1,4 +1,4 @@
-from .base import AnnotationNode, AnnotationAttribute, special_attributes, key_for_cypher, AnnotationAttributeError
+from .base import AnnotationNode, key_for_cypher
 
 
 class HierarchicalAnnotation(AnnotationNode):

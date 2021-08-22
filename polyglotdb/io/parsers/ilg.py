@@ -1,14 +1,12 @@
 import os
-import re
-from collections import Counter
 
-from polyglotdb.exceptions import (DelimiterError, ILGError, ILGLinesMismatchError,
+from polyglotdb.exceptions import (ILGLinesMismatchError,
                                    ILGWordMismatchError)
 from polyglotdb.structure import Hierarchy
 
-from ..helper import guess_type, ilg_text_to_lines
+from ..helper import ilg_text_to_lines
 
-from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
+from .base import BaseParser, DiscourseData
 
 
 class IlgParser(BaseParser):

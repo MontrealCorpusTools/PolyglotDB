@@ -1,5 +1,4 @@
 
-
 from polyglotdb.exceptions import GraphQueryError
 
 from ..base.results import BaseQueryResults, BaseRecord
@@ -31,8 +30,6 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             a._speaker = pa
 
     for pre in to_preload:
-        print(pre)
-        print(type(pre), isinstance(pre, QuerySubAnnotation))
         if isinstance(pre, HierarchicalAnnotation):
             pa = LinguisticAnnotation(corpus)
             r[pre.alias]['neo4j_label'] = pre.alias.split('_')[-1]
@@ -44,16 +41,11 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             a._supers[pre.node_type] = pa
         elif isinstance(pre, QuerySubAnnotation):
             subannotations = r[pre.collection_alias]
-            print(subannotations)
             for s in subannotations:
-                print(s)
                 sa = SubAnnotation(corpus)
                 s['neo4j_label'] = pre.collection_alias.split('_in_')[0].replace('node_', '')
                 sa._annotation = a
                 sa.node = s
-                if sa._type is None:
-                    print(s)
-                    error
                 if sa._type not in a._subannotations:
                     a._subannotations[sa._type] = []
                 a._subannotations[sa._type].append(sa)
@@ -65,7 +57,6 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             for i, e in enumerate(subs):
                 pa = LinguisticAnnotation(corpus)
                 e['neo4j_label'] = pre.collected_node.alias.replace('node_', '')
-                print(pre.collection_alias)
                 pa.node = e
                 pa.type_node = sub_types[i]
                 pa._preloaded = True
@@ -211,13 +202,11 @@ class QueryResults(BaseQueryResults):
                     speaker = r[a.speaker_alias]
                     if utterance_id not in a.attribute.cache:
                         data = self.corpus.get_utterance_acoustics(a.attribute.label, utterance_id, discourse, speaker)
-                        print(data)
                         a.attribute.cache[utterance_id] = data
                     t = a.hydrate(self.corpus, utterance_id,
                                   r[a.begin_alias],
                                   r[a.end_alias])
                     for k in a.output_columns:
-                        print(k, self.track_columns)
                         if k == 'time':
                             continue
                         if k in self.track_columns:

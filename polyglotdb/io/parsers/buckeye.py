@@ -2,7 +2,7 @@ import os
 import re
 
 from polyglotdb.exceptions import BuckeyeParseError
-from .base import BaseParser, PGAnnotation, PGAnnotationType, DiscourseData
+from .base import BaseParser, DiscourseData
 from .speaker import FilenameSpeakerParser
 from ..helper import find_wav_path
 

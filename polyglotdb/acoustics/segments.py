@@ -1,5 +1,4 @@
 from conch.analysis.segments import SegmentMapping
-import sys
 
 
 def generate_segments(corpus_context, annotation_type='utterance', subset=None, file_type='vowel',
@@ -36,10 +35,7 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                     WHERE s.name = $speaker_name
                     RETURN d, r.channel as channel'''.format(corpus_name=corpus_context.cypher_safe_name)
         results = corpus_context.execute_cypher(statement, speaker_name=s)
-        print('RESULTS', results)
         for r in results:
-            print('line', r)
-            print(r['channel'])
             channel = r['channel']
             discourse = r['d']['name']
             if file_type == 'vowel':
@@ -85,7 +81,6 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
                     elif 'utterance'not in corpus_context.hierarchy.annotation_types:
                         utt_id = None
                     else:
-                        print(a)
                         utt_id = a.utterance.id
                     if fetch_subannotations:
                         #Get subannotations too

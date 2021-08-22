@@ -1,4 +1,4 @@
-from .helper import key_for_cypher, value_for_cypher
+from .helper import key_for_cypher
 from .elements import (EqualClauseElement, NotEqualClauseElement, SubsetClauseElement,
                        NotSubsetClauseElement, NullClauseElement, NotNullClauseElement,
                        InClauseElement, NotInClauseElement, GtClauseElement, GteClauseElement,

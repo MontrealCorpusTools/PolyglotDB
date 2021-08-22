@@ -1,21 +1,17 @@
 import os
-import pickle
 import shutil
 import sys
-import time
 from decimal import Decimal
 
 from neo4j import GraphDatabase
 
 from ..query.annotations.attributes import AnnotationNode, PauseAnnotation
-from ..query.annotations import GraphQuery, SplitQuery
+from ..query.annotations import SplitQuery
 from ..query.lexicon import LexiconQuery, LexiconNode
 from ..query.speaker import SpeakerQuery, SpeakerNode
 from ..query.discourse import DiscourseQuery, DiscourseNode
 from ..config import CorpusConfig
-from ..exceptions import (CorpusConfigError, GraphQueryError,
-                          ConnectionError, AuthorizationError, TemporaryConnectionError,
-                          NetworkAddressError)
+from ..exceptions import (CorpusConfigError, GraphQueryError)
 from ..structure import Hierarchy
 
 
@@ -101,8 +97,9 @@ class BaseContext(object):
                 parameters[k] = float(v)
         try:
             with self.graph_driver.session() as session:
-                print(statement)
-                print(parameters)
+                if self.config.debug:
+                    print('Statement:', statement)
+                    print('Parameters:',parameters)
                 results = session.run(statement, **parameters)
                 if return_graph:
                     results = results.graph()

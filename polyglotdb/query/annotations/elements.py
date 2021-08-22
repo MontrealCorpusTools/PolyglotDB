@@ -9,8 +9,6 @@ from ..base.elements import (ClauseElement, EqualClauseElement as BaseEqualClaus
                              NullClauseElement as BaseNullClauseElement,
                              NotNullClauseElement as BaseNotNullClauseElement, )
 
-from ...exceptions import NodeAttributeError
-
 
 class AnnotationClauseElement(ClauseElement):
     """
