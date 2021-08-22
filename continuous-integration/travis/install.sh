@@ -36,7 +36,7 @@ if [ ! -f "$HOME/tools/praat" ]; then
    grep -Eo 'praat[0-9]+_linux64barren\.tar\.gz' | head -1)
 
   # Download.
-  curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
+  curl "https://www.fon.hum.uva.nl/praat/praat6151_linux64barren.tar.gz" > praat-latest.tar.gz
   tar -zxvf praat-latest.tar.gz
   mv praat_barren $HOME/tools/praat
 else
