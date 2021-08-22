@@ -8,7 +8,7 @@ branches:
 notifications:
   email: false
 
-dist: trusty
+dist: bionic
 sudo: required
 
 addons:
