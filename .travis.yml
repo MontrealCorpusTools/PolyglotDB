@@ -29,6 +29,7 @@ before_install:
 # Install packages
 install:
   - export PATH="$HOME/miniconda/miniconda/bin:$HOME/tools/autovot/autovot/bin:$PATH"
+  - source "$HOME/miniconda/miniconda/etc/profile.d/conda.sh"
   - conda activate test-environment
   - pip install -r requirements.txt
   - which python
