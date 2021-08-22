@@ -96,7 +96,7 @@ if __name__ == '__main__':
               'praatio ~= 4.1',
               'textgrid',
               'conch_sounds',
-              'numpy==1.17.0'
+              'numpy==1.17.0',
               'librosa',
               'influxdb',
               'tqdm',
