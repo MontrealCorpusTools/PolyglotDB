@@ -20,20 +20,6 @@ else
   echo "Miniconda already installed."
 fi
 
-if [ ! -d "$HOME/miniconda/miniconda/envs/test-server-environment" ]; then
-  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
-  conda create -q -n test-server-environment -c conda-forge python=$TRAVIS_PYTHON_VERSION librosa numpy resampy scikit-learn scipy
-  conda activate test-server-environment
-  which python
-  #pip install -q coveralls coverage neo4j-driver~=4.3 praatio~=4.1 textgrid tqdm influxdb conch_sounds pytest setuptools requests -U
-  pip install -q -r requirements.txt
-  python setup.py install
-else
-  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
-  conda activate test-server-environment
-  python setup.py install
-  echo "Server already installed."
-fi
 
 if [ ! -d "$HOME/pgdb/data" ]; then
   conda activate test-environment
