@@ -17,6 +17,8 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb conch_sounds
   python setup.py install
 else
+  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  source "$HOME/miniconda/miniconda/etc/profile.d/conda.sh"
   echo "Miniconda already installed."
 fi
 
