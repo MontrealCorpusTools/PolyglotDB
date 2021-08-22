@@ -1,5 +1,6 @@
 import csv
 import os
+import re
 
 
 def write_csv_file(path, header, data, mode='w'):
@@ -51,7 +52,7 @@ def data_to_graph_csvs(corpus_context, data):
     token_headers = data.token_headers
     for s in data.speakers:
         for x in data.annotation_types:
-            path = os.path.join(directory, '{}_{}.csv'.format(s, x))
+            path = os.path.join(directory, '{}_{}.csv'.format(re.sub(r'\W', '_', s), x))
             rfs[s, x] = open(path, 'a', newline='', encoding='utf8')
             rel_writers[s, x] = csv.DictWriter(rfs[s, x], token_headers[x], delimiter=',')
     subanno_files = {}
@@ -59,7 +60,7 @@ def data_to_graph_csvs(corpus_context, data):
     for sp in data.speakers:
         for k, v in data.hierarchy.subannotations.items():
             for s in v:
-                path = os.path.join(directory, '{}_{}_{}.csv'.format(sp, k, s))
+                path = os.path.join(directory, '{}_{}_{}.csv'.format(re.sub(r'\W', '_', sp), k, s))
                 subanno_files[sp, k, s] = open(path, 'a', newline='', encoding='utf8')
                 header = ['id', 'begin', 'end', 'annotation_id', 'label']
                 subanno_writers[sp, k, s] = csv.DictWriter(subanno_files[sp, k, s], header, delimiter=',')
@@ -107,7 +108,7 @@ def utterance_data_to_csvs(corpus_context, speaker, discourse, data):
         the timing data
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                        '{}_{}_utterance.csv'.format(speaker, discourse))
+                        '{}_{}_utterance.csv'.format(re.sub(r'\W', '_', speaker), discourse))
     header = ['id', 'prev_id', 'begin_word_id', 'end_word_id']
     write_csv_file(path, header, data, 'a')
 
@@ -151,7 +152,7 @@ def syllables_data_to_csvs(corpus_context, speaker, discourse, syllable_data):
 
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                        '{}_{}_syllable.csv'.format(speaker, discourse))
+                        '{}_{}_syllable.csv'.format(re.sub(r'\W', '_', speaker), discourse))
     header = ['id', 'prev_id', 'vowel_id', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
     write_csv_file(path, header, syllable_data, 'a')
 
@@ -192,7 +193,7 @@ def nonsyls_data_to_csvs(corpus_context, speaker, discourse, data):
 
     """
     path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                        '{}_{}_nonsyl.csv'.format(speaker, discourse))
+                        '{}_{}_nonsyl.csv'.format(re.sub(r'\W', '_', speaker), discourse))
     header = ['id', 'prev_id', 'break', 'onset_id', 'coda_id', 'begin', 'end', 'label', 'type_id']
     write_csv_file(path, header, data, 'a')
 
@@ -313,7 +314,7 @@ def create_utterance_csvs(corpus_context):
         discourses = corpus_context.get_discourses_of_speaker(s)
         for d in discourses:
             path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                                '{}_{}_utterance.csv'.format(s, d))
+                                '{}_{}_utterance.csv'.format(re.sub(r'\W', '_', s), d))
             with open(path, 'w', newline='', encoding='utf8') as f:
                 writer = csv.DictWriter(f, header, delimiter=',')
                 writer.writeheader()
@@ -325,7 +326,7 @@ def create_syllabic_csvs(corpus_context):
         discourses = corpus_context.get_discourses_of_speaker(s)
         for d in discourses:
             path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                                '{}_{}_syllable.csv'.format(s, d))
+                                '{}_{}_syllable.csv'.format(re.sub(r'\W', '_', s), d))
             with open(path, 'w', newline='', encoding='utf8') as f:
                 writer = csv.DictWriter(f, header, delimiter=',')
                 writer.writeheader()
@@ -337,7 +338,7 @@ def create_nonsyllabic_csvs(corpus_context):
         discourses = corpus_context.get_discourses_of_speaker(s)
         for d in discourses:
             path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                                '{}_{}_nonsyl.csv'.format(s, d))
+                                '{}_{}_nonsyl.csv'.format(re.sub(r'\W', '_', s), d))
             with open(path, 'w', newline='', encoding='utf8') as f:
                 writer = csv.DictWriter(f, header, delimiter=',')
                 writer.writeheader()

@@ -1,13 +1,9 @@
 import pytest
 from polyglotdb import CorpusContext
 
-acoustic = pytest.mark.skipif(
-    pytest.config.getoption("--skipacoustics"),
-    reason="remove --skipacoustics option to run"
-)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_phone_mean_pitch(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
@@ -19,7 +15,7 @@ def test_phone_mean_pitch(acoustic_utt_config, praat_path):
         print(results)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_speaker_mean_pitch(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.pitch_source = 'praat'
@@ -29,7 +25,7 @@ def test_speaker_mean_pitch(acoustic_utt_config, praat_path):
         print(results)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_phone_speaker_mean_pitch(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.pitch_source = 'praat'

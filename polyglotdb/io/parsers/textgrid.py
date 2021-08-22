@@ -1,9 +1,8 @@
 import os
+from praatio import tgio
 
-from textgrid import TextGrid, IntervalTier
 
 from polyglotdb.exceptions import TextGridError
-from polyglotdb.structure import Hierarchy
 from polyglotdb.io.types.parsing import Orthography, Transcription
 
 from .base import BaseParser, DiscourseData
@@ -49,13 +48,12 @@ class TextgridParser(BaseParser):
 
         Returns
         -------
-        :class:`~textgrid.TextGrid`
+        :class:`~praatio.tgio.TextGrid`
             TextGrid object
         """
-        tg = TextGrid()
         try:
-            tg.read(path)
-        except ValueError as e:
+            tg = tgio.openTextgrid(path)
+        except (AssertionError, ValueError) as e:
             raise (TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
         return tg
 
@@ -77,7 +75,7 @@ class TextgridParser(BaseParser):
         """
         tg = self.load_textgrid(path)
 
-        if len(tg.tiers) != len(self.annotation_tiers):
+        if len(tg.tierNameList) != len(self.annotation_tiers):
             raise (TextGridError(
                 "The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(
                     path)))
@@ -93,12 +91,12 @@ class TextgridParser(BaseParser):
             a.speaker = speaker
 
         # Parse the tiers
-        for i, ti in enumerate(tg.tiers):
-
-            if isinstance(ti, IntervalTier):
-                self.annotation_tiers[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
+        for i, tier_name in enumerate(tg.tierNameList):
+            ti = tg.tierDict[tier_name]
+            if isinstance(ti, tgio.IntervalTier):
+                self.annotation_tiers[i].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList))
             else:
-                self.annotation_tiers[i].add(((x.mark.strip(), x.time) for x in ti))
+                self.annotation_tiers[i].add(((text.strip(), time) for time, text in ti.entryList))
 
         is_empty_textgrid = True
 

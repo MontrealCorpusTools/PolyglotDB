@@ -44,7 +44,7 @@ class PrecedenceClauseElement(AnnotationClauseElement):
         """
         Create a Cypher parameter for the value of the clause.
         """
-        return '{`%s%s`}' % (self.value_alias_prefix.replace('`', ''), self.node.alias.replace('`', ''))
+        return '$`%s%s`' % (self.value_alias_prefix.replace('`', ''), self.node.alias.replace('`', ''))
 
     def for_cypher(self):
 

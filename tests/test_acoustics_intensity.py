@@ -5,11 +5,6 @@ import pytest
 
 from polyglotdb import CorpusContext
 
-acoustic = pytest.mark.skipif(
-    pytest.config.getoption("--skipacoustics"),
-    reason="remove --skipacoustics option to run"
-)
-
 
 def test_query_intensity(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
@@ -83,7 +78,7 @@ def test_relativize_intensity(acoustic_utt_config):
                 assert not p.has_value('Intensity_relativized')
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.praat_path = praat_path

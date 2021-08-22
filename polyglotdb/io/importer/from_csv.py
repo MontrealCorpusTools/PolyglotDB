@@ -1,7 +1,8 @@
 import os
 import logging
 import time
-
+import neo4j
+import re
 
 def make_path_safe(path):
     '''Takes a path and returns it with the associated Javascript URL-safe characters'''
@@ -35,17 +36,29 @@ def import_type_csvs(corpus_context, type_headers):
         else:
             type_path = 'file:///{}'.format(make_path_safe(path))
 
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
+        try:
+            corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
 
         properties = []
         for x in h:
             properties.append(prop_temp.format(name=x))
         if 'label' in h:
-            properties.append('label_insensitive: lower(csvLine.label)')
-            corpus_context.execute_cypher('CREATE INDEX ON :%s_type(label_insensitive)' % at)
+            properties.append('label_insensitive: toLower(csvLine.label)')
+            try:
+                corpus_context.execute_cypher('CREATE INDEX ON :%s_type(label_insensitive)' % at)
+            except neo4j.exceptions.ClientError as e:
+                if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                    raise
         for x in h:
             if x != 'id':
-                corpus_context.execute_cypher('CREATE INDEX ON :%s_type(%s)' % (at, x))
+                try:
+                    corpus_context.execute_cypher('CREATE INDEX ON :%s_type(%s)' % (at, x))
+                except neo4j.exceptions.ClientError as e:
+                    if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                        raise
         if properties:
             type_prop_string = ', '.join(properties)
         else:
@@ -126,7 +139,7 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                 if call_back is not None:
                     call_back(cur)
                     cur += 1
-                path = os.path.join(directory, '{}_{}.csv'.format(s, at))
+                path = os.path.join(directory, '{}_{}.csv'.format(re.sub(r'\W', '_', s), at))
                 if not os.path.exists(path):  # Already imported
                     continue
                 # If on the Docker version, the files live in /site/proj
@@ -134,7 +147,11 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                     rel_path = 'file:///site/proj/{}'.format(make_path_safe(path))
                 else:
                     rel_path = 'file:///{}'.format(make_path_safe(path))
-                session.write_transaction(_unique_function, at)
+                try:
+                    session.write_transaction(_unique_function, at)
+                except neo4j.exceptions.ClientError as e:
+                    if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                        raise
 
                 properties = []
 
@@ -142,10 +159,18 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                     if x in ['type_id', 'id', 'previous_id', 'speaker', 'discourse', 'begin', 'end']:
                         continue
                     properties.append(prop_temp.format(name=x))
-                    session.write_transaction(_prop_index, at, x)
+                    try:
+                        session.write_transaction(_prop_index, at, x)
+                    except neo4j.exceptions.ClientError as e:
+                        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                            raise
                 if 'label' in token_headers[at]:
-                    properties.append('label_insensitive: lower(csvLine.label)')
-                    session.write_transaction(_label_index, at)
+                    properties.append('label_insensitive: toLower(csvLine.label)')
+                    try:
+                        session.write_transaction(_label_index, at)
+                    except neo4j.exceptions.ClientError as e:
+                        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                            raise
                 st = hierarchy[at]
                 if properties:
                     token_prop_string = ', ' + ', '.join(properties)
@@ -198,8 +223,16 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                 rel_statement = rel_import_statement.format(**rel_kwargs)
                 speaker_statements.append((node_statement, rel_statement, path, at, s))
                 begin = time.time()
-                session.write_transaction(_begin_index, at)
-                session.write_transaction(_end_index, at)
+                try:
+                    session.write_transaction(_begin_index, at)
+                except neo4j.exceptions.ClientError as e:
+                    if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                        raise
+                try:
+                    session.write_transaction(_end_index, at)
+                except neo4j.exceptions.ClientError as e:
+                    if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                        raise
             statements.append(speaker_statements)
 
     for i, speaker_statements in enumerate(statements):
@@ -225,8 +258,12 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
     for sp in speakers:
         for k, v in hierarchy.subannotations.items():
             for s in v:
-                path = os.path.join(directory, '{}_{}_{}.csv'.format(sp, k, s))
-                corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
+                path = os.path.join(directory, '{}_{}_{}.csv'.format(re.sub(r'\W', '_', sp), k, s))
+                try:
+                    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
+                except neo4j.exceptions.ClientError as e:
+                    if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                        raise
                 # If on the Docker version, the files live in /site/proj
                 if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
                     sub_path = 'file:///site/proj/{}'.format(make_path_safe(path))
@@ -236,7 +273,7 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                 rel_import_statement = '''USING PERIODIC COMMIT 1000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
-    CREATE (t:{subannotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
+    CREATE (t:{subannotation_type}:{corpus_name}:speech {{id: csvLine.id, type: $subannotation_type, begin: toFloat(csvLine.begin),
                                 end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
     CREATE (t)-[:annotates]->(n)'''
                 kwargs = {'path': sub_path, 'annotation_type': k,
@@ -244,7 +281,7 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                           'corpus_name': corpus_context.cypher_safe_name}
                 statement = rel_import_statement.format(**kwargs)
                 try:
-                    corpus_context.execute_cypher(statement)
+                    corpus_context.execute_cypher(statement, subannotation_type=s)
                 except:
                     raise
                 finally:
@@ -269,7 +306,7 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
-    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    int_set_template = 'n.{name} = toInteger(csvLine.{name})'
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
@@ -291,13 +328,13 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     else:
         lex_path = 'file:///{}'.format(make_path_safe(path))
     if case_sensitive:
-        import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 3000
+        import_statement = '''USING PERIODIC COMMIT 3000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     with csvLine
     MATCH (n:{word_type}_type:{corpus_name}) where n.label = csvLine.label
     SET {new_properties}'''
     else:
-        import_statement = '''CYPHER planner=rule USING PERIODIC COMMIT 3000
+        import_statement = '''USING PERIODIC COMMIT 3000
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:{word_type}_type:{corpus_name}) where n.label_insensitive = csvLine.label
     SET {new_properties}'''
@@ -308,7 +345,11 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
                                         new_properties=properties)
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.word_name, h))
+        try:
+            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.word_name, h))
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
     os.remove(path)
 
 
@@ -325,7 +366,7 @@ def import_feature_csvs(corpus_context, typed_data):
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
-    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    int_set_template = 'n.{name} = toInteger(csvLine.{name})'
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
@@ -348,7 +389,7 @@ def import_feature_csvs(corpus_context, typed_data):
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
 
-    import_statement = '''CYPHER planner=rule
+    import_statement = '''
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:{phone_type}_type:{corpus_name}) where n.label = csvLine.label
     SET {new_properties}'''
@@ -359,7 +400,11 @@ def import_feature_csvs(corpus_context, typed_data):
                                         new_properties=properties)
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name, h))
+        try:
+            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name, h))
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
     os.remove(path)
 
 
@@ -376,7 +421,7 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
-    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    int_set_template = 'n.{name} = toInteger(csvLine.{name})'
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
@@ -399,7 +444,7 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
     else:
         syl_path = 'file:///{}'.format(make_path_safe(path))
 
-    import_statement = '''CYPHER planner=rule
+    import_statement = '''
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:syllable_type:{corpus_name}) where n.label = csvLine.label
     SET {new_properties}'''
@@ -410,7 +455,11 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
                                         new_properties=properties)
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("syllable", h))
+        try:
+            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("syllable", h))
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
 
 
 def import_utterance_enrichment_csvs(corpus_context, typed_data):
@@ -426,7 +475,7 @@ def import_utterance_enrichment_csvs(corpus_context, typed_data):
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
-    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    int_set_template = 'n.{name} = toInteger(csvLine.{name})'
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
@@ -449,7 +498,7 @@ def import_utterance_enrichment_csvs(corpus_context, typed_data):
     else:
         utt_path = 'file:///{}'.format(make_path_safe(path))
 
-    import_statement = '''CYPHER planner=rule
+    import_statement = '''
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:utterance:{corpus_name}) where n.id = csvLine.id
     SET {new_properties}'''
@@ -460,7 +509,11 @@ def import_utterance_enrichment_csvs(corpus_context, typed_data):
                                         new_properties=properties)
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("utterance", h))
+        try:
+            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("utterance", h))
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
 
 
 def import_speaker_csvs(corpus_context, typed_data):
@@ -476,7 +529,7 @@ def import_speaker_csvs(corpus_context, typed_data):
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
-    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    int_set_template = 'n.{name} = toInteger(csvLine.{name})'
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
@@ -499,7 +552,7 @@ def import_speaker_csvs(corpus_context, typed_data):
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
 
-    import_statement = '''CYPHER planner=rule
+    import_statement = '''
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:Speaker:{corpus_name}) where n.name = toString(csvLine.name)
     SET {new_properties}'''
@@ -509,7 +562,11 @@ def import_speaker_csvs(corpus_context, typed_data):
                                         new_properties=properties)
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :Speaker(%s)' % h)
+        try:
+            corpus_context.execute_cypher('CREATE INDEX ON :Speaker(%s)' % h)
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
     os.remove(path)
 
 
@@ -526,7 +583,7 @@ def import_discourse_csvs(corpus_context, typed_data):
     """
     string_set_template = 'n.{name} = csvLine.{name}'
     float_set_template = 'n.{name} = toFloat(csvLine.{name})'
-    int_set_template = 'n.{name} = toInt(csvLine.{name})'
+    int_set_template = 'n.{name} = toInteger(csvLine.{name})'
     bool_set_template = '''n.{name} = (CASE WHEN csvLine.{name} = 'False' THEN false ELSE true END)'''
     properties = []
     for h, v in typed_data.items():
@@ -549,7 +606,7 @@ def import_discourse_csvs(corpus_context, typed_data):
     else:
         feat_path = 'file:///{}'.format(make_path_safe(path))
 
-    import_statement = '''CYPHER planner=rule
+    import_statement = '''
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
     MATCH (n:Discourse:{corpus_name}) where n.name = toString(csvLine.name)
     SET {new_properties}'''
@@ -559,7 +616,11 @@ def import_discourse_csvs(corpus_context, typed_data):
                                         new_properties=properties)
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
-        corpus_context.execute_cypher('CREATE INDEX ON :Discourse(%s)' % h)
+        try:
+            corpus_context.execute_cypher('CREATE INDEX ON :Discourse(%s)' % h)
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
     os.remove(path)
 
 
@@ -579,7 +640,11 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
     if call_back is not None:
         call_back('Importing data...')
         call_back(0, len(speakers))
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
     for i, s in enumerate(speakers):
         discourses = corpus_context.get_discourses_of_speaker(s)
         for d in discourses:
@@ -589,7 +654,7 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                 call_back('Importing data for speaker {} of {} ({})...'.format(i, len(speakers), s))
                 call_back(i)
 
-            path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_{}_utterance.csv'.format(s, d))
+            path = os.path.join(corpus_context.config.temporary_directory('csv'), '{}_{}_utterance.csv'.format(re.sub(r'\W', '_', s), d))
             if corpus_context.config.debug:
                 print('Importing utterances for speaker {} in discourse {}, using import file {}'.format(s, d, path))
 
@@ -683,13 +748,41 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
     if call_back is not None:
         call_back('Importing syllables...')
         call_back(0, len(speakers))
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
     for i, s in enumerate(speakers):
         if stop_check is not None and stop_check():
             return
@@ -699,7 +792,7 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
         discourses = corpus_context.get_discourses_of_speaker(s)
         for d in discourses:
             path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                                '{}_{}_syllable.csv'.format(s, d))
+                                '{}_{}_syllable.csv'.format(re.sub(r'\W', '_', s), d))
             if corpus_context.config.debug:
                 print('Importing syllables for speaker {} in discourse {}, using import file {}'.format(s, d, path))
             # If on the Docker version, the files live in /site/proj
@@ -837,8 +930,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             UNWIND (case when onspath is not null then nodes(onspath)[0..-1] else [null] end) as o
     
             OPTIONAL MATCH (o)-[r:contained_by]->(w)
-            with n, w,s, csvLine, filter(x in collect(o) WHERE x is not NULL) as ons,
-            filter(x in collect(r) WHERE x is not NULL) as rels
+            with n, w,s, csvLine, [x in collect(o) WHERE x is not NULL| x] as ons,
+            [x in collect(r) WHERE x is not NULL | x] as rels
             FOREACH (o in ons | SET o :onset, o.syllable_position = 'onset')
             FOREACH (o in ons | CREATE (o)-[:contained_by]->(s))
             FOREACH (r in rels | DELETE r)
@@ -866,8 +959,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             UNWIND (case when codapath is not null then nodes(codapath)[1..] else [null] end) as c
     
             OPTIONAL MATCH (c)-[r:contained_by]->(w)
-            WITH n, w,s, filter(x in collect(c) WHERE x is not NULL) as cod,
-            filter(x in collect(r) WHERE x is not NULL) as rels
+            WITH n, w,s, [x in collect(c) WHERE x is not NULL | x] as cod,
+            [x in collect(r) WHERE x is not NULL | x] as rels
             FOREACH (c in cod | SET c :coda, c.syllable_position = 'coda')
             FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
             FOREACH (r in rels | DELETE r)
@@ -900,12 +993,36 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
     if call_back is not None:
         call_back('Importing degenerate syllables...')
         call_back(0, len(speakers))
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
-    corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
+    try:
+        corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
     for i, s in enumerate(speakers):
         if stop_check is not None and stop_check():
             return
@@ -915,7 +1032,7 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
         discourses = corpus_context.get_discourses_of_speaker(s)
         for d in discourses:
             path = os.path.join(corpus_context.config.temporary_directory('csv'),
-                                '{}_{}_nonsyl.csv'.format(s, d))
+                                '{}_{}_nonsyl.csv'.format(re.sub(r'\W', '_', s), d))
 
             if corpus_context.config.debug:
                 print('Importing degenerate syllables for speaker {} in discourse {}, using import file {}'.format(s, d,
@@ -1020,8 +1137,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             UNWIND (case when p is not null then nodes(p) else [o] end) as c
     
             OPTIONAL MATCH (c)-[r:contained_by]->(w)
-            with w,s, toInt(csvLine.break) as break, filter(x in collect(c) WHERE x is not NULL) as cod,
-            filter(x in collect(r) WHERE x is not NULL) as rels
+            with w,s, toInteger(csvLine.break) as break, [x in collect(c) WHERE x is not NULL | x] as cod,
+            [x in collect(r) WHERE x is not NULL| x] as rels
             FOREACH (c in cod[break..] | SET c :coda, c.syllable_position = 'coda')
             FOREACH (c in cod[..break] | SET c :onset, c.syllable_position = 'onset')
             FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
@@ -1065,8 +1182,11 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
 
     prop_temp = '''{name}: csvLine.{name}'''
     properties = []
-
-    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % type)
+    try:
+        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % type)
+    except neo4j.exceptions.ClientError as e:
+        if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+            raise
 
     for p in props:
         if p in ['id', 'annotated_id', 'begin', 'end']:
@@ -1076,11 +1196,11 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
         properties = ', ' + ', '.join(properties)
     else:
         properties = ''
-    statement = '''CYPHER planner=rule USING PERIODIC COMMIT 500
+    statement = '''USING PERIODIC COMMIT 500
     LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
             MATCH (annotated:{a_type}:{corpus} {{id: csvLine.annotated_id}})
             CREATE (annotated) <-[:annotates]-(annotation:{type}:{corpus}
-                {{id: csvLine.id, begin: toFloat(csvLine.begin),
+                {{id: csvLine.id, type: $type, begin: toFloat(csvLine.begin),
                 end: toFloat(csvLine.end){properties}}})
             '''
     statement = statement.format(path=csv_path,
@@ -1088,11 +1208,15 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
                                  a_type=annotated_type,
                                  type=type,
                                  properties=properties)
-    corpus_context.execute_cypher(statement)
+    corpus_context.execute_cypher(statement, type=type)
     for p in props:
         if p in ['id', 'annotated_id']:
             continue
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (type, p))
+        try:
+            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (type, p))
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
     os.remove(path)
 
 

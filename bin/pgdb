@@ -9,6 +9,7 @@ import subprocess
 import signal
 
 from urllib.request import urlretrieve
+import requests
 from tqdm import tqdm
 
 CONFIG_DIR = os.path.expanduser('~/.pgdb')
@@ -51,9 +52,9 @@ CONFIG = load_config()
 
 TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
 
-NEO4J_VERSION = '3.5.3'
+NEO4J_VERSION = '4.3.3'
 
-INFLUXDB_VERSION = '1.2.4'
+INFLUXDB_VERSION = '1.8.9'
 
 
 def tqdm_hook(t):
@@ -97,7 +98,7 @@ def download_neo4j(data_directory, overwrite=False):
         import win32com.shell.shell as shell
         exe = 'neo4j.bat'
         neo4j_bin = os.path.join(CONFIG['Data']['directory'], 'neo4j', 'bin', exe)
-        params = 'install-service asadmin'
+        params = 'install-service'
         shell.ShellExecuteEx(lpVerb='runas', lpFile=neo4j_bin, lpParameters=params)
     return True
 
@@ -121,9 +122,10 @@ def download_influxdb(data_directory, overwrite=False):
         download_link = 'https://dl.influxdata.com/influxdb/releases/influxdb-{version}_{dist_string}'.format(
             version=INFLUXDB_VERSION, dist_string=dist_string)
 
-        with tqdm(unit='B', unit_scale=True, miniters=1) as t:
-            filename, headers = urlretrieve(download_link, path, reporthook=tqdm_hook(t), data=None)
-        shutil.unpack_archive(filename, data_directory)
+        with requests.get(download_link, stream=True) as r:
+            with open(path, 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
+        shutil.unpack_archive(path, data_directory)
         for d in os.listdir(data_directory):
             if d.startswith(('influxdb')):
                 os.rename(os.path.join(data_directory, d), influxdb_directory)
@@ -195,7 +197,9 @@ def start():
         exe = 'neo4j'
 
     neo4j_bin = os.path.join(CONFIG['Data']['directory'], 'neo4j', 'bin', exe)
+    print(neo4j_bin)
     subprocess.call([neo4j_bin, 'start'])
+    print(neo4j_bin)
     if sys.platform.startswith('win'):
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxd.exe')
     elif sys.platform == 'darwin':

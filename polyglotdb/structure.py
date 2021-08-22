@@ -22,19 +22,19 @@ class Hierarchy(object):
         Name of the corpus
     """
 
-    get_type_subset_template = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+    get_type_subset_template = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
         RETURN n.subsets as subsets"""
-    set_type_subset_template = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+    set_type_subset_template = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        SET n.subsets = {{subsets}}"""
+        SET n.subsets = $subsets"""
 
-    get_token_subset_template = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+    get_token_subset_template = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(n:{type})
         RETURN n.subsets as subsets"""
-    set_token_subset_template = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+    set_token_subset_template = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(n:{type})
-        SET n.subsets = {{subsets}}"""
+        SET n.subsets = $subsets"""
 
     def __init__(self, data=None, corpus_name=None):
         if data is None:
@@ -342,7 +342,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 'n.{0} = {{{0}}}'
+        set_template = 'n.{0} = ${0}'
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -361,7 +361,7 @@ class Hierarchy(object):
             ps.append(set_template.format(k))
             kwargs[k] = v
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
         SET {sets}""".format(type=annotation_type, sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -390,7 +390,7 @@ class Hierarchy(object):
         for k in properties:
             ps.append(remove_template.format(k))
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
         REMOVE {removes}""".format(type=annotation_type, removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -417,7 +417,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 'n.{0} = {{{0}}}'
+        set_template = 'n.{0} = ${0}'
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -436,7 +436,7 @@ class Hierarchy(object):
             ps.append(set_template.format(k))
             kwargs[k] = v
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:has_acoustics]->(n:{type})
         SET {sets}""".format(type=acoustic_type, sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -464,7 +464,7 @@ class Hierarchy(object):
         for k in properties:
             ps.append(remove_template.format(k))
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:has_acoustics]->(n:{type})
         REMOVE {removes}""".format(type=acoustic_type, removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -490,7 +490,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 'n.{0} = {{{0}}}'
+        set_template = 'n.{0} = ${0}'
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -509,7 +509,7 @@ class Hierarchy(object):
             ps.append(set_template.format(k))
             kwargs[k] = v
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(n:{type})
         SET {sets}""".format(type=annotation_type, sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -537,7 +537,7 @@ class Hierarchy(object):
         for k in properties:
             ps.append(remove_template.format(k))
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(n:{type})
         REMOVE {removes}""".format(type=annotation_type, removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -561,7 +561,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 's.{0} = {{{0}}}'
+        set_template = 's.{0} = ${0}'
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -580,7 +580,7 @@ class Hierarchy(object):
             ps.append(set_template.format(k))
             kwargs[k] = v
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_by]->(s:Speaker)
         SET {sets}""".format(sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -606,7 +606,7 @@ class Hierarchy(object):
         for k in properties:
             ps.append(remove_template.format(k))
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_by]->(s:Speaker)
         REMOVE {removes}""".format(removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -628,7 +628,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 'd.{0} = {{{0}}}'
+        set_template = 'd.{0} = ${0}'
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -647,7 +647,7 @@ class Hierarchy(object):
             ps.append(set_template.format(k))
             kwargs[k] = v
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_in]->(d:Discourse)
         SET {sets}""".format(sets=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -674,7 +674,7 @@ class Hierarchy(object):
         for k in properties:
             ps.append(remove_template.format(k))
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_in]->(d:Discourse)
         REMOVE {removes}""".format(removes=', '.join(ps))
         corpus_context.execute_cypher(statement,
@@ -938,7 +938,7 @@ class Hierarchy(object):
         self.subannotations[annotation_type].add(subannotation_type)
         self.subannotation_properties[subannotation_type] = set(k for k in properties)
         if properties:
-            set_template = 's.{0} = {{{0}}}'
+            set_template = 's.{0} = ${0}'
             ps = []
             kwargs = {}
             for k, v in properties:
@@ -956,7 +956,7 @@ class Hierarchy(object):
                     v = None
                 ps.append(set_template.format(k))
                 kwargs[k] = v
-            statement = """MATCH (c:Corpus), (c)<-[:contained_by*]-(a:{a_type}) WHERE c.name = {{corpus_name}}
+            statement = """MATCH (c:Corpus), (c)<-[:contained_by*]-(a:{a_type}) WHERE c.name = $corpus_name
                     WITH a
                     CREATE (a)<-[:annotates]-(s:{s_type})
                     WITH s
@@ -965,7 +965,7 @@ class Hierarchy(object):
                                           corpus_name=corpus_context.corpus_name, **kwargs)
 
         else:
-            statement = """MATCH (c:Corpus), (c)<-[:contained_by*]-(a:{a_type}) WHERE c.name = {{corpus_name}}
+            statement = """MATCH (c:Corpus), (c)<-[:contained_by*]-(a:{a_type}) WHERE c.name = $corpus_name
                     WITH a
                     MERGE (a)<-[:annotates]-(s:{s_type})""".format(a_type= annotation_type, s_type=subannotation_type)
             corpus_context.execute_cypher(statement,
@@ -990,7 +990,7 @@ class Hierarchy(object):
         for k, v in self.subannotations.items():
             if subannotation_type in v:
                 self.subannotations[k] = v - {subannotation_type}
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
         DETACH DELETE s""".format(s_type=subannotation_type)
         corpus_context.execute_cypher(statement,
@@ -1013,7 +1013,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 's.{0} = {{{0}}}'
+        set_template = 's.{0} = ${0}'
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -1032,7 +1032,7 @@ class Hierarchy(object):
             ps.append(set_template.format(k))
             kwargs[k] = v
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
         SET {sets}""".format(sets=', '.join(ps), s_type=subannotation_type)
         corpus_context.execute_cypher(statement,
@@ -1059,7 +1059,7 @@ class Hierarchy(object):
         for k in properties:
             ps.append(remove_template.format(k))
 
-        statement = """MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
         REMOVE {removes}""".format(removes=', '.join(ps), s_type=subannotation_type)
         corpus_context.execute_cypher(statement,

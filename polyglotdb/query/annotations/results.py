@@ -16,6 +16,7 @@ from .models import LinguisticAnnotation, SubAnnotation, Speaker, Discourse
 def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, corpus):
     base_annotation_type = to_find.replace('node_', '')
     a = LinguisticAnnotation(corpus)
+    r[to_find]['neo4j_label'] = to_find.replace('node_', '')
     a.node = r[to_find]
     a.type_node = r[to_find_type]
     a._preloaded = True
@@ -30,8 +31,11 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             a._speaker = pa
 
     for pre in to_preload:
+        print(pre)
+        print(type(pre), isinstance(pre, QuerySubAnnotation))
         if isinstance(pre, HierarchicalAnnotation):
             pa = LinguisticAnnotation(corpus)
+            r[pre.alias]['neo4j_label'] = pre.alias.split('_')[-1]
             pa.node = r[pre.alias]
             pa.type_node = r[pre.type_alias]
             pa._preloaded = True
@@ -40,10 +44,16 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             a._supers[pre.node_type] = pa
         elif isinstance(pre, QuerySubAnnotation):
             subannotations = r[pre.collection_alias]
+            print(subannotations)
             for s in subannotations:
+                print(s)
                 sa = SubAnnotation(corpus)
+                s['neo4j_label'] = pre.collection_alias.split('_in_')[0].replace('node_', '')
                 sa._annotation = a
                 sa.node = s
+                if sa._type is None:
+                    print(s)
+                    error
                 if sa._type not in a._subannotations:
                     a._subannotations[sa._type] = []
                 a._subannotations[sa._type].append(sa)
@@ -54,12 +64,15 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             subannotations = r[pre.subannotation_alias]
             for i, e in enumerate(subs):
                 pa = LinguisticAnnotation(corpus)
+                e['neo4j_label'] = pre.collected_node.alias.replace('node_', '')
+                print(pre.collection_alias)
                 pa.node = e
                 pa.type_node = sub_types[i]
                 pa._preloaded = True
                 for s in subannotations[i]:
                     sa = SubAnnotation(corpus)
                     sa._annotation = pa
+                    s['neo4j_label'] = pre.subannotation_alias.split('_in_')[0].replace('node_', '')
                     sa.node = s
                     if sa._type not in pa._subannotations:
                         pa._subannotations[sa._type] = []
@@ -77,6 +90,7 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
         pa = LinguisticAnnotation(corpus)
         pa._preloaded = True
         pa = LinguisticAnnotation(corpus)
+        r[pre.alias]['neo4j_label'] = pre.alias.split('_')[-1]
         pa.node = r[pre.alias]
         pa.type_node = r[pre.type_alias]
         pa._discourse = a._discourse
@@ -92,6 +106,7 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             break
         pa = LinguisticAnnotation(corpus)
         pa._preloaded = True
+        r[pre.alias]['neo4j_label'] = pre.alias.split('_')[-1]
         pa.node = r[pre.alias]
         pa.type_node = r[pre.type_alias]
         pa._discourse = a._discourse
@@ -110,6 +125,7 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
             pa = LinguisticAnnotation(corpus)
             pa._preloaded = True
             pa = LinguisticAnnotation(corpus)
+            r[pre.alias]['neo4j_label'] = pre.alias.split('_')[-1]
             pa.node = r[pre.alias]
             pa.type_node = r[pre.type_alias]
             pa._discourse = a._discourse
@@ -125,6 +141,7 @@ def hydrate_model(r, to_find, to_find_type, to_preload, to_preload_acoustics, co
                 break
             pa = LinguisticAnnotation(corpus)
             pa._preloaded = True
+            r[pre.alias]['neo4j_label'] = pre.alias.split('_')[-1]
             pa.node = r[pre.alias]
             pa.type_node = r[pre.type_alias]
             pa._discourse = a._discourse
@@ -194,11 +211,13 @@ class QueryResults(BaseQueryResults):
                     speaker = r[a.speaker_alias]
                     if utterance_id not in a.attribute.cache:
                         data = self.corpus.get_utterance_acoustics(a.attribute.label, utterance_id, discourse, speaker)
+                        print(data)
                         a.attribute.cache[utterance_id] = data
                     t = a.hydrate(self.corpus, utterance_id,
                                   r[a.begin_alias],
                                   r[a.end_alias])
                     for k in a.output_columns:
+                        print(k, self.track_columns)
                         if k == 'time':
                             continue
                         if k in self.track_columns:
@@ -229,8 +248,8 @@ class QueryResults(BaseQueryResults):
 
 class AnnotationRecord(BaseRecord):
     def __init__(self, result):
-        self.columns = result.keys()
-        self.values = result.values()
+        self.columns = list(result.keys())
+        self.values = list(result.values())
         self.acoustic_columns = []
         self.acoustic_values = []
         self.track = Track()

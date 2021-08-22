@@ -4,10 +4,6 @@ import pytest
 
 from polyglotdb import CorpusContext
 
-acoustic = pytest.mark.skipif(
-    pytest.config.getoption("--skipacoustics"),
-    reason="remove --skipacoustics option to run"
-)
 
 
 # def test_run_script(acoustic_utt_config, praat_path, praatscript_test_dir):
@@ -28,7 +24,7 @@ acoustic = pytest.mark.skipif(
 #         output = g.analyze_script_file(script_path, sibilantfile_path, 0.0, 0.137, None, '1', '2')
 #         assert(output == 4654.12)
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_script(acoustic_utt_config, praat_path, praatscript_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.praat_path = praat_path
@@ -49,7 +45,7 @@ def test_analyze_script(acoustic_utt_config, praat_path, praatscript_test_dir):
         for r in results:
             assert (r.values)
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_track_script(acoustic_utt_config, praat_path, praatscript_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()

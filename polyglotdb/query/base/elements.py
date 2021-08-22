@@ -34,7 +34,7 @@ class ClauseElement(object):
         """
         Create a Cypher parameter for the value of the clause.
         """
-        return '{`%s%s`}' % (self.value_alias_prefix.replace('`', ''), self.attribute.alias.replace('`', ''))
+        return '$`%s%s`' % (self.value_alias_prefix.replace('`', ''), self.attribute.alias.replace('`', ''))
 
     def for_cypher(self):
         """

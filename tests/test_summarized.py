@@ -9,11 +9,11 @@ def test_get_measure(summarized_config):
     with CorpusContext(summarized_config) as g:
         res = g.get_measure('duration', 'mean', 'phone')
         print(res)
-        assert (len(res) == 33)
+        assert (len(res) == 32)
         for i, r in enumerate(res):
-            if r[0] == 'uw':
+            if r['phone'] == 'uw':
                 break
-        assert res[i][1] == approx(0.08043999999999973, 1e-3)
+        assert res[i]['mean_duration'] == approx(0.08043999999999973, 1e-3)
 
 
 def test_phone_mean_duration(summarized_config):
@@ -21,11 +21,11 @@ def test_phone_mean_duration(summarized_config):
         print("phone mean:")
         res = g.get_measure('duration', 'mean', 'phone')
         print(res)
-        assert (len(res) == 33)
+        assert (len(res) == 32)
         for i, r in enumerate(res):
-            if r[0] == 'uw':
+            if r['phone'] == 'uw':
                 break
-        assert res[i][1] == approx(0.08043999999999973, 1e-3)
+        assert res[i]['mean_duration'] == approx(0.08043999999999973, 1e-3)
 
 
 def test_phone_mean_duration_speaker(summarized_config):
@@ -33,11 +33,11 @@ def test_phone_mean_duration_speaker(summarized_config):
         print("phone mean:")
         res = g.get_measure('duration', 'mean', 'phone', False, 'unknown')
         print(res)
-        assert (len(res) == 33)
+        assert (len(res) == 32)
         for i, r in enumerate(res):
-            if r[0] == 'uw':
+            if r['phone'] == 'uw':
                 break
-        assert res[i][1] == approx(0.08043999999999973, 1e-3)
+        assert res[i]['mean_duration'] == approx(0.08043999999999973, 1e-3)
 
 
 def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
@@ -50,12 +50,12 @@ def test_phone_mean_duration_speaker_buckeye(graph_db, buckeye_test_dir):
         assert (len(res) == 17)
         dx, eh = 0, 0
         for i, r in enumerate(res):
-            if r[0] == 'dx':
+            if r['phone'] == 'dx':
                 dx = i
-            if r[0] == 'eh':
+            if r['phone'] == 'eh':
                 eh = i
-        assert res[dx][1] == approx(0.029999999999999805, 1e-3)
-        assert res[eh][1] == approx(0.04932650000000005, 1e-3)
+        assert res[dx]['mean_duration'] == approx(0.029999999999999805, 1e-3)
+        assert res[eh]['mean_duration'] == approx(0.04932650000000005, 1e-3)
 
 
 def test_phone_mean_duration_with_speaker(summarized_config):
@@ -64,11 +64,11 @@ def test_phone_mean_duration_with_speaker(summarized_config):
         # res =g.phone_mean_duration_with_speaker()
         res = g.get_measure('duration', 'mean', 'phone', True)
         print(res)
-        assert (len(res) == 33)
+        assert (len(res) == 32)
         for i, r in enumerate(res):
-            if r[1] == 'uw':
+            if r['phone'] == 'uw':
                 break
-        assert res[i][2] == approx(0.08043999999999973, 1e-3)
+        assert res[i]['mean_duration'] == approx(0.08043999999999973, 1e-3)
 
 
 def test_phone_std_dev(summarized_config):
@@ -77,11 +77,11 @@ def test_phone_std_dev(summarized_config):
         res = g.get_measure('duration', 'stdev', 'phone')
         print(res)
         for i, r in enumerate(res):
-            if r[0] == 'uw':
+            if r['phone'] == 'uw':
                 break
 
-        assert (len(res) == 33)
-        assert res[i][1] == approx(0.026573072836990105, 1e-3)
+        assert (len(res) == 32)
+        assert res[i]['stdev_duration'] == approx(0.026573072836990105, 1e-3)
 
 
 def test_phone_median(summarized_config):
@@ -90,9 +90,9 @@ def test_phone_median(summarized_config):
         res = g.get_measure('duration', 'median', 'phone')
         print(res)
         for i, r in enumerate(res):
-            if r[0] == 'n':
+            if r['phone'] == 'n':
                 break
-        assert res[i][1] == approx(0.059820000000000206, 1e-3)
+        assert res[i]['median_duration'] == approx(0.059820000000000206, 1e-3)
 
 
 def test_word_mean_duration(summarized_config):
@@ -102,9 +102,9 @@ def test_word_mean_duration(summarized_config):
         print(res)
         assert (len(res) == 44)
         for i, r in enumerate(res):
-            if r[0] == 'words':
+            if r['word'] == 'words':
                 break
-        assert res[i][1] == approx(0.5340040000000001, 1e-3)
+        assert res[i]['mean_duration'] == approx(0.5340040000000001, 1e-3)
 
 
 def test_word_mean_duration_with_speaker(summarized_config):
@@ -114,9 +114,9 @@ def test_word_mean_duration_with_speaker(summarized_config):
         print(res)
         assert (len(res) == 44)
         for i, r in enumerate(res):
-            if r[1] == 'words':
+            if r['word'] == 'words':
                 break
-        assert res[i][2] == approx(0.5340040000000001, 1e-3)
+        assert res[i]['mean_duration'] == approx(0.5340040000000001, 1e-3)
 
 
 @pytest.mark.xfail
@@ -126,10 +126,10 @@ def test_word_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
         res = g.get_measure('duration', 'mean', 'word', True)
         print(res)
         for i, r in enumerate(res):
-            if r[1] == 'that\'s':
+            if r['word'] == 'that\'s':
                 break
-        assert (len(res) == 9)
-        assert res[i][2] == approx(0.17431200000000002, 1e-3)
+        assert (len(res) == 8)
+        assert res[i]['mean_duration'] == approx(0.17431200000000002, 1e-3)
 
 
 def test_word_median(summarized_config):
@@ -139,9 +139,9 @@ def test_word_median(summarized_config):
         print(res)
         assert (len(res) == 44)
         for i, r in enumerate(res):
-            if r[0] == 'words':
+            if r['word'] == 'words':
                 break
-        assert res[i][1] == approx(0.5489699999999971, 1e-3)
+        assert res[i]['median_duration'] == approx(0.5489699999999971, 1e-3)
 
 
 def test_word_std_dev(summarized_config):
@@ -152,9 +152,9 @@ def test_word_std_dev(summarized_config):
 
         assert (len(res) == 44)
         for i, r in enumerate(res):
-            if r[0] == 'words':
+            if r['word'] == 'words':
                 break
-        assert res[i][1] == approx(0.26996736762060747, 1e-3)
+        assert res[i]['stdev_duration'] == approx(0.26996736762060747, 1e-3)
 
 
 def test_syllable_mean_duration(summarized_config):
@@ -167,11 +167,11 @@ def test_syllable_mean_duration(summarized_config):
         print("syllable mean:")
         res = g.get_measure('duration', 'mean', 'syllable')
         print(res)
-        assert (len(res) == 57)
+        assert (len(res) == 56)
         for i, r in enumerate(res):
-            if r[0] == 'w.er.d.z':
+            if r['syllable'] == 'w.er.d.z':
                 break
-        assert res[i][1] == approx(0.5340040000000001, 1e-3)
+        assert res[i]['mean_duration'] == approx(0.5340040000000001, 1e-3)
 
 
 def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir):
@@ -187,9 +187,9 @@ def test_syllable_mean_duration_with_speaker_buckeye(graph_db, buckeye_test_dir)
         print(res)
         assert (len(res) == 12)
         for i, r in enumerate(res):
-            if r[1] == 'dh.ae.s':
+            if r['syllable'] == 'dh.ae.s':
                 break
-        assert res[i][2] == approx(0.17030199999999995, 1e-3)
+        assert res[i]['mean_duration'] == approx(0.17030199999999995, 1e-3)
 
 
 def test_syllable_median(summarized_config):
@@ -203,7 +203,7 @@ def test_syllable_median(summarized_config):
         res = g.get_measure('duration', 'median', 'syllable')
 
         print(res)
-        assert (len(res) == 57)
+        assert (len(res) == 56)
 
 
 def test_syllable_std_dev(summarized_config):
@@ -215,7 +215,7 @@ def test_syllable_std_dev(summarized_config):
 
         print("syllable std dev:")
         res = g.get_measure('duration', 'stdev', 'syllable')
-        assert (len(res) == 57)
+        assert (len(res) == 56)
         g.reset_syllables()
 
 

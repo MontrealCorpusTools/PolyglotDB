@@ -114,7 +114,7 @@ where p.{index} = target set p.average_duration = dur
 with p as phone
 match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
 with n,phone with n, n.{index} as target, sum(phone.average_duration) as baseline 
-set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation, \
+set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation,
                                                                                    corpus_name=self.cypher_safe_name,
                                                                                    index=index, speaker=speaker)
 
@@ -127,7 +127,7 @@ with p as phone
 match(n:{higher_annotation}:{corpus_name}) where phone.begin>=n.begin and phone.end<=n.end
 with n,phone
 with n, n.{index} as target, sum(phone.average_duration) as baseline
-set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.format(higher_annotation=annotation, \
+set n.baseline_duration = baseline return n.{index} as label, n.baseline_duration as baseline_duration'''.format(higher_annotation=annotation,
                                                                                    corpus_name=self.cypher_safe_name,
                                                                                    index=index)
         if speaker is not None:
@@ -136,7 +136,7 @@ set n.baseline_duration = baseline return n.{index}, n.baseline_duration'''.form
         res = self.execute_cypher(statement)
         result = {}
         for c in res:
-            result.update({c[0]: c[1]})
+            result.update({c['label']: c['baseline_duration']})
         return result
 
     # SPEAKER

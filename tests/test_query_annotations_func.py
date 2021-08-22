@@ -56,7 +56,7 @@ def test_max(acoustic_config):
         q = g.query_graph(g.phone)
         result = q.aggregate(Max(g.phone.duration))
         print(result)
-        assert (abs(result - 1.47161) < 0.0001)
+        assert (abs(result - 0.7141982077865059) < 0.0001)
 
 
 def test_iqr(acoustic_config):
@@ -64,7 +64,7 @@ def test_iqr(acoustic_config):
         q = g.query_graph(g.phone)
         result = q.aggregate(InterquartileRange(g.phone.duration))
         print(result)
-        assert (abs(result - 0.078485) < 0.001)  # Differences in output between this and R are greater
+        assert (abs(result - 0.06985377627008615) < 0.001)  # Differences in output between this and R are greater
 
 
 def test_stdev(acoustic_config):
@@ -72,7 +72,7 @@ def test_stdev(acoustic_config):
         q = g.query_graph(g.phone)
         result = q.aggregate(Stdev(g.phone.duration))
         print(result)
-        assert (abs(result - 0.1801785) < 0.0001)
+        assert (abs(result - 0.09919653455576248) < 0.0001)
 
 
 def test_sum(acoustic_config):
@@ -80,7 +80,7 @@ def test_sum(acoustic_config):
         q = g.query_graph(g.phone)
         result = q.aggregate(Sum(g.phone.duration))
         print(result)
-        assert (abs(result - 26.72327) < 0.0001)
+        assert (abs(result - 19.810184959164687) < 0.0001)
 
 
 def test_median(acoustic_config):
@@ -88,7 +88,7 @@ def test_median(acoustic_config):
         q = g.query_graph(g.phone)
         result = q.aggregate(Median(g.phone.duration))
         print(result)
-        assert (abs(result - 0.07682) < 0.0001)
+        assert (abs(result - 0.07206877027163117) < 0.0001)
 
 
 def test_quantile(acoustic_config):
@@ -96,4 +96,4 @@ def test_quantile(acoustic_config):
         q = g.query_graph(g.phone)
         result = q.aggregate(Quantile(g.phone.duration, 0.4))
         print(result)
-        assert (abs(result - 0.062786) < 0.0001)
+        assert (abs(result - 0.06135379031168853) < 0.0001)

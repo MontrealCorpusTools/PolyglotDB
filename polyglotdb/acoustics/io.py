@@ -5,6 +5,7 @@ import re
 import csv
 import librosa
 import audioread
+import neo4j
 
 from conch.utils import write_wav
 
@@ -77,14 +78,14 @@ def add_discourse_sound_info(corpus_context, discourse, filepath):
     else:
         shutil.copy(filepath, low_freq_path)
         low_freq_rate = sample_rate
-    statement = '''MATCH (d:Discourse:{corpus_name}) where d.name = {{discourse_name}}
-                    SET d.file_path = {{filepath}},
-                    d.consonant_file_path = {{consonant_filepath}},
-                    d.vowel_file_path = {{vowel_filepath}},
-                    d.low_freq_file_path = {{low_freq_filepath}},
-                    d.duration = {{duration}},
-                    d.sampling_rate = {{sampling_rate}},
-                    d.num_channels = {{n_channels}}'''.format(corpus_name=corpus_context.cypher_safe_name)
+    statement = '''MATCH (d:Discourse:{corpus_name}) where d.name = $discourse_name
+                    SET d.file_path = $filepath,
+                    d.consonant_file_path = $consonant_filepath,
+                    d.vowel_file_path = $vowel_filepath,
+                    d.low_freq_file_path = $low_freq_filepath,
+                    d.duration = $duration,
+                    d.sampling_rate = $sampling_rate,
+                    d.num_channels = $n_channels'''.format(corpus_name=corpus_context.cypher_safe_name)
     corpus_context.execute_cypher(statement, filepath=filepath,
                                   consonant_filepath=consonant_path,
                                   vowel_filepath=vowel_path,
@@ -157,7 +158,11 @@ def point_measures_from_csv(corpus_context, header_info, annotation_type="phone"
     for h in header_info.keys():
         if h == 'id':
             continue
-        corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (annotation_type, h))
+        try:
+            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (annotation_type, h))
+        except neo4j.exceptions.ClientError as e:
+            if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                raise
     corpus_context.hierarchy.add_token_properties(corpus_context, annotation_type,
                                                   [(h, t) for h, t in header_info.items() if h != 'id'])
     corpus_context.encode_hierarchy()

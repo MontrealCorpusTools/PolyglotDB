@@ -283,9 +283,14 @@ class AnnotationNode(Node):
         return self.alias
 
     @property
+    def labels_alias(self):
+        """ Returns alias """
+        return 'labels({}) as {}'.format(self.alias, key_for_cypher(self.alias + '_labels'))
+
+    @property
     def withs(self):
         """ Returns a list of alias and type_alias """
-        return [self.alias, self.type_alias]
+        return [self.alias, self.type_alias, self.labels_alias]
 
     def precedes(self, other_annotation):
         return PrecedesClauseElement(self, other_annotation)
@@ -294,6 +299,7 @@ class AnnotationNode(Node):
         return FollowsClauseElement(self, other_annotation)
 
     def __getattr__(self, key):
+        print(key, self.hierarchy.acoustics)
         if key == 'current':
             return self
         elif key in ['previous', 'following']:

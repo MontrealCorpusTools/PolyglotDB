@@ -152,7 +152,7 @@ class BaseQuery(object):
         cypher = self.cypher()
         value = self.corpus.execute_cypher(cypher, **self.cypher_params())
         self._aggregate = []
-        return value.single().values()[0]
+        return list(value[0].values())[0]
 
     def aggregate(self, *args):
         """
@@ -168,7 +168,7 @@ class BaseQuery(object):
         elif len(self._aggregate) > 1:
             return list(value)[0]
         else:
-            return value.single().values()[0]
+            return list(list(value)[0].values())[0]
 
     def preload(self, *args):
         self._preload.extend(args)

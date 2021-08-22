@@ -1,7 +1,6 @@
 # from __future__ import absolute_import
 import os
 
-from textgrid import TextGrid, IntervalTier
 
 from .textgrid import TextgridParser
 from ..types.parsing import OrthographyTier
@@ -59,26 +58,26 @@ class AlignerParser(TextgridParser):
         found_phone = False
         invalid = True
         multiple_speakers = False
-        for ti in tg.tiers:
-            if ' - ' in ti.name:
+        for i, tier_name in enumerate(tg.tierNameList):
+            if ' - ' in tier_name:
                 multiple_speakers = True
                 break
         if multiple_speakers:
             if self.speaker_first:
-                speakers = {x.name.split(' - ')[0].strip().replace('/', '_').replace('\\', '_') for x in tg.tiers if
-                            ' - ' in x.name}
+                speakers = {tier_name.split(' - ')[0].strip().replace('/', '_').replace('\\', '_') for tier_name in tg.tierNameList if
+                            ' - ' in tier_name}
             else:
-                speakers = {x.name.split(' - ')[1].strip().replace('/', '_').replace('\\', '_') for x in tg.tiers if
-                            ' - ' in x.name}
+                speakers = {tier_name.split(' - ')[1].strip().replace('/', '_').replace('\\', '_') for tier_name in tg.tierNameList if
+                            ' - ' in tier_name}
             found_words = {x: False for x in speakers}
             found_phones = {x: False for x in speakers}
-            for ti in tg.tiers:
-                if ' - ' not in ti.name:
+            for i, tier_name in enumerate(tg.tierNameList):
+                if ' - ' not in tier_name:
                     continue
                 if self.speaker_first:
-                    speaker, name = ti.name.split(' - ')
+                    speaker, name = tier_name.split(' - ')
                 else:
-                    name, speaker = ti.name.split(' - ')
+                    name, speaker = tier_name.split(' - ')
                 speaker = speaker.strip().replace('/', '_').replace('\\', '_')
                 name = name.strip()
                 if name.lower().startswith(self.word_label):
@@ -88,10 +87,10 @@ class AlignerParser(TextgridParser):
             found_word = all(found_words.values())
             found_phone = all(found_words.values())
         else:
-            for ti in tg.tiers:
-                if ti.name.lower().startswith(self.word_label):
+            for i, tier_name in enumerate(tg.tierNameList):
+                if tier_name.lower().startswith(self.word_label):
                     found_word = True
-                elif ti.name.lower().startswith(self.phone_label):
+                elif tier_name.lower().startswith(self.phone_label):
                     found_phone = True
         return multiple_speakers, found_word and found_phone
 
@@ -131,11 +130,12 @@ class AlignerParser(TextgridParser):
                 a.speaker = speaker
 
             # Parse the tiers
-            for i, ti in enumerate(tg.tiers):
-                if ti.name.lower().startswith(self.word_label):
-                    self.annotation_tiers[0].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
-                elif ti.name.lower().startswith(self.phone_label):
-                    self.annotation_tiers[1].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
+            for i, tier_name in enumerate(tg.tierNameList):
+                ti = tg.tierDict[tier_name]
+                if tier_name.lower().startswith(self.word_label):
+                    self.annotation_tiers[0].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList))
+                elif tier_name.lower().startswith(self.phone_label):
+                    self.annotation_tiers[1].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList))
             pg_annotations = self._parse_annotations(types_only)
 
             data = DiscourseData(name, pg_annotations, self.hierarchy)
@@ -153,20 +153,20 @@ class AlignerParser(TextgridParser):
                 if n_channels > 1:
                     # Figure speaker-channel mapping
                     n_tiers = 0
-                    for ti in tg.tiers:
+                    for i, tier_name in enumerate(tg.tierNameList):
                         try:
-                            speaker, type = ti.name.split(' - ')
+                            speaker, type = tier_name.split(' - ')
                         except ValueError:
                             continue
                         n_tiers += 1
                     ind = 0
                     cutoffs = [x / n_channels for x in range(1, n_channels)]
-                    for ti in tg.tiers:
+                    for i, tier_name in enumerate(tg.tierNameList):
                         try:
                             if self.speaker_first:
-                                speaker, type = ti.name.split(' - ')
+                                speaker, type = tier_name.split(' - ')
                             else:
-                                type, speaker = ti.name.split(' - ')
+                                type, speaker = tier_name.split(' - ')
                             speaker = speaker.strip().replace('/', '_').replace('\\', '_')
                         except ValueError:
                             continue
@@ -181,12 +181,13 @@ class AlignerParser(TextgridParser):
                         ind += 1
 
             # Parse the tiers
-            for ti in tg.tiers:
+            for i, tier_name in enumerate(tg.tierNameList):
+                ti = tg.tierDict[tier_name]
                 try:
                     if self.speaker_first:
-                        speaker, type = ti.name.split(' - ')
+                        speaker, type = tier_name.split(' - ')
                     else:
-                        type, speaker = ti.name.split(' - ')
+                        type, speaker = tier_name.split(' - ')
                     speaker = speaker.strip().replace('/', '_').replace('\\', '_')
                 except ValueError:
                     continue
@@ -194,11 +195,11 @@ class AlignerParser(TextgridParser):
                     type = 'word'
                 elif type.lower().startswith(self.phone_label):
                     type = 'phone'
-                if len(ti) == 1 and ti[0].mark.strip() == '':
+                if len(ti.entryList) == 1 and ti[0][2].strip() == '':
                     continue
                 at = OrthographyTier(type, type)
                 at.speaker = speaker
-                at.add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti))
+                at.add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList))
                 self.annotation_tiers.append(at)
             pg_annotations = self._parse_annotations(types_only)
             data = DiscourseData(name, pg_annotations, self.hierarchy)

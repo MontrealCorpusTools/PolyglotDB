@@ -21,6 +21,16 @@ def pytest_addoption(parser):
     parser.addoption("--skipacoustics", action="store_true",
                      help="skip acoustic tests")
 
+def pytest_collection_modifyitems(config, items):
+    if not config.getoption("--skipacoustics"):
+        # --runslow given in cli: do not skip slow tests
+        return
+    skip_slow = pytest.mark.skip(reason="remove --skipacoustics option to run")
+    for item in items:
+        if "acoustic" in item.keywords:
+            item.add_marker(skip_slow)
+
+
 
 @pytest.fixture(scope='session')
 def test_dir():
@@ -525,7 +535,7 @@ def partitur_corpus_config(graph_db, partitur_test_dir):
 @pytest.fixture(scope='session')
 def praat_path():
     if sys.platform == 'win32':
-        return 'praatcon.exe'
+        return 'praat.exe'
     elif os.environ.get('TRAVIS', False):
         return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
     else:

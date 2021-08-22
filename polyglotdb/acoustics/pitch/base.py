@@ -25,12 +25,12 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
     statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name}),
                 (u:{utt_type}:{corpus_name})-[:spoken_by]->(s),
                 (u)-[:spoken_in]->(d)
-                WHERE u.id = {{utterance_id}}
-                RETURN u, d, r'''.format(corpus_name=corpus_context.cypher_safe_name, utt_type=utt_type)
+                WHERE u.id = $utterance_id
+                RETURN u, d, r.channel as channel'''.format(corpus_name=corpus_context.cypher_safe_name, utt_type=utt_type)
     results = corpus_context.execute_cypher(statement, utterance_id=utterance_id)
     segment_mapping = SegmentMapping()
     for r in results:
-        channel = r['r']['channel']
+        channel = r['channel']
         file_path = r['d']['vowel_file_path']
         u = r['u']
         segment_mapping.add_file_segment(file_path, u['begin'], u['end'], channel, padding=padding)
@@ -72,14 +72,14 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
                 (u:{utt_type}:{corpus_name})-[:spoken_by]->(s),
                 (u)-[:spoken_in]->(d),
                 (p:{phone_type}:{corpus_name})-[:contained_by*]->(u)
-                WHERE u.id = {{utterance_id}}
-                SET u.pitch_last_edited = {{date}}
-                RETURN u, d, r, s, collect(p) as p'''.format(corpus_name=corpus_context.cypher_safe_name,
+                WHERE u.id = $utterance_id
+                SET u.pitch_last_edited = $date
+                RETURN u, d, r.channel as channel, s, collect(p) as p'''.format(corpus_name=corpus_context.cypher_safe_name,
                                                              utt_type=utt_type, phone_type=phone_type)
     results = corpus_context.execute_cypher(statement, utterance_id=utterance_id, date=time_stamp)
 
     for r in results:
-        channel = r['r']['channel']
+        channel = r['channel']
         discourse = r['d']['name']
         speaker = r['s']['name']
         u = r['u']
