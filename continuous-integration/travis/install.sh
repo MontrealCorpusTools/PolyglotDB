@@ -7,6 +7,7 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   chmod +x miniconda.sh
   ./miniconda.sh -b -p $HOME/miniconda/miniconda
   export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  source "$HOME/miniconda/etc/profile.d/conda.sh"
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a

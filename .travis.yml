@@ -22,7 +22,7 @@ before_install:
 
   # install Neo4j locally:
   #- sudo apt-get update && sudo apt-get install oracle-java8-installer
-  - source $(conda info --root)/etc/profile.d/conda.sh
+
   - bash continuous-integration/travis/install.sh
   - ls -al $HOME/tools/autovot/autovot/bin
 
