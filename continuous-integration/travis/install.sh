@@ -21,10 +21,10 @@ fi
 
 if [ ! -d "$HOME/miniconda/miniconda/envs/test-server-environment" ]; then
   export PATH="$HOME/miniconda/miniconda/bin:$PATH"
-  conda create -q -n test-server-environment python=$TRAVIS_PYTHON_VERSION numba
+  conda create -q -n test-server-environment -c conda-forge python=$TRAVIS_PYTHON_VERSION librosa numpy
   source activate test-server-environment
   which python
-  pip install -q coveralls coverage neo4j-driver~=4.3 praatio~=4.1 textgrid librosa tqdm influxdb conch_sounds pytest setuptools
+  pip install -q coveralls coverage neo4j-driver~=4.3 praatio~=4.1 textgrid tqdm influxdb conch_sounds pytest setuptools
   python setup.py install
 else
   export PATH="$HOME/miniconda/miniconda/bin:$PATH"
