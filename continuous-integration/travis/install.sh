@@ -21,7 +21,7 @@ fi
 
 if [ ! -d "$HOME/miniconda/miniconda/envs/test-server-environment" ]; then
   export PATH="$HOME/miniconda/miniconda/bin:$PATH"
-  conda create -q -n test-server-environment python=$TRAVIS_PYTHON_VERSION setuptools numpy pytest scipy
+  conda create -q -n test-server-environment python=$TRAVIS_PYTHON_VERSION setuptools numpy~=1.20 pytest scipy
   source activate test-server-environment
   which python
   pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb django conch_sounds

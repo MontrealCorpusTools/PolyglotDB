@@ -14,7 +14,7 @@ sudo: required
 addons:
   apt:
     packages:
-      - oracle-java8-installer
+      - oraclejdk11
       - sox
 
 before_install:
