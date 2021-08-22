@@ -1,13 +1,12 @@
-import re
+
 import os
-import string
 import logging
 import operator
 import hashlib
 import wave
 from collections import Counter
+from praatio import tgio
 
-from textgrid import TextGrid
 
 from polyglotdb.exceptions import DelimiterError, TextGridError
 
@@ -382,9 +381,8 @@ def guess_textgrid_format(path):
                 if not f.lower().endswith('.textgrid'):
                     continue
                 tg_path = os.path.join(root, f)
-                tg = TextGrid()
                 try:
-                    tg.read(tg_path)
+                    tg = tgio.openTextgrid(tg_path)
                 except ValueError as e:
                     raise (TextGridError('The file {} could not be parsed: {}'.format(tg_path, str(e))))
 
@@ -404,8 +402,11 @@ def guess_textgrid_format(path):
                     counts[None] += 1
         return max(counts.keys(), key=lambda x: counts[x])
     elif path.lower().endswith('.textgrid'):
-        tg = TextGrid()
-        tg.read(path)
+        try:
+            tg = tgio.openTextgrid(path)
+        except ValueError as e:
+            raise (TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
+
         labbcat_parser = inspect_labbcat(path)
         mfa_parser = inspect_mfa(path)
         fave_parser = inspect_fave(path)

@@ -202,11 +202,11 @@ class PositionalAnnotation(SubPathAnnotation):
 class PathAttribute(AnnotationCollectionAttribute):
     collapsing = True
     filter_template = '{alias}.{property}'
-    return_template = 'extract(n in {alias}|n.{property})'
-    duration_return_template = 'extract(n in {alias}|n.end - n.begin)'
+    return_template = '[n in {alias}|n.{property}]'
+    duration_return_template = '[n in {alias}|n.end - n.begin]'
     count_return_template = 'size({alias})'
     rate_return_template = 'case when ({node_alias}.end - {node_alias}.begin) = 0 then null else size({alias}) / ({node_alias}.end - {node_alias}.begin) end'
-    position_return_template = 'reduce(count = 1, n in filter(x in {alias} where x.begin < {node_alias}.begin) | count + 1)'
+    position_return_template = 'reduce(count = 1, n in [x in {alias} where x.begin < {node_alias}.begin | x] | count + 1)'
 
     def __repr__(self):
         return '<PathAttribute \'{}\'>'.format(str(self))
@@ -248,7 +248,7 @@ class PathAttribute(AnnotationCollectionAttribute):
 
 
 class PositionalAttribute(PathAttribute):
-    return_template = 'extract(n in {alias}|n.{property})[{pos}]'
+    return_template = '[n in {alias}|n.{property}][{pos}]'
 
     def __repr__(self):
         return '<PositionalAttribute \'{}\'>'.format(str(self))

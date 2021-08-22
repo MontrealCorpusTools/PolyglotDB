@@ -1,5 +1,4 @@
-from collections import Counter
-from textgrid import TextGrid, IntervalTier
+
 from .aligner import AlignerParser
 from polyglotdb.io.parsers.speaker import FilenameSpeakerParser
 

@@ -1,9 +1,7 @@
-from collections import defaultdict
+
 import copy
 
-from .elements import (ContainsClauseElement,
-                       AlignmentClauseElement,
-                       RightAlignedClauseElement, LeftAlignedClauseElement,
+from .elements import (RightAlignedClauseElement, LeftAlignedClauseElement,
                        NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
 
 from .attributes import (HierarchicalAnnotation)

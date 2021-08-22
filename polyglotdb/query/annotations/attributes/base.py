@@ -3,7 +3,7 @@ from ....exceptions import AnnotationAttributeError, SubsetError
 
 from ..elements import (EqualClauseElement, GtClauseElement, GteClauseElement,
                         LtClauseElement, LteClauseElement, NotEqualClauseElement,
-                        InClauseElement, NotInClauseElement, ContainsClauseElement, RegexClauseElement,
+                        InClauseElement, NotInClauseElement, RegexClauseElement,
                         RightAlignedClauseElement, LeftAlignedClauseElement,
                         NotRightAlignedClauseElement, NotLeftAlignedClauseElement,
                         SubsetClauseElement, NotSubsetClauseElement,
@@ -283,9 +283,14 @@ class AnnotationNode(Node):
         return self.alias
 
     @property
+    def labels_alias(self):
+        """ Returns alias """
+        return 'labels({}) as {}'.format(self.alias, key_for_cypher(self.alias + '_labels'))
+
+    @property
     def withs(self):
         """ Returns a list of alias and type_alias """
-        return [self.alias, self.type_alias]
+        return [self.alias, self.type_alias, self.labels_alias]
 
     def precedes(self, other_annotation):
         return PrecedesClauseElement(self, other_annotation)

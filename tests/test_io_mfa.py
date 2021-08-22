@@ -5,9 +5,7 @@ from polyglotdb.io import inspect_mfa
 
 from polyglotdb import CorpusContext
 
-from polyglotdb.exceptions import TextGridError, GraphQueryError, ParseError
-from textgrid import TextGrid, IntervalTier
-from polyglotdb.io.parsers.mfa import MfaParser
+from polyglotdb.exceptions import ParseError
 
 def test_load_mfa(mfa_test_dir, graph_db):
     with CorpusContext('test_mfa', **graph_db) as c:

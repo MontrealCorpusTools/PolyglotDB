@@ -7,34 +7,24 @@ if [ ! -d "$HOME/miniconda/miniconda/envs/test-environment" ]; then
   chmod +x miniconda.sh
   ./miniconda.sh -b -p $HOME/miniconda/miniconda
   export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  source "$HOME/miniconda/miniconda/etc/profile.d/conda.sh"
   conda config --set always_yes yes --set changeps1 no
   conda update -q conda
   conda info -a
   conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION setuptools numpy pytest scipy
-  source activate test-environment
+  conda activate test-environment
   which python
   pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb conch_sounds
   python setup.py install
 else
+  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
+  source "$HOME/miniconda/miniconda/etc/profile.d/conda.sh"
   echo "Miniconda already installed."
 fi
 
-if [ ! -d "$HOME/miniconda/miniconda/envs/test-server-environment" ]; then
-  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
-  conda create -q -n test-server-environment python=$TRAVIS_PYTHON_VERSION setuptools numpy pytest scipy
-  source activate test-server-environment
-  which python
-  pip install -q coveralls coverage neo4j-driver textgrid librosa tqdm influxdb django conch_sounds
-  python setup.py install
-else
-  export PATH="$HOME/miniconda/miniconda/bin:$PATH"
-  source activate test-server-environment
-  python setup.py install
-  echo "Server already installed."
-fi
 
 if [ ! -d "$HOME/pgdb/data" ]; then
-  source activate test-environment
+  conda activate test-environment
   pgdb install ~/pgdb -q
 else
   echo "Neo4j and InfluxDB already installed."
@@ -48,7 +38,7 @@ if [ ! -f "$HOME/tools/praat" ]; then
    grep -Eo 'praat[0-9]+_linux64barren\.tar\.gz' | head -1)
 
   # Download.
-  curl "http://www.fon.hum.uva.nl/praat/${latestVer}" > praat-latest.tar.gz
+  curl "https://www.fon.hum.uva.nl/praat/praat6151_linux64barren.tar.gz" > praat-latest.tar.gz
   tar -zxvf praat-latest.tar.gz
   mv praat_barren $HOME/tools/praat
 else

@@ -61,8 +61,8 @@ class SyllabicContext(UtteranceContext):
                 statement = '''match (w:{word_name}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}),
                 (w)-[:spoken_in]->(d:Discourse:{corpus_name})
         where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
-        AND s.name = {{speaker}}
-        AND d.name = {{discourse}}
+        AND s.name = $speaker
+        AND d.name = $discourse
         with w
         match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
         (n)-[:contained_by*1..2]->(w)
@@ -74,7 +74,7 @@ class SyllabicContext(UtteranceContext):
         where not (pn)<-[:precedes]-()-[:contained_by*1..2]->(w)
         with w, n,pn
         match p = shortestPath((pn)-[:precedes*0..10]->(n))
-        with extract(x in nodes(p)[0..-1]|x.label) as onset
+        with [x in nodes(p)[0..-1]|x.label] as onset
         return onset, count(onset) as freq'''.format(corpus_name=self.cypher_safe_name,
                                                      word_name=self.word_name,
                                                      syllabic_name=make_label_safe_for_cypher(syllabic_label),
@@ -106,8 +106,8 @@ class SyllabicContext(UtteranceContext):
                 statement = '''match (w:{word_name}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}),
                 (w)-[:spoken_in]->(d:Discourse:{corpus_name})
         where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
-        AND s.name = {{speaker}}
-        AND d.name = {{discourse}}
+        AND s.name = $speaker
+        AND d.name = $discourse
         with w
         match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
         (n)-[:contained_by*1..2]->(w)
@@ -119,7 +119,7 @@ class SyllabicContext(UtteranceContext):
         where not (pn)-[:precedes]->()-[:contained_by*1..2]->(w)
         with w, n,pn
         match p = shortestPath((n)-[:precedes*0..10]->(pn))
-        with extract(x in nodes(p)[1..]|x.label) as coda
+        with [x in nodes(p)[1..]|x.label] as coda
         return coda, count(coda) as freq'''.format(corpus_name=self.cypher_safe_name,
                                                    word_name=self.word_name,
                                                    syllabic_name=make_label_safe_for_cypher(syllabic_label),
@@ -155,7 +155,7 @@ class SyllabicContext(UtteranceContext):
         if call_back is not None:
             call_back('Resetting syllables...')
             number = self.execute_cypher(
-                '''MATCH (n:syllable:%s) return count(*) as number ''' % self.cypher_safe_name).single()['number']
+                '''MATCH (n:syllable:%s) return count(*) as number ''' % self.cypher_safe_name)[0]['number']
             call_back(0, number)
         for s in self.speakers:
             discourses = self.get_discourses_of_speaker(s)
@@ -165,8 +165,8 @@ class SyllabicContext(UtteranceContext):
                         (s)-[:contained_by]->(w:{word_name}:{corpus}),
                         (s)-[:spoken_by]->(sp:Speaker:{corpus}),
                         (s)-[:spoken_in]->(d:Discourse:{corpus})
-                        WHERE sp.name = {{speaker_name}}
-                        AND d.name = {{discourse_name}}
+                        WHERE sp.name = $speaker_name
+                        AND d.name = $discourse_name
                         with p,w
                         CREATE (p)-[:contained_by]->(w)
                 '''.format(corpus=self.cypher_safe_name,
@@ -177,8 +177,8 @@ class SyllabicContext(UtteranceContext):
                 phone_label_statement = '''
                         MATCH (p:{phone_name}:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
                         (p)-[:spoken_in]->(d:Discourse:{corpus})
-                        WHERE sp.name = {{speaker_name}}
-                        AND d.name = {{discourse_name}}
+                        WHERE sp.name = $speaker_name
+                        AND d.name = $discourse_name
                         with p
                         REMOVE p:onset, p:nucleus, p:coda, p.syllable_position
                 '''.format(corpus=self.cypher_safe_name,
@@ -190,8 +190,8 @@ class SyllabicContext(UtteranceContext):
                 delete_statement = '''
                 MATCH (s:syllable:{corpus})-[:spoken_by]->(sp:Speaker:{corpus}),
                         (s)-[:spoken_in]->(d:Discourse:{corpus})
-                        WHERE sp.name = {{speaker_name}}
-                        AND d.name = {{discourse_name}}
+                        WHERE sp.name = $speaker_name
+                        AND d.name = $discourse_name
                         WITH s
                         LIMIT 1000
                         DETACH DELETE s
@@ -200,7 +200,7 @@ class SyllabicContext(UtteranceContext):
                 while deleted > 0:
                     if stop_check is not None and stop_check():
                         break
-                    deleted = self.execute_cypher(delete_statement, speaker_name=s, discourse_name=d).single()[
+                    deleted = self.execute_cypher(delete_statement, speaker_name=s, discourse_name=d)[0][
                         'deleted_count']
 
                     num_deleted += deleted
@@ -406,8 +406,8 @@ class SyllabicContext(UtteranceContext):
             for d in discourses:
                 self.execute_cypher(
                     '''MATCH (s:{corpus_name}:Speaker)<-[:spoken_by]-(n:{corpus_name}:syllable)-[:spoken_in]->(d:{corpus_name}:Discourse)
-                    where s.name = {{speaker_name}} 
-                    AND d.name = {{discourse_name}} and n.prev_id is not Null 
+                    where s.name = $speaker_name 
+                    AND d.name = $discourse_name and n.prev_id is not Null 
                     REMOVE n.prev_id'''.format(corpus_name=self.cypher_safe_name), speaker_name=s, discourse_name=d)
 
         self.hierarchy.add_annotation_type('syllable', above=self.phone_name, below=self.word_name)
@@ -430,7 +430,6 @@ class SyllabicContext(UtteranceContext):
         type_data : dict
             By default None
         """
-
         if type_data is None:
             type_data = {k: type(v) for k, v in next(iter(syllable_data.values())).items()}
         syllables_enrichment_data_to_csvs(self, syllable_data)
@@ -443,21 +442,20 @@ class SyllabicContext(UtteranceContext):
         all_syls = self.query_graph(syllable).all()
         enrich_dict = {}
 
-        for i, x in enumerate(all_syls.cursors):
-            for item in x:
-                syl = item[0]['label']
-                splitsyl = syl.split('.')
-                nucleus = splitsyl[0]
-                for j, seg in enumerate(splitsyl):
-                    if re.search(pattern, seg) is not None:
-                        nucleus = seg
-                r = re.search(pattern, nucleus)
-                if r is not None:
-                    end = nucleus[r.start(0):r.end(0)].replace("_", "")
-                    nucleus = re.sub(pattern, "", nucleus)
-                    fullpatt = str(nucleus) + str(pattern).replace("$", "")
-                    syl = re.sub(fullpatt, nucleus, syl)
-                    enrich_dict.update({syl: {'stress': end}})
+        for item in all_syls:
+            syl = item['label']
+            splitsyl = syl.split('.')
+            nucleus = splitsyl[0]
+            for j, seg in enumerate(splitsyl):
+                if re.search(pattern, seg) is not None:
+                    nucleus = seg
+            r = re.search(pattern, nucleus)
+            if r is not None:
+                end = nucleus[r.start(0):r.end(0)].replace("_", "")
+                nucleus = re.sub(pattern, "", nucleus)
+                fullpatt = str(nucleus) + str(pattern).replace("$", "")
+                syl = re.sub(fullpatt, nucleus, syl)
+                enrich_dict.update({syl: {'stress': end}})
         return enrich_dict
 
     def _generate_tone_enrichment(self, pattern):
@@ -558,7 +556,7 @@ class SyllabicContext(UtteranceContext):
                             AND discourse.name = $discourse_name
                             AND wt.{word_property_name} is not null
                             WITH s, w, split(wt.{word_property_name}, '-') as stresses
-                            WHERE length(stresses) = w.num_syllables
+                            WHERE size(stresses) = w.num_syllables
                             SET s.stress = stresses[s.position_in_word-1]'''.format(
                     corpus_name=self.cypher_safe_name, word_property_name=word_property_name)
                 self.execute_cypher(statement, speaker_name=s, discourse_name=d)

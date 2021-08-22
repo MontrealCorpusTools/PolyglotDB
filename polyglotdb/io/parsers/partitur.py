@@ -1,8 +1,7 @@
 import re
 import os
-from polyglotdb.io.parsers.base import BaseParser  # , PGAnnotation, PGAnnotationType, DiscourseData
+from polyglotdb.io.parsers.base import BaseParser
 
-from .speaker import FilenameSpeakerParser
 from .speaker import DirectorySpeakerParser
 
 from .base import DiscourseData

@@ -57,8 +57,9 @@ See the `ISCAN server`_ for a more fully featured solution.
 Mac
 ```
 
-#. Ensure Java 8 is installed inside Anaconda distribution (``conda install -c anaconda openjdk``) if using Anaconda, or
+#. Ensure Java 11 is installed inside Anaconda distribution (``conda install -c anaconda openjdk``) if using Anaconda, or
    via Homebrew otherwise (``brew cask install java``)
+#. Check Java version is 11 via ``java --version``
 #. Once PolyglotDB is installed, run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
    :code:`pgdb install` to save data in the default directory.
 
@@ -74,7 +75,8 @@ To uninstall, run :code:`pgdb uninstall`
 Windows
 ```````
 
-#. Ensure Java is installed (https://www.java.com/) and on the path (``java --version`` works in the command prompt)
+#. Ensure Java 11 is installed (https://www.java.com/) and on the path (``java --version`` works in the command prompt)
+#. Check Java version is 11 via ``java --version``
 #. Start an Administrator command prompt (right click on cmd.exe and select "Run as administrator"), as Neo4j will be installed as a Windows service.
 #. Run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
    :code:`pgdb install` to save data in the default directory.
@@ -87,15 +89,14 @@ To uninstall, run :code:`pgdb uninstall` (also requires an administrator command
 Linux
 `````
 
-Ensure Java 8 is installed. On Ubuntu:
+Ensure Java 11 is installed. On Ubuntu:
 
 .. code-block:: bash
 
-   sudo add-apt-repository ppa:webupd8team/java
    sudo apt-get update
-   sudo apt-get install oracle-java8-installer
+   sudo apt-get install openjdk-11-jdk-headless
 
-Once installed, run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
+Once installed, double check that ``java --version`` returns Java 11. Then run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
 :code:`pgdb install` to save data in the default directory.
 
 Once you have installed PolyglotDB, to start it run :code:`pgdb start`.

@@ -8,13 +8,8 @@ from polyglotdb.acoustics.formants.base import analyze_formant_points
 from polyglotdb.acoustics.formants.refined import get_mean_SD, \
     analyze_formant_points_refinement, save_formant_point_data
 
-acoustic = pytest.mark.skipif(
-    pytest.config.getoption("--skipacoustics"),
-    reason="remove --skipacoustics option to run"
-)
 
-
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_formants_basic_praat(acoustic_utt_config, praat_path, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
@@ -53,7 +48,7 @@ def test_analyze_formants_vowel_segments(acoustic_utt_config, praat_path, result
         assert not g.discourse_has_acoustics('formants', g.discourses[0])
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_formants_gendered_praat(acoustic_utt_config, praat_path, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
@@ -102,6 +97,10 @@ def test_query_formants(acoustic_utt_config):
         results = q.all()
 
         print(sorted(expected_formants.items()))
+        print(results[0])
+        print(repr(results[0]))
+        print(repr(results))
+        print(results)
         print(results[0].track)
         for point in results[0].track:
             assert (round(point['F1'], 1) == expected_formants[point.time]['F1'])

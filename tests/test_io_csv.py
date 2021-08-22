@@ -3,10 +3,6 @@ import os
 
 from polyglotdb import CorpusContext
 
-acoustic = pytest.mark.skipif(
-    pytest.config.getoption("--skipacoustics"),
-    reason="remove --skipacoustics option to run"
-)
 
 
 def test_to_csv(acoustic_utt_config, export_test_dir):
@@ -71,7 +67,7 @@ def test_to_csv(acoustic_utt_config, export_test_dir):
             i += 1
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_csv_vot(acoustic_utt_config, vot_classifier_path, export_test_dir):
     export_path = os.path.join(export_test_dir, 'results_export_vot.csv')
     with CorpusContext(acoustic_utt_config) as g:

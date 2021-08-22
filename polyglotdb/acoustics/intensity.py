@@ -2,7 +2,7 @@ from conch import analyze_segments
 from conch.analysis.intensity import PraatSegmentIntensityTrackFunction
 
 from .segments import generate_utterance_segments
-from ..exceptions import AcousticError, SpeakerAttributeError
+from ..exceptions import AcousticError
 
 from .utils import PADDING
 

@@ -1,7 +1,6 @@
 import re
 from ..io.importer import feature_data_to_csvs, import_feature_csvs
 from .lexical import LexicalContext
-from ..exceptions import SubsetError
 from ..io.enrichment.features import enrich_features_from_csv, parse_file
 
 
@@ -130,18 +129,17 @@ class PhonologicalContext(LexicalContext):
         length = 0
         newphones = []
         toAdd = {}
-        for c in results.cursors:
-            for item in c:
-                phone = item[0]['label']
-                if re.search(pattern, phone) is not None:
-                    newphone = re.sub(pattern, "", phone)
-                    length = len(phone) - len(newphone)
-                    oldphones.append(phone)
-                    newphones.append(newphone)
-                    toAdd.update({'label': newphone})
-        statement = '''MATCH (n:{phone_name}{type}:{corpus_name}) WHERE n.label in {{oldphones}} 
+        for item in results:
+            phone = item['label']
+            if re.search(pattern, phone) is not None:
+                newphone = re.sub(pattern, "", phone)
+                length = len(phone) - len(newphone)
+                oldphones.append(phone)
+                newphones.append(newphone)
+                toAdd.update({'label': newphone})
+        statement = '''MATCH (n:{phone_name}{type}:{corpus_name}) WHERE n.label in $oldphones 
         SET n.oldlabel = n.label 
-        SET n.label=substring(n.label,0,length(n.label)-{length})'''
+        SET n.label=substring(n.label,0,size(n.label)-{length})'''
         norm_statement = statement.format(phone_name=self.phone_name, type='',
                                           corpus_name=self.cypher_safe_name, length=length)
         type_statement = statement.format(phone_name=self.phone_name, type='_type',

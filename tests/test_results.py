@@ -17,4 +17,4 @@ def test_encode_class(acoustic_utt_config):
 
         assert (second_twenty == results.previous(40))
 
-        assert (len(results) == 203)
+        assert (len(results) == 192)

@@ -1,5 +1,4 @@
 from conch.analysis.segments import SegmentMapping
-import sys
 
 
 def generate_segments(corpus_context, annotation_type='utterance', subset=None, file_type='vowel',
@@ -33,11 +32,11 @@ def generate_segments(corpus_context, annotation_type='utterance', subset=None, 
     segment_mapping = SegmentMapping()
     for s in speakers:
         statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
-                    WHERE s.name = {{speaker_name}}
-                    RETURN d, r'''.format(corpus_name=corpus_context.cypher_safe_name)
+                    WHERE s.name = $speaker_name
+                    RETURN d, r.channel as channel'''.format(corpus_name=corpus_context.cypher_safe_name)
         results = corpus_context.execute_cypher(statement, speaker_name=s)
         for r in results:
-            channel = r['r']['channel']
+            channel = r['channel']
             discourse = r['d']['name']
             if file_type == 'vowel':
                 file_path = r['d']['vowel_file_path']

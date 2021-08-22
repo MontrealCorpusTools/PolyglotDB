@@ -59,8 +59,8 @@ class PauseContext(ImportContext):
                 statement = '''MATCH (prec:{corpus}:{word_type}:speech)-[:spoken_by]->(s:Speaker:{corpus}),
                 (prec)-[:spoken_in]->(d:Discourse:{corpus})
                 WHERE not (prec)-[:precedes]->()
-                AND s.name = {{speaker}}
-                AND d.name = {{discourse}}
+                AND s.name = $speaker
+                AND d.name = $discourse
                 WITH prec
                 MATCH p = (prec)-[:precedes_pause*]->(foll:{corpus}:{word_type}:speech)
                 WITH prec, foll, p
@@ -71,8 +71,8 @@ class PauseContext(ImportContext):
                 self.execute_cypher(statement, speaker=s, discourse=d)
 
                 statement = '''MATCH (s:Speaker:{corpus})<-[:spoken_by]-(w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
-                WHERE s.name = {{speaker}}
-                AND d.name = {{discourse}}
+                WHERE s.name = $speaker
+                AND d.name = $discourse
                     with d, max(w.end) as speech_end, min(w.begin) as speech_begin
                     set d.speech_begin = speech_begin,
                         d.speech_end = speech_end
@@ -95,24 +95,24 @@ class PauseContext(ImportContext):
                 (m)-[:spoken_by]->(s:Speaker:{corpus}),
                 (m)-[:spoken_in]->(d:Discourse:{corpus})
                 WHERE (n)-[:precedes_pause]->()
-                AND s.name = {{speaker}}
-                AND d.name = {{discourse}}
+                AND s.name = $speaker
+                AND d.name = $discourse
                 DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
                 self.execute_cypher(statement, speaker=s, discourse=d)
 
                 statement = '''MATCH (n:{corpus}:{word_type})-[r:precedes_pause]->(m:{corpus}:{word_type}),
                 (m)-[:spoken_by]->(s:Speaker:{corpus}),
                 (m)-[:spoken_in]->(d:Discourse:{corpus})
-                WHERE s.name = {{speaker}}
-                AND d.name = {{discourse}}
+                WHERE s.name = $speaker
+                AND d.name = $discourse
                 MERGE (n)-[:precedes]->(m)
                 DELETE r'''.format(corpus=self.cypher_safe_name, word_type=self.word_name)
                 self.execute_cypher(statement, speaker=s, discourse=d)
 
                 statement = '''MATCH (n:pause:{corpus})-[:spoken_by]->(s:Speaker:{corpus}),
                 (n)-[:spoken_in]->(d:Discourse:{corpus})
-                WHERE s.name = {{speaker}}
-                AND d.name = {{discourse}}
+                WHERE s.name = $speaker
+                AND d.name = $discourse
                 SET n :speech
                 REMOVE n:pause'''.format(corpus=self.cypher_safe_name)
                 self.execute_cypher(statement, speaker=s, discourse=d)

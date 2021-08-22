@@ -1,7 +1,7 @@
 import os
 import math
+from praatio import tgio
 
-from textgrid import TextGrid, IntervalTier
 
 from polyglotdb.structure import Hierarchy
 
@@ -81,10 +81,10 @@ def uniqueLabels(tier):
     set
         label from the tier
     """
-    try:
-        return set(x.mark for x in tier.intervals)
-    except AttributeError:
-        return set(x.mark for x in tier.points)
+    if isinstance(tier, tgio.IntervalTier):
+        return set(x for _, _, x in tier.entryList)
+    else:
+        return set(x for _, x in tier.entryList)
 
 
 def average_duration(tier):
@@ -102,10 +102,10 @@ def average_duration(tier):
         average duration
     """
 
-    if isinstance(tier, IntervalTier):
-        return sum(float(x.maxTime) - float(x.minTime) for x in tier) / len(tier)
+    if isinstance(tier, tgio.IntervalTier):
+        return sum(float(end) - float(begin) for (begin, end, _) in tier.entryList) / len(tier.entryList)
     else:
-        return float(tier.maxTime) / len(tier)
+        return float(tier.maxTime) / len(tier.entryList)
 
 
 def averageLabelLen(tier):
@@ -168,11 +168,12 @@ def guess_tiers(tg):
     """
     tier_properties = {}
     tier_guesses = {}
-    for i, t in enumerate(tg.tiers):
-        if len(t) == 0:
+    for i, tier_name in enumerate(tg.tierNameList):
+        ti = tg.tierDict[tier_name]
+        if len(ti.entryList) == 0:
             continue
-        t.maxTime = tg.maxTime
-        tier_properties[t.name] = (i, average_duration(t))
+        ti.maxTime = tg.maxTimestamp
+        tier_properties[ti.name] = (i, average_duration(ti))
     for k, v in tier_properties.items():
         if v is None:
             continue
@@ -224,16 +225,16 @@ def inspect_textgrid(path):
         textgrids.append(path)
     anno_types = []
     for t in textgrids:
-        tg = TextGrid()
-        tg.read(t)
+        tg = tgio.openTextgrid(t)
         if len(anno_types) == 0:
             tier_guesses, hierarchy = guess_tiers(tg)
-            for ti in tg.tiers:
-                if ti.name not in tier_guesses:
+            for i, tier_name in enumerate(tg.tierNameList):
+                ti = tg.tierDict[tier_name]
+                if tier_name not in tier_guesses:
                     a = OrthographyTier('word', 'word')
                     a.ignored = True
-                elif tier_guesses[ti.name] == 'segment':
-                    a = SegmentTier(ti.name, tier_guesses[ti.name])
+                elif tier_guesses[tier_name] == 'segment':
+                    a = SegmentTier(tier_name, tier_guesses[ti.name])
                 else:
                     labels = uniqueLabels(ti)
                     cat = guess_type(labels, trans_delimiters)
@@ -241,37 +242,38 @@ def inspect_textgrid(path):
                         a = TranscriptionTier(ti.name, tier_guesses[ti.name])
                         a.trans_delimiter = guess_trans_delimiter(labels)
                     elif cat == 'numeric':
-                        if isinstance(ti, IntervalTier):
+                        if isinstance(ti, tgio.IntervalTier):
                             raise (NotImplementedError)
                         else:
                             a = BreakIndexTier(ti.name, tier_guesses[ti.name])
                     elif cat == 'orthography':
-                        if isinstance(ti, IntervalTier):
+                        if isinstance(ti, tgio.IntervalTier):
                             a = OrthographyTier(ti.name, tier_guesses[ti.name])
                         else:
                             a = TextOrthographyTier(ti.name, tier_guesses[ti.name])
                     elif cat == 'tobi':
-                        a = TobiTier(ti.name, tier_guesses[ti.name])
+                        a = TobiTier(tier_name, tier_guesses[ti.name])
                     elif cat == 'grouping':
                         a = GroupingTier(ti.name, tier_guesses[ti.name])
                     else:
-                        print(ti.name)
+                        print(tier_name)
                         print(cat)
                         raise (NotImplementedError)
                 if not a.ignored:
-                    try:
-                        a.add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti), save=False)
-                    except AttributeError:
-                        a.add(((x.mark.strip(), x.time) for x in ti), save=False)
+                    if isinstance(ti, tgio.IntervalTier):
+                        a.add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList), save=False)
+                    else:
+                        a.add(((text.strip(), time) for time, text in ti.entryList), save=False)
                 anno_types.append(a)
         else:
-            for i, ti in enumerate(tg.tiers):
+            for i, tier_name in enumerate(tg.tierNameList):
+                ti = tg.tierDict[tier_name]
                 if anno_types[i].ignored:
                     continue
-                try:
-                    anno_types[i].add(((x.mark.strip(), x.minTime, x.maxTime) for x in ti), save=False)
-                except AttributeError:
-                    anno_types[i].add(((x.mark.strip(), x.time) for x in ti), save=False)
+                if isinstance(ti, tgio.IntervalTier):
+                    anno_types[i].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList), save=False)
+                else:
+                    anno_types[i].add(((text.strip(), time) for time, text in ti.entryList), save=False)
 
     parser = TextgridParser(anno_types, hierarchy)
     return parser

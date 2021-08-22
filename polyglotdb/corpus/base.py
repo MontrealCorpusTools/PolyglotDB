@@ -1,21 +1,17 @@
 import os
-import pickle
 import shutil
 import sys
-import time
 from decimal import Decimal
 
 from neo4j import GraphDatabase
 
 from ..query.annotations.attributes import AnnotationNode, PauseAnnotation
-from ..query.annotations import GraphQuery, SplitQuery
+from ..query.annotations import SplitQuery
 from ..query.lexicon import LexiconQuery, LexiconNode
 from ..query.speaker import SpeakerQuery, SpeakerNode
 from ..query.discourse import DiscourseQuery, DiscourseNode
 from ..config import CorpusConfig
-from ..exceptions import (CorpusConfigError, GraphQueryError,
-                          ConnectionError, AuthorizationError, TemporaryConnectionError,
-                          NetworkAddressError)
+from ..exceptions import (CorpusConfigError, GraphQueryError)
 from ..structure import Hierarchy
 
 
@@ -93,14 +89,23 @@ class BaseContext(object):
             Result of Cypher query
         """
         from neo4j.exceptions import ServiceUnavailable
+        return_graph = False
+        if 'return_graph' in parameters:
+            return_graph = parameters.pop('return_graph')
         for k, v in parameters.items():
             if isinstance(v, Decimal):
                 parameters[k] = float(v)
         try:
             with self.graph_driver.session() as session:
-                # print(statement)
-                # print(parameters)
+                if self.config.debug:
+                    print('Statement:', statement)
+                    print('Parameters:',parameters)
                 results = session.run(statement, **parameters)
+                if return_graph:
+                    results = results.graph()
+                else:
+                    results = results.data()
+
             return results
         except Exception as e:
             raise
@@ -287,7 +292,7 @@ class BaseContext(object):
         """
 
         delete_statement = '''MATCH (n:{corpus}:{anno})-[:spoken_by]->(s:{corpus}:Speaker)
-        where s.name = {{speaker}}
+        where s.name = $speaker
         with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count'''
 
         delete_type_statement = '''MATCH (n:{corpus}:{anno}_type)
@@ -310,7 +315,7 @@ class BaseContext(object):
                     if stop_check is not None and stop_check():
                         break
                     deleted = self.execute_cypher(delete_statement.format(corpus=self.cypher_safe_name, anno=a),
-                                                  speaker=s).single()['deleted_count']
+                                                  speaker=s)[0]['deleted_count']
                     num_deleted += deleted
                     if call_back is not None:
                         call_back(num_deleted)
@@ -320,7 +325,7 @@ class BaseContext(object):
                 if stop_check is not None and stop_check():
                     break
                 deleted = self.execute_cypher(
-                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a)).single()['deleted_count']
+                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a))[0]['deleted_count']
                 num_deleted += deleted
                 if call_back is not None:
                     call_back(num_deleted)
@@ -328,7 +333,7 @@ class BaseContext(object):
         self.execute_cypher('''MATCH (n:{}:Speaker) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.execute_cypher('''MATCH (n:{}:Discourse) DETACH DELETE n '''.format(self.cypher_safe_name))
         self.reset_hierarchy()
-        self.execute_cypher('''MATCH (n:Corpus) where n.name = {corpus_name} DELETE n ''', corpus_name=self.corpus_name)
+        self.execute_cypher('''MATCH (n:Corpus) where n.name = $corpus_name DELETE n ''', corpus_name=self.corpus_name)
         self.hierarchy = Hierarchy(corpus_name=self.corpus_name)
         self.cache_hierarchy()
 
@@ -451,7 +456,7 @@ class BaseContext(object):
         if name not in self.discourses:
             raise GraphQueryError('{} is not a discourse in this corpus.'.format(name))
         d = self.discourse_sound_file(name)
-        if d['consonant_file_path'] is not None and os.path.exists(d['consonant_file_path']):
+        if 'consonant_file_path' in d and d['consonant_file_path'] is not None and os.path.exists(d['consonant_file_path']):
             directory = self.discourse_audio_directory(name)
             if self.config.debug:
                 print('Removing', directory)
@@ -461,7 +466,7 @@ class BaseContext(object):
         for a in self.hierarchy.annotation_types:
             # Remove tokens in discourse
             statement = '''MATCH (d:{corpus_name}:Discourse)<-[:spoken_in]-(n:{corpus_name}:{atype})
-            WHERE d.name = {{discourse}}
+            WHERE d.name = $discourse
             DETACH DELETE n'''.format(corpus_name=self.cypher_safe_name, atype=a)
             if self.config.debug:
                 print(statement)
@@ -471,7 +476,7 @@ class BaseContext(object):
                     print('RESULT', r)
         # Remove discourse node
         statement = '''MATCH (d:{corpus_name}:Discourse)
-        WHERE d.name = {{discourse}}
+        WHERE d.name = $discourse
         DETACH DELETE d'''.format(corpus_name=self.cypher_safe_name)
         if self.config.debug:
             print(statement)

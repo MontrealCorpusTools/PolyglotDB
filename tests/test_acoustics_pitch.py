@@ -5,13 +5,9 @@ import pytest
 
 from polyglotdb import CorpusContext
 
-acoustic = pytest.mark.skipif(
-    pytest.config.getoption("--skipacoustics"),
-    reason="remove --skipacoustics option to run"
-)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_discourse_pitch(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.praat_path = praat_path
@@ -24,7 +20,7 @@ def test_analyze_discourse_pitch(acoustic_utt_config, praat_path):
                 assert len(track)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_save_new_pitch_track(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.praat_path = praat_path
@@ -52,7 +48,7 @@ def test_save_new_pitch_track(acoustic_utt_config, praat_path):
                 assert point['F0'] == 100
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
@@ -68,8 +64,13 @@ def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
             assert len(r.track)
 
 
-def test_reset_utterances(acoustic_utt_config):
+@pytest.mark.acoustic
+def test_reset_utterances(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.praat_path = praat_path
+        g.analyze_pitch()
+        assert (g.discourse_has_acoustics('pitch', g.discourses[0]))
         g.reset_utterances()
         g.encode_utterances(0.15)
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
@@ -81,7 +82,7 @@ def test_reset_utterances(acoustic_utt_config):
             assert len(r.track)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_track_mean_query(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
@@ -96,7 +97,7 @@ def test_track_mean_query(acoustic_utt_config):
             assert (abs(r['Mean_F0'] - calc_mean) < 0.001)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_track_following_mean_query(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
@@ -112,7 +113,7 @@ def test_track_following_mean_query(acoustic_utt_config):
             assert (abs(r['following_phone_pitch_mean'] - calc_mean) > 0.001)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_track_hierarchical_mean_query(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
@@ -128,7 +129,7 @@ def test_track_hierarchical_mean_query(acoustic_utt_config):
             assert (abs(r['word_pitch_mean'] - calc_mean) > 0.001)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_track_hierarchical_following_mean_query(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
@@ -146,7 +147,7 @@ def test_track_hierarchical_following_mean_query(acoustic_utt_config):
             assert (r['word_pitch_mean'] != r['following_word_pitch_mean'])
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_test_dir):
     with CorpusContext(acoustic_utt_config) as g:
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
@@ -173,15 +174,17 @@ def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_te
         q.to_csv(os.path.join(results_test_dir, 'test_track_hierarchical_utterance_mean_query.txt'))
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_pitch_basic_reaper(acoustic_utt_config, reaper_path):
+    if not os.path.exists(reaper_path):
+        pytest.skip('no reaper available')
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.config.reaper_path = reaper_path
         g.analyze_pitch(source='reaper', multiprocessing=False)
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
@@ -189,7 +192,7 @@ def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
         g.analyze_pitch(source='praat', algorithm='gendered')
 
 
-@acoustic
+@pytest.mark.acoustic
 def test_analyze_pitch_gendered_praat(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()

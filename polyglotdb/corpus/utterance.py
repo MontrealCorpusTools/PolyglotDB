@@ -120,9 +120,9 @@ class UtteranceContext(PauseContext):
             statement = '''MATCH p = (prev_node_word:{word_type}:speech:{corpus})-[:precedes_pause*1..]->(foll_node_word:{word_type}:speech:{corpus}),
             (prev_node_word)-[:spoken_in]->(d:Discourse:{corpus}),
             (prev_node_word)-[:spoken_by]->(s:Speaker:{corpus})
-            WHERE d.name = {{discourse}} AND s.name = {{speaker}}
+            WHERE d.name = $discourse AND s.name = $speaker
     WITH nodes(p)[1..-1] as ns,foll_node_word, prev_node_word
-    WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
+    WHERE foll_node_word.begin - prev_node_word.end >= $node_pause_duration
     AND NONE (x in ns where x:speech)
     WITH foll_node_word, prev_node_word
     RETURN prev_node_word.end AS begin, prev_node_word.id AS begin_id, foll_node_word.begin AS end, foll_node_word.id AS end_id, foll_node_word.begin - prev_node_word.end AS duration
@@ -142,9 +142,9 @@ class UtteranceContext(PauseContext):
                 else:
                     collapsed_results.append(r)
             statement = '''MATCH (s:Speaker:{corpus})<-[:spoken_by]-(w:{word_type}:{corpus}:speech)-[:spoken_in]->(d:Discourse:{corpus})
-            where d.name = {{discourse}} AND s.name = {{speaker}}
+            where d.name = $discourse AND s.name = $speaker
             with max(w.end) as max_end, min(w.begin) as min_begin, collect(w) as words
-            with filter(x in words where x.begin = min_begin or x.end = max_end) as c UNWIND c as w
+            with [x in words where x.begin = min_begin or x.end = max_end | x] as c UNWIND c as w
             return w.id as id, w.begin as begin, w.end as end
             order by w.begin
             '''.format(corpus=self.cypher_safe_name, word_type=word_type)
@@ -231,9 +231,9 @@ class UtteranceContext(PauseContext):
         word_type = self.word_name
         statement = '''MATCH p = (prev_node_word:{word_type}:speech:{corpus})-[:precedes_pause*1..]->(foll_node_word:{word_type}:speech:{corpus}),
         (prev_node_word)-[:spoken_in]->(d:Discourse:{corpus})
-        WHERE d.name = {{discourse}}
+        WHERE d.name = $discourse
 WITH nodes(p)[1..-1] as ns,foll_node_word, prev_node_word
-WHERE foll_node_word.begin - prev_node_word.end >= {{node_pause_duration}}
+WHERE foll_node_word.begin - prev_node_word.end >= $node_pause_duration
 AND NONE (x in ns where x:speech)
 WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, foll_node_word.begin AS end, foll_node_word.begin - prev_node_word.end AS duration
@@ -296,7 +296,7 @@ ORDER BY begin'''.format(corpus=self.cypher_safe_name, word_type=word_type)
         if self.config.query_behavior == 'speaker':
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name})-[:spoken_by]->(speaker:Speaker:{corpus_name}),
             (node_word_in_node_utterance:{w_type}:{corpus_name})-[:contained_by]->(node_utterance)
-            WHERE speaker.name = {{split_name}}
+            WHERE speaker.name = $split_name
             WITH node_utterance, node_word_in_node_utterance
             ORDER BY node_word_in_node_utterance.begin
             WITH node_utterance,collect(node_word_in_node_utterance) as nodes
@@ -310,7 +310,7 @@ ORDER BY begin'''.format(corpus=self.cypher_safe_name, word_type=word_type)
         elif self.config.query_behavior == 'discourse':
             statement = '''MATCH (node_utterance:utterance:speech:{corpus_name})-[:spoken_in]->(discourse:Discourse:{corpus_name}),
             (node_word_in_node_utterance:{w_type}:{corpus_name})-[:contained_by]->(node_utterance)
-            WHERE discourse.name = {{split_name}}
+            WHERE discourse.name = $split_name
             WITH node_utterance, node_word_in_node_utterance
             ORDER BY node_word_in_node_utterance.begin
             WITH node_utterance, collect(node_word_in_node_utterance) as nodes

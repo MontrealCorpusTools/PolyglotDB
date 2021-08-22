@@ -13,11 +13,11 @@ def test_models(acoustic_config):
 
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.label == '<SIL>')
+        assert (model.label == 'dh')
 
-        assert (model.following.label == 'dh')
+        assert (model.following.label == 'ih')
 
-        assert (model.following.following.label == 'ih')
+        assert (model.following.following.label == 's')
         assert (model.previous is None)
 
 
@@ -57,7 +57,7 @@ def test_hierarchical(acoustic_config):
 
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.label == 'dh')
+        assert (model.label == 'ih')
         assert (model.word.label == 'this')
 
 
@@ -200,6 +200,7 @@ def test_preload_sub(subannotation_config):
         results = q.all()
 
         for r in results:
+
             if (r.label == 'g' and r.begin == 2.2) or r.begin == 0:
                 assert ('voicing_during_closure' in r._subannotations)
                 assert (r._subannotations['voicing_during_closure'] is not None)

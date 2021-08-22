@@ -148,7 +148,7 @@ def to_seconds(time_string):
             d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%SZ')
             s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
         except:
-            m = re.search('T(\d{2}):(\d{2}):(\d+)\.(\d+)?', time_string)
+            m = re.search(r'T(\d{2}):(\d{2}):(\d+)\.(\d+)?', time_string)
             p = m.groups()
 
             s = 60 * 60 * int(p[0]) + 60 * int(p[1]) + int(p[2]) + int(p[3][:6]) / 1e6
@@ -579,9 +579,9 @@ class AudioContext(SyllabicContext):
         dict
             Information for the audio file path
         """
-        statement = '''MATCH (d:Discourse:{corpus_name}) WHERE d.name = {{discourse_name}} return d'''.format(
+        statement = '''MATCH (d:Discourse:{corpus_name}) WHERE d.name = $discourse_name return d'''.format(
             corpus_name=self.cypher_safe_name)
-        results = self.execute_cypher(statement, discourse_name=discourse).records()
+        results = self.execute_cypher(statement, discourse_name=discourse)
         for r in results:
             d = r['d']
             break
@@ -786,9 +786,9 @@ class AudioContext(SyllabicContext):
             file_path, begin, end, channel, utterance_id = seg.file_path, seg.begin, seg.end, seg.channel, seg[
                 'utterance_id']
             res = self.execute_cypher(
-                'MATCH (d:Discourse:{corpus_name}) where d.low_freq_file_path = {{file_path}} OR '
-                'd.vowel_file_path = {{file_path}} OR '
-                'd.consonant_file_path = {{file_path}} '
+                'MATCH (d:Discourse:{corpus_name}) where d.low_freq_file_path = $file_path OR '
+                'd.vowel_file_path = $file_path OR '
+                'd.consonant_file_path = $file_path '
                 'RETURN d.name as name'.format(
                     corpus_name=self.cypher_safe_name), file_path=file_path)
             for r in res:
@@ -1008,7 +1008,7 @@ class AudioContext(SyllabicContext):
             set_statements = []
             for measure in measures.keys():
                 set_statements.append(statistic_template.format(statistic=statistic, measure=measure))
-            statement = '''WITH {{data}} as data
+            statement = '''WITH $data as data
                         UNWIND data as d
                         MATCH (s:Speaker:{corpus_name}), (p:phone_type:{corpus_name})
                         WHERE p.label = d.phone AND s.name = d.speaker
@@ -1033,7 +1033,7 @@ class AudioContext(SyllabicContext):
             set_statements = []
             for measure in measures.keys():
                 set_statements.append(statistic_template.format(statistic=statistic, measure=measure))
-            statement = '''WITH {{data}} as data
+            statement = '''WITH $data as data
                                 UNWIND data as d
                                 MATCH (n:phone_type:{corpus_name})
                                 WHERE n.label = d.phone
@@ -1055,7 +1055,7 @@ class AudioContext(SyllabicContext):
             set_statements = []
             for measure in measures.keys():
                 set_statements.append(statistic_template.format(statistic=statistic, measure=measure))
-            statement = '''WITH {{data}} as data
+            statement = '''WITH $data as data
                             UNWIND data as d
                             MATCH (n:Speaker:{corpus_name})
                             WHERE n.name = d.speaker
@@ -1106,17 +1106,17 @@ class AudioContext(SyllabicContext):
         if by_phone and by_speaker:
             statement = '''MATCH (p:phone_type:{corpus_name})-[n:spoken_by]->(s:Speaker:{corpus_name}) 
             return {return_list} LIMIT 1'''.format(corpus_name=self.cypher_safe_name, return_list=', '.join(returns))
-            results = self.execute_cypher(statement).records()
+            results = self.execute_cypher(statement)
             try:
-                first = next(results)
-            except StopIteration:
+                first = results[0]
+            except IndexError:
                 first = None
             if first is None:
                 self.encode_acoustic_statistic(acoustic_name, statistic, by_phone, by_speaker)
             statement = '''MATCH (p:phone_type:{corpus_name})-[n:spoken_by]->(s:Speaker:{corpus_name})
             return p.label as phone, s.name as speaker, {return_list}'''.format(
                 corpus_name=self.cypher_safe_name, return_list=', '.join(returns))
-            results = self.execute_cypher(statement).records()
+            results = self.execute_cypher(statement)
             results = {(x['speaker'], x['phone']): [x[n] for n in measures] for x in results}
 
         elif by_phone:
@@ -1125,7 +1125,7 @@ class AudioContext(SyllabicContext):
             statement = '''MATCH (n:phone_type:{corpus_name})
             return n.label as phone, {return_list}'''.format(
                 corpus_name=self.cypher_safe_name, return_list=', '.join(returns))
-            results = self.execute_cypher(statement).records()
+            results = self.execute_cypher(statement)
             results = {x['phone']: [x[n] for n in measures] for x in results}
         elif by_speaker:
             if not self.hierarchy.has_speaker_property(measures[0]):
@@ -1133,7 +1133,7 @@ class AudioContext(SyllabicContext):
             statement = '''MATCH (n:Speaker:{corpus_name})
             return n.name as speaker, {return_list}'''.format(
                 corpus_name=self.cypher_safe_name, return_list=', '.join(returns))
-            results = self.execute_cypher(statement).records()
+            results = self.execute_cypher(statement)
             results = {x['speaker']: [x[n] for n in measures] for x in results}
         return results
 

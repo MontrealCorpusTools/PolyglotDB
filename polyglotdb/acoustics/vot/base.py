@@ -1,14 +1,10 @@
-import tempfile
 
 from uuid import uuid1
 from conch import analyze_segments
-from conch.analysis.segments import SegmentMapping, FileSegment
+from conch.analysis.segments import SegmentMapping
 from conch.analysis.autovot import AutoVOTAnalysisFunction
 
-from ..segments import generate_utterance_segments, generate_segments
-from ...query.annotations.models import LinguisticAnnotation
-from ...exceptions import SpeakerAttributeError
-from ..classes import Track, TimePoint
+from ..segments import generate_segments
 from ..utils import PADDING
 
 
@@ -99,8 +95,9 @@ def analyze_vot(corpus_context, classifier, stop_label='stops',
                 else:
                     speaker_mapped_stops[x["speaker"]] = [stop_info]
             for speaker in speaker_mapped_stops:
-                segment_mapping.add_file_segment(sf["consonant_file_path"], \
-                        0, sf["duration"], sf["channel"],\
+                channel = corpus_context.get_channel_of_speaker(speaker, discourse)
+                segment_mapping.add_file_segment(sf["consonant_file_path"],
+                        0, sf["duration"], channel,
                         name="{}-{}".format(speaker, discourse), vot_marks=speaker_mapped_stops[speaker])
     output = analyze_segments(segment_mapping.segments, vot_func, stop_check=stop_check, multiprocessing=multiprocessing)
 

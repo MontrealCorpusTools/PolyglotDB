@@ -1,9 +1,8 @@
 from uuid import uuid1
-import time
 from decimal import Decimal
 from polyglotdb.exceptions import GraphModelError
 
-from ..base.helper import key_for_cypher, value_for_cypher
+from ..base.helper import value_for_cypher
 
 
 class BaseAnnotation(object):
@@ -28,10 +27,8 @@ class BaseAnnotation(object):
         """
         self._node = item
         self._id = item['id']
-        for x in self._node.labels:
-            if x in self.corpus_context.hierarchy:
-                self._type = x
-                break
+        if self._node['neo4j_label'] in self.corpus_context.hierarchy:
+            self._type = self._node['neo4j_label']
 
     @property
     def duration(self):
@@ -54,6 +51,9 @@ class BaseAnnotation(object):
             The objects corpus_context will be set to this parameter
         """
         self._corpus_context = context
+
+    def __getitem__(self, key):
+        return getattr(self, key)
 
     def save(self):
         pass
@@ -119,9 +119,6 @@ class LinguisticAnnotation(BaseAnnotation):
         for k, v in self._subannotations.items():
             for t in v:
                 t.corpus_context = context
-
-    def __getitem__(self, key):
-        return getattr(self, key)
 
     @property
     def properties(self):
@@ -205,12 +202,13 @@ class LinguisticAnnotation(BaseAnnotation):
                 print('Warning: fetching previous annotation from the database, '
                       'preload this annotation for faster access.')
                 res = list(self.corpus_context.execute_cypher(
-                    '''MATCH (previous_type)<-[:is_a]-(previous_token)-[:precedes]->(token {id: {id}})
+                    '''MATCH (previous_type)<-[:is_a]-(previous_token)-[:precedes]->(token {id: $id})
                         RETURN previous_token, previous_type''', id=self._id))
                 if len(res) == 0:
                     self._previous = 'empty'
                     return None
                 self._previous = LinguisticAnnotation(self.corpus_context)
+                res[0]['previous_token']['neo4j_label'] = self._type
                 self._previous.node = res[0]['previous_token']
                 self._previous.type_node = res[0]['previous_type']
             return self._previous
@@ -221,12 +219,13 @@ class LinguisticAnnotation(BaseAnnotation):
                 print('Warning: fetching following annotation from the database, '
                       'preload this annotation for faster access.')
                 res = list(self.corpus_context.execute_cypher(
-                    '''MATCH (following_type)<-[:is_a]-(following_token)<-[:precedes]-(token {id: {id}})
+                    '''MATCH (following_type)<-[:is_a]-(following_token)<-[:precedes]-(token {id: $id})
                             RETURN following_token, following_type''', id=self._id))
                 if len(res) == 0:
                     self._following = 'empty'
                     return None
                 self._following = LinguisticAnnotation(self.corpus_context)
+                res[0]['following_token']['neo4j_label'] = self._type
                 self._following.node = res[0]['following_token']
                 self._following.type_node = res[0]['following_type']
             return self._following
@@ -249,7 +248,7 @@ class LinguisticAnnotation(BaseAnnotation):
                 print('Warning: fetching speaker information from the database, '
                       'preload speakers for faster access.')
                 res = list(self.corpus_context.execute_cypher(
-                    '''MATCH (speaker:Speaker)<-[:spoken_by]-(token {id: {id}})
+                    '''MATCH (speaker:Speaker)<-[:spoken_by]-(token {id: $id})
                         RETURN speaker''', id=self._id))
                 if len(res) == 0:
                     self._speaker = 'empty'
@@ -264,7 +263,7 @@ class LinguisticAnnotation(BaseAnnotation):
                 print('Warning: fetching discourse information from the database, '
                       'preload discourses for faster access.')
                 res = list(self.corpus_context.execute_cypher(
-                    '''MATCH (discourse:Discourse)<-[:spoken_in]-(token {id: {id}})
+                    '''MATCH (discourse:Discourse)<-[:spoken_in]-(token {id: $id})
                         RETURN discourse''', id=self._id))
                 if len(res) == 0:
                     self._discourse = 'empty'
@@ -277,11 +276,16 @@ class LinguisticAnnotation(BaseAnnotation):
                 print('Warning: fetching {0} information from the database, '
                       'preload {0} annotations for faster access.'.format(key))
                 res = self.corpus_context.execute_cypher(
-                    '''MATCH (lower_type)<-[:is_a]-(lower_token:{a_type})-[:contained_by*1..]->(token {{id: {{id}}}})
-                        RETURN lower_token, lower_type ORDER BY lower_token.begin'''.format(a_type=key), id=self._id)
+                    '''MATCH (lower_type)<-[:is_a]-(lower_token:{a_type})-[:contained_by*1..]->(token {{id: $id}})
+                        RETURN lower_token, lower_type, labels(lower_token) as neo4j_labels ORDER BY lower_token.begin'''.format(a_type=key), id=self._id)
                 self._subs[key] = []
                 for r in res:
                     a = LinguisticAnnotation(self.corpus_context)
+                    labels = r['neo4j_labels']
+                    for label in labels:
+                        if label in self.corpus_context.hierarchy:
+                            r['lower_token']['neo4j_label'] = label
+                            break
                     a.node = r['lower_token']
                     a.type_node = r['lower_type']
                     self._subs[key].append(a)
@@ -291,11 +295,16 @@ class LinguisticAnnotation(BaseAnnotation):
                 print('Warning: fetching {0} information from the database, '
                       'preload {0} annotations for faster access.'.format(key))
                 res = list(self.corpus_context.execute_cypher(
-                    '''MATCH (higher_type)<-[:is_a]-(higher_token:{a_type})<-[:contained_by*1..]-(token {{id: {{id}}}})
-                        RETURN higher_token, higher_type'''.format(a_type=key), id=self._id))
+                    '''MATCH (higher_type)<-[:is_a]-(higher_token:{a_type})<-[:contained_by*1..]-(token {{id: $id}})
+                        RETURN higher_token, higher_type, labels(higher_token) as neo4j_labels'''.format(a_type=key), id=self._id))
                 if len(res) == 0:
                     return None
                 a = LinguisticAnnotation(self.corpus_context)
+                labels = res[0]['neo4j_labels']
+                for label in labels:
+                    if label in self.corpus_context.hierarchy:
+                        res[0]['higher_token']['neo4j_label'] = label
+                        break
                 a.node = res[0]['higher_token']
                 a.type_node = res[0]['higher_type']
                 self._supers[key] = a
@@ -308,7 +317,7 @@ class LinguisticAnnotation(BaseAnnotation):
                     print('Warning: fetching {0} information from the database, '
                           'preload {0} annotations for faster access.'.format(key))
                     res = self.corpus_context.execute_cypher(
-                        '''MATCH (sub:{a_type})-[:annotates]->(token {{id: {{id}}}})
+                        '''MATCH (sub:{a_type})-[:annotates]->(token {{id: $id}})
                             RETURN sub'''.format(a_type=key), id=self._id)
 
                     self._subannotations[key] = []
@@ -349,7 +358,7 @@ class LinguisticAnnotation(BaseAnnotation):
         if self._unsaved:
             props = {k: v for k, v in self.node.items() if k != 'id'}
             prop_string = ',\n'.join(['n.{} = {}'.format(k, value_for_cypher(v)) for k, v in props.items()])
-            statement = '''MATCH (n:{corpus_name}:{type}) WHERE n.id = {{id}}
+            statement = '''MATCH (n:{corpus_name}:{type}) WHERE n.id = $id
                         SET {prop_string}'''.format(corpus_name=self.corpus_context.cypher_safe_name,
                                                     type=self._type, prop_string=prop_string)
             self.corpus_context.execute_cypher(statement, id=self._id)
@@ -367,15 +376,20 @@ class LinguisticAnnotation(BaseAnnotation):
             the ID of the desired node
         """
         res = list(self.corpus_context.execute_cypher(
-            '''MATCH (token {id: {id}})-[:is_a]->(type)
-                RETURN token, type''', id=id))
+            '''MATCH (token {id: $id})-[:is_a]->(type)
+                RETURN token, type, labels(token) as neo4j_labels''', id=id))
+        labels = res[0]['neo4j_labels']
+        for label in labels:
+            if label in self.corpus_context.hierarchy:
+                res[0]['token']['neo4j_label'] = label
+                break
         self.node = res[0]['token']
         self.type_node = res[0]['type']
 
     @property
     def channel(self):
         statement = '''MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
-        WHERE s.name = {{speaker_name}} and d.name = {{discourse_name}}
+        WHERE s.name = $speaker_name and d.name = $discourse_name
         RETURN r.channel as channel'''.format(corpus_name=self.corpus_context.cypher_safe_name)
         results = self.corpus_context.execute_cypher(statement, speaker_name=self.speaker.name,
                                                      discourse_name=self.discourse.name)
@@ -409,7 +423,7 @@ class LinguisticAnnotation(BaseAnnotation):
             raise (GraphModelError('Can\'t delete a subannotation that doesn\'t belong to this annotation.'))
         subannotation = self._subannotations[subannotation._type].pop(i)
 
-        statement = '''MATCH (n:{type} {{id: {{id}}}}) DETACH DELETE n'''.format(type=subannotation._type)
+        statement = '''MATCH (n:{type} {{id: $id}}) DETACH DELETE n'''.format(type=subannotation._type)
 
         self.corpus_context.execute_cypher(statement, id=subannotation.id)
 
@@ -433,15 +447,16 @@ class LinguisticAnnotation(BaseAnnotation):
         # if 'end' not in properties:
         #    properties['end'] = self.end
         properties['id'] = str(uuid1())
+        properties['type'] = type
         discourse = self.discourse.name
-        statement = '''MATCH (n:{type}:{corpus} {{id:{{a_id}}}})
+        statement = '''MATCH (n:{type}:{corpus} {{id:$a_id}})
         CREATE (n)<-[r:annotates]-(sub:{sub_type}:{corpus})
         WITH sub, r
         SET {props}
         return sub, r'''
         props = []
         for k, v in properties.items():
-            props.append('sub.%s = {%s}' % (k, k))
+            props.append('sub.%s = $%s' % (k, k))
             if self._corpus_context.hierarchy.has_subannotation_property(type, k):
                 for name, t in self._corpus_context.hierarchy.subannotation_properties[type]:
                     if name == k:
@@ -455,8 +470,7 @@ class LinguisticAnnotation(BaseAnnotation):
             sa = SubAnnotation(self.corpus_context)
             sa._annotation = self
             sa._type = type
-            res = self.corpus_context.execute_cypher(statement, a_id=self._id, **properties).single()
-
+            res = self.corpus_context.execute_cypher(statement, a_id=self._id, **properties)[0]
             sa.node = res['sub']
             rel = res['r']
 
@@ -500,9 +514,9 @@ class SubAnnotation(BaseAnnotation):
         kwards : dict
             keyword arguments to update properties
         """
-        self._node._update(kwargs)
+        self._node.update(kwargs)
         if self._node['begin'] > self._node['end']:
-            self._node._update({}, begin=self._node['end'], end=self._node['begin'])
+            self._node.update({}, begin=self._node['end'], end=self._node['begin'])
         self._unsaved = True
 
     @property
@@ -515,11 +529,9 @@ class SubAnnotation(BaseAnnotation):
         """ Sets the node to item"""
         self._node = item
         self._id = item['id']
-        for x in self._node.labels:
-            if self._annotation._type in self.corpus_context.hierarchy.subannotations and x in \
-                    self.corpus_context.hierarchy.subannotations[self._annotation._type]:
-                self._type = x
-                break
+        if self._annotation._type in self.corpus_context.hierarchy.subannotations and self._node['type'] in \
+                self.corpus_context.hierarchy.subannotations[self._annotation._type]:
+            self._type = self._node['type']
 
     def load(self, id):
         """ 
@@ -531,11 +543,22 @@ class SubAnnotation(BaseAnnotation):
             the ID of the desired node
         """
         res = list(self.corpus_context.execute_cypher(
-            '''MATCH (sub {id: {id}})-[:annotates]->(token)-[:is_a]->(type)
-                RETURN sub, token, type''', id=id))
+            '''MATCH (sub {id: $id})-[:annotates]->(token)-[:is_a]->(type)
+                RETURN sub, token, type, labels(token) as neo4j_labels, labels(sub) as sub_neo4j_labels''', id=id))
         self._annotation = LinguisticAnnotation(self.corpus_context)
+        labels = res[0]['neo4j_labels']
+        for label in labels:
+            if label in self.corpus_context.hierarchy:
+                res[0]['token']['neo4j_label'] = label
+                break
         self._annotation.node = res[0]['token']
         self._annotation.type_node = res[0]['type']
+        labels = res[0]['sub_neo4j_labels']
+        for x in labels:
+            if self._annotation._type in self.corpus_context.hierarchy.subannotations and x in \
+                    self.corpus_context.hierarchy.subannotations[self._annotation._type]:
+                res[0]['sub']['neo4j_label'] = x
+                break
         self.node = res[0]['sub']
 
     def save(self):
@@ -543,7 +566,7 @@ class SubAnnotation(BaseAnnotation):
         if self._unsaved:
             props = {k: v for k, v in self.node.items() if k != 'id'}
             prop_string = ',\n'.join(['n.{} = {}'.format(k, value_for_cypher(v)) for k, v in props.items()])
-            statement = '''MATCH (n:{corpus_name}:{type}) WHERE n.id = {{id}}
+            statement = '''MATCH (n:{corpus_name}:{type}) WHERE n.id = $id
                         SET {prop_string}'''.format(corpus_name=self.corpus_context.cypher_safe_name,
                                                     type=self._type, prop_string=prop_string)
             self.corpus_context.execute_cypher(statement, id=self._id)
@@ -590,7 +613,7 @@ class Speaker(SubAnnotation):
         id : str
             the ID of the desired node"""
         res = list(self.corpus_context.execute_cypher(
-            '''MATCH (speaker:{a_type} {{id: {{id}}}})
+            '''MATCH (speaker:{a_type} {{id: $id}})
                 RETURN speaker'''.format(a_type=self._type), id=id))
         self.node = res[0]['speaker']
 

@@ -1,7 +1,7 @@
 class BaseRecord(object):
     def __init__(self, result):
-        self.columns = result.keys()
-        self.values = result.values()
+        self.columns = list(result.keys())
+        self.values = list(result.values())
 
     def __getitem__(self, key):
         if key in self.columns:
@@ -16,17 +16,19 @@ class BaseQueryResults(object):
         self.corpus = query.corpus
         self.call_back = query.call_back
         self.stop_check = query.stop_check
-        self.cursors = [self.corpus.execute_cypher(query.cypher(), **query.cypher_params()).records()]
-        self.cache = []
+        self.cursors = []
         self.evaluated = []
         self.current_ind = 0
         if query._columns:
+            self.cache = self.corpus.execute_cypher(query.cypher(), **query.cypher_params())
             self.models = False
             self._preload = None
             self._to_find = None
             self._to_find_type = None
             self._columns = [x.output_alias.replace('`', '') for x in query._columns]
         else:
+
+            self.cache = self.corpus.execute_cypher(query.cypher(), **query.cypher_params())
             self.models = True
             self._preload = query._preload
             self._to_find = query.to_find.alias
@@ -45,11 +47,11 @@ class BaseQueryResults(object):
             raise (IndexError('Results do not support negative indexing.'))
         cur_cache_len = len(self.cache)
         if key < cur_cache_len:
-            return self.cache[key]
+            return self._sanitize_record(self.cache[key])
         self._cache_cursor(up_to=key)
         cur_cache_len = len(self.cache)
         if key < cur_cache_len:
-            return self.cache[key]
+            return self._sanitize_record(self.cache[key])
         raise (IndexError(key))
 
     def _cache_cursor(self, up_to=None):
@@ -73,8 +75,8 @@ class BaseQueryResults(object):
 
     def add_results(self, query):
         ## Add some validation
-        cursor = query.all().cursors[0]
-        self.cursors.append(cursor)
+        cursor = query.all().cache
+        self.cache.extend(cursor)
 
     def next(self, number):
         next_ind = number + self.current_ind
@@ -96,21 +98,7 @@ class BaseQueryResults(object):
 
     def __iter__(self):
         for r in self.cache:
-            yield r
-        for i, c in enumerate(self.cursors):
-            if self.stop_check is not None and self.stop_check():
-                break
-            while True:
-                try:
-                    r = next(c)
-                except StopIteration:
-                    r = None
-                if r is None:
-                    self.evaluated.append(i)
-                    break
-                r = self._sanitize_record(r)
-                self.cache.append(r)
-                yield r
+            yield self._sanitize_record(r)
 
     def rows_for_csv(self):
         header = self.columns

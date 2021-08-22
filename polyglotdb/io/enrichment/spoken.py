@@ -1,5 +1,3 @@
-import csv
-from collections import defaultdict
 
 from .helper import parse_file
 

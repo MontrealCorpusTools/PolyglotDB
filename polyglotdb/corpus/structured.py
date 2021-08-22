@@ -1,4 +1,4 @@
-import time
+
 from ..query import value_for_cypher
 from ..query.annotations.query import SplitQuery
 from ..query.metadata.query import MetaDataQuery
@@ -53,10 +53,10 @@ class StructuredContext(BaseContext):
         path = (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(nt),
         (c)-[:spoken_by]->(s:Speaker),
         (c)-[:spoken_in]->(d:Discourse)
-        where c.name = {corpus_name}
+        where c.name = $corpus_name
         WITH c, n, nt, path, s, d
         OPTIONAL MATCH (n)<-[:annotates]-(subs)
-        return c, n,nt, path, collect(subs) as subs, s, d
+        return c, n, labels(n) as neo4j_labels, nt, path, collect(subs) as subs, s, d
         order by size(nodes(path))'''
         results = self.execute_cypher(hierarchy_statement, corpus_name=self.corpus_name)
         sup = None
@@ -84,11 +84,11 @@ class StructuredContext(BaseContext):
             if not discourse_properties:
                 for k, v in r['d'].items():
                     discourse_properties.add((k, type(v)))
-            at = list(r['n'].labels)[0]
+            at = list(r['neo4j_labels'])[0]
             data[at] = sup
             sup = at
             if r['subs'] is not None:
-                subs[at] = set([list(x.labels)[0] for x in r['subs']])
+                subs[at] = set([x['type'] for x in r['subs']])
             token_subsets[at] = set()
             type_subsets[at] = set()
             token_properties[at] = set([('id', type(''))])
@@ -148,7 +148,7 @@ class StructuredContext(BaseContext):
         self.execute_cypher('''MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t),
                                 (c)-[:spoken_by]->(s:Speaker),
                                 (c)-[:spoken_in]->(d:Discourse)
-                                WHERE c.name = {corpus}
+                                WHERE c.name = $corpus
                                 WITH n, t, c, s, d
                                 OPTIONAL MATCH (t)<-[:annotates]-(a)
                                 WITH n, t, c, s, d, a
@@ -166,7 +166,7 @@ class StructuredContext(BaseContext):
         speaker_template = '''(c)-[:spoken_by]->(s:Speaker {%s})'''
         discourse_template = '''(c)-[:spoken_in]->(d:Discourse {%s})'''
         acoustic_template = '''(c)-[:has_acoustics]->(%s:%s {%s})'''
-        statement = '''MATCH (c:Corpus) WHERE c.name = {{corpus_name}}
+        statement = '''MATCH (c:Corpus) WHERE c.name = $corpus_name
         with c
         MERGE {merge_statement}'''
         merge_statements = []
@@ -219,7 +219,7 @@ class StructuredContext(BaseContext):
             merge_statements.append(hierarchy_template.format(super=sup, sub=sub,
                                                               sub_type=sub_type))
             for sa in subannotations:
-                sa = "{0}:{0} {{label: '', begin:0, end: 0}}".format(sa)
+                sa = "{0}:{0} {{label: '', begin:0, type: '{0}', end: 0}}".format(sa)
                 merge_statements.append(subannotation_template.format(super=at, sub=sa))
 
         statement = statement.format(merge_statement='\nMERGE '.join(merge_statements))

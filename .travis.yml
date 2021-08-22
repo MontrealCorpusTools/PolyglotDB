@@ -1,35 +1,36 @@
 language: python
 python:
-  - 3.6
+  - 3.8
 branches:
   only:
-    - master
+    - main
     - develop
 notifications:
   email: false
 
-dist: trusty
+dist: bionic
 sudo: required
 
 addons:
   apt:
     packages:
-      - oracle-java8-installer
+      - openjdk-11-jdk
       - sox
+      - libsndfile1
 
 before_install:
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
+
   # install Neo4j locally:
   #- sudo apt-get update && sudo apt-get install oracle-java8-installer
-  - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
+
   - bash continuous-integration/travis/install.sh
   - ls -al $HOME/tools/autovot/autovot/bin
 
 # Install packages
 install:
   - export PATH="$HOME/miniconda/miniconda/bin:$HOME/tools/autovot/autovot/bin:$PATH"
-  - source activate test-environment
+  - source "$HOME/miniconda/miniconda/etc/profile.d/conda.sh"
+  - conda activate test-environment
   - pip install -r requirements.txt
   - which python
   - conda list

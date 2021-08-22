@@ -5,11 +5,6 @@ import pytest
 
 from polyglotdb import CorpusContext
 
-acoustic = pytest.mark.skipif(
-    pytest.config.getoption("--skipacoustics"),
-    reason="remove --skipacoustics option to run"
-)
-
 
 
 # def test_query(acoustic_utt_config, praat_path):

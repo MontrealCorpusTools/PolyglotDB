@@ -164,9 +164,9 @@ class PreviousPauseAnnotation(FollowingPauseAnnotation):
 
 
 class PausePathAttribute(AnnotationCollectionAttribute):
-    duration_filter_template = 'extract(n in nodes({alias})[-1..]| n.end)[0] - extract(n in nodes({alias})[0..1]| n.begin)[0]'
-    duration_return_template = 'extract(n in {alias}[-1..]| n.end)[0] - extract(n in {alias}[0..1]| n.begin)[0]'
-    filter_template = 'extract(n in nodes({alias})|n.{property})'
+    duration_filter_template = '[n in nodes({alias})[-1..]| n.end][0] - [n in nodes({alias})[0..1]| n.begin][0]'
+    duration_return_template = '[n in {alias}[-1..]| n.end][0] - [n in {alias}[0..1]| n.begin][0]'
+    filter_template = '[n in nodes({alias})|n.{property}]'
 
     def for_filter(self):
         if self.label == 'duration':

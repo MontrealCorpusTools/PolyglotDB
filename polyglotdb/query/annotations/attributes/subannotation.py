@@ -1,4 +1,4 @@
-from .path import SubPathAnnotation, PathAttribute, key_for_cypher
+from .path import SubPathAnnotation, PathAttribute
 
 
 class SubAnnotation(SubPathAnnotation):

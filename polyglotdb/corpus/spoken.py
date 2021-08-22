@@ -79,7 +79,7 @@ class SpokenContext(AudioContext):
             All speakers who spoke in the discourse
         """
         query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
-                WHERE d.name = {{discourse_name}}
+                WHERE d.name = $discourse_name
                 RETURN s.name as speaker'''.format(corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(query, discourse_name=discourse)
         speakers = [x['speaker'] for x in results]
@@ -100,11 +100,33 @@ class SpokenContext(AudioContext):
             All discourses the speaker spoke in
         """
         query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
-                WHERE s.name = {{speaker_name}}
+                WHERE s.name = $speaker_name
                 RETURN d.name as discourse'''.format(corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(query, speaker_name=speaker)
         discourses = [x['discourse'] for x in results]
         return discourses
+
+    def get_channel_of_speaker(self, speaker, discourse):
+        """
+        Get the channel that the speaker is in
+
+        Parameters
+        ----------
+        speaker : str
+            Speaker to query
+        discourse : str
+            Discourse to query
+
+        Returns
+        -------
+        int
+            Channel of audio that speaker is in
+        """
+        query = '''MATCH (d:Discourse:{corpus_name})<-[r:speaks_in]-(s:Speaker:{corpus_name})
+                WHERE s.name = $speaker_name AND d.name = $discourse_name
+                RETURN r.channel as channel'''.format(corpus_name=self.cypher_safe_name)
+        results = self.execute_cypher(query, speaker_name=speaker, discourse_name=discourse)
+        return results[0]['channel']
 
     def enrich_speakers(self, speaker_data, type_data=None):
         """

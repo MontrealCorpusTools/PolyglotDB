@@ -2,7 +2,9 @@ import os
 import logging
 import time
 import csv
+import re
 from collections import defaultdict
+import neo4j
 
 from ..acoustics.io import setup_audio
 
@@ -36,14 +38,14 @@ class ImportContext(StructuredContext):
         directory = self.config.temporary_directory('csv')
         for s in speakers:
             for k, v in token_headers.items():
-                path = os.path.join(directory, '{}_{}.csv'.format(s, k))
+                path = os.path.join(directory, '{}_{}.csv'.format(re.sub(r'\W', '_', s), k))
                 with open(path, 'w', newline='', encoding='utf8') as f:
                     w = csv.DictWriter(f, v, delimiter=',')
                     w.writeheader()
             if subannotations is not None:
                 for k, v in subannotations.items():
                     for sub in v:
-                        path = os.path.join(directory, '{}_{}_{}.csv'.format(s, k, sub))
+                        path = os.path.join(directory, '{}_{}_{}.csv'.format(re.sub(r'\W', '_', s), k, sub))
                         with open(path, 'w', newline='', encoding='utf8') as f:
                             header = ['id', 'begin', 'end', 'annotation_id', 'label']
                             w = csv.DictWriter(f, header, delimiter=',')
@@ -62,9 +64,21 @@ class ImportContext(StructuredContext):
             tx.run('MERGE (n:Corpus {name: $corpus_name}) return n', corpus_name=corpus_name)
 
         with self.graph_driver.session() as session:
-            session.write_transaction(_corpus_index)
-            session.write_transaction(_discourse_index)
-            session.write_transaction(_speaker_index)
+            try:
+                session.write_transaction(_corpus_index)
+            except neo4j.exceptions.ClientError as e:
+                if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                    raise
+            try:
+                session.write_transaction(_discourse_index)
+            except neo4j.exceptions.ClientError as e:
+                if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                    raise
+            try:
+                session.write_transaction(_speaker_index)
+            except neo4j.exceptions.ClientError as e:
+                if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
+                    raise
             session.write_transaction(_corpus_create, self.corpus_name)
 
     def finalize_import(self, speakers, token_headers, hierarchy, call_back=None, stop_check=None):

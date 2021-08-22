@@ -14,8 +14,6 @@ class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = ['--strict', '--verbose', '--tb=long', 'tests', '-x']
-        # if os.environ.get('TRAVIS', False):
-        #    self.test_args.insert(0, '--skipacoustics')
         self.test_suite = True
 
     def run_tests(self):
@@ -92,7 +90,8 @@ if __name__ == '__main__':
           package_data={'polyglotdb.databases': ['*.conf'],
                         'polyglotdb.acoustics.formants': ['*.praat']},
           install_requires=[
-              'neo4j-driver',
+              'neo4j-driver~=4.3',
+              'praatio~=4.1',
               'textgrid',
               'conch_sounds',
               'librosa',

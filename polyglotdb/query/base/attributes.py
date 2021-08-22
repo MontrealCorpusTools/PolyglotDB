@@ -1,4 +1,4 @@
-from .helper import key_for_cypher, value_for_cypher
+from .helper import key_for_cypher
 from .elements import (EqualClauseElement, NotEqualClauseElement, SubsetClauseElement,
                        NotSubsetClauseElement, NullClauseElement, NotNullClauseElement,
                        InClauseElement, NotInClauseElement, GtClauseElement, GteClauseElement,
@@ -239,7 +239,7 @@ class CollectionAttribute(NodeAttribute):
     collapsing = True
     acoustic = False
     filter_template = '{alias}.{property}'
-    return_template = 'extract(n in {alias}|n.{property})'
+    return_template = '[n in {alias}|n.{property}]'
 
     def __repr__(self):
         return '<CollectionAttribute \'{}\'>'.format(str(self))
