@@ -14,7 +14,7 @@ sudo: required
 addons:
   apt:
     packages:
-      - oraclejdk11
+      - openjdk-11-jdk
       - sox
 
 before_install:
