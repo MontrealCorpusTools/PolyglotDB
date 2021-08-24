@@ -132,7 +132,7 @@ def download_influxdb(data_directory, overwrite=False):
     else:
         print('Installing InfluxDB...')
         subprocess.call(['brew', 'update'])
-        subprocess.call(['brew', 'install', 'influxdb'])
+        subprocess.call(['brew', 'install', 'influxdb@1'])
     return True
 
 
@@ -203,7 +203,7 @@ def start():
     if sys.platform.startswith('win'):
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxd.exe')
     elif sys.platform == 'darwin':
-        influxdb_bin = 'influxd'
+        influxdb_bin = '/usr/local/opt/influxdb@1/bin/influxd'
     else:
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'usr', 'bin', 'influxd')
     influxdb_conf = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxdb.conf')
