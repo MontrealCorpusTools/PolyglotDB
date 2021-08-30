@@ -256,7 +256,9 @@ class AudioContext(SyllabicContext):
         signal, sr = self.load_waveform(discourse, file_type, begin, end)
         return generate_spectrogram(signal, sr)
 
-    def analyze_pitch(self, source='praat', algorithm='base', stop_check=None, call_back=None, multiprocessing=True):
+    def analyze_pitch(self, source='praat', algorithm='base',
+                      absolute_min_pitch=50, absolute_max_pitch=500, adjusted_octaves=1,
+                      stop_check=None, call_back=None, multiprocessing=True):
         """
         Analyze pitch tracks and save them to the database.
 
@@ -268,6 +270,12 @@ class AudioContext(SyllabicContext):
             Program to use for analyzing pitch, either ``praat`` or ``reaper``
         algorithm : str
             Algorithm to use, ``base``, ``gendered``, or ``speaker_adjusted``
+        absolute_min_pitch : int
+            Absolute pitch floor
+        absolute_max_pitch : int
+            Absolute pitch ceiling
+        adjusted_octaves : int
+            How many octaves around the speaker's mean pitch to set the speaker adjusted pitch floor and ceiling
         stop_check : callable
             Function to check whether processing should stop early
         call_back : callable
@@ -275,7 +283,8 @@ class AudioContext(SyllabicContext):
         multiprocessing : bool
             Flag whether to use multiprocessing or threading
         """
-        analyze_pitch(self, source, algorithm, stop_check, call_back, multiprocessing=multiprocessing)
+        analyze_pitch(self, source, algorithm, stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing,
+                      absolute_min_pitch=absolute_min_pitch, absolute_max_pitch=absolute_max_pitch, adjusted_octaves=adjusted_octaves)
 
     def analyze_utterance_pitch(self, utterance, source='praat', **kwargs):
         """
@@ -813,6 +822,8 @@ class AudioContext(SyllabicContext):
                     v = sanitize_value(value[name], type)
                     if v is not None:
                         fields[name] = v
+                    elif type in [int, float]:
+                        fields[name] = type(-1)
                 if not fields:
                     continue
                 if set_label is None:

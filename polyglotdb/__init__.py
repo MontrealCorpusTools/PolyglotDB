@@ -1,6 +1,6 @@
 __ver_major__ = 1
 __ver_minor__ = 2
-__ver_patch__ = '0a1'
+__ver_patch__ = 0
 __version__ = f"{__ver_major__}.{__ver_minor__}.{__ver_patch__}"
 
 __all__ = ['query', 'io', 'corpus', 'config', 'exceptions', 'CorpusContext', 'CorpusConfig']

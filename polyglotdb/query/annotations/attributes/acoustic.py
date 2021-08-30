@@ -251,9 +251,9 @@ class InterpolatedTrack(Track):
                     undef_regions.append((x1, x[i + 1]))
         new_data = RawTrack()
         for o in self.attribute.output_columns:
-            y = [data[x1][o] for x1 in x]
+            y = [data[x1][o] for x1 in x if data[x1][o] and data[x1][o] > 0]
             if len(y) > 1:
-                f = interpolate.interp1d([float(x1) for x1 in x], y)
+                f = interpolate.interp1d([float(x1) for x1 in x if data[x1][o] and data[x1][o] > 0], y)
             for k in new_times:
                 out_time = k
                 if self.attribute.relative_time:

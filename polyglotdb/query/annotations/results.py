@@ -223,7 +223,7 @@ class QueryResults(BaseQueryResults):
                 for point in line.track:
                     line = {}
                     line.update(baseline)
-                    line.update({'time': point.time})
+                    line.update({'time': round(point.time, 4)})
                     line.update(point.select_values(self.track_columns))
                     yield line
             else:

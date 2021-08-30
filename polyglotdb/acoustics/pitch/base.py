@@ -26,7 +26,8 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
                 (u:{utt_type}:{corpus_name})-[:spoken_by]->(s),
                 (u)-[:spoken_in]->(d)
                 WHERE u.id = $utterance_id
-                RETURN u, d, r.channel as channel'''.format(corpus_name=corpus_context.cypher_safe_name, utt_type=utt_type)
+                RETURN u, d, r.channel as channel'''.format(corpus_name=corpus_context.cypher_safe_name,
+                                                            utt_type=utt_type)
     results = corpus_context.execute_cypher(statement, utterance_id=utterance_id)
     segment_mapping = SegmentMapping()
     for r in results:
@@ -50,7 +51,7 @@ def analyze_utterance_pitch(corpus_context, utterance, source='praat', min_pitch
             if v['F0'] is None or v['F0'] <= 0:
                 continue
             p = TimePoint(k)
-            p.add_value('F0',  v['F0'])
+            p.add_value('F0', v['F0'])
             track.add(p)
     if 'pitch' not in corpus_context.hierarchy.acoustics:
         corpus_context.hierarchy.add_acoustic_properties(corpus_context, 'pitch', [('F0', float)])
@@ -74,8 +75,9 @@ def update_utterance_pitch_track(corpus_context, utterance, new_track):
                 (p:{phone_type}:{corpus_name})-[:contained_by*]->(u)
                 WHERE u.id = $utterance_id
                 SET u.pitch_last_edited = $date
-                RETURN u, d, r.channel as channel, s, collect(p) as p'''.format(corpus_name=corpus_context.cypher_safe_name,
-                                                             utt_type=utt_type, phone_type=phone_type)
+                RETURN u, d, r.channel as channel, s, collect(p) as p'''.format(
+        corpus_name=corpus_context.cypher_safe_name,
+        utt_type=utt_type, phone_type=phone_type)
     results = corpus_context.execute_cypher(statement, utterance_id=utterance_id, date=time_stamp)
 
     for r in results:
@@ -136,6 +138,9 @@ def analyze_pitch(corpus_context,
                   source='praat',
                   algorithm='base',
                   call_back=None,
+                  absolute_min_pitch=50,
+                  absolute_max_pitch=500,
+                  adjusted_octaves=1,
                   stop_check=None, multiprocessing=True):
     """
 
@@ -143,16 +148,27 @@ def analyze_pitch(corpus_context,
     ----------
     corpus_context : :class:`~polyglotdb.corpus.audio.AudioContext`
     source : str
+        Program to use for analyzing pitch, either ``praat`` or ``reaper``
     algorithm : str
+        Algorithm to use, ``base``, ``gendered``, or ``speaker_adjusted``
+    absolute_min_pitch : int
+        Absolute pitch floor
+    absolute_max_pitch : int
+        Absolute pitch ceiling
+    adjusted_octaves : int
+        How many octaves around the speaker's mean pitch to set the speaker adjusted pitch floor and ceiling
+    stop_check : callable
+        Function to check whether processing should stop early
     call_back : callable
-    stop_check  : callable
+        Function to report progress
+    multiprocessing : bool
+        Flag whether to use multiprocessing or threading
 
     Returns
     -------
 
     """
-    absolute_min_pitch = 50
-    absolute_max_pitch = 500
+
     if not 'utterance' in corpus_context.hierarchy:
         raise (Exception('Must encode utterances before pitch can be analyzed'))
     segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING).grouped_mapping('speaker')
@@ -181,18 +197,17 @@ def analyze_pitch(corpus_context,
             output = analyze_segments(v, pitch_function, stop_check=stop_check, multiprocessing=multiprocessing)
 
             sum_pitch = 0
-            sum_square_pitch = 0
             n = 0
             for seg, track in output.items():
                 for t, v in track.items():
                     v = v['F0']
 
                     if v is not None and v > 0:  # only voiced frames
-
                         n += 1
                         sum_pitch += v
-                        sum_square_pitch += v * v
-            speaker_data[k] = [sum_pitch / n, math.sqrt((n * sum_square_pitch - sum_pitch * sum_pitch) / (n * (n - 1)))]
+            mean_pitch = sum_pitch / n
+            speaker_data[k] = int(mean_pitch / math.pow(2, adjusted_octaves)), \
+                              int( mean_pitch * math.pow(2, adjusted_octaves))
 
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         if call_back is not None:
@@ -214,9 +229,7 @@ def analyze_pitch(corpus_context,
             pitch_function = generate_pitch_function(source, min_pitch, max_pitch,
                                                      path=path)
         elif algorithm == 'speaker_adjusted':
-            mean_pitch, sd_pitch = speaker_data[speaker]
-            min_pitch = int(mean_pitch - 3 * sd_pitch)
-            max_pitch = int(mean_pitch + 3 * sd_pitch)
+            min_pitch, max_pitch = speaker_data[speaker]
             if min_pitch < absolute_min_pitch:
                 min_pitch = absolute_min_pitch
             if max_pitch > absolute_max_pitch:

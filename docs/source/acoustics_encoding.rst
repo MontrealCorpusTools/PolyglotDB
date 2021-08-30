@@ -51,8 +51,7 @@ The default source is Praat.
         c.analyze_pitch(source='reaper')
 
 
-If the source is `praat`, the Praat executable must be discoverable on the system path (i.e., a call of `praat` in a terminal works).
-Likewise, if the source is `reaper`, the Reaper executable must be on the path or the full path to the Reaper executable must be specified.
+If the source is `praat`, the Praat executable must be discoverable on the system path (i.e., a call of `praat` in a terminal works). Likewise, if the source is `reaper`, the Reaper executable must be on the path or the full path to the Reaper executable must be specified.
 
 
 .. _pitch_algorithms:
@@ -75,20 +74,17 @@ Similar to the `source`, attribute, the `algorithm` can be toggled between :code
 
         c.analyze_pitch(algorithm='speaker_adapted')
 
-The :code:`"base"` algorithm uses a minimum pitch of 55 Hz and a maximum pitch of 480 Hz.
+The :code:`"base"` algorithm uses a default minimum pitch of 50 Hz and a maximum pitch of 500 Hz, but these can be changed through the ``absolute_min_pitch`` and ``absolute_max_pitch`` parameters.
 
 The :code:`"gendered"` algorithm checks whether a `Gender` property is available for speakers.  If a speaker has a property
 value that starts with `f` (i.e., female),
-utterances by that speakers will use a minimum pitch of 100 Hz and a maximum pitch of 480 Hz.  If they have a property
+utterances by that speakers will use a minimum pitch of 100 Hz and a maximum pitch of 500 Hz.  If they have a property
 value of `m` (i.e., male),
-utterances by that speakers will use a minimum pitch of 55 Hz and a maximum pitch of 400 Hz.
+utterances by that speakers will use a minimum pitch of 50 Hz and a maximum pitch of 400 Hz.
 
 The :code:`"speaker_adapted"` algorithm does two passes of pitch estimation.  The first is identical to :code:`"base"`
-and uses a minimum pitch of 55 Hz and a maximum pitch of 480 Hz.
-This first pass is used to estimate by-speaker means and standard deviations of F0.  The mean and SD for each speaker is
-then used to generate per-speaker minimum and maximum pitch values.
-The minimum pitch value is 3 standard deviations below the speaker mean, and the maximum pitch value is 3 standard
-deviations above the speaker mean.
+and uses a minimum pitch of 50 Hz and a maximum pitch of 500 Hz (or whatever the parameters have been set to).
+This first pass is used to estimate by-speaker means of F0.  Speaker-specific pitch floors and ceilings are calculated by adding or subtracting the number of octaves that the ``adjusted_octaves`` parameter specifies.  The default is 1, so the per-speaker pitch range will be one octave below and above the speaker's mean pitch.
 
 .. _intensity_encoding:
 

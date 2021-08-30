@@ -10,6 +10,7 @@ Version 1.2
 * Upgraded InfluxDB compatibility to 1.8.9
 * Changed Praat TextGrid handling to use praatio 4.1
 * Phone parsing no longer includes blank intervals (i.e. silences), so preceding and following phone calculations have changed
+* Update speaker adjusted pitch algorithm to use octave based min and max pitch rather than the more permissive standard deviation approach
 
 Version 1.0
 ===========
