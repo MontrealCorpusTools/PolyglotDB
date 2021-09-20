@@ -91,7 +91,7 @@ if __name__ == '__main__':
                         'polyglotdb.acoustics.formants': ['*.praat']},
           install_requires=[
               'neo4j-driver~=4.3',
-              'praatio~=4.1',
+              'praatio~=5.0',
               'textgrid',
               'conch_sounds',
               'librosa',

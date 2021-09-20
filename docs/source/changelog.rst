@@ -3,6 +3,13 @@
 Changelog
 *********
 
+Version 1.2.1
+=============
+
+* Upgraded compatible praatio package to 5.0
+* Restored parsing empty intervals from TextGrids
+* Added `CorpusContext.analyze_formant_points` function similar to be comparable to other formant analysis workflows
+
 Version 1.2
 ===========
 

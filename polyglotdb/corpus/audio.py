@@ -8,8 +8,10 @@ from decimal import Decimal
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
 
-from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_intensity, \
+from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_formant_points, analyze_intensity, \
     analyze_script, analyze_track_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
+
+from ..acoustics.formants.helper import save_formant_point_data
 from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
 from ..acoustics.utils import load_waveform, generate_spectrogram
@@ -371,6 +373,28 @@ class AudioContext(SyllabicContext):
                     overwrite_edited=overwrite_edited,
                     vot_min=vot_min, vot_max=vot_max, window_min=window_min,
                     window_max=window_max)
+
+    def analyze_formant_points(self, stop_check=None, call_back=None, multiprocessing=True,
+                               vowel_label=None):
+        """
+        Compute formant tracks and save them to the database
+
+        See :meth:`polyglotdb.acoustics.formants.base.analyze_formant_points` for more details.
+
+        Parameters
+        ----------
+        stop_check : callable
+            Function to check whether to terminate early
+        call_back : callable
+            Function to report progress
+        multiprocessing : bool
+            Flag to use multiprocessing, defaults to True, if False uses threading
+        vowel_label : str, optional
+            Optional subset of phones to compute tracks over.  If None, then tracks over utterances are computed.
+        """
+        data = analyze_formant_points(self,  stop_check=stop_check, call_back=call_back,
+                               multiprocessing=multiprocessing, vowel_label=vowel_label)
+        save_formant_point_data(self, data)
 
     def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True,
                                vowel_label=None):

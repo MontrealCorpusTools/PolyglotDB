@@ -69,6 +69,7 @@ def test_to_csv(acoustic_utt_config, export_test_dir):
 
 @pytest.mark.acoustic
 def test_csv_vot(acoustic_utt_config, vot_classifier_path, export_test_dir):
+    pytest.skip()
     export_path = os.path.join(export_test_dir, 'results_export_vot.csv')
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()

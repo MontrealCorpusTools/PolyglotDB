@@ -1,5 +1,6 @@
 import os
-from praatio import tgio
+from praatio.utilities.errors import DuplicateTierName
+from praatio import textgrid
 
 
 from polyglotdb.exceptions import TextGridError
@@ -48,12 +49,12 @@ class TextgridParser(BaseParser):
 
         Returns
         -------
-        :class:`~praatio.tgio.TextGrid`
+        :class:`~praatio.textgrid.TextGrid`
             TextGrid object
         """
         try:
-            tg = tgio.openTextgrid(path)
-        except (AssertionError, ValueError) as e:
+            tg = textgrid.openTextgrid(path, includeEmptyIntervals=True)
+        except (AssertionError, ValueError, DuplicateTierName) as e:
             raise (TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
         return tg
 
@@ -93,7 +94,7 @@ class TextgridParser(BaseParser):
         # Parse the tiers
         for i, tier_name in enumerate(tg.tierNameList):
             ti = tg.tierDict[tier_name]
-            if isinstance(ti, tgio.IntervalTier):
+            if isinstance(ti, textgrid.IntervalTier):
                 self.annotation_tiers[i].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList))
             else:
                 self.annotation_tiers[i].add(((text.strip(), time) for time, text in ti.entryList))

@@ -2,7 +2,7 @@ from collections import Counter
 from .aligner import AlignerParser
 
 from polyglotdb.io.parsers.speaker import DirectorySpeakerParser
-from praatio import tgio
+from praatio import textgrid
 
 
 class LabbCatParser(AlignerParser):
@@ -49,7 +49,7 @@ class LabbCatParser(AlignerParser):
             TextGrid object
         """
         try:
-            tg = tgio.openTextgrid(path)
+            tg = textgrid.openTextgrid(path, includeEmptyIntervals=True)
             new_tiers = []
             dup_tiers_maxes = {k:0 for k,v in Counter([t.name for t in tg.tiers]).items() if v > 1}
             dup_tiers_inds = {k:0 for k in dup_tiers_maxes.keys()}

@@ -1,6 +1,6 @@
 import os
 import math
-from praatio import tgio
+from praatio import textgrid
 
 
 from polyglotdb.structure import Hierarchy
@@ -81,7 +81,7 @@ def uniqueLabels(tier):
     set
         label from the tier
     """
-    if isinstance(tier, tgio.IntervalTier):
+    if isinstance(tier, textgrid.IntervalTier):
         return set(x for _, _, x in tier.entryList)
     else:
         return set(x for _, x in tier.entryList)
@@ -102,7 +102,7 @@ def average_duration(tier):
         average duration
     """
 
-    if isinstance(tier, tgio.IntervalTier):
+    if isinstance(tier, textgrid.IntervalTier):
         return sum(float(end) - float(begin) for (begin, end, _) in tier.entryList) / len(tier.entryList)
     else:
         return float(tier.maxTime) / len(tier.entryList)
@@ -225,7 +225,7 @@ def inspect_textgrid(path):
         textgrids.append(path)
     anno_types = []
     for t in textgrids:
-        tg = tgio.openTextgrid(t)
+        tg = textgrid.openTextgrid(t, includeEmptyIntervals=True)
         if len(anno_types) == 0:
             tier_guesses, hierarchy = guess_tiers(tg)
             for i, tier_name in enumerate(tg.tierNameList):
@@ -242,12 +242,12 @@ def inspect_textgrid(path):
                         a = TranscriptionTier(ti.name, tier_guesses[ti.name])
                         a.trans_delimiter = guess_trans_delimiter(labels)
                     elif cat == 'numeric':
-                        if isinstance(ti, tgio.IntervalTier):
+                        if isinstance(ti, textgrid.IntervalTier):
                             raise (NotImplementedError)
                         else:
                             a = BreakIndexTier(ti.name, tier_guesses[ti.name])
                     elif cat == 'orthography':
-                        if isinstance(ti, tgio.IntervalTier):
+                        if isinstance(ti, textgrid.IntervalTier):
                             a = OrthographyTier(ti.name, tier_guesses[ti.name])
                         else:
                             a = TextOrthographyTier(ti.name, tier_guesses[ti.name])
@@ -260,7 +260,7 @@ def inspect_textgrid(path):
                         print(cat)
                         raise (NotImplementedError)
                 if not a.ignored:
-                    if isinstance(ti, tgio.IntervalTier):
+                    if isinstance(ti, textgrid.IntervalTier):
                         a.add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList), save=False)
                     else:
                         a.add(((text.strip(), time) for time, text in ti.entryList), save=False)
@@ -270,7 +270,7 @@ def inspect_textgrid(path):
                 ti = tg.tierDict[tier_name]
                 if anno_types[i].ignored:
                     continue
-                if isinstance(ti, tgio.IntervalTier):
+                if isinstance(ti, textgrid.IntervalTier):
                     anno_types[i].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList), save=False)
                 else:
                     anno_types[i].add(((text.strip(), time) for time, text in ti.entryList), save=False)

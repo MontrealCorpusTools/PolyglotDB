@@ -1,7 +1,7 @@
 neo4j-driver ~= 4.3
 librosa
 scipy
-praatio ~= 4.1
+praatio ~= 5.0
 textgrid
 influxdb
 tqdm

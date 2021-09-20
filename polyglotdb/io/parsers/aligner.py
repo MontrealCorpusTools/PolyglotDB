@@ -195,7 +195,7 @@ class AlignerParser(TextgridParser):
                     type = 'word'
                 elif type.lower().startswith(self.phone_label):
                     type = 'phone'
-                if len(ti.entryList) == 1 and ti[0][2].strip() == '':
+                if len(ti.entryList) == 1 and ti.entryList[0][2].strip() == '':
                     continue
                 at = OrthographyTier(type, type)
                 at.speaker = speaker

@@ -13,11 +13,11 @@ def test_models(acoustic_config):
 
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.label == 'dh')
+        assert (model.label == '<SIL>')
 
-        assert (model.following.label == 'ih')
+        assert (model.following.label == 'dh')
 
-        assert (model.following.following.label == 's')
+        assert (model.following.following.label == 'ih')
         assert (model.previous is None)
 
 
@@ -57,7 +57,7 @@ def test_hierarchical(acoustic_config):
 
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.label == 'ih')
+        assert (model.label == 'dh')
         assert (model.word.label == 'this')
 
 

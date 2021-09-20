@@ -9,6 +9,7 @@ from polyglotdb import CorpusContext
 
 @pytest.mark.acoustic
 def test_analyze_vot(acoustic_utt_config, vot_classifier_path):
+    pytest.skip()
     with CorpusContext(acoustic_utt_config) as g:
         g.reset_acoustics()
         g.reset_vot()

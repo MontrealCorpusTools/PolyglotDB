@@ -5,7 +5,7 @@ import operator
 import hashlib
 import wave
 from collections import Counter
-from praatio import tgio
+from praatio import textgrid
 
 
 from polyglotdb.exceptions import DelimiterError, TextGridError
@@ -382,7 +382,7 @@ def guess_textgrid_format(path):
                     continue
                 tg_path = os.path.join(root, f)
                 try:
-                    tg = tgio.openTextgrid(tg_path)
+                    tg = textgrid.openTextgrid(tg_path, includeEmptyIntervals=True)
                 except ValueError as e:
                     raise (TextGridError('The file {} could not be parsed: {}'.format(tg_path, str(e))))
 
@@ -403,7 +403,7 @@ def guess_textgrid_format(path):
         return max(counts.keys(), key=lambda x: counts[x])
     elif path.lower().endswith('.textgrid'):
         try:
-            tg = tgio.openTextgrid(path)
+            tg = textgrid.openTextgrid(path, includeEmptyIntervals=True)
         except ValueError as e:
             raise (TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
 

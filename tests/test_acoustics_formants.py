@@ -178,15 +178,13 @@ def test_query_aggregate_formants(acoustic_utt_config):
         assert (round(results[0]['Mean_F3'], 0) > 0)
 
 
-def test_refine_formants(acoustic_utt_config, praat_path, export_test_dir):
+def test_formants(acoustic_utt_config, praat_path, export_test_dir):
     output_path = os.path.join(export_test_dir, 'formant_vowel_data.csv')
     with CorpusContext(acoustic_utt_config) as g:
         test_phone_label = 'ow'
         g.config.praat_path = praat_path
         g.encode_class(['ih', 'iy', 'ah', 'uw', 'er', 'ay', 'aa', 'ae', 'eh', 'ow'], 'vowel')
-        old_data = analyze_formant_points(corpus_context=g, vowel_label='vowel')
-        old_metadata = get_mean_SD(old_data)
-        save_formant_point_data(g, old_data)
+        g.analyze_formant_points(vowel_label='vowel')
         assert (g.hierarchy.has_token_property('phone', 'F1'))
         q = g.query_graph(g.phone).filter(g.phone.label == test_phone_label)
         q = q.columns(g.phone.begin, g.phone.end, g.phone.F1.column_name('F1'))
