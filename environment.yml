@@ -1,0 +1,17 @@
+name: polyglotdb-dev
+channels:
+    - conda-forge
+dependencies:
+    - librosa
+    - scipy
+    - praatio ~= 5.0
+    - textgrid
+    - influxdb
+    - tqdm
+    - future
+    - requests
+    - openjdk=11
+    - pip
+    - pip:
+        - conch_sounds
+        - neo4j-driver ~= 4.3
