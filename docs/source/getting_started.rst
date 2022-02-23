@@ -122,34 +122,26 @@ We’ll now kick off a two-step process:
 
 .. code-block:: bash
 
-    # Create and activate the build environment
     conda env create -f environment.yml
     conda activate polyglotdb-dev
 
-    # or with older versions of Anaconda:
-    source activate polyglotdb-dev
-
-    # Build and install polyglotdb
-    python setup.py install
-    python -m pip install -e . --no-build-isolation --no-use-pep517
-
-At this point you should be able to import polyglotdb from your locally built version:
+From within the polyglotdb-dev environment, double check that ``java --version`` returns Java 11. Then:
 
 .. code-block:: bash
 
-    $ python
-    >>> import pandas
-    >>> print(polyglotdb.__version__)
-    0.22.0.dev0+29.g4ad6d4d74
+    python setup.py install
+    pgdb install /path/to/where/you/want/data/to/be/stored
 
-This will create the new environment, and not touch any of your existing environments, nor any existing Python installation.
+You now have a new conda environment that is isolated from any existing environments or python installations. The pgdb executable will only be accessible from within the polyglotdb-dev environment.
 
 To view your environments:
 
 .. code-block:: bash
+
     conda info -e
 
 To return to your root environment:
 
 .. code-block:: bash
+
     conda deactivate
