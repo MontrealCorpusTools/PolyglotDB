@@ -103,3 +103,45 @@ Once you have installed PolyglotDB, to start it run :code:`pgdb start`.
 Likewise, you can close PolyglotDB by running :code:`pgdb stop`.
 
 To uninstall, navigate to the PolyglotDB directory and type :code:`pgdb uninstall`
+
+
+Conda Development Environment
+============
+
+You can also use conda to create an isolated polyglotdb development environment:
+
+#. Install either Anaconda, miniconda, or miniforge 
+#. Make sure your conda is up to date (conda update conda)
+#. Make sure that you have cloned the polyglotdb repository
+#. cd to the source directory
+
+We’ll now kick off a two-step process:
+
+#. Create a conda environment to isolate polyglotdb dependencies
+#. Build and install polyglotdb
+
+.. code-block:: bash
+
+    conda env create -f environment.yml
+    conda activate polyglotdb-dev
+
+From within the polyglotdb-dev environment, double check that ``java --version`` returns Java 11. Then:
+
+.. code-block:: bash
+
+    python setup.py install
+    pgdb install /path/to/where/you/want/data/to/be/stored
+
+You now have a new conda environment that is isolated from any existing environments or python installations. The pgdb executable will only be accessible from within the polyglotdb-dev environment.
+
+To view your environments:
+
+.. code-block:: bash
+
+    conda info -e
+
+To return to your root environment:
+
+.. code-block:: bash
+
+    conda deactivate
