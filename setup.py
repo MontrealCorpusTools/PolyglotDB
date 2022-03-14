@@ -63,7 +63,8 @@ if __name__ == '__main__':
           url='https://github.com/MontrealCorpusTools/PolyglotDB',
           author='Montreal Corpus Tools',
           author_email='michael.e.mcauliffe@gmail.com',
-          packages=['polyglotdb',
+          packages=['bin',
+                    'polyglotdb',
                     'polyglotdb.acoustics',
                     'polyglotdb.acoustics.formants',
                     'polyglotdb.acoustics.pitch',
@@ -99,7 +100,9 @@ if __name__ == '__main__':
               'tqdm',
               'requests'
           ],
-          scripts=['bin/pgdb'],
+          entry_point={
+                  'console_scripts': ['pgdb = bin.pgdb:main']
+          },
           cmdclass={'test': PyTest},
           extras_require={
               'testing': ['pytest'],
