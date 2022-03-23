@@ -41,10 +41,7 @@ to be runnable:
 Encoding syllables
 ==================
 
-To create syllables requires two steps.  The first is to specify the subset of phones in the corpus that are syllabic segments
-and function as syllabic nuclei.  In general these will be vowels, but can also include syllabic consonants.  Subsets in
-PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references; see :ref:`enrichment_subsets` for
-more details.
+To create syllables requires two steps. The first is to specify the subset of phones in the corpus that are syllabic segments and function as syllabic nuclei. In general these will be vowels, but can also include syllabic consonants. Subsets in PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references; see :ref:`enrichment_subsets` for more details.
 
 .. code-block:: python
 
@@ -90,7 +87,7 @@ Encoding utterances
 
 As with syllables, encoding utterances consists of two steps.  The first is marking the "words" that are actually non-speech
 elements within the transcript.  When a corpus is first imported,
-every annotation is treated as speech.  So we muist first encode
+every annotation is treated as speech.  So we must first encode
 labels like ``<SIL>`` as pause elements and not actual speech sounds:
 
 .. code-block:: python
@@ -112,8 +109,8 @@ Once pauses are encoded, the next step is to actually create the utterance annot
     with CorpusContext('pg_tutorial') as c:
         c.encode_utterances(min_pause_length=0.15)
 
-The `min_puase_length` argument specifies how long (in seconds) a non-speech
-element has to be to act as an utterance boundary.  In many cases,
+The `min_pause_length` argument specifies how long (in seconds) a non-speech
+element has to be to act as an utterance boundary. In many cases,
 "pauses" that are short enough, such as those inserted by a forced
 alignment error, are not good utterance boundaries (or just signal a
 smaller unit than an "utterance").
@@ -203,7 +200,7 @@ Next we will encode the number of syllables per word:
     with CorpusContext('pg_tutorial') as c:
         c.encode_count('word', 'syllable', 'num_syllables')
 
-Once the enrichments complete, a token property of ``speech_rate`` will be available for query and export on utterance
+Once the enrichments are complete, a token property of ``speech_rate`` will be available for query and export on utterance
 annotations, as well as one for ``num_syllables`` on word tokens.
 
 .. note::
