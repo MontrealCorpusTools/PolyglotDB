@@ -3,7 +3,7 @@
 
 .. _Montreal Forced Aligner: https://montreal-forced-aligner.readthedocs.io/en/latest/
 
-.. _tutorial corpus download link: https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/data/
+.. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:u:/g/personal/michael_haaf_mcgill_ca/EfocNOr3o7xJuCrG_-OrR3MBh_-vmQaHtkV2J7vJq61c1w?e=UEhQg7
 
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1_first_steps.ipynb
 
