@@ -1,24 +1,22 @@
-
 from polyglotdb import CorpusContext
 import polyglotdb.io as pgio
 
-# change this path to where you put the pg_tutorial directory after downloading, unzipping from tutorial site
-corpus_root = '/mnt/e/Data/pg_tutorial'
+#corpus_root = '/home/michael/Cloud/LibriSpeech-aligned/'
+#corpus_name = 'tutorial'
+corpus_root = '/home/michael/Cloud/LibriSpeech-subset/'
+corpus_name = 'tutorial-subset'
 
 parser = pgio.inspect_mfa(corpus_root)
 parser.call_back = print
 
-# for verbose output during corpus import:
-parser.call_back = print
-
-with CorpusContext('pg_tutorial') as c:
-    c.load(parser, corpus_root)
-
+# Note: a corpus only needs to be loaded (imported) to pgdb once.
+# If you get the error "The discourse ... already exists in this corpus"
+# then you can comment out/delete the following two lines:
+# with CorpusContext(corpus_name) as c:
+#     c.load(parser, corpus_root)
 
 # Simple queries
-
-## uncomment the following to carry out the "Testing some simple queries" part:
-with CorpusContext('pg_tutorial') as c:
+with CorpusContext(corpus_name) as c:
     print('Speakers:', c.speakers)
     print('Discourses:', c.discourses)
 
@@ -30,7 +28,7 @@ with CorpusContext('pg_tutorial') as c:
 
 from polyglotdb.query.base.func import Count, Average
 
-with CorpusContext('pg_tutorial') as c:
+with CorpusContext(corpus_name) as c:
     q = c.query_graph(c.phone).group_by(c.phone.label.column_name('phone'))
     results = q.aggregate(Count().column_name('count'), Average(c.phone.duration).column_name('average_duration'))
     for r in results:

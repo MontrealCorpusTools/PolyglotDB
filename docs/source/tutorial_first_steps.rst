@@ -3,11 +3,13 @@
 
 .. _Montreal Forced Aligner: https://montreal-forced-aligner.readthedocs.io/en/latest/
 
-.. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:u:/g/personal/michael_haaf_mcgill_ca/EfocNOr3o7xJuCrG_-OrR3MBh_-vmQaHtkV2J7vJq61c1w?e=UEhQg7
+.. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:f:/g/personal/michael_haaf_mcgill_ca/EjTbG6TDJOFFgAWSD6Hq1FABeakjZRkFL33z4F1DuPDcMw?e=1zQhw3
 
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1_first_steps.ipynb
 
-.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial1.py
+.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1.py
+
+.. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_1_first_steps.txt
 
 .. _tutorial_first_steps:
 
@@ -24,8 +26,8 @@ This tutorial is available as a `Jupyter notebook`_ as well.
 Downloading the tutorial corpus
 ===============================
 
-The tutorial corpus used here is a version of the `LibriSpeech`_ test-clean subset, forced aligned with the
-`Montreal Forced Aligner`_ (`tutorial corpus download link`_).  Extract the files to somewhere on your local machine.
+There are two tutorial corpora made available for usage with this tutorial. These are both subsets of the `LibriSpeech`_ test-clean dataset, forced aligned with the
+`Montreal Forced Aligner`_ (`tutorial corpus download link`_). One corpus contains dozens of speakers and 490MB of data. The other corpus is a subset with much less data (25MB) and just two speakers -- it is recommended to start with this corpus while you become accustomed to using polyglotdb, since some commands can take several minutes to run when applied to a large dataset. Results for running these commands are provided alongside the tutorial to provide a basis for expected results.
 
 .. _tutorial_import:
 
@@ -39,12 +41,15 @@ To import the tutorial corpus, the following lines of code are necessary:
    from polyglotdb import CorpusContext
    import polyglotdb.io as pgio
 
-   corpus_root = '/mnt/e/Data/pg_tutorial'
+   corpus_root = '/path/to/corpus/on/your/machine'
 
    parser = pgio.inspect_mfa(corpus_root)
    parser.call_back = print
 
-   with CorpusContext('pg_tutorial') as c:
+   # A string variable is used to specify the database identifier for the corpus in pgdb.
+   # Corpus identifiers can be any valid string. They are unique to each corpus.
+   corpus_name = 'tutorial'
+   with CorpusContext(corpus_name) as c:
       c.load(parser, corpus_root)
 
 .. important::
@@ -74,7 +79,8 @@ fresh state via the following code:
 
    from polyglotdb import CorpusContext
 
-   with CorpusContext('pg_tutorial') as c:
+   corpus_name = 'tutorial'
+   with CorpusContext(corpus_name) as c:
       c.reset()
 
 
@@ -93,7 +99,8 @@ To ensure that data import completed successfully, we can print the list of spea
 
    from polyglotdb import CorpusContext
 
-   with CorpusContext('pg_tutorial') as c:
+   corpus_name = 'tutorial'
+   with CorpusContext(corpus_name) as c:
     print('Speakers:', c.speakers)
     print('Discourses:', c.discourses)
 
@@ -109,7 +116,8 @@ A more interesting summary query is perhaps looking at the count and average dur
 
    from polyglotdb.query.base.func import Count, Average
 
-   with CorpusContext('pg_tutorial') as c:
+   corpus_name = 'tutorial'
+   with CorpusContext(corpus_name) as c:
       q = c.query_graph(c.phone).group_by(c.phone.label.column_name('phone'))
       results = q.aggregate(Count().column_name('count'), Average(c.phone.duration).column_name('average_duration'))
       for r in results:
@@ -118,6 +126,6 @@ A more interesting summary query is perhaps looking at the count and average dur
 Next steps
 ==========
 
-You can see a `full version of the script`_.
+You can see a `full version of the script`_, as well as `expected output`_ when run on the 'LibriSpeech-subset' corpora.
 
 See :ref:`tutorial_enrichment` for the next tutorial covering how to enrich the corpus and create more interesting queries.

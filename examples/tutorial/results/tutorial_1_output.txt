@@ -1,0 +1,134 @@
+Speakers: ['61', '121']
+Discourses: ['61-70970-0009', '61-70970-0010', '61-70970-0035', '61-70970-0011', '61-70968-0049', '61-70968-0052', '61-70968-0041', '61-70968-0047', '61-70970-0031', '61-70970-0021', '61-70968-0037', '61-70970-0002', '61-70968-0051', '61-70970-0022', '61-70968-0015', '61-70968-0006', '61-70970-0015', '61-70968-0033', '61-70970-0039', '61-70968-0029', '61-70968-0016', '61-70970-0018', '61-70970-0013', '61-70968-0019', '61-70968-0054', '61-70970-0003', '61-70970-0038', '61-70970-0023', '61-70968-0008', '61-70970-0004', '61-70968-0056', '61-70968-0023', '61-70968-0007', '61-70968-0009', '61-70970-0037', '61-70970-0012', '61-70968-0001', '61-70970-0033', '61-70968-0045', '61-70968-0030', '61-70968-0004', '61-70970-0027', '61-70968-0024', '61-70968-0055', '61-70968-0039', '61-70968-0060', '61-70970-0005', '61-70970-0020', '61-70968-0042', '61-70970-0030', '61-70970-0001', '61-70968-0000', '61-70970-0008', '61-70970-0000', '61-70968-0062', '61-70968-0034', '61-70968-0031', '61-70968-0025', '61-70968-0021', '61-70968-0022', '61-70970-0014', '61-70968-0040', '61-70968-0020', '61-70968-0010', '61-70970-0040', '61-70968-0026', '61-70968-0017', '61-70968-0048', '61-70968-0002', '61-70968-0028', '61-70968-0038', '61-70968-0044', '61-70968-0003', '61-70970-0017', '61-70970-0029', '61-70968-0011', '61-70970-0025', '61-70968-0058', '61-70968-0014', '61-70968-0012', '61-70968-0035', '61-70970-0016', '61-70968-0043', '61-70968-0046', '61-70970-0036', '61-70968-0050', '61-70968-0059', '61-70968-0036', '61-70970-0032', '61-70970-0024', '61-70970-0019', '61-70968-0057', '61-70968-0005', '61-70968-0061', '61-70970-0034', '61-70968-0013', '61-70970-0026', '61-70968-0018', '61-70970-0028', '61-70970-0007', '61-70968-0053', '61-70970-0006', '61-70968-0027', '61-70968-0032', '121-123852-0000', '121-121726-0013', '121-127105-0012', '121-127105-0025', '121-123852-0002', '121-127105-0023', '121-123859-0003', '121-127105-0008', '121-127105-0032', '121-127105-0013', '121-121726-0003', '121-127105-0035', '121-127105-0021', '121-121726-0006', '121-121726-0010', '121-127105-0000', '121-127105-0005', '121-121726-0001', '121-127105-0027', '121-127105-0014', '121-123859-0002', '121-121726-0011', '121-127105-0022', '121-123852-0001', '121-127105-0018', '121-121726-0008', '121-127105-0028', '121-121726-0012', '121-127105-0030', '121-121726-0014', '121-127105-0019', '121-127105-0003', '121-127105-0016', '121-127105-0017', '121-127105-0009', '121-127105-0029', '121-127105-0001', '121-127105-0007', '121-127105-0031', '121-127105-0033', '121-123852-0003', '121-123852-0004', '121-121726-0000', '121-127105-0010', '121-127105-0034', '121-127105-0015', '121-127105-0020', '121-121726-0004', '121-127105-0011', '121-127105-0002', '121-123859-0001', '121-121726-0009', '121-127105-0036', '121-123859-0000', '121-127105-0026', '121-127105-0024', '121-121726-0007', '121-123859-0004', '121-121726-0005', '121-127105-0006', '121-121726-0002', '121-127105-0004']
+phone: <SIL>
+phone: AA0
+phone: AA1
+phone: AA2
+phone: AE0
+phone: AE1
+phone: AE2
+phone: AH0
+phone: AH1
+phone: AH2
+phone: AO0
+phone: AO1
+phone: AO2
+phone: AW1
+phone: AW2
+phone: AY0
+phone: AY1
+phone: AY2
+phone: B
+phone: CH
+phone: D
+phone: DH
+phone: EH0
+phone: EH1
+phone: ER0
+phone: ER1
+phone: EY1
+phone: EY2
+phone: F
+phone: G
+phone: HH
+phone: IH0
+phone: IH1
+phone: IH2
+phone: IY0
+phone: IY1
+phone: IY2
+phone: JH
+phone: K
+phone: L
+phone: M
+phone: N
+phone: NG
+phone: OW0
+phone: OW1
+phone: OW2
+phone: OY1
+phone: P
+phone: R
+phone: S
+phone: SH
+phone: T
+phone: TH
+phone: UH0
+phone: UH1
+phone: UH2
+phone: UW0
+phone: UW1
+phone: UW2
+phone: V
+phone: W
+phone: Y
+phone: Z
+phone: ZH
+phone: sil
+phone: spn
+The phone EH0 had 5 occurrences and an average duration of 0.06399999999999997.
+The phone ZH had 2 occurrences and an average duration of 0.11999999999999966.
+The phone UW0 had 5 occurrences and an average duration of 0.09600000000000004.
+The phone UW1 had 103 occurrences and an average duration of 0.09601941747572816.
+The phone IY0 had 146 occurrences and an average duration of 0.1004109589041096.
+The phone OW2 had 2 occurrences and an average duration of 0.05499999999999988.
+The phone D had 408 occurrences and an average duration of 0.06436274509803927.
+The phone IH1 had 220 occurrences and an average duration of 0.08281818181818185.
+The phone AO0 had 3 occurrences and an average duration of 0.07333333333333325.
+The phone Y had 71 occurrences and an average duration of 0.08915492957746479.
+The phone SH had 66 occurrences and an average duration of 0.10787878787878788.
+The phone V had 152 occurrences and an average duration of 0.07631578947368425.
+The phone EY1 had 140 occurrences and an average duration of 0.1429285714285714.
+The phone AA0 had 1 occurrences and an average duration of 0.08999999999999986.
+The phone AO2 had 3 occurrences and an average duration of 0.08333333333333348.
+The phone W had 239 occurrences and an average duration of 0.07301255230125524.
+The phone Z had 261 occurrences and an average duration of 0.0900383141762452.
+The phone IH2 had 8 occurrences and an average duration of 0.04750000000000003.
+The phone L had 353 occurrences and an average duration of 0.08869688385269128.
+The phone M had 252 occurrences and an average duration of 0.08694444444444445.
+The phone B had 169 occurrences and an average duration of 0.0695266272189349.
+The phone ER0 had 161 occurrences and an average duration of 0.08621118012422359.
+The phone AE2 had 9 occurrences and an average duration of 0.10333333333333337.
+The phone UW2 had 2 occurrences and an average duration of 0.10499999999999998.
+The phone T had 672 occurrences and an average duration of 0.08217261904761909.
+The phone IY2 had 2 occurrences and an average duration of 0.09000000000000002.
+The phone DH had 292 occurrences and an average duration of 0.055479452054794556.
+The phone EH1 had 266 occurrences and an average duration of 0.07954887218045122.
+The phone S had 434 occurrences and an average duration of 0.10951612903225798.
+The phone IY1 had 172 occurrences and an average duration of 0.11540697674418599.
+The phone sil had 607 occurrences and an average duration of 0.28601317957166394.
+The phone spn had 35 occurrences and an average duration of 0.5399999999999997.
+The phone UH0 had 2 occurrences and an average duration of 0.030000000000000138.
+The phone AE0 had 1 occurrences and an average duration of 0.10000000000000009.
+The phone AY1 had 186 occurrences and an average duration of 0.16607526881720425.
+The phone AY0 had 1 occurrences and an average duration of 0.08000000000000007.
+The phone AA2 had 4 occurrences and an average duration of 0.06749999999999995.
+The phone K had 225 occurrences and an average duration of 0.09422222222222228.
+The phone UH2 had 2 occurrences and an average duration of 0.054999999999999716.
+The phone <SIL> had 166 occurrences and an average duration of 0.017469503012048276.
+The phone TH had 77 occurrences and an average duration of 0.10454545454545451.
+The phone AE1 had 200 occurrences and an average duration of 0.10715000000000005.
+The phone F had 172 occurrences and an average duration of 0.10139534883720935.
+The phone OW1 had 110 occurrences and an average duration of 0.1420909090909092.
+The phone AY2 had 12 occurrences and an average duration of 0.10999999999999993.
+The phone AH0 had 660 occurrences and an average duration of 0.05842424242424241.
+The phone AW1 had 51 occurrences and an average duration of 0.15039215686274504.
+The phone OY1 had 10 occurrences and an average duration of 0.21199999999999994.
+The phone AO1 had 124 occurrences and an average duration of 0.11306451612903236.
+The phone AH2 had 3 occurrences and an average duration of 0.04666666666666669.
+The phone AH1 had 207 occurrences and an average duration of 0.07285024154589367.
+The phone IH0 had 311 occurrences and an average duration of 0.057588424437299.
+The phone UH1 had 43 occurrences and an average duration of 0.07395348837209303.
+The phone N had 604 occurrences and an average duration of 0.07475165562913907.
+The phone R had 412 occurrences and an average duration of 0.07725728155339806.
+The phone G had 73 occurrences and an average duration of 0.08397260273972604.
+The phone AA1 had 136 occurrences and an average duration of 0.11007352941176463.
+The phone HH had 226 occurrences and an average duration of 0.07747787610619464.
+The phone NG had 94 occurrences and an average duration of 0.0987234042553192.
+The phone EY2 had 2 occurrences and an average duration of 0.13999999999999996.
+The phone P had 165 occurrences and an average duration of 0.09848484848484851.
+The phone AW2 had 1 occurrences and an average duration of 0.09999999999999998.
+The phone ER1 had 42 occurrences and an average duration of 0.12023809523809519.
+The phone CH had 46 occurrences and an average duration of 0.11260869565217385.
+The phone JH had 32 occurrences and an average duration of 0.0987499999999999.
+The phone OW0 had 17 occurrences and an average duration of 0.1382352941176471.
