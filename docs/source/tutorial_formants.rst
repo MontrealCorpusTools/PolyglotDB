@@ -115,6 +115,6 @@ The CSV file generated will then be ready to open in other programs or in R for 
 
 Next steps
 ==========
-At this point, the corpus is ready for formant analysis using R. We have provided an `rmd script` showcasing a possible approach. We have also provided results for running this script in a `follow-up analysis`_ html. These results were found using the full LibriSpeech-aligned dataset, which contains many more speakers than the subset we have been using in tutorials so far.
+At this point, the corpus is ready for formant analysis using R. We have provided an `rmd script`_ showcasing a possible approach. We have also provided results for running this script in a `follow-up analysis`_ html. These results were found using the full LibriSpeech-aligned dataset, which contains many more speakers than the subset we have been using in tutorials so far.
 
 See :ref:`tutorial_pitch` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
