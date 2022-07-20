@@ -9,8 +9,6 @@
 
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1.py
 
-.. _expected results: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/
-
 .. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_1_subset_output.txt
 
 .. _formant: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
@@ -38,7 +36,7 @@ The corpora are made available for download here: `tutorial corpus download link
 
 In tutorials 1-3, we show how to prepare the LibriSpeech-aligned-subset corpus for linguistic analysis using polyglotdb. The subset is chosen for these tutorials to allow users to quickly test commands and compare their results with `expected results`_ while getting used to interacting with polyglotdb, since some enrichment commands can be timeconsuming when run on large datasets.
 
-In tutorials 4 and 5, vowel `formant`_ and `pitch`_ analysis is performed and `expected results_` are provided. These experiments are performed using the larger corpus to allow for more coherent analysis.
+In tutorials 4 and 5, vowel `formant`_ and `pitch`_ analysis is performed and expected results are provided. These experiments are performed using the larger corpus to allow for more coherent analysis.
 
 .. _tutorial_import:
 
@@ -59,7 +57,6 @@ The first step is to prepare our python environment. We begin by importing the p
    # Corpus identifiers can be any valid string. They are unique to each corpus.
    corpus_name = 'tutorial-subset'
    # corpus_name = 'tutorial'
-
 
 Then run following lines of code to import corpus data into pgdb. For any given corpora, these commands only need to be run once: corpora are preserved in pgdb after import.
 
@@ -96,9 +93,6 @@ fresh state via the following code:
 
 .. code-block:: python
 
-   from polyglotdb import CorpusContext
-
-   corpus_name = 'tutorial'
    with CorpusContext(corpus_name) as c:
       c.reset()
 
@@ -116,9 +110,6 @@ To ensure that data import completed successfully, we can print the list of spea
 
 .. code-block:: python
 
-   from polyglotdb import CorpusContext
-
-   corpus_name = 'tutorial'
    with CorpusContext(corpus_name) as c:
     print('Speakers:', c.speakers)
     print('Discourses:', c.discourses)
@@ -135,7 +126,6 @@ A more interesting summary query is perhaps looking at the count and average dur
 
    from polyglotdb.query.base.func import Count, Average
 
-   corpus_name = 'tutorial'
    with CorpusContext(corpus_name) as c:
       q = c.query_graph(c.phone).group_by(c.phone.label.column_name('phone'))
       results = q.aggregate(Count().column_name('count'), Average(c.phone.duration).column_name('average_duration'))

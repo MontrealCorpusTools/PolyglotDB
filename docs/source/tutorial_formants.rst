@@ -7,9 +7,9 @@
 
 .. _praat: https://www.fon.hum.uva.nl/praat/
 
-.. _follow-up analysis: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_subset_formants.html
+.. _follow-up analysis: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html
 
-.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_subset_formants.rmd
+.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.rmd
 
 .. _tutorial_formants:
 
@@ -110,8 +110,11 @@ We can now query the results using a similar set of commands as in the previous 
     q.to_csv(export_path)
 
 
-The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_, its `expected output`_ when run on the 'LibriSpeech-subset' corpora, and `follow-up analysis`_ performed with an `rmd script`_ using the same corpora.
+The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_, its `expected output`_ when run on the 'LibriSpeech-subset' corpora.
+
 
 Next steps
 ==========
+At this point, the corpus is ready for formant analysis using R. We have provided an `rmd script` showcasing a possible approach. We have also provided results for running this script in a `follow-up analysis`_ html. These results were found using the full LibriSpeech-aligned dataset, which contains many more speakers than the subset we have been using in tutorials so far.
+
 See :ref:`tutorial_pitch` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
