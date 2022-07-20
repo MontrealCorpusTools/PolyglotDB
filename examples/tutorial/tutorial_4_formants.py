@@ -5,7 +5,7 @@ from polyglotdb.query.base.func import Count, Average
 from polyglotdb.acoustics.formants.base import analyze_formant_points
 
 # corpus_root = './data/LibriSpeech-aligned/'
-#corpus_name = 'tutorial'
+# corpus_name = 'tutorial'
 # export_path = './results/tutorial_4_formants.csv')
 corpus_root = './data/LibriSpeech-aligned-subset/'
 corpus_name = 'tutorial-subset'
@@ -19,7 +19,6 @@ with CorpusContext(corpus_name) as c:
     q = q.columns(c.lexicon_phone.label.column_name('phone'))
     phone_results = q.all()
 phone_set = [x.values[0] for x in phone_results]
-print(phone_set)
 
 # specify non-speech phones for this corpus:
 non_speech_set = ['<SIL>', 'sil', 'spn']
@@ -30,7 +29,6 @@ vowel_set = [re.search(vowel_regex, x).string
              for x in phone_set
              if re.search(vowel_regex, x) != None
              and x not in non_speech_set]
-print(vowel_set)
 
 # we now enrich the corpus with syllable annotations
 # to do this, we create a phone subset called vowel
@@ -45,27 +43,14 @@ print("Encoding vowel syllables...")
 with CorpusContext(corpus_name) as c:
     c.encode_syllables(syllabic_label='vowel')
 
-# we now enrich the corpus with utterances
-with CorpusContext(corpus_name) as c:
-    c.encode_pauses(non_speech_set)
-    c.encode_utterances(min_pause_length=0.15)
 
-with CorpusContext(corpus_name) as c:
-    c.encode_rate('utterance', 'syllable', 'speech_rate')
-
-# speaker information
-print("Speaker enrichment begun...")
-speaker_enrichment_path = os.path.join(corpus_root, 'enrichment_data', 'SPEAKERS.csv')
-with CorpusContext(corpus_name) as c:
-    c.enrich_speakers_from_csv(speaker_enrichment_path)
-
-# now let's enrich the corpus with formant measurements using praat
+# This step uses Praat, a program for analyzing audio files
+# The PATH for running the Praat command on your machine needs to be used.
 print("Formant calculations...")
 with CorpusContext(corpus_name) as c:
     c.config.praat_path = "/usr/bin/praat"
     c.analyze_formant_points(vowel_label='vowel', call_back=print)
 
-# we now export the results
 print("Querying results...")
 with CorpusContext(corpus_name) as c:
     q = c.query_graph(c.phone).filter(c.phone.subset == 'vowel')

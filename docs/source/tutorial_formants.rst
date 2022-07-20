@@ -7,7 +7,12 @@
 
 .. _praat: https://www.fon.hum.uva.nl/praat/
 
+.. _follow-up analysis: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_subset_formants.html
+
+.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_subset_formants.rmd
+
 .. _tutorial_formants:
+
 
 ***********************************
 Tutorial 4: Vowel formant analysis
@@ -47,6 +52,7 @@ Currently, the tutorial-subset corpus contains an entry for each phoneme. We can
 We can then isolate only the vowel phonemes using regular expressions:
 
 .. code-block:: python
+
   non_speech_set = ['<SIL>', 'sil', 'spn']
   vowel_regex = '^[AEOUI].[0-9]'
   vowel_set = [re.search(vowel_regex, p).string for p in phone_set
@@ -55,6 +61,7 @@ We can then isolate only the vowel phonemes using regular expressions:
 The corpus can then be enriched with syllables that have vowels as their nuclei:
 
 .. code-block:: python
+
   with CorpusContext(corpus_name) as c:
     c.encode_type_subset('phone', vowel_set, 'vowel')
 
@@ -65,7 +72,7 @@ The corpus can then be enriched with syllables that have vowels as their nuclei:
 Using Praat to measure verb formants
 =========================
 
-Now that all vowel syllables are isolated and easily queriable, polyglotdb can perform formant analysis on these vowels. The executbale run to perform formant analysis is configurable: a common option is to use `praat`_:
+Now that all vowel syllables are isolated and easily queriable, polyglotdb can perform formant analysis on these vowels. The executable run to perform formant analysis is configurable: a common option is to use `praat`_:
 
 .. code-block:: python
 
@@ -101,3 +108,10 @@ We can now query the results using a similar set of commands as in the previous 
                   c.phone.F3.column_name('F3'))
     results = q.all()
     q.to_csv(export_path)
+
+
+The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_, its `expected output`_ when run on the 'LibriSpeech-subset' corpora, and `follow-up analysis`_ performed with an `rmd script`_ using the same corpora.
+
+Next steps
+==========
+See :ref:`tutorial_pitch` for another practical examples of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
