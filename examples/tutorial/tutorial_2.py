@@ -1,14 +1,13 @@
 import os
 from polyglotdb import CorpusContext
 
-## CHANGE THIS PATH to location of pg_tutorial corpus on your system
-corpus_root = '/home/michael/Cloud/LibriSpeech-subset/'
+# corpus_root = './data/LibriSpeech-aligned/'
+#corpus_name = 'tutorial'
+corpus_root = './data/LibriSpeech-aligned-subset/'
 corpus_name = 'tutorial-subset'
 
-## See LibriSpeech-subset/enrichment_data
 speaker_filename = "SPEAKERS.csv"
 stress_data_filename = "iscan_lexicon.csv"
-
 
 syllabics = ["ER0", "IH2", "EH1", "AE0", "UH1", "AY2", "AW2", "UW1", "OY2", "OY1", "AO0", "AH2", "ER1", "AW1",
              "OW0", "IY1", "IY2", "UW0", "AA1", "EY0", "AE1", "AA0", "OW1", "AW0", "AO1", "AO2", "IH0", "ER2",
@@ -19,7 +18,6 @@ print("Syllable enrichment...")
 with CorpusContext(corpus_name) as c:
     c.encode_type_subset('phone', syllabics, 'syllabic')
     c.encode_syllables(syllabic_label='syllabic')
-
 
 print("Utterance enrichment...")
 pause_labels = ['<SIL>']
