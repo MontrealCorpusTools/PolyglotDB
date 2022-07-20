@@ -3,12 +3,18 @@
 
 .. _Montreal Forced Aligner: https://montreal-forced-aligner.readthedocs.io/en/latest/
 
-.. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:u:/g/personal/michael_haaf_mcgill_ca/EfocNOr3o7xJuCrG_-OrR3MBh_-vmQaHtkV2J7vJq61c1w?e=UEhQg7
+.. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:f:/g/personal/michael_haaf_mcgill_ca/EjTbG6TDJOFFgAWSD6Hq1FABeakjZRkFL33z4F1DuPDcMw?e=1zQhw3
 
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1_first_steps.ipynb
 
-.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial1.py
+.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1.py
 
+.. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_1_subset_output.txt
+
+.. _formant: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
+
+.. _pitch: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.Rmd
+ 
 .. _tutorial_first_steps:
 
 ***********************
@@ -24,27 +30,42 @@ This tutorial is available as a `Jupyter notebook`_ as well.
 Downloading the tutorial corpus
 ===============================
 
-The tutorial corpus used here is a version of the `LibriSpeech`_ test-clean subset, forced aligned with the
-`Montreal Forced Aligner`_ (`tutorial corpus download link`_).  Extract the files to somewhere on your local machine.
+There are two corpora made available for usage with this tutorial. These are both subsets of the `LibriSpeech`_ test-clean dataset, forced aligned with the `Montreal Forced Aligner`_ 
+
+The corpora are made available for download here: `tutorial corpus download link`_. The larger corpus, LibriSpeech-aligned, contains dozens of speakers and 490MB of data. The smaller corpus, LibriSpeech-aligned-subset, contains just two speakers from the previous corpus and therefore much less data (25MB).
+
+In tutorials 1-3, we show how to prepare the LibriSpeech-aligned-subset corpus for linguistic analysis using polyglotdb. The subset is chosen for these tutorials to allow users to quickly test commands and compare their results with `expected results`_ while getting used to interacting with polyglotdb, since some enrichment commands can be timeconsuming when run on large datasets.
+
+In tutorials 4 and 5, vowel `formant`_ and `pitch`_ analysis is performed and expected results are provided. These experiments are performed using the larger corpus to allow for more coherent analysis.
 
 .. _tutorial_import:
 
 Importing the tutorial corpus
 =============================
 
-To import the tutorial corpus, the following lines of code are necessary:
+The first step is to prepare our python environment. We begin by importing the polyglotdb libraries we need and setting useful variables:
 
 .. code-block:: python
 
    from polyglotdb import CorpusContext
    import polyglotdb.io as pgio
 
-   corpus_root = '/mnt/e/Data/pg_tutorial'
+   # This is the path to wherever you have downloaded the provided corpora directories
+   corpus_root = './data/LibriSpeech-aligned-subset'
+   # corpus_root = './data/LibriSpeech-aligned'
+
+   # Corpus identifiers can be any valid string. They are unique to each corpus.
+   corpus_name = 'tutorial-subset'
+   # corpus_name = 'tutorial'
+
+Then run following lines of code to import corpus data into pgdb. For any given corpora, these commands only need to be run once: corpora are preserved in pgdb after import.
+
+.. code-block:: python
 
    parser = pgio.inspect_mfa(corpus_root)
    parser.call_back = print
 
-   with CorpusContext('pg_tutorial') as c:
+   with CorpusContext(corpus_name) as c:
       c.load(parser, corpus_root)
 
 .. important::
@@ -72,9 +93,7 @@ fresh state via the following code:
 
 .. code-block:: python
 
-   from polyglotdb import CorpusContext
-
-   with CorpusContext('pg_tutorial') as c:
+   with CorpusContext(corpus_name) as c:
       c.reset()
 
 
@@ -91,9 +110,7 @@ To ensure that data import completed successfully, we can print the list of spea
 
 .. code-block:: python
 
-   from polyglotdb import CorpusContext
-
-   with CorpusContext('pg_tutorial') as c:
+   with CorpusContext(corpus_name) as c:
     print('Speakers:', c.speakers)
     print('Discourses:', c.discourses)
 
@@ -109,7 +126,7 @@ A more interesting summary query is perhaps looking at the count and average dur
 
    from polyglotdb.query.base.func import Count, Average
 
-   with CorpusContext('pg_tutorial') as c:
+   with CorpusContext(corpus_name) as c:
       q = c.query_graph(c.phone).group_by(c.phone.label.column_name('phone'))
       results = q.aggregate(Count().column_name('count'), Average(c.phone.duration).column_name('average_duration'))
       for r in results:
@@ -118,6 +135,6 @@ A more interesting summary query is perhaps looking at the count and average dur
 Next steps
 ==========
 
-You can see a `full version of the script`_.
+You can see a `full version of the script`_, as well as `expected output`_ when run on the 'LibriSpeech-subset' corpora.
 
 See :ref:`tutorial_enrichment` for the next tutorial covering how to enrich the corpus and create more interesting queries.

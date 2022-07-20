@@ -1,7 +1,7 @@
 
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_2_enrichment.ipynb
 
-.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial2.py
+.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_2.py
 
 .. _tutorial_enrichment:
 
@@ -33,8 +33,14 @@ to be runnable:
     import os
     from polyglotdb import CorpusContext
 
-    ## CHANGE THIS PATH to location of pg_tutorial corpus on your system
-    corpus_root = '/mnt/e/Data/pg_tutorial'
+    ## CHANGE THIS PATH to location of the corpus on your system
+    corpus_root = './data/LibriSpeech-aligned-subset/'
+    corpus_name = 'tutorial-subset'
+
+    ## See the enrichment_data/ subdirectory in the tutorial directory to view examples of these files
+    speaker_filename = "SPEAKERS.csv"
+    stress_data_filename = "iscan_lexicon.csv"
+
 
 .. _tutorial_syllable_enrichment:
 
@@ -50,7 +56,7 @@ To create syllables requires two steps. The first is to specify the subset of ph
              "UW2", "IY0", "AE2", "AH0", "AH1", "UH2", "EH2", "UH0", "EY1", "AY0", "AY1", "EH0", "EY2", "AA2",
              "OW2", "IH1"]
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         c.encode_type_subset('phone', syllabics, 'syllabic')
 
 
@@ -65,7 +71,7 @@ annotations as follows:
 
 .. code-block:: python
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         c.encode_syllables(syllabic_label='syllabic')
 
 
@@ -94,7 +100,7 @@ labels like ``<SIL>`` as pause elements and not actual speech sounds:
 
     pause_labels = ['<SIL>']
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         c.encode_pauses(pause_labels)
 
 
@@ -106,7 +112,7 @@ Once pauses are encoded, the next step is to actually create the utterance annot
 
 .. code-block:: python
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         c.encode_utterances(min_pause_length=0.15)
 
 The `min_pause_length` argument specifies how long (in seconds) a non-speech
@@ -130,9 +136,9 @@ than the numeric code used in LibriSpeech.  This information can be imported int
 
 .. code-block:: python
 
-    speaker_enrichment_path = os.path.join(corpus_root, 'enrichment_data', 'speaker_info.csv')
+    speaker_enrichment_path = os.path.join(corpus_root, 'enrichment_data', speaker_filename)
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         c.enrich_speakers_from_csv(speaker_enrichment_path)
 
 Note that the CSV file could have an arbitrary name and location, in
@@ -162,9 +168,9 @@ example, ``astringent`` will have a stress pattern of ``0-1-0``.
 
 .. code-block:: python
 
-    lexicon_enrichment_path = os.path.join(corpus_root, 'enrichment_data', 'iscan_lexicon.csv')
+    lexicon_enrichment_path = os.path.join(corpus_root, 'enrichment_data', stress_data_filename)
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         c.enrich_lexicon_from_csv(lexicon_enrichment_path)
         c.encode_stress_from_word_property('stress_pattern')
 
@@ -190,14 +196,14 @@ here is going to to be syllables per second.
 
 .. code-block:: python
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         c.encode_rate('utterance', 'syllable', 'speech_rate')
 
 Next we will encode the number of syllables per word:
 
 .. code-block:: python
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         c.encode_count('word', 'syllable', 'num_syllables')
 
 Once the enrichments are complete, a token property of ``speech_rate`` will be available for query and export on utterance
@@ -211,8 +217,7 @@ annotations, as well as one for ``num_syllables`` on word tokens.
 Next steps
 ==========
 
-You can see a `full version of the script`_ which carries out all
-steps shown in code above.
+You can see a `full version of the script`_ which carries out all steps shown in code above.
 
 See :ref:`tutorial_query` for the next tutorial covering how to create and export interesting queries using the information
 enriched above.  See :ref:`enrichment` for a full list and example usage of the various enrichments possible in PolyglotDB.

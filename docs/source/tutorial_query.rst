@@ -1,9 +1,11 @@
 
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_3_query.ipynb
 
-.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial3.py
+.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_3.py
 
 .. _related ISCAN tutorial: https://iscan.readthedocs.io/en/latest/tutorials_iscan.html#examining-analysing-the-data
+
+.. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_3_subset_output.csv
 
 .. _tutorial_query:
 
@@ -15,16 +17,15 @@ The main objective of this tutorial is to export a CSV file using a query on an 
 enriched (:ref:`tutorial_enrichment`) corpus.
 This tutorial is available as a `Jupyter notebook`_ as well.
 
-As in the other tutorials, import statements and the location of the corpus root must be set for the code in this tutorial
+As in the other tutorials, import statements and the corpus name (as it is stored in pgdb) must be set for the code in this tutorial
 to be runnable:
 
 .. code-block:: python
 
     from polyglotdb import CorpusContext
 
-
-    ## CHANGE FOR YOUR SYSTEM
-    export_path = '/path/to/export/pg_tutorial.csv'
+    corpus_name = 'tutorial-subset'
+    export_path = './results/tutorial_3_subset_output.csv'
 
 Creating an initial query
 =========================
@@ -39,13 +40,11 @@ For this example, we will query for all *syllables*, which are:
     ``'1'``)
   - At the beginning of the word,
   - In words that are at the end of utterances.
-    
 
 .. code-block:: python
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         q = c.query_graph(c.syllable)
-
         q = q.filter(c.syllable.stress == '1') # Stressed syllables...
         q = q.filter(c.syllable.begin == c.syllable.word.begin) # That are at the beginning of words...
         q = q.filter(c.syllable.word.end == c.syllable.word.utterance.end) # that are at the end of utterances.
@@ -57,9 +56,8 @@ Next, we want to specify the particular information to extract for each syllable
 .. code-block:: python
 
     # duplicated from above
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         q = c.query_graph(c.syllable)
-
         q = q.filter(c.syllable.stress == '1') # Stressed syllables...
         q = q.filter(c.syllable.begin == c.syllable.word.begin) # That are at the beginning of words...
         q = q.filter(c.syllable.word.end == c.syllable.word.utterance.end) # that are at the end of utterances.
@@ -85,9 +83,8 @@ To test out the query, we can ``limit`` the results (for readability) and print 
 .. code-block:: python
 
     # duplicated from above
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         q = c.query_graph(c.syllable)
-
         q = q.filter(c.syllable.stress == '1') # Stressed syllables...
         q = q.filter(c.syllable.begin == c.syllable.word.begin) # That are at the beginning of words...
         q = q.filter(c.syllable.word.end == c.syllable.word.utterance.end) # that are at the end of utterances.
@@ -120,7 +117,7 @@ For completeness, the full code for the query and export is given below.
 
 .. code-block:: python
 
-    with CorpusContext('pg_tutorial') as c:
+    with CorpusContext(corpus_name) as c:
         q = c.query_graph(c.syllable)
         q = q.filter(c.syllable.stress == 1)
 
@@ -141,9 +138,8 @@ For completeness, the full code for the query and export is given below.
                       )
         q.to_csv(export_path)
 
-The CSV file generated will then be ready to open in other programs or in R for data analysis.
+The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_, as well as `expected output`_ when run on the 'LibriSpeech-subset' corpora.
 
 Next steps
 ==========
-
-See the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
+See :ref:`tutorial_formants` and :ref:`tutorial_pitch` for practical examples of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
