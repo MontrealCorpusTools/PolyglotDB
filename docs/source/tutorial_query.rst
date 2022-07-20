@@ -1,7 +1,7 @@
 
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_3_query.ipynb
 
-.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial3.py
+.. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_3.py
 
 .. _related ISCAN tutorial: https://iscan.readthedocs.io/en/latest/tutorials_iscan.html#examining-analysing-the-data
 
@@ -142,5 +142,4 @@ The CSV file generated will then be ready to open in other programs or in R for 
 
 Next steps
 ==========
-
-See the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results. Coming soon: tutorials for extracting vowel formants and performing pitch analysis on the LibriSpeech corpus.
+See :ref:`tutorial_formants` and `tutorial_pitch` for practical examples of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.

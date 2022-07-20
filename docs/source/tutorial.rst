@@ -15,5 +15,7 @@ Contents:
    tutorial_first_steps.rst
    tutorial_enrichment.rst
    tutorial_query.rst
+   tutorial_formants.rst
+   tutorial_pitch.rst
 
 
