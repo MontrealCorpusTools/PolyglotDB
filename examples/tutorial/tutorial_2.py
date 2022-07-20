@@ -2,7 +2,7 @@ import os
 from polyglotdb import CorpusContext
 
 # corpus_root = './data/LibriSpeech-aligned/'
-#corpus_name = 'tutorial'
+# corpus_name = 'tutorial'
 corpus_root = './data/LibriSpeech-aligned-subset/'
 corpus_name = 'tutorial-subset'
 

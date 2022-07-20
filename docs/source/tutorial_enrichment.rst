@@ -33,11 +33,11 @@ to be runnable:
     import os
     from polyglotdb import CorpusContext
 
-    ## CHANGE THIS PATH to location of pg_tutorial corpus on your system
-    corpus_root = '/home/michael/Cloud/LibriSpeech-subset/'
+    ## CHANGE THIS PATH to location of the corpus on your system
+    corpus_root = './data/LibriSpeech-aligned-subset/'
     corpus_name = 'tutorial-subset'
 
-    ## See LibriSpeech-subset/enrichment_data
+    ## See the enrichment_data/ subdirectory in the tutorial directory to view examples of these files
     speaker_filename = "SPEAKERS.csv"
     stress_data_filename = "iscan_lexicon.csv"
 
@@ -217,8 +217,7 @@ annotations, as well as one for ``num_syllables`` on word tokens.
 Next steps
 ==========
 
-You can see a `full version of the script`_ which carries out all
-steps shown in code above.
+You can see a `full version of the script`_ which carries out all steps shown in code above.
 
 See :ref:`tutorial_query` for the next tutorial covering how to create and export interesting queries using the information
 enriched above.  See :ref:`enrichment` for a full list and example usage of the various enrichments possible in PolyglotDB.
