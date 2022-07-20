@@ -1,0 +1,297 @@
+---
+title: "Plotting pitch"
+author: "M. Sonderegger & XX"
+date: 'Last update: `r format(Sys.time(), "%B %d")`'
+output: 
+  html_document:
+    theme: paper
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+## using figure size defaults from
+## https://r4ds.hadley.nz/graphics-for-communication.html#figure-sizing
+knitr::opts_chunk$set(
+  echo = TRUE,
+  fig.width = 6,
+  fig.asp = 0.618,
+  out.width = "70%",
+  fig.align = "center",
+  ## suppress messages from e.g. ggplot calls
+  message = FALSE,
+  ## Speed up compilation
+  cache = TRUE
+)
+```
+
+# Preliminaries
+
+
+Load packages and data output by the PolyglotDB formants tutorial script:
+
+```{r}
+library(tidyverse)
+library(broom)
+
+v <- read_csv("librispeech_pitch_full_set.csv")
+```
+## Preprocessing
+
+Save original dataset:
+
+```{r}
+v_orig <- v
+```
+
+
+Quick look at columns of the dataframe:
+
+```{r}
+glimpse(v)
+```
+We just want data from words beginning with CV. There are some words starting with VV, which is a bug in the query.  Exclude these:
+
+```{r}
+v <- filter(v, !(consonant %in% c("AW1", "OW1", "ER0"))) %>% droplevels()
+```
+
+
+We are primarily interested in:
+
+* `F0`: pitch (in Hz), where -1 means "undefined" (unvoiced frame of speech)
+* `sex` of speaker
+* `speaker`
+* `consonant`: consonant preceding the vowel
+
+Define and correct some columns:  
+
+* `stress`: this is e.g. `1` in `AH1`
+* `stressed`: stress = 0 vs 2/1
+* `vowel`: this is e.g. `AH` in `AH`
+* `speaker`: should be character (or factor)
+* `rel_time`: time since beginning of vowel
+
+```{r}
+v <- v %>% mutate(
+  stress = str_split(vowel, "[A-Z]+", simplify = TRUE)[, 2],
+  stressed = ifelse(stress == "0", "N", "Y"),
+  vowel = str_split(vowel, "[0-9]", simplify = TRUE)[, 1],
+  speaker = as.character(speaker)
+)
+
+v <- v %>%
+  group_by(traj_id) %>%
+  summarize(min_time = min(time)) %>%
+  left_join(v) %>%
+  mutate(rel_time = time - min_time) %>%
+  select(-min_time)
+```
+
+
+Below we'll look at effects of consonant type and vowel height on F0.  This requires defining:
+
+1. Broad types of consonant
+
+```{r}
+v <- v %>%
+  mutate(
+    cons_class =
+      fct_recode(
+        consonant,
+        voiced_obs = "B", voiced_obs = "DH", voiced_obs = "D", voiced_obs = "G", voiced_obs = "V", voiced_obs = "JH", voiced_obs = "Z",
+        vless_obs = "CH", vless_obs = "F", vless_obs = "CH", vless_obs = "HH", vless_obs = "K", vless_obs = "P", vless_obs = "S", vless_obs = "SH", vless_obs = "T", vless_obs = "TH",
+        nasal = "M", nasal = "N",
+        sonorant = "L", sonorant = "R", sonorant = "W", sonorant = "Y"
+      )
+  )
+```
+
+2. Vowel height
+
+```{r}
+v <- v %>% 
+  mutate(
+    vowel_height = 
+      fct_recode(
+        vowel,
+        high = "IY", high = "UH", high = "UW", high = "IH",
+        mid = "EY", mid = "EH", mid = "ER", mid = "OW", mid = "AH",
+        low = "AE", low = "AA", low = "AO",
+        dipth = "OY", dipth = "AY", dipth = "AW"
+      )
+  )
+  
+```
+
+
+Make pitch  = -1 be NA:
+
+```{r}
+v[v$F0 == -1, "F0"] <- NA
+```
+
+Speaker mean pitch, and $z$-score pitch within speaker:
+
+```{r}
+v <- v %>%
+  group_by(speaker) %>%
+  summarize(F0_mean = mean(F0, na.rm = T)) %>%
+  left_join(v) %>%
+  group_by(speaker) %>%
+  mutate(F0_std = as.numeric(scale(F0)))
+```
+
+Add vowel duration (I think), basic stats to be used to detect trajectories where pitch tracking was off.
+
+```{r}
+v <- v %>%
+  group_by(traj_id) %>%
+  summarise(
+    dur = 0.010 * (n() - 1),
+    ## number and % of NA points in this trajectory
+    na_n = sum(is.na(F0)),
+    not_na_n = n() - na_n,
+    na_frac = na_n / n(),
+  ) %>%
+  left_join(v)
+```
+
+
+# Data cleaning
+
+All trajectories, filtering out those with non-trivial undefined F0:
+
+```{r}
+v %>%
+  ## filter out trajectories where any appreciable portion of vowel didn't have F0 detected:
+  filter(na_frac < 0.1 & na_n <= 2) %>%
+  ggplot(aes(x = rel_time, y = F0_std)) +
+  geom_line(aes(group = traj_id))
+```
+
+There are some  crazy trajectories there. For this demo, let's just remove anything 3 SD from speaker mean or >200 msec long (which is a very long vowel):
+
+```{r}
+v <- v %>%
+  filter(na_frac < 0.1 & na_n <= 2) %>%
+  filter(abs(F0_std) < 3) %>%
+  filter(dur < 0.2)
+```
+
+
+```{r}
+v %>%
+  filter(na_frac < 0.1 & na_n <= 2) %>%
+  ggplot(aes(x = rel_time, y = F0_std)) +
+  geom_line(aes(group = traj_id)) +
+  facet_wrap(~speaker)
+```
+
+Looks a bit better.
+
+How much data was excluded?
+
+```{r}
+## this percent
+1 - nrow(v) / nrow(v_orig)
+```
+
+
+# Basic patterns
+
+
+We expect:
+
+1. Male speakers have higher F0 than female speakers (on average)
+2. F0 should be higher after voiceless vs. voiced obstruents, more so near the beginning of the vowel
+3. F0 should be higher for high vs. low vowels; mid vowels may pattern in between.
+4. Effects (2) and (3) should be larger at higher F0 values, hence larger for F vs. M speakers.
+
+Examine in just stressed syllables, to avoid prosodic effects.
+
+## Consonant voicing
+
+Voiced vs. voiceless obstruent trajectories as a function of % through the vowel:
+
+```{r}
+v %>%
+  filter(stressed == "Y" & cons_class %in% c("voiced_obs", "vless_obs")) %>%
+  ggplot(aes(x = rel_time / dur, y = F0_std)) +
+  geom_smooth(aes(color = cons_class))
+```
+
+Beautiful. 
+
+In Hz, faceting by gender:
+
+```{r}
+v %>%
+  filter(stressed == "Y" & cons_class %in% c("voiced_obs", "vless_obs")) %>%
+  ggplot(aes(x = rel_time / dur, y = F0)) +
+  geom_smooth(aes(color = cons_class)) +
+  facet_wrap(~sex)
+```
+
+The effect is larger (in Hz) for F speakers than for M speakers, as expected.
+
+Now by-speaker:
+
+```{r, out.width='90%', fig.width=10}
+v %>%
+  filter(stressed == "Y" & cons_class %in% c("voiced_obs", "vless_obs")) %>%
+  ggplot(aes(x = rel_time / dur, y = F0_std)) +
+  geom_smooth(aes(color = cons_class)) +
+  facet_wrap(~speaker, scales = "free_y") +
+  theme(legend.position = "none")
+```
+
+Here there is some interesting variability, but most speakers show the expected pattern: blue $>$ red, at least at beginning of the vowel.
+
+
+## Vowel height
+
+
+Trajectories as a function of vowel height, just for stressed syllables, omitting diphthongs (which don't have a well-defined height):
+
+
+```{r}
+v %>%
+  filter(stressed == "Y" & vowel_height != "dipth") %>%
+  droplevels() %>%
+  ggplot(aes(x = rel_time / dur, y = F0_std)) +
+  geom_smooth(aes(color = vowel_height))
+```
+
+
+Beautiful. 
+
+In Hz, faceting by gender:
+
+```{r}
+v %>%
+  filter(stressed == "Y" & vowel_height != "dipth") %>%
+  droplevels() %>%
+  ggplot(aes(x = rel_time / dur, y = F0)) +
+  geom_smooth(aes(color = vowel_height)) +
+  facet_wrap(~sex)
+```
+
+The effect is larger (in Hz) for F speakers than for M speakers, as expected.
+
+
+
+<!-- ## Bonus: C voicing vs nasal baseline -->
+
+
+
+<!-- Voiced vs. voiceless obstruent trajectories as a function of % through the vowel, with a "nasal baseline".  We expect nasals to show a similar F0 effect to voiced obstrunets, which seems to be roughly true: -->
+
+<!-- ```{r} -->
+<!-- v %>% -->
+<!--   filter(stressed == "Y" & cons_class %in% c("voiced_obs", "vless_obs", "nasal")) %>% -->
+<!--   ggplot(aes(x = rel_time / dur, y = F0_std)) + -->
+<!--   geom_smooth(aes(color = cons_class)) -->
+<!-- ``` -->
+

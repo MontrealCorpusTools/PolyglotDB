@@ -5,8 +5,6 @@
 Tutorial
 ********
 
-Under development!
-
 Contents:
 
 .. toctree::

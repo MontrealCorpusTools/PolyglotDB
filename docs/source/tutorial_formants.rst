@@ -114,4 +114,4 @@ The CSV file generated will then be ready to open in other programs or in R for 
 
 Next steps
 ==========
-See :ref:`tutorial_pitch` for another practical examples of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
+See :ref:`tutorial_pitch` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
