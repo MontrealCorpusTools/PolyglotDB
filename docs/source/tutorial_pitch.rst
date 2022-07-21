@@ -7,7 +7,7 @@
 
 .. _follow-up analysis: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.html
 
-.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.rmd
+.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.Rmd
 
 .. _tutorial_pitch:
 
@@ -20,7 +20,7 @@ The main objective of this tutorial is to perform pitch extraction on the enrich
 As in the other tutorials, import statements and the corpus name (as it is stored in pgdb) must be set for the code in this tutorial
 to be runnable. The example given below continues to make use of the "tutorial-subset" corpus we have been using in tutorials 1-3.
 
-   .. code-block:: python
+.. code-block:: python
 
    from polyglotdb import CorpusContext
 
@@ -29,7 +29,7 @@ to be runnable. The example given below continues to make use of the "tutorial-s
    # export_path = './results/tutorial_4_formants.csv')
    corpus_root = './data/LibriSpeech-aligned-subset/'
    corpus_name = 'tutorial-subset'
-   export_path = './results/tutorial_4_subset_formants.csv')
+   export_path = './results/tutorial_5_pitch.csv')
 
 Vowel phoneme enrichment
 =========================
@@ -88,8 +88,9 @@ We can now query the results using a similar set of commands as in the previous 
                   c.phone.discourse.name.column_name('discourse'),
                   c.phone.speaker.name.column_name('speaker'),
                   c.phone.speaker.sex.column_name('sex'),
-                  c.phone.pitch.track.column_name('f0')
-  )
+                  c.phone.pitch.track.column_name('f0'))
+    results = q.all()
+    q.to_csv(export_path)
 
 The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_ and its `expected output`_ when run on the 'LibriSpeech-subset' corpora.
 

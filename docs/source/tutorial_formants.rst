@@ -9,7 +9,7 @@
 
 .. _follow-up analysis: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html
 
-.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.rmd
+.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
 
 .. _tutorial_formants:
 
@@ -75,8 +75,6 @@ Using Praat to measure verb formants
 Now that all vowel syllables are isolated and easily queriable, polyglotdb can perform formant analysis on these vowels. The executable run to perform formant analysis is configurable: a common option is to use `praat`_:
 
 .. code-block:: python
-
-  from polyglotdb import CorpusContext
 
   # NOTE: the location of your praat executable depends on your operating system/installation.
   # double check where praat is installed on your system and change the praat_path variable as required.
