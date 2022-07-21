@@ -11,10 +11,10 @@ corpus_name = 'tutorial-subset'
 export_path = './results/tutorial_5_subset_pitch.csv'
 
 
-## 1. ENRICHMENT TO ENCODE SYLLABLES, UTTERANCES, SPEAKERS
+## 1. ENRICHMENT TO ENCODE SYLLABLES, UTTERANCES, SPEAKERS ##
+# NOTE: Step 1 is duplicated in tutorial 4. If have completed tutorial 4, you
+# can comment/delete code below for encoding syllables/utterances/speakers
 
-
-# retrieve phone set for vowel processing
 with CorpusContext(corpus_name) as c:
     q = c.query_lexicon(c.lexicon_phone)
     q = q.order_by(c.lexicon_phone.label)
@@ -22,40 +22,25 @@ with CorpusContext(corpus_name) as c:
     phone_results = q.all()
 phone_set = [x.values[0] for x in phone_results]
 
-# we now use a regular expression to find all the non-speech phones
-# non_speech_regex = '[<s]'
-# non_speech_set = [re.search(non_speech_regex, x).string
-#                   for x in phone_set
-#                   if re.search(non_speech_regex, x) != None]
-
-# specify non-speech phones for this corpus:
 non_speech_set = ['<SIL>', 'sil', 'spn']
 
-# in turn, use a regular expression to find all the vowel phones
 vowel_regex = '^[AEOUI].[0-9]'
 vowel_set = [re.search(vowel_regex, x).string
              for x in phone_set
              if re.search(vowel_regex, x) != None]
 
-# we now enrich the corpus with syllable annotations
-# to do this, we create a phone subset called vowel
-# containing all vowel phones
 print("Encoding vowel set...")
 with CorpusContext(corpus_name) as c:
     c.encode_type_subset('phone', vowel_set, 'vowel')
 
-# we now enrich the corpus with syllables that have
-# vowels as their nuclei
 print("Encoding vowel syllables...")
 with CorpusContext(corpus_name) as c:
     c.encode_syllables(syllabic_label='vowel')
 
-# we now enrich the corpus with utterances
 with CorpusContext(corpus_name) as c:
     c.encode_pauses(non_speech_set)
     c.encode_utterances(min_pause_length=0.15)
 
-# speaker information
 print("Speaker enrichment begun...")
 speaker_enrichment_path = os.path.join(corpus_root, 'enrichment_data', 'SPEAKERS.csv')
 with CorpusContext(corpus_name) as c:
@@ -72,6 +57,8 @@ with CorpusContext(corpus_name) as c:
 
 
 # Pitch encoding
+# This step uses Praat, a program for analyzing audio files
+# The PATH for running the Praat command on your machine needs to be used.
 print("Encoding pitch...")
 with CorpusContext(corpus_name) as c:
     c.reset_acoustic_measure('pitch')

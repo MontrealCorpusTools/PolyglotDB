@@ -9,7 +9,7 @@
 
 .. _follow-up analysis: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html
 
-.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.rmd
+.. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
 
 .. _tutorial_formants:
 
@@ -76,10 +76,11 @@ Now that all vowel syllables are isolated and easily queriable, polyglotdb can p
 
 .. code-block:: python
 
-  from polyglotdb import CorpusContext
-
+  # NOTE: the location of your praat executable depends on your operating system/installation.
+  # double check where praat is installed on your system and change the praat_path variable as required.
+  praat_path = "/usr/bin/praat"
   with CorpusContext(corpus_name) as c:
-    c.config.praat_path = "/usr/bin/praat"
+    c.config.praat_path = praat_path
     c.analyze_formant_points(vowel_label='vowel', call_back=print)
 
 This step will enrich the corpus with formant variables (F1, F2, F3) aassociated with each vowel phoneme in the corpus.
