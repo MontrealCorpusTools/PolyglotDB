@@ -9,9 +9,9 @@ This section contains several troubleshooting tips on installation, tutorials, e
 
 Contents:
 
-..  toctree::
-    :maxdepth: 2
+.. toctree::
+   :maxdepth: 2
 
-    tshoot_install.rst 
+   tshoot_install.rst 
 
 

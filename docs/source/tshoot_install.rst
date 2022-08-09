@@ -1,8 +1,11 @@
 .. _tshoot_install:
 
 ************
-Installation (for Mac users) 
+Installation 
 ************
+
+For Mac users 
+=============
 
 If the ``pgdb`` command does not work, you may try the following steps:
 
