@@ -10,6 +10,7 @@ Run time error
 If this error occurs: 
 
 .. code-block:: python 
+    
     RuntimeError: 
         An attempt has been made to start a new process before the
         current process has finished its bootstrapping phase.

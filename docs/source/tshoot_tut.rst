@@ -12,6 +12,7 @@ Corpus Structure
 * If the KeyError still exists, you may reset the corpus as below. 
 
 .. code-block:: python 
+
     with CorpusContext(corpus_name) as c:
         c.reset()
 
@@ -24,6 +25,7 @@ Defining Vowel Set (Tutorial 4)
 In other words, instead of using:
 
 .. code-block:: python
+
     vowel_set = [re.search(vowel_regex, p).string for p in phone_set
             if re.search(vowel_regex, p) != None and p not in non_speech_set]
 
@@ -31,6 +33,7 @@ In other words, instead of using:
 Use (e.g., for Cantonese): 
 
 .. code-block:: python 
+    
     vowel_set = ['6', '6j', '6w', '9', '9y', 'E:', 'O:', 'O:j', 'a:', 'a:j', 'a:w', 'ej', 'i:', 'ow', 'u:', 'y:']
 
 
