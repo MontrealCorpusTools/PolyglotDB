@@ -1,7 +1,7 @@
 .. _troubleshooting:
 
 ***************
-Troubleshooting
+Troubleshooting Tips
 ***************
 
 This section contains several troubleshooting tips on installation, tutorials, etc. 
@@ -13,5 +13,4 @@ Contents:
    :maxdepth: 2
 
    tshoot_install.rst 
-
 

@@ -4,7 +4,7 @@
 Installation 
 ************
 
-For Mac users 
+On Mac
 =============
 
 If the ``pgdb`` command does not work, you may try the following steps:
