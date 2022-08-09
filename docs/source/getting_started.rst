@@ -58,7 +58,7 @@ Mac
 ```
 
 #. Ensure Java 11 is installed inside Anaconda distribution (``conda install -c anaconda openjdk``) if using Anaconda, or
-   via Homebrew otherwise (``brew cask install java``)
+   via Homebrew otherwise (``brew install openjdk``)
 #. Check Java version is 11 via ``java --version``
 #. Once PolyglotDB is installed, run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
    :code:`pgdb install` to save data in the default directory.
