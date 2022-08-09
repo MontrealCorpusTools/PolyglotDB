@@ -1,3 +1,5 @@
+.. _tshoot_install:
+
 ************
 Installation (for Mac users) 
 ************
