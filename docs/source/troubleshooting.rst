@@ -13,4 +13,7 @@ Contents:
    :maxdepth: 2
 
    tshoot_install.rst 
+   tshoot_tut.rst
+   tshoot_other.rst
+
 
