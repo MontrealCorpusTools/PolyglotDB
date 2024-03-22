@@ -51,17 +51,17 @@ class LabbCatParser(AlignerParser):
         try:
             tg = textgrid.openTextgrid(path, includeEmptyIntervals=True)
             new_tiers = []
-            dup_tiers_maxes = {k:0 for k,v in Counter([t.name for t in tg.tiers]).items() if v > 1}
+            dup_tiers_maxes = {k:0 for k,v in Counter([t for t in tg.tierNameList]).items() if v > 1}
             dup_tiers_inds = {k:0 for k in dup_tiers_maxes.keys()}
 
-            for i, t in enumerate(tg.tiers):
-                if t.name in dup_tiers_maxes:
-                    if len(t) > dup_tiers_maxes[t.name]:
-                        dup_tiers_maxes[t.name] = len(t)
-                        dup_tiers_inds[t.name] = i
-            for i, t in enumerate(tg.tiers):
-                if t.name in dup_tiers_maxes:
-                    if i != dup_tiers_inds[t.name]:
+            for i, t in enumerate(tg.tierNameList):
+                if t in dup_tiers_maxes:
+                    if len(t) > dup_tiers_maxes[t]:
+                        dup_tiers_maxes[t] = len(t)
+                        dup_tiers_inds[t] = i
+            for i, t in enumerate(tg.tierNameList):
+                if t in dup_tiers_maxes:
+                    if i != dup_tiers_inds[t]:
                         continue
                 new_tiers.append(t)
             tg.tiers = new_tiers
