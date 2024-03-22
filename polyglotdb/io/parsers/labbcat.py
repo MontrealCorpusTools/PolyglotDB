@@ -57,8 +57,8 @@ class LabbCatParser(AlignerParser):
             for i, t in enumerate(tg.tierNameList):
                 if t in dup_tiers_maxes:
                     if len(t) > dup_tiers_maxes[t]:
-                        dup_tiers_maxes[t.name] = len(t)
-                        dup_tiers_inds[t.name] = i
+                        dup_tiers_maxes[t] = len(t)
+                        dup_tiers_inds[t] = i
             for i, t in enumerate(tg.tierNameList):
                 if t in dup_tiers_maxes:
                     if i != dup_tiers_inds[t]:
