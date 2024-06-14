@@ -18,6 +18,7 @@ Contents:
    queries.rst
    developer.rst
    changelog.rst
+   troubleshooting.rst
 
 See `the PolyglotDB wiki`_ for the changelog.
 
