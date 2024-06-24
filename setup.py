@@ -1,6 +1,6 @@
 import sys
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import codecs
 
@@ -10,23 +10,11 @@ def readme():
         return f.read()
 
 
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = ['--strict', '--verbose', '--tb=long', 'tests', '-x']
-        self.test_suite = True
-
-    def run_tests(self):
-        if __name__ == '__main__':  # Fix for multiprocessing infinite recursion on Windows
-            import pytest
-            errcode = pytest.main(self.test_args)
-            sys.exit(errcode)
-
 def read(rel_path):
     here = os.path.abspath(os.path.dirname(__file__))
     with codecs.open(os.path.join(here, rel_path), 'r') as fp:
         return fp.read()
-
+    
 
 def get_version(rel_path):
     delim = ' = '
@@ -63,32 +51,11 @@ if __name__ == '__main__':
           url='https://github.com/MontrealCorpusTools/PolyglotDB',
           author='Montreal Corpus Tools',
           author_email='michael.e.mcauliffe@gmail.com',
-          packages=['polyglotdb',
-                    'polyglotdb.acoustics',
-                    'polyglotdb.acoustics.formants',
-                    'polyglotdb.acoustics.pitch',
-                    'polyglotdb.acoustics.vot',
-                    'polyglotdb.client',
-                    'polyglotdb.corpus',
-                    'polyglotdb.databases',
-                    'polyglotdb.io',
-                    'polyglotdb.io.types',
-                    'polyglotdb.io.parsers',
-                    'polyglotdb.io.inspect',
-                    'polyglotdb.io.exporters',
-                    'polyglotdb.io.importer',
-                    'polyglotdb.io.enrichment',
-                    'polyglotdb.query',
-                    'polyglotdb.query.base',
-                    'polyglotdb.query.annotations',
-                    'polyglotdb.query.annotations.attributes',
-                    'polyglotdb.query.discourse',
-                    'polyglotdb.query.speaker',
-                    'polyglotdb.query.lexicon',
-                    'polyglotdb.query.metadata',
-                    'polyglotdb.syllabification'],
-          package_data={'polyglotdb.databases': ['*.conf'],
-                        'polyglotdb.acoustics.formants': ['*.praat']},
+          packages=find_packages(include=['polyglotdb', 'polyglotdb.*']),
+          include_package_data=True,
+          package_data={
+              'polyglotdb.databases': ['*.conf'],
+              'polyglotdb.acoustics.formants': ['*.praat']},
           install_requires=[
               'neo4j-driver~=4.3',
               'praatio~=5.0',
@@ -100,8 +67,8 @@ if __name__ == '__main__':
               'requests'
           ],
           scripts=['bin/pgdb'],
-          cmdclass={'test': PyTest},
-          extras_require={
-              'testing': ['pytest'],
-          }
+          tests_require=[
+              'pytest'
+          ]
           )
+    

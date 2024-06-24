@@ -3,7 +3,7 @@ channels:
     - conda-forge
 dependencies:
     - librosa
-    - scipy
+    - scipy ~= 1.12.0
     - praatio ~= 5.0
     - textgrid
     - influxdb
