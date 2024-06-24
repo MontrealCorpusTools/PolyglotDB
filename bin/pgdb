@@ -7,7 +7,7 @@ import shutil
 import configparser
 import subprocess
 import signal
-
+import platform
 from urllib.request import urlretrieve
 import requests
 from tqdm import tqdm
@@ -203,7 +203,10 @@ def start():
     if sys.platform.startswith('win'):
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxd.exe')
     elif sys.platform == 'darwin':
-        influxdb_bin = '/usr/local/opt/influxdb@1/bin/influxd'
+        if platform.machine() == 'arm64':
+            influxdb_bin = '/opt/homebrew/opt/influxdb@1/bin/influxd'
+        else:
+            influxdb_bin = '/usr/local/opt/influxdb@1/bin/influxd'
     else:
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'usr', 'bin', 'influxd')
     influxdb_conf = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxdb.conf')
