@@ -132,7 +132,10 @@ def download_influxdb(data_directory, overwrite=False):
     else:
         print('Installing InfluxDB...')
         subprocess.call(['brew', 'update'])
-        subprocess.call(['brew', 'install', 'influxdb@1'])
+        if (platform.machine() == 'arm64'):
+            subprocess.call(['arch', '-arm64', 'brew', 'install', 'influxdb@1'])
+        else:
+            subprocess.call(['brew', 'install', 'influxdb@1'])
     return True
 
 
