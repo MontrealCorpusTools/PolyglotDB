@@ -256,6 +256,7 @@ def status(name):
 
 
 def main():
+    global CONFIG_CHANGED
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='Command to use')
     install_parser = subparsers.add_parser("install")
