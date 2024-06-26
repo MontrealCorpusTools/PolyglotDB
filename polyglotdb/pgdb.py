@@ -255,7 +255,7 @@ def status(name):
     pass
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='Command to use')
     install_parser = subparsers.add_parser("install")
@@ -324,3 +324,6 @@ if __name__ == '__main__':
 
     if CONFIG_CHANGED:
         save_config(CONFIG)
+
+if __name__ == '__main__':
+    main()

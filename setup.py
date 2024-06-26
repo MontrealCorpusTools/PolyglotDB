@@ -64,7 +64,11 @@ if __name__ == '__main__':
               'tqdm',
               'requests'
           ],
-          scripts=['bin/pgdb'],
+          entry_points={
+              'console_scripts': [
+                  'pgdb=polyglotdb.pgdb:main'
+              ]
+          },
           tests_require=[
               'pytest'
           ]
