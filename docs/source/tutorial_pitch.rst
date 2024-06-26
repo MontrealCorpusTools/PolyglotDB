@@ -29,7 +29,7 @@ to be runnable. The example given below continues to make use of the "tutorial-s
    # export_path = './results/tutorial_4_formants.csv')
    corpus_root = './data/LibriSpeech-aligned-subset/'
    corpus_name = 'tutorial-subset'
-   export_path = './results/tutorial_5_pitch.csv')
+   export_path = './results/tutorial_5_pitch.csv'
 
 Vowel phoneme enrichment
 =========================
@@ -48,6 +48,9 @@ To extract pitch tracks from the data, we first encode syllable count per word.
 
 
 Then, the CorpusContext method analyze_pitch is used with a configurable pitch analysis exectuble. Like tutorial 4, in this case, we use `praat`_:
+
+.. note::
+  When performing analysis with Praat, you might encounter an ``EOFError`` due to the use of multiprocessing by polyglotdb. To avoid this, include the statement: ``if __name__ == '__main__':`` at the beginning of your program.
 
 .. code-block:: python
 
@@ -89,6 +92,8 @@ We can now query the results using a similar set of commands as in the previous 
                   c.phone.speaker.name.column_name('speaker'),
                   c.phone.speaker.sex.column_name('sex'),
                   c.phone.pitch.track.column_name('f0'))
+
+    q = q.order_by(c.phone.label)
     results = q.all()
     q.to_csv(export_path)
 

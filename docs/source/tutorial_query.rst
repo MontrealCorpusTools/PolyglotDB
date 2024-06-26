@@ -102,6 +102,7 @@ To test out the query, we can ``limit`` the results (for readability) and print 
                       )
 
         q = q.limit(10)
+        q = q.order_by(c.syllable.label)
         results = q.all()
         print(results)
 
@@ -134,6 +135,8 @@ For completeness, the full code for the query and export is given below.
                       c.syllable.speaker.name.column_name('speaker'),
                       c.syllable.discourse.name.column_name('file'),
                       )
+                      
+        q = q.order_by(c.syllable.label)
         q.to_csv(export_path)
 
 The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_, as well as `expected output`_ when run on the 'LibriSpeech-subset' corpora.
