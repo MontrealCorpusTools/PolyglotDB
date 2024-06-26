@@ -30,6 +30,7 @@ from polyglotdb.query.base.func import Count, Average
 
 with CorpusContext(corpus_name) as c:
     q = c.query_graph(c.phone).group_by(c.phone.label.column_name('phone'))
+    q = q.order_by(c.lexicon_phone.label)
     results = q.aggregate(Count().column_name('count'), Average(c.phone.duration).column_name('average_duration'))
     for r in results:
         print('The phone {} had {} occurrences and an average duration of {}.'.format(r['phone'], r['count'], r['average_duration']))

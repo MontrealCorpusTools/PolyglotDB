@@ -26,6 +26,7 @@ with CorpusContext(corpus_name) as c:
                     c.syllable.discourse.name.column_name('file'),
                     )
     print(f"Exporting full query to {export_path}")
+    q = q.order_by(c.syllable.label)
     q.to_csv(export_path)
 
     print("Preview query limited to 10 data points...")
