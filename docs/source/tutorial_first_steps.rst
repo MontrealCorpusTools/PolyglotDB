@@ -3,7 +3,7 @@
 
 .. _Montreal Forced Aligner: https://montreal-forced-aligner.readthedocs.io/en/latest/
 
-.. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:f:/g/personal/michael_haaf_mcgill_ca/EjTbG6TDJOFFgAWSD6Hq1FABeakjZRkFL33z4F1DuPDcMw?e=1zQhw3
+.. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:u:/g/personal/morgan_sonderegger_mcgill_ca/Ee8yKmOYAIdHlVM1H4xVIT8BMZpIrkWPiYdAauhXsbFqVA?e=RRGhbq
 
 .. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1_first_steps.ipynb
 
@@ -127,7 +127,8 @@ A more interesting summary query is perhaps looking at the count and average dur
    from polyglotdb.query.base.func import Count, Average
 
    with CorpusContext(corpus_name) as c:
-      q = c.query_graph(c.phone).group_by(c.phone.label.column_name('phone'))
+      # Optional: Use order_by to enforce ordering on the output for easier comparison with the sample output.
+      q = c.query_graph(c.phone).order_by(c.phone.label).group_by(c.phone.label.column_name('phone'))
       results = q.aggregate(Count().column_name('count'), Average(c.phone.duration).column_name('average_duration'))
       for r in results:
          print('The phone {} had {} occurrences and an average duration of {}.'.format(r['phone'], r['count'], r['average_duration']))

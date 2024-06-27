@@ -32,7 +32,7 @@ to be runnable. The example given below continues to make use of the "tutorial-s
     # export_path = './results/tutorial_4_formants.csv')
     corpus_root = './data/LibriSpeech-aligned-subset/'
     corpus_name = 'tutorial-subset'
-    export_path = './results/tutorial_4_subset_formants.csv')
+    export_path = './results/tutorial_4_subset_formants.csv'
 
 Vowel phoneme enrichment
 =========================
@@ -74,9 +74,16 @@ Using Praat to measure verb formants
 
 Now that all vowel syllables are isolated and easily queriable, polyglotdb can perform formant analysis on these vowels. The executable run to perform formant analysis is configurable: a common option is to use `praat`_:
 
+.. note::
+  When performing analysis with Praat, you might encounter an ``EOFError`` due to the use of multiprocessing by polyglotdb. To avoid this, include the statement: ``if __name__ == '__main__':`` at the beginning of your program.
+
 .. code-block:: python
 
   # NOTE: the location of your praat executable depends on your operating system/installation.
+  # By default:
+  # Windows: "C:\Program Files\Praat.exe"
+  # Mac: "/Applications/Praat.app/Contents/MacOS/Praat"
+  # Linux: "/usr/bin/praat"
   # double check where praat is installed on your system and change the praat_path variable as required.
   praat_path = "/usr/bin/praat"
   with CorpusContext(corpus_name) as c:
@@ -107,6 +114,9 @@ We can now query the results using a similar set of commands as in the previous 
                   c.phone.F1.column_name('F1'), # the columns enriched by praat
                   c.phone.F2.column_name('F2'),
                   c.phone.F3.column_name('F3'))
+                  
+    # Optional: Use order_by to enforce ordering on the output for easier comparison with the sample output.
+    q = q.order_by(c.phone.label)
     results = q.all()
     q.to_csv(export_path)
 
