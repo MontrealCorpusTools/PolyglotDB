@@ -85,10 +85,10 @@ Now that all vowel syllables are isolated and easily queriable, polyglotdb can p
   # Mac: "/Applications/Praat.app/Contents/MacOS/Praat"
   # Linux: "/usr/bin/praat"
   # double check where praat is installed on your system and change the praat_path variable as required.
- praat_path = "/usr/bin/praat"
- with CorpusContext(corpus_name) as c:
-   c.config.praat_path = praat_path
-   c.analyze_formant_points(vowel_label='vowel', call_back=print)
+  praat_path = "/usr/bin/praat"
+  with CorpusContext(corpus_name) as c:
+    c.config.praat_path = praat_path
+    c.analyze_formant_points(vowel_label='vowel', call_back=print)
 
 This step will enrich the corpus with formant variables (F1, F2, F3) aassociated with each vowel phoneme in the corpus.
 
@@ -114,7 +114,8 @@ We can now query the results using a similar set of commands as in the previous 
                   c.phone.F1.column_name('F1'), # the columns enriched by praat
                   c.phone.F2.column_name('F2'),
                   c.phone.F3.column_name('F3'))
-
+                  
+    # Optional: Use order_by to enforce ordering on the output for easier comparison with the sample output.
     q = q.order_by(c.phone.label)
     results = q.all()
     q.to_csv(export_path)

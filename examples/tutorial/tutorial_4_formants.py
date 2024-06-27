@@ -68,5 +68,8 @@ if __name__ == '__main__':
                     c.phone.F1.column_name('F1'),
                     c.phone.F2.column_name('F2'),
                     c.phone.F3.column_name('F3'))
+        
+        # Optional: Use order_by to enforce ordering on the output for easier comparison with the sample output.
+        q = q.order_by(c.phone.label)
         results = q.all()
         q.to_csv(export_path)

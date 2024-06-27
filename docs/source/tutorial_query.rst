@@ -102,6 +102,8 @@ To test out the query, we can ``limit`` the results (for readability) and print 
                       )
 
         q = q.limit(10)
+        
+        # Optional: Use order_by to enforce ordering on the output for easier comparison with the sample output.
         q = q.order_by(c.syllable.label)
         results = q.all()
         print(results)

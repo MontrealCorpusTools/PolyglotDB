@@ -94,6 +94,7 @@ if __name__ == '__main__':
                 c.phone.pitch.track.column_name('f0')
                 )
         
+        # Optional: Use order_by to enforce ordering on the output for easier comparison with the sample output.
         q = q.order_by(c.phone.label)
         results = q.all()
         q.to_csv(export_path)
