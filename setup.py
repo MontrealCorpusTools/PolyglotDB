@@ -29,6 +29,24 @@ def get_version(rel_path):
     return "{}.{}.{}".format(major_version, minor_version, patch_version)
 
 
+def get_install_requires():
+    install_requires = [
+        'neo4j',
+        'praatio~=5.0',
+        'textgrid',
+        'conch_sounds',
+        'librosa',
+        'influxdb',
+        'tqdm',
+        'requests',
+        'scipy~=1.12.0',
+        'setuptools' # only added to work with praatio
+    ]
+    if os.name == 'nt':
+        install_requires.append('pywin32')
+    return install_requires
+
+
 if __name__ == '__main__':
     setup(name='polyglotdb',
           version=get_version("polyglotdb/__init__.py"),
@@ -49,21 +67,12 @@ if __name__ == '__main__':
           url='https://github.com/MontrealCorpusTools/PolyglotDB',
           author='Montreal Corpus Tools',
           author_email='michael.e.mcauliffe@gmail.com',
-          packages=find_packages(include=['polyglotdb', 'polyglotdb.*']),
+          packages=find_packages(),
           include_package_data=True,
           package_data={
               'polyglotdb.databases': ['*.conf'],
               'polyglotdb.acoustics.formants': ['*.praat']},
-          install_requires=[
-              'neo4j-driver~=4.3',
-              'praatio~=5.0',
-              'textgrid',
-              'conch_sounds',
-              'librosa',
-              'influxdb',
-              'tqdm',
-              'requests'
-          ],
+          install_requires=get_install_requires(),
           entry_points={
               'console_scripts': [
                   'pgdb=polyglotdb.pgdb:main'

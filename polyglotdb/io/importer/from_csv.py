@@ -35,9 +35,8 @@ def import_type_csvs(corpus_context, type_headers):
             type_path = 'file:///site/proj/{}'.format(make_path_safe(path))
         else:
             type_path = 'file:///{}'.format(make_path_safe(path))
-
         try:
-            corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s_type) ASSERT node.id IS UNIQUE' % at)
+            corpus_context.execute_cypher('CREATE CONSTRAINT FOR (node:%s_type) REQUIRE node.id IS UNIQUE' % at)
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise
@@ -48,14 +47,14 @@ def import_type_csvs(corpus_context, type_headers):
         if 'label' in h:
             properties.append('label_insensitive: toLower(csvLine.label)')
             try:
-                corpus_context.execute_cypher('CREATE INDEX ON :%s_type(label_insensitive)' % at)
+                corpus_context.execute_cypher('CREATE INDEX FOR (n:%s_type) ON (n.label_insensitive)' % at)
             except neo4j.exceptions.ClientError as e:
                 if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                     raise
         for x in h:
             if x != 'id':
                 try:
-                    corpus_context.execute_cypher('CREATE INDEX ON :%s_type(%s)' % (at, x))
+                    corpus_context.execute_cypher('CREATE INDEX FOR (n:%s_type) ON (n.%s)' % (at, x))
                 except neo4j.exceptions.ClientError as e:
                     if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                         raise
@@ -63,13 +62,15 @@ def import_type_csvs(corpus_context, type_headers):
             type_prop_string = ', '.join(properties)
         else:
             type_prop_string = ''
-        type_import_statement = '''USING PERIODIC COMMIT 2000
-LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
+        type_import_statement = '''
+        CALL {{
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
+        }} IN TRANSACTIONS OF 2000 ROWS
         '''
         kwargs = {'path': type_path, 'annotation_type': at,
-                  'type_property_string': type_prop_string,
-                  'corpus_name': corpus_context.cypher_safe_name}
+                'type_property_string': type_prop_string,
+                'corpus_name': corpus_context.cypher_safe_name}
         statement = type_import_statement.format(**kwargs)
         log.info('Loading {} types...'.format(at))
         begin = time.time()
@@ -116,19 +117,19 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
     statements = []
 
     def _unique_function(tx, at):
-        tx.run('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % at)
+        tx.run('CREATE CONSTRAINT FOR (node:%s) REQUIRE node.id IS UNIQUE' % at)
 
     def _prop_index(tx, at, prop):
-        tx.run('CREATE INDEX ON :%s(%s)' % (at, prop))
+        tx.run('CREATE INDEX FOR (n:%s) ON (n.%s)' % (at, prop))
 
     def _label_index(tx, at):
-        tx.run('CREATE INDEX ON :%s(label_insensitive)' % at)
+        tx.run('CREATE INDEX FOR (n:%s) ON (n.label_insensitive)' % at)
 
     def _begin_index(tx, at):
-        tx.run('CREATE INDEX ON :%s(begin)' % (at,))
+        tx.run('CREATE INDEX FOR (n:%s) ON (n.begin)' % at)
 
     def _end_index(tx, at):
-        tx.run('CREATE INDEX ON :%s(end)' % (at,))
+        tx.run('CREATE INDEX FOR (n:%s) ON (n.end)' % at)
 
     with corpus_context.graph_driver.session() as session:
         for i, s in enumerate(speakers):
@@ -176,47 +177,55 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                     token_prop_string = ', ' + ', '.join(properties)
                 else:
                     token_prop_string = ''
-                node_import_statement = '''USING PERIODIC COMMIT 2000
-                LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-                CREATE (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id, begin: toFloat(csvLine.begin),
-                                            end: toFloat(csvLine.end){token_property_string} }})
+                node_import_statement = '''
+                CALL {{
+                    LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                    CREATE (t:{annotation_type}:{corpus_name}:speech {{
+                        id: csvLine.id, 
+                        begin: toFloat(csvLine.begin),
+                        end: toFloat(csvLine.end){token_property_string} 
+                    }})
+                }} IN TRANSACTIONS OF 2000 ROWS
                 '''
+
                 node_kwargs = {'path': rel_path, 'annotation_type': at,
                                'token_property_string': token_prop_string,
                                'corpus_name': corpus_context.cypher_safe_name}
                 if st is not None:
-                    rel_import_statement = '''USING PERIODIC COMMIT 2000
-                    LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-                    MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
-                    (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-                    (s:Speaker:{corpus_name} {{name: csvLine.speaker}}),
-                    (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
-                    CREATE (t)-[:is_a]->(n),
-                        (t)-[:contained_by]->(super),
-                        (t)-[:spoken_in]->(d),
-                        (t)-[:spoken_by]->(s)
-                    WITH t, csvLine
-                    MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
-                        CREATE (p)-[:precedes]->(t)
-                    '''
+                    rel_import_statement = '''
+                    CALL{{
+                        LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                        MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
+                        (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
+                        (s:Speaker:{corpus_name} {{name: csvLine.speaker}}),
+                        (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
+                        CREATE (t)-[:is_a]->(n),
+                            (t)-[:contained_by]->(super),
+                            (t)-[:spoken_in]->(d),
+                            (t)-[:spoken_by]->(s)
+                        WITH t, csvLine
+                        MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+                            CREATE (p)-[:precedes]->(t)
+                    }} IN TRANSACTIONS OF 2000 ROWS'''
                     rel_kwargs = {'path': rel_path, 'annotation_type': at,
                                   'corpus_name': corpus_context.cypher_safe_name,
                                   'stype': st}
                 else:
 
-                    rel_import_statement = '''USING PERIODIC COMMIT 2000
-                LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
-                MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
-                (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
-                (s:Speaker:{corpus_name} {{ name: csvLine.speaker}}),
-                        (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
-                CREATE (t)-[:is_a]->(n),
-                        (t)-[:spoken_in]->(d),
-                        (t)-[:spoken_by]->(s)
-                    WITH t, csvLine
-                    MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
-                        CREATE (p)-[:precedes]->(t)
-                '''
+                    rel_import_statement = '''
+                    CALL{{
+                        LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                        MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
+                        (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
+                        (s:Speaker:{corpus_name} {{ name: csvLine.speaker}}),
+                                (t:{annotation_type}:{corpus_name}:speech {{id: csvLine.id}})
+                        CREATE (t)-[:is_a]->(n),
+                                (t)-[:spoken_in]->(d),
+                                (t)-[:spoken_by]->(s)
+                            WITH t, csvLine
+                            MATCH (p:{annotation_type}:{corpus_name}:speech {{id: csvLine.previous_id}})
+                                CREATE (p)-[:precedes]->(t)
+                    }} IN TRANSACTIONS OF 2000 ROWS'''
                     rel_kwargs = {'path': rel_path, 'annotation_type': at,
                                   'corpus_name': corpus_context.cypher_safe_name}
                 node_statement = node_import_statement.format(**node_kwargs)
@@ -260,7 +269,7 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
             for s in v:
                 path = os.path.join(directory, '{}_{}_{}.csv'.format(re.sub(r'\W', '_', sp), k, s))
                 try:
-                    corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % s)
+                    corpus_context.execute_cypher('CREATE CONSTRAINT FOR (node:%s) REQUIRE node.id IS UNIQUE' % s)
                 except neo4j.exceptions.ClientError as e:
                     if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                         raise
@@ -270,12 +279,21 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                 else:
                     sub_path = 'file:///{}'.format(make_path_safe(path))
 
-                rel_import_statement = '''USING PERIODIC COMMIT 1000
-    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
-    CREATE (t:{subannotation_type}:{corpus_name}:speech {{id: csvLine.id, type: $subannotation_type, begin: toFloat(csvLine.begin),
-                                end: toFloat(csvLine.end), label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END  }})
-    CREATE (t)-[:annotates]->(n)'''
+                rel_import_statement = '''
+                CALL {{
+                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                    MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
+                    CREATE (t:{subannotation_type}:{corpus_name}:speech {{
+                        id: csvLine.id, 
+                        type: $subannotation_type, 
+                        begin: toFloat(csvLine.begin),
+                        end: toFloat(csvLine.end), 
+                        label: CASE csvLine.label WHEN NULL THEN '' ELSE csvLine.label END
+                    }})
+                    CREATE (t)-[:annotates]->(n)
+                }} IN TRANSACTIONS OF 1000 ROWS
+                '''
+
                 kwargs = {'path': sub_path, 'annotation_type': k,
                           'subannotation_type': s,
                           'corpus_name': corpus_context.cypher_safe_name}
@@ -328,16 +346,24 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     else:
         lex_path = 'file:///{}'.format(make_path_safe(path))
     if case_sensitive:
-        import_statement = '''USING PERIODIC COMMIT 3000
-    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    with csvLine
-    MATCH (n:{word_type}_type:{corpus_name}) where n.label = csvLine.label
-    SET {new_properties}'''
+        import_statement = '''
+        CALL {
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            WITH csvLine
+            MATCH (n:{word_type}_type:{corpus_name}) WHERE n.label = csvLine.label
+            SET {new_properties}
+        } IN TRANSACTIONS OF 3000 ROWS
+        '''
+
     else:
-        import_statement = '''USING PERIODIC COMMIT 3000
-    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-    MATCH (n:{word_type}_type:{corpus_name}) where n.label_insensitive = csvLine.label
-    SET {new_properties}'''
+        import_statement = '''
+        CALL {{
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            MATCH (n:{word_type}_type:{corpus_name}) WHERE n.label_insensitive = csvLine.label
+            SET {new_properties}
+        }} IN TRANSACTIONS OF 3000 ROWS
+        '''
+
 
     statement = import_statement.format(path=lex_path,
                                         corpus_name=corpus_context.cypher_safe_name,
@@ -346,7 +372,7 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         try:
-            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.word_name, h))
+            corpus_context.execute_cypher('CREATE INDEX FOR (n:%s) ON (n.%s)' % (corpus_context.word_name, h))
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise
@@ -401,7 +427,7 @@ def import_feature_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         try:
-            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (corpus_context.phone_name, h))
+            corpus_context.execute_cypher('CREATE INDEX FOR (n:%s) ON (n.%s)' % (corpus_context.phone_name, h))
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise
@@ -456,7 +482,7 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         try:
-            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("syllable", h))
+            corpus_context.execute_cypher('CREATE INDEX FOR (n:%s) ON (n.%s)' % ("syllable", h))
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise
@@ -510,7 +536,7 @@ def import_utterance_enrichment_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         try:
-            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % ("utterance", h))
+            corpus_context.execute_cypher('CREATE INDEX FOR (n:%s) ON (n.%s)' % ("utterance", h))
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise
@@ -563,7 +589,7 @@ def import_speaker_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         try:
-            corpus_context.execute_cypher('CREATE INDEX ON :Speaker(%s)' % h)
+            corpus_context.execute_cypher('CREATE INDEX FOR (s:Speaker) ON (s.%s)' % h)
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise
@@ -617,7 +643,7 @@ def import_discourse_csvs(corpus_context, typed_data):
     corpus_context.execute_cypher(statement)
     for h, v in typed_data.items():
         try:
-            corpus_context.execute_cypher('CREATE INDEX ON :Discourse(%s)' % h)
+            corpus_context.execute_cypher('CREATE INDEX FOR (d:Discourse) ON (d.%s)' % h)
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise
@@ -641,7 +667,7 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
         call_back('Importing data...')
         call_back(0, len(speakers))
     try:
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:utterance) ASSERT node.id IS UNIQUE')
+        corpus_context.execute_cypher('CREATE CONSTRAINT FOR (node:utterance) REQUIRE node.id IS UNIQUE')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
@@ -666,12 +692,17 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             node_statement = '''
-            USING PERIODIC COMMIT 1000
-                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                    MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
                     (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
-                    WITH csvLine, begin, end
-                    CREATE (utt:utterance:{corpus}:speech {{id: csvLine.id, begin: begin.begin, end: end.end}})-[:is_a]->(u_type:utterance_type:{corpus})
+                WITH csvLine, begin, end
+                CREATE (utt:utterance:{corpus}:speech {{
+                    id: csvLine.id, 
+                    begin: begin.begin, 
+                    end: end.end
+                }})-[:is_a]->(u_type:utterance_type:{corpus})
+            }} IN TRANSACTIONS OF 1000 ROWS
             '''
 
             statement = node_statement.format(path=csv_path,
@@ -682,14 +713,17 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                 print('Utterance node creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
-            rel_statement = '''USING PERIODIC COMMIT 1000
-                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                    MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus}),
+            rel_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus}),
                     (utt:utterance:{corpus}:speech {{id: csvLine.id}})
-                    CREATE
-                        (d)<-[:spoken_in]-(utt),
-                        (s)<-[:spoken_by]-(utt)
+                CREATE
+                    (d)<-[:spoken_in]-(utt),
+                    (s)<-[:spoken_by]-(utt)
+            }} IN TRANSACTIONS OF 1000 ROWS
             '''
+
             statement = rel_statement.format(path=csv_path,
                                              corpus=corpus_context.cypher_safe_name,
                                              word_type=corpus_context.word_name)
@@ -698,12 +732,14 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                 print('Spoken relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
-            rel_statement = '''USING PERIODIC COMMIT 1000
-                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                    MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
+            rel_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
                     (utt:utterance:{corpus}:speech {{id: csvLine.id}}),
-                    (prev:utterance {{id:csvLine.prev_id}})
-                    CREATE (prev)-[:precedes]->(utt)
+                    (prev:utterance {{id: csvLine.prev_id}})
+                CREATE (prev)-[:precedes]->(utt)
+            }} IN TRANSACTIONS OF 1000 ROWS
             '''
             statement = rel_statement.format(path=csv_path,
                                              corpus=corpus_context.cypher_safe_name,
@@ -713,15 +749,17 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                 print('Precedence relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
-            word_statement = '''USING PERIODIC COMMIT 1000
-                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                    MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
+            word_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
                     (utt:utterance:{corpus}:speech {{id: csvLine.id}}),
                     (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}}),
                     path = shortestPath((begin)-[:precedes*0..]->(end))
-                    WITH utt, nodes(path) as words
-                    UNWIND words as w
-                    CREATE (w)-[:contained_by]->(utt)
+                WITH utt, nodes(path) AS words
+                UNWIND words AS w
+                CREATE (w)-[:contained_by]->(utt)
+            }} IN TRANSACTIONS OF 1000 ROWS
             '''
             statement = word_statement.format(path=csv_path,
                                               corpus=corpus_context.cypher_safe_name,
@@ -747,37 +785,37 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
         call_back('Importing syllables...')
         call_back(0, len(speakers))
     try:
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
+        corpus_context.execute_cypher('CREATE CONSTRAINT FOR (node:syllable) REQUIRE node.id IS UNIQUE')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
+        corpus_context.execute_cypher('CREATE CONSTRAINT FOR (node:syllable_type) REQUIRE node.id IS UNIQUE')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable) ON (s.begin)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable(prev_id)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable) ON (s.prev_id)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable) ON (s.end)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable) ON (s.label)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable_type) ON (s.label)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
@@ -801,10 +839,11 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             nucleus_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MATCH (n:{phone_name}:{corpus}:speech {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
-            SET n :nucleus, n.syllable_position = 'nucleus'
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (n:{phone_name}:{corpus}:speech {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
+                SET n :nucleus, n.syllable_position = 'nucleus'
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = nucleus_statement.format(path=csv_path,
                                                  corpus=corpus_context.cypher_safe_name,
@@ -816,15 +855,20 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             node_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
-            ON CREATE SET s_type.label = csvLine.label
-            WITH s_type, csvLine
-            CREATE (s:syllable:{corpus}:speech {{id: csvLine.id, prev_id: csvLine.prev_id,
-                                label: csvLine.label,
-                                begin: toFloat(csvLine.begin), end: toFloat(csvLine.end)}}),
-                    (s)-[:is_a]->(s_type)
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
+                ON CREATE SET s_type.label = csvLine.label
+                WITH s_type, csvLine
+                CREATE (s:syllable:{corpus}:speech {{
+                    id: csvLine.id, 
+                    prev_id: csvLine.prev_id,
+                    label: csvLine.label,
+                    begin: toFloat(csvLine.begin), 
+                    end: toFloat(csvLine.end)
+                }}),
+                (s)-[:is_a]->(s_type)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = node_statement.format(path=csv_path,
                                               corpus=corpus_context.cypher_safe_name)
@@ -834,13 +878,14 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
                     (s:syllable:{corpus}:speech {{id: csvLine.id}})
-            WITH n, w, s
-            CREATE (s)-[:contained_by]->(w),
+                WITH n, w, s
+                CREATE (s)-[:contained_by]->(w),
                     (n)-[:contained_by]->(s)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = rel_statement.format(path=csv_path,
                                              corpus=corpus_context.cypher_safe_name,
@@ -852,15 +897,16 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}}),
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}}),
                     (s:syllable:{corpus}:speech {{id: csvLine.id}}),
                     (n)-[:spoken_by]->(sp:Speaker),
                     (n)-[:spoken_in]->(d:Discourse)
-            WITH sp, d, s
-            CREATE (s)-[:spoken_by]->(sp),
+                WITH sp, d, s
+                CREATE (s)-[:spoken_by]->(sp),
                     (s)-[:spoken_in]->(d)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = rel_statement.format(path=csv_path,
                                              corpus=corpus_context.cypher_safe_name,
@@ -872,12 +918,13 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             prev_rel_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
-            with csvLine, s
-            MATCH (prev:syllable {{id:csvLine.prev_id}})
-              CREATE (prev)-[:precedes]->(s)
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
+                WITH csvLine, s
+                MATCH (prev:syllable {{id: csvLine.prev_id}})
+                CREATE (prev)-[:precedes]->(s)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = prev_rel_statement.format(path=csv_path,
                                                   corpus=corpus_context.cypher_safe_name,
@@ -889,10 +936,11 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             del_rel_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
-            DELETE r
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
+                DELETE r
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = del_rel_statement.format(path=csv_path,
                                                  corpus=corpus_context.cypher_safe_name,
@@ -904,23 +952,22 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             onset_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MATCH (n:{phone_name}:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
-            WITH csvLine, s, w, n
-            OPTIONAL MATCH
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (n:{phone_name}:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
+                WITH csvLine, s, w, n
+                OPTIONAL MATCH
                     (onset:{phone_name}:{corpus} {{id: csvLine.onset_id}}),
                     onspath = (onset)-[:precedes*1..10]->(n)
-    
-            with n, w,s, csvLine, onspath
-            UNWIND (case when onspath is not null then nodes(onspath)[0..-1] else [null] end) as o
-    
-            OPTIONAL MATCH (o)-[r:contained_by]->(w)
-            with n, w,s, csvLine, [x in collect(o) WHERE x is not NULL| x] as ons,
-            [x in collect(r) WHERE x is not NULL | x] as rels
-            FOREACH (o in ons | SET o :onset, o.syllable_position = 'onset')
-            FOREACH (o in ons | CREATE (o)-[:contained_by]->(s))
-            FOREACH (r in rels | DELETE r)
+                WITH n, w, s, csvLine, onspath
+                UNWIND (CASE WHEN onspath IS NOT NULL THEN nodes(onspath)[0..-1] ELSE [NULL] END) AS o
+                OPTIONAL MATCH (o)-[r:contained_by]->(w)
+                WITH n, w, s, csvLine, [x IN collect(o) WHERE x IS NOT NULL | x] AS ons,
+                    [x IN collect(r) WHERE x IS NOT NULL | x] AS rels
+                FOREACH (o IN ons | SET o :onset, o.syllable_position = 'onset')
+                FOREACH (o IN ons | CREATE (o)-[:contained_by]->(s))
+                FOREACH (r IN rels | DELETE r)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = onset_statement.format(path=csv_path,
                                                corpus=corpus_context.cypher_safe_name,
@@ -931,25 +978,25 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                 print('Onset hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
-            coda_statment = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MATCH (n:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
-            WITH csvLine, s, w, n
-            OPTIONAL MATCH
+            coda_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (n:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
+                WITH csvLine, s, w, n
+                OPTIONAL MATCH
                     (coda:{phone_name}:{corpus} {{id: csvLine.coda_id}}),
-                codapath = (n)-[:precedes*1..10]->(coda)
-            WITH n, w, s, codapath
-            UNWIND (case when codapath is not null then nodes(codapath)[1..] else [null] end) as c
-    
-            OPTIONAL MATCH (c)-[r:contained_by]->(w)
-            WITH n, w,s, [x in collect(c) WHERE x is not NULL | x] as cod,
-            [x in collect(r) WHERE x is not NULL | x] as rels
-            FOREACH (c in cod | SET c :coda, c.syllable_position = 'coda')
-            FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
-            FOREACH (r in rels | DELETE r)
+                    codapath = (n)-[:precedes*1..10]->(coda)
+                WITH n, w, s, codapath
+                UNWIND (CASE WHEN codapath IS NOT NULL THEN nodes(codapath)[1..] ELSE [NULL] END) AS c
+                OPTIONAL MATCH (c)-[r:contained_by]->(w)
+                WITH n, w, s, [x IN collect(c) WHERE x IS NOT NULL | x] AS cod,
+                    [x IN collect(r) WHERE x IS NOT NULL | x] AS rels
+                FOREACH (c IN cod | SET c :coda, c.syllable_position = 'coda')
+                FOREACH (c IN cod | CREATE (c)-[:contained_by]->(s))
+                FOREACH (r IN rels | DELETE r)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
-            statement = coda_statment.format(path=csv_path,
+            statement = coda_statement.format(path=csv_path,
                                              corpus=corpus_context.cypher_safe_name,
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
@@ -976,32 +1023,32 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
         call_back('Importing degenerate syllables...')
         call_back(0, len(speakers))
     try:
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable) ASSERT node.id IS UNIQUE')
+        corpus_context.execute_cypher('CREATE CONSTRAINT FOR (node:syllable) REQUIRE node.id IS UNIQUE')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:syllable_type) ASSERT node.id IS UNIQUE')
+        corpus_context.execute_cypher('CREATE CONSTRAINT FOR (node:syllable_type) REQUIRE node.id IS UNIQUE')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable(begin)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable) ON (s.begin)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable(end)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable) ON (s.end)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable(label)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable) ON (s.label)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
     try:
-        corpus_context.execute_cypher('CREATE INDEX ON :syllable_type(label)')
+        corpus_context.execute_cypher('CREATE INDEX FOR (s:syllable_type) ON (s.label)')
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
@@ -1026,15 +1073,21 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                 csv_path = 'file:///{}'.format(make_path_safe(path))
 
             begin = time.time()
-            node_statement = '''USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-            MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
-            ON CREATE SET s_type.label = csvLine.label
-            WITH s_type, csvLine
-        CREATE (s:syllable:{corpus}:speech {{id: csvLine.id, prev_id: csvLine.prev_id,
-                                        begin: toFloat(csvLine.begin), end: toFloat(csvLine.end),
-                                        label: csvLine.label}}),
-                    (s)-[:is_a]->(s_type) 
+            node_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
+                ON CREATE SET s_type.label = csvLine.label
+                WITH s_type, csvLine
+                CREATE (s:syllable:{corpus}:speech {{
+                    id: csvLine.id, 
+                    prev_id: csvLine.prev_id,
+                    begin: toFloat(csvLine.begin), 
+                    end: toFloat(csvLine.end),
+                    label: csvLine.label
+                }}),
+                (s)-[:is_a]->(s_type)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
 
             statement = node_statement.format(path=csv_path,
@@ -1045,16 +1098,17 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
                     (o)-[:spoken_by]->(sp:Speaker),
                     (o)-[:spoken_in]->(d:Discourse),
                     (s:syllable:{corpus}:speech {{id: csvLine.id}})
-            WITH w, csvLine, sp, d, s
-            CREATE (s)-[:contained_by]->(w),
+                WITH w, csvLine, sp, d, s
+                CREATE (s)-[:contained_by]->(w),
                     (s)-[:spoken_by]->(sp),
                     (s)-[:spoken_in]->(d)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = rel_statement.format(path=csv_path,
                                              corpus=corpus_context.cypher_safe_name,
@@ -1066,12 +1120,13 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
-            with csvLine, s
-            MATCH (prev:syllable {{id:csvLine.prev_id}})
-              CREATE (prev)-[:precedes]->(s)
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+                MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
+                with csvLine, s
+                MATCH (prev:syllable {{id:csvLine.prev_id}})
+                CREATE (prev)-[:precedes]->(s)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = rel_statement.format(path=csv_path,
                                              corpus=corpus_context.cypher_safe_name,
@@ -1083,12 +1138,13 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = '''
-            USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
-            with csvLine, s
-            MATCH (foll:syllable {{prev_id:csvLine.id}})
-              CREATE (s)-[:precedes]->(foll)
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+                MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
+                with csvLine, s
+                MATCH (foll:syllable {{prev_id:csvLine.id}})
+                CREATE (s)-[:precedes]->(foll)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = rel_statement.format(path=csv_path,
                                              corpus=corpus_context.cypher_safe_name,
@@ -1099,24 +1155,25 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                 print('Second precedence relationship creation took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
-            phone_statement = '''USING PERIODIC COMMIT 2000
-            LOAD CSV WITH HEADERS FROM "{path}" as csvLine
-        MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}}),
-        (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
-        with o, w, csvLine, s
-        OPTIONAL MATCH
-        (c:{phone_name}:{corpus}:speech {{id: csvLine.coda_id}})-[:contained_by]->(w),
-        p = (o)-[:precedes*..10]->(c)
-        with o, w, s, p, csvLine
-            UNWIND (case when p is not null then nodes(p) else [o] end) as c
-    
-            OPTIONAL MATCH (c)-[r:contained_by]->(w)
-            with w,s, toInteger(csvLine.break) as break, [x in collect(c) WHERE x is not NULL | x] as cod,
-            [x in collect(r) WHERE x is not NULL| x] as rels
-            FOREACH (c in cod[break..] | SET c :coda, c.syllable_position = 'coda')
-            FOREACH (c in cod[..break] | SET c :onset, c.syllable_position = 'onset')
-            FOREACH (c in cod | CREATE (c)-[:contained_by]->(s))
-            FOREACH (r in rels | DELETE r)
+            phone_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}}),
+                    (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
+                WITH o, w, csvLine, s
+                OPTIONAL MATCH
+                    (c:{phone_name}:{corpus}:speech {{id: csvLine.coda_id}})-[:contained_by]->(w),
+                    p = (o)-[:precedes*..10]->(c)
+                WITH o, w, s, p, csvLine
+                UNWIND (CASE WHEN p IS NOT NULL THEN nodes(p) ELSE [o] END) AS c
+                OPTIONAL MATCH (c)-[r:contained_by]->(w)
+                WITH w, s, toInteger(csvLine.break) AS break, [x IN collect(c) WHERE x IS NOT NULL | x] AS cod,
+                    [x IN collect(r) WHERE x IS NOT NULL | x] AS rels
+                FOREACH (c IN cod[break..] | SET c :coda, c.syllable_position = 'coda')
+                FOREACH (c IN cod[..break] | SET c :onset, c.syllable_position = 'onset')
+                FOREACH (c IN cod | CREATE (c)-[:contained_by]->(s))
+                FOREACH (r IN rels | DELETE r)
+            }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = phone_statement.format(path=csv_path,
                                                corpus=corpus_context.cypher_safe_name,
@@ -1155,7 +1212,7 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
     prop_temp = '''{name}: csvLine.{name}'''
     properties = []
     try:
-        corpus_context.execute_cypher('CREATE CONSTRAINT ON (node:%s) ASSERT node.id IS UNIQUE' % type)
+        corpus_context.execute_cypher('CREATE CONSTRAINT FOR (node:%s) REQUIRE node.id IS UNIQUE' % type)
     except neo4j.exceptions.ClientError as e:
         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
             raise
@@ -1168,13 +1225,18 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
         properties = ', ' + ', '.join(properties)
     else:
         properties = ''
-    statement = '''USING PERIODIC COMMIT 500
-    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-            MATCH (annotated:{a_type}:{corpus} {{id: csvLine.annotated_id}})
-            CREATE (annotated) <-[:annotates]-(annotation:{type}:{corpus}
-                {{id: csvLine.id, type: $type, begin: toFloat(csvLine.begin),
-                end: toFloat(csvLine.end){properties}}})
-            '''
+    statement = '''
+    CALL {{
+        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        MATCH (annotated:{a_type}:{corpus} {{id: csvLine.annotated_id}})
+        CREATE (annotated) <-[:annotates]-(annotation:{type}:{corpus} {{
+            id: csvLine.id, 
+            type: $type, 
+            begin: toFloat(csvLine.begin),
+            end: toFloat(csvLine.end){properties}
+        }})
+    }} IN TRANSACTIONS OF 500 ROWS
+    '''
     statement = statement.format(path=csv_path,
                                  corpus=corpus_context.cypher_safe_name,
                                  a_type=annotated_type,
@@ -1185,7 +1247,7 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
         if p in ['id', 'annotated_id']:
             continue
         try:
-            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (type, p))
+            corpus_context.execute_cypher('CREATE INDEX FOR (n:%s) ON (n.%s)' % (type, p))
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise
@@ -1240,11 +1302,13 @@ def import_token_csv(corpus_context, path, annotated_type, id_column, properties
         corpus_context.encode_hierarchy()
 
     property_update = ', '.join(["x.{} = csvLine.{}".format(p, p) for p in properties])
-    statement = '''USING PERIODIC COMMIT 500
-            LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
-            MATCH (x:{a_type}:{corpus} {{id: csvLine.{id_column}}})
-            SET {property_update}
-            '''.format(path=path, a_type=annotated_type, corpus=corpus_context.cypher_safe_name,
+    statement = '''
+    CALL {{
+        LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
+        MATCH (x:{a_type}:{corpus} {{id: csvLine.{id_column}}})
+        SET {property_update}
+    }} IN TRANSACTIONS OF 500 ROWS
+    '''.format(path=path, a_type=annotated_type, corpus=corpus_context.cypher_safe_name,
                        id_column=id_column, property_update=property_update)
     corpus_context.execute_cypher(statement)
     os.remove(path)

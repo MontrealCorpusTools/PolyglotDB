@@ -2,7 +2,7 @@ import os
 import logging
 import configparser
 
-CONFIG_DIR = os.path.expanduser('~/.pgdb')
+CONFIG_DIR = os.path.join(os.environ['CONDA_PREFIX'], '.pgdb')
 
 BASE_DIR = os.path.join(CONFIG_DIR, 'data')
 
