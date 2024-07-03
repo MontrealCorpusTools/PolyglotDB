@@ -1,4 +1,4 @@
-name: polyglotdb-dev-2
+name: polyglotdb-dev
 channels:
     - conda-forge
 dependencies:
