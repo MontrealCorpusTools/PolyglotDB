@@ -12,14 +12,6 @@ from urllib.request import urlretrieve
 import requests
 from tqdm import tqdm
 
-CONFIG_DIR = os.path.join(os.environ['CONDA_PREFIX'], '.pgdb')
-
-DEFAULT_DATA_DIR = os.path.join(CONFIG_DIR, 'data')
-
-CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.ini')
-
-CONFIG_CHANGED = False
-
 
 def load_config():
     c = configparser.ConfigParser()
@@ -47,10 +39,6 @@ def save_config(c):
     with open(CONFIG_PATH, 'w') as configfile:
         c.write(configfile)
 
-
-CONFIG = load_config()
-
-TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
 
 NEO4J_VERSION = '5.21.0'
 
@@ -242,9 +230,27 @@ def status(name):
 
 def main():
     if 'CONDA_PREFIX' not in os.environ:
-        print('Conda environment not detected.\nPlease ensure you are running under a conda environment')
+        print('Conda environment not detected. Please ensure you are running under a conda environment')
         sys.exit(1)
+    global CONFIG_DIR
+    CONFIG_DIR = os.path.join(os.environ['CONDA_PREFIX'], '.pgdb')
+
+    global DEFAULT_DATA_DIR
+    DEFAULT_DATA_DIR = os.path.join(CONFIG_DIR, 'data')
+
+    global CONFIG_PATH
+    CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.ini')
+
     global CONFIG_CHANGED
+    CONFIG_CHANGED = False
+
+    global CONFIG
+    CONFIG = load_config()
+
+    global TEMP_DIR
+    TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
+
+
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='Command to use')
     install_parser = subparsers.add_parser("install")
