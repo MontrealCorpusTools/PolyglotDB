@@ -233,7 +233,7 @@ def main():
         print('Conda environment not detected. Please ensure you are running under a conda environment')
         sys.exit(1)
     global CONFIG_DIR
-    CONFIG_DIR = os.path.join(os.environ['CONDA_PREFIX'], '.pgdb')
+    CONFIG_DIR = os.environ.get('PGDB_HOME', os.path.expanduser('~/.pgdb'))
 
     global DEFAULT_DATA_DIR
     DEFAULT_DATA_DIR = os.path.join(CONFIG_DIR, 'data')
