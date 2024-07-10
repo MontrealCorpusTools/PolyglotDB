@@ -7,9 +7,7 @@ import shutil
 import configparser
 import subprocess
 import signal
-import platform
 from urllib.request import urlretrieve
-import requests
 from tqdm import tqdm
 
 
