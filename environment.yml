@@ -2,8 +2,16 @@ name: polyglotdb-dev
 channels:
     - conda-forge
 dependencies:
-    - python
     - openjdk=21
     - pip
+    - librosa
+    - scipy<=1.12.0
+    - praatio<=5.0
+    - textgrid
+    - influxdb
+    - tqdm
+    - future
+    - requests
+    - neo4j-python-driver
     - pip:
-        - -e .
+        - conch-sounds
