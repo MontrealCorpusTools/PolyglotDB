@@ -7,18 +7,8 @@ import shutil
 import configparser
 import subprocess
 import signal
-
 from urllib.request import urlretrieve
-import requests
 from tqdm import tqdm
-
-CONFIG_DIR = os.path.expanduser('~/.pgdb')
-
-DEFAULT_DATA_DIR = os.path.join(CONFIG_DIR, 'data')
-
-CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.ini')
-
-CONFIG_CHANGED = True
 
 
 def load_config():
@@ -48,11 +38,7 @@ def save_config(c):
         c.write(configfile)
 
 
-CONFIG = load_config()
-
-TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
-
-NEO4J_VERSION = '4.3.3'
+NEO4J_VERSION = '5.21.0'
 
 INFLUXDB_VERSION = '1.8.9'
 
@@ -98,7 +84,7 @@ def download_neo4j(data_directory, overwrite=False):
         import win32com.shell.shell as shell
         exe = 'neo4j.bat'
         neo4j_bin = os.path.join(CONFIG['Data']['directory'], 'neo4j', 'bin', exe)
-        params = 'install-service'
+        params = 'windows-service install'
         shell.ShellExecuteEx(lpVerb='runas', lpFile=neo4j_bin, lpParameters=params)
     return True
 
@@ -108,34 +94,33 @@ def download_influxdb(data_directory, overwrite=False):
     if not overwrite and os.path.exists(influxdb_directory):
         print('Using existing InfluxDB installation.')
         return
-    if sys.platform != 'darwin':
-        os.makedirs(TEMP_DIR, exist_ok=True)
-        print('Downloading InfluxDB...')
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    print('Downloading InfluxDB...')
 
-        if sys.platform.startswith('win'):
-            dist_string = 'windows_amd64.zip'
-            path = os.path.join(TEMP_DIR, 'influxdb.zip')
-        else:
-            dist_string = 'linux_amd64.tar.gz'
-            path = os.path.join(TEMP_DIR, 'influxdb.tar.gz')
-
-        download_link = 'https://dl.influxdata.com/influxdb/releases/influxdb-{version}_{dist_string}'.format(
-            version=INFLUXDB_VERSION, dist_string=dist_string)
-
-        with requests.get(download_link, stream=True) as r:
-            with open(path, 'wb') as f:
-                shutil.copyfileobj(r.raw, f)
-        shutil.unpack_archive(path, data_directory)
-        for d in os.listdir(data_directory):
-            if d.startswith(('influxdb')):
-                os.rename(os.path.join(data_directory, d), influxdb_directory)
+    if sys.platform.startswith('win'):
+        dist_string = 'windows_amd64.zip'
+        path = os.path.join(TEMP_DIR, 'influxdb.zip')
+    elif sys.platform == 'darwin':
+        dist_string = 'darwin_amd64.tar.gz'
+        path = os.path.join(TEMP_DIR, 'influxdb.tar.gz')
     else:
-        print('Installing InfluxDB...')
-        subprocess.call(['brew', 'update'])
-        subprocess.call(['brew', 'install', 'influxdb@1'])
+        dist_string = 'linux_amd64.tar.gz'
+        path = os.path.join(TEMP_DIR, 'influxdb.tar.gz')
+
+    download_link = 'https://dl.influxdata.com/influxdb/releases/influxdb-{version}_{dist_string}'.format(
+        version=INFLUXDB_VERSION, dist_string=dist_string)
+
+    with tqdm(unit='B', unit_scale=True, miniters=1) as t:
+        filename, headers = urlretrieve(download_link, path, reporthook=tqdm_hook(t), data=None)
+    shutil.unpack_archive(filename, data_directory)
+    for d in os.listdir(data_directory):
+        if d.startswith(('influxdb')):
+            os.rename(os.path.join(data_directory, d), influxdb_directory)
+
     return True
 
 
+    
 def configure_neo4j(data_directory):
     from polyglotdb.databases.config import neo4j_template_path
     neo4j_conf_path = os.path.join(data_directory, 'neo4j', 'conf', 'neo4j.conf')
@@ -177,11 +162,12 @@ def uninstall():
         import win32com.shell.shell as shell
         exe = 'neo4j.bat'
         neo4j_bin = os.path.join(CONFIG['Data']['directory'], 'neo4j', 'bin', exe)
-        params = 'uninstall-service asadmin'
+        params = 'windows-service uninstall'
         shell.ShellExecuteEx(lpVerb='runas', lpFile=neo4j_bin, lpParameters=params)
 
     try:
         shutil.rmtree(directory)
+        shutil.rmtree(CONFIG_DIR)
     except FileNotFoundError:
         pass
 
@@ -202,8 +188,6 @@ def start():
     print(neo4j_bin)
     if sys.platform.startswith('win'):
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxd.exe')
-    elif sys.platform == 'darwin':
-        influxdb_bin = '/usr/local/opt/influxdb@1/bin/influxd'
     else:
         influxdb_bin = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'usr', 'bin', 'influxd')
     influxdb_conf = os.path.join(CONFIG['Data']['directory'], 'influxdb', 'influxdb.conf')
@@ -242,7 +226,26 @@ def status(name):
     pass
 
 
-if __name__ == '__main__':
+def main():
+    global CONFIG_DIR
+    CONFIG_DIR = os.environ.get('PGDB_HOME', os.path.expanduser('~/.pgdb'))
+
+    global DEFAULT_DATA_DIR
+    DEFAULT_DATA_DIR = os.path.join(CONFIG_DIR, 'data')
+
+    global CONFIG_PATH
+    CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.ini')
+
+    global CONFIG_CHANGED
+    CONFIG_CHANGED = False
+
+    global CONFIG
+    CONFIG = load_config()
+
+    global TEMP_DIR
+    TEMP_DIR = os.path.join(CONFIG_DIR, 'downloads')
+
+
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='Command to use')
     install_parser = subparsers.add_parser("install")
@@ -311,3 +314,6 @@ if __name__ == '__main__':
 
     if CONFIG_CHANGED:
         save_config(CONFIG)
+
+if __name__ == '__main__':
+    main()

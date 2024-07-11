@@ -1,6 +1,6 @@
-neo4j-driver ~= 4.3
+neo4j
 librosa
-scipy
+scipy ~= 1.12.0
 praatio ~= 5.0
 textgrid
 influxdb

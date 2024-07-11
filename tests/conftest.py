@@ -538,6 +538,8 @@ def praat_path():
         return 'praat.exe'
     elif os.environ.get('TRAVIS', False):
         return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
+    elif sys.platform == 'darwin':
+        return '/Applications/Praat.app/Contents/MacOS/Praat'
     else:
         return 'praat'
 

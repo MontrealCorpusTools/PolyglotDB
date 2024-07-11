@@ -145,10 +145,11 @@ def point_measures_from_csv(corpus_context, header_info, annotation_type="phone"
             import_path = 'file:///{}'.format(make_path_safe(path))
 
         import_statement = '''
-                USING PERIODIC COMMIT 2000
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                MATCH (n:{annotation_type}:{corpus_name}) where n.id = csvLine.id
-                SET {new_properties}'''
+                CALL {{
+                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                    MATCH (n:{annotation_type}:{corpus_name}) WHERE n.id = csvLine.id
+                    SET {new_properties}
+                }} IN TRANSACTIONS OF 2000 ROWS'''
 
         statement = import_statement.format(path=import_path,
                                             corpus_name=corpus_context.cypher_safe_name,
@@ -159,7 +160,7 @@ def point_measures_from_csv(corpus_context, header_info, annotation_type="phone"
         if h == 'id':
             continue
         try:
-            corpus_context.execute_cypher('CREATE INDEX ON :%s(%s)' % (annotation_type, h))
+            corpus_context.execute_cypher('CREATE INDEX FOR (n:%s) ON (n.%s)' % (annotation_type, h))
         except neo4j.exceptions.ClientError as e:
             if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                 raise

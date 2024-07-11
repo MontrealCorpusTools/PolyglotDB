@@ -52,13 +52,13 @@ class ImportContext(StructuredContext):
                             w.writeheader()
 
         def _corpus_index(tx):
-            tx.run('CREATE CONSTRAINT ON (node:Corpus) ASSERT node.name IS UNIQUE')
+            tx.run('CREATE CONSTRAINT FOR (node:Corpus) REQUIRE node.name IS UNIQUE')
 
         def _discourse_index(tx):
-            tx.run('CREATE INDEX ON :Discourse(name)')
+            tx.run('CREATE INDEX FOR (d:Discourse) ON (d.name)')
 
         def _speaker_index(tx):
-            tx.run('CREATE INDEX ON :Speaker(name)')
+            tx.run('CREATE INDEX FOR (s:Speaker) ON (s.name)')
 
         def _corpus_create(tx, corpus_name):
             tx.run('MERGE (n:Corpus {name: $corpus_name}) return n', corpus_name=corpus_name)
