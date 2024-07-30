@@ -7,7 +7,7 @@ Changelog
 Version 1.3.0
 =============
 
-* Upgraded Neo4j compatibility to 5.x
+* Upgraded Neo4j compatibility to 5.22
 
 Version 1.2.1
 =============
