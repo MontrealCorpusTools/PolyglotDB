@@ -1,6 +1,6 @@
 language: python
 python:
-  - 3.8
+  - 3.12
 branches:
   only:
     - main
@@ -14,7 +14,6 @@ sudo: required
 addons:
   apt:
     packages:
-      - openjdk-11-jdk
       - sox
       - libsndfile1
 
@@ -34,8 +33,7 @@ install:
   - pip install -r requirements.txt
   - which python
   - conda list
-  - python bin/pgdb install -q
-  - python bin/pgdb start
+  - python polyglotdb/pgdb.py start
 
 before_script:
   - sleep 15
@@ -43,15 +41,15 @@ before_script:
 # Run test
 script:
   - source activate test-environment
-  - coverage run --source=polyglotdb setup.py test
+  - coverage run -m pytest
 
 after_script:
   - source activate test-environment
-  - python bin/pgdb stop
+  - python polyglotdb/pgdb.py stop
 
 # Calculate coverage
 after_success:
-  - coveralls
+  - coveralls 
 
 cache:
   pip: true
