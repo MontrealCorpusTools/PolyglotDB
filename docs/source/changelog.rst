@@ -7,7 +7,10 @@ Changelog
 Version 1.3.0
 =============
 
-* Upgraded Neo4j compatibility to 5.22
+* Updated Neo4j Cypher queries to be compatible with Neo4j 5.x syntax.
+* Upgraded Neo4j compatibility to version 5.22 and Java compatibility to Java 21.
+* Updated the packaging process for smooth installation across platforms.
+* Made Conda a required installation dependency.
 
 Version 1.2.1
 =============
