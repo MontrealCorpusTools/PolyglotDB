@@ -94,7 +94,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'PolyglotDB'
-copyright = '2015-2019, Montreal Corpus Tools'
+copyright = '2015-2024, Montreal Corpus Tools'
 author = 'Montreal Corpus Tools'
 
 release: str = get_version("polyglotdb")
