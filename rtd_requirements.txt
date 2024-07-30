@@ -2,3 +2,4 @@ sphinx
 numpydoc
 mock
 sphinx_rtd_theme
+polyglotdb
