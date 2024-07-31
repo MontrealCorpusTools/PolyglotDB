@@ -2,6 +2,8 @@
 
 .. _installation:
 
+.. _Conda Installation: https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html
+
 ***************
 Getting started
 ***************
@@ -25,42 +27,48 @@ dependencies that must be installed prior to using a Polyglot database, dependin
 Installation
 ============
 
+It is recommended to create an insolated conda environment for using PolyglotDB, for ensuring the correct Java version as well as better package management with Python. 
+
+If you don't have conda installed on your device: 
+
+#. Install either Anaconda, Miniconda, or Miniforge (`Conda Installation`_)
+#. Make sure your conda is up to date :code:`conda update conda`
+
+.. note::
+   On Windows, you should use Anaconda Prompt or Miniforge Prompt in order to use conda.
+
 To install via pip:
 
-``pip install polyglotdb``
+#. Create the a conda environment via :code:`conda create -n polyglotdb -c conda-forge openjdk pip`
+#. Activate conda environment :code:`conda activate polyglotdb`
+#. Install PolyglotDB via :code:`pip install polyglotdb`, which will install the ``pgdb`` utility that can be run inside your conda environment 
+   and manages a local database.
 
 To install from source (primarily for development):
 
 #. Clone or download the Git repository (https://github.com/MontrealCorpusTools/PolyglotDB).
-#. Navigate to the directory via command line and install the dependencies via :code:`pip install -r requirements.txt`
-#. Install PolyglotDB via :code:`python setup.py install`, which will install the ``pgdb`` utility that can be run anywhere
+#. Navigate to the directory via command line and create the conda environment via :code:`conda env create -f environment.yml`
+#. Activate conda environment :code:`conda activate polyglotdb-dev`
+#. Install PolyglotDB via :code:`pip install -e .`, which will install the ``pgdb`` utility that can be run inside your conda environment
    and manages a local database.
-
-.. note::
-
-   The use of ``sudo`` is not recommended for installation.  Ideally your Python installation should be managed by either
-   Anaconda or Homebrew (for Macs).
 
 .. _local_setup:
 
 Set up local database
 ---------------------
 
-Installing the PolyglotDB package also installs a utility script (``pgdb``) that is then callable from the command line
-anywhere on the system.  The ``pgdb`` command allows for the administration of a single Polyglot database (install/start/stop/uninstall).
+Installing the PolyglotDB package also installs a utility script (``pgdb``) that is then callable from the command line inside your conda environment. 
+The ``pgdb`` command allows for the administration of a single Polyglot database (install/start/stop/uninstall).
 Using ``pgdb`` requires that several prerequisites be installed first, and the remainder of this section will detail how
 to install these on various platforms.
 Please be aware that using the ``pgdb`` utility to set up a database is not recommended for larger groups or those needing
 remote access.
 See the `ISCAN server`_ for a more fully featured solution.
 
-Mac
-```
-
-#. Ensure Java 11 is installed inside Anaconda distribution (``conda install -c anaconda openjdk``) if using Anaconda, or
-   via Homebrew otherwise (``brew cask install java``)
-#. Check Java version is 11 via ``java --version``
-#. Once PolyglotDB is installed, run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
+Mac & Linux
+```````````
+#. Make sure you are inside the dedicated conda environment just created. If not, activate it via :code:`conda activate polyglotdb`
+#. Inside your conda environment, run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
    :code:`pgdb install` to save data in the default directory.
 
 .. warning::
@@ -75,66 +83,18 @@ To uninstall, run :code:`pgdb uninstall`
 Windows
 ```````
 
-#. Ensure Java 11 is installed (https://www.java.com/) and on the path (``java --version`` works in the command prompt)
-#. Check Java version is 11 via ``java --version``
-#. Start an Administrator command prompt (right click on cmd.exe and select "Run as administrator"), as Neo4j will be installed as a Windows service.
-#. Run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
+#. Make sure you are running as an Administrator (right-click on Anaconda Prompt/Miniforge Prompt and select "Run as administrator"), as Neo4j will be installed as a Windows service.
+#. If you had to reopen a command prompt in Step 1, reactivate your conda environment via: :code:`conda activate polyglotdb`.
+#. Inside your conda environment, run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
    :code:`pgdb install` to save data in the default directory.
 
-To start the database, you likewise have to use an administrator command prompt before entering the commands :code:`pgdb start`
+To start/stop the database, you likewise have to use an administrator command prompt before entering the commands :code:`pgdb start`
 or :code:`pgdb stop`.
 
 To uninstall, run :code:`pgdb uninstall` (also requires an administrator command prompt).
 
-Linux
-`````
 
-Ensure Java 11 is installed. On Ubuntu:
-
-.. code-block:: bash
-
-   sudo apt-get update
-   sudo apt-get install openjdk-11-jdk-headless
-
-Once installed, double check that ``java --version`` returns Java 11. Then run :code:`pgdb install /path/to/where/you/want/data/to/be/stored`, or
-:code:`pgdb install` to save data in the default directory.
-
-Once you have installed PolyglotDB, to start it run :code:`pgdb start`.
-Likewise, you can close PolyglotDB by running :code:`pgdb stop`.
-
-To uninstall, navigate to the PolyglotDB directory and type :code:`pgdb uninstall`
-
-
-Conda Development Environment
-============
-
-You can also use conda to create an isolated polyglotdb development environment:
-
-#. Install either Anaconda, miniconda, or miniforge 
-#. Make sure your conda is up to date (conda update conda)
-#. Make sure that you have cloned the polyglotdb repository
-#. cd to the source directory
-
-We’ll now kick off a two-step process:
-
-#. Create a conda environment to isolate polyglotdb dependencies
-#. Build and install polyglotdb
-
-.. code-block:: bash
-
-    conda env create -f environment.yml
-    conda activate polyglotdb-dev
-
-From within the polyglotdb-dev environment, double check that ``java --version`` returns Java 11. Then:
-
-.. code-block:: bash
-
-    python setup.py install
-    pgdb install /path/to/where/you/want/data/to/be/stored
-
-You now have a new conda environment that is isolated from any existing environments or python installations. The pgdb executable will only be accessible from within the polyglotdb-dev environment.
-
-To view your environments:
+To view your conda environments:
 
 .. code-block:: bash
 
