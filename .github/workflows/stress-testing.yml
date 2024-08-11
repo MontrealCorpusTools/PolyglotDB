@@ -29,8 +29,12 @@ jobs:
         cp .github/config/influxdb.conf $PGDB_HOME/influxdb/conf/
         cp .github/config/config.ini $PGDB_HOME/
         
-    - name: List files after copying
-      run: ls -R $PGDB_HOME
+    - name: Check PGDB_HOME and config.ini
+      run: |
+        echo "PGDB_HOME is set to $PGDB_HOME"
+        ls -l $PGDB_HOME/config.ini
+        cat $PGDB_HOME/config.ini
+
       
     - name: Start services
       run: |
