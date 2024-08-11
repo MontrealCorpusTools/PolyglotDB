@@ -1,0 +1,98 @@
+name: stress testing
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      PGDB_HOME: ${{ github.workspace }}/pgdb_home  # Use workspace directory
+
+    steps:
+    - name: Checkout main repository
+      uses: actions/checkout@v3
+      with:
+        repository: lxy2304/PolyglotDB
+
+    - name: Setup PGDB_HOME directory
+      run: |
+        mkdir -p $PGDB_HOME/neo4j/conf
+        mkdir -p $PGDB_HOME/influxdb/conf
+
+    - name: Copy configuration files
+      run: |
+        cp .github/config/neo4j.conf $PGDB_HOME/neo4j/conf/
+        cp .github/config/influxdb.conf $PGDB_HOME/influxdb/conf/
+        cp .github/config/config.ini $PGDB_HOME
+
+    - name: Start services
+      run: |
+        docker run -d \
+          --name neo4j \
+          -p 7474:7474 -p 7687:7687 \
+          -v $PGDB_HOME/neo4j/conf:/conf \
+          -v /tmp:/tmp \
+          neo4j:5.22.0
+
+        docker run -d \
+          --name influxdb \
+          -p 8086:8086 \
+          -v $PGDB_HOME/influxdb/conf:/etc/influxdb \
+          -v /tmp:/tmp \
+          influxdb:1.8
+
+    - name: Checkout private repository
+      uses: actions/checkout@v3
+      with:
+        repository: lxy2304/testing
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set environment variable for private repo root
+      run: echo "TEST_REPO_ROOT=$(pwd)" >> $GITHUB_ENV
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install required packages
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install polyglotdb pyyaml
+
+    - name: Download and set up Praat
+      run: |
+        wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
+        tar -xzf praat.tar.gz
+        echo "praat_path=$(pwd)/praat" >> $GITHUB_ENV
+        
+    - name: Run sibilant.py
+      run: |
+        source venv/bin/activate
+        python $TEST_REPO_ROOT/sibilant.py -r ice-can
+        python $TEST_REPO_ROOT/check_sibilants.py
+
+    - name: Run formant.py
+      run: |
+        source venv/bin/activate
+        python $TEST_REPO_ROOT/formant.py -r ice-can
+        python $TEST_REPO_ROOT/check_formants.py
+
+
+    - name: Run formant_track.py
+      run: |
+        source venv/bin/activate
+        python $TEST_REPO_ROOT/formant_track.py -r ice-can
+        python $TEST_REPO_ROOT/check_formant_tracks.py
+
+    - name: Run duration.py
+      run: |
+        source venv/bin/activate
+        python $TEST_REPO_ROOT/duration.py -r ice-can
+        python $TEST_REPO_ROOT/check_duration.py
