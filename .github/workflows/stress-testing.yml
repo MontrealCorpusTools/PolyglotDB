@@ -6,6 +6,26 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      PGDB_HOME: ${{ github.workspace }}/pgdb_home  # Use workspace directory
+
+    services: 
+      neo4j:
+        image: neo4j:5.22.0
+        ports:
+          - 7474:7474
+          - 7687:7687
+        options: |
+          --volume=$PGDB_HOME/neo4j/conf:$PGDB_HOME/neo4j/conf \
+          --volume=$PGDB_HOME:$PGDB_HOME
+
+      influxdb:
+        image: influxdb:1.8
+        ports:
+          - 8086:8086
+        options: |
+          --volume=$PGDB_HOME/influxdb/conf:/etc/influxdb
+    
     steps:
     - name: Checkout main repository
       uses: actions/checkout@v3
@@ -15,7 +35,6 @@ jobs:
 
     - name: Setup PGDB_HOME directory
       run: |
-        echo "PGDB_HOME=${{ runner.temp }}/pgdb_home" >> $GITHUB_ENV
         mkdir -p $PGDB_HOME/neo4j/conf
         mkdir -p $PGDB_HOME/influxdb/conf
 
@@ -24,21 +43,6 @@ jobs:
         cp .github/config/neo4j.conf $PGDB_HOME/neo4j/conf/
         cp .github/config/influxdb.conf $PGDB_HOME/influxdb/conf/
         cp .github/config/config.ini $PGDB_HOME/
-
-    - name: Start services
-      run: |
-        docker run -d \
-          --name neo4j \
-          -p 7474:7474 -p 7687:7687 \
-          -v $PGDB_HOME/neo4j/conf:/conf \
-          -v $PGDB_HOME:$PGDB_HOME \
-          neo4j:5.22.0
-
-        docker run -d \
-          --name influxdb \
-          -p 8086:8086 \
-          -v $PGDB_HOME/influxdb/conf:/etc/influxdb \
-          influxdb:1.8
 
     - name: Set up Git for cloning
       run: |
