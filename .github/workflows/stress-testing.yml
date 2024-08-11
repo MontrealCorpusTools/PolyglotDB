@@ -42,11 +42,12 @@ jobs:
           -v /tmp:/tmp \
           influxdb:1.8
 
-    - name: Checkout private repository
+    - name: Checkout private repository with LFS support
       uses: actions/checkout@v3
       with:
-        repository: lxy2304/testing
-        token: ${{ secrets.PAT }}
+        repository: your-username/testing
+        token: ${{ secrets.MY_GITHUB_PAT }}
+        lfs: true  # Enable LFS support
 
     - name: Set environment variable for private repo root
       run: echo "TEST_REPO_ROOT=$(pwd)" >> $GITHUB_ENV
