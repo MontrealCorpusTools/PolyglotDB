@@ -23,14 +23,14 @@ jobs:
 
     - name: Clone the private repository
       run: |
-        git clone https://x-access-token:${{ secrets.PAT }}@github.com/lxy2304/testing.git
+        git lfs clone https://x-access-token:${{ secrets.PAT }}@github.com/lxy2304/testing.git testing
         cd testing
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
 
 
     - name: Set environment variable for private repo root
-      run: echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
+      run: echo "TEST_REPO_ROOT=$(pwd)" >> $GITHUB_ENV
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v4
