@@ -32,14 +32,13 @@ jobs:
           --name neo4j \
           -p 7474:7474 -p 7687:7687 \
           -v $PGDB_HOME/neo4j/conf:/conf \
-          -v /tmp:/tmp \
+          -v $PGDB_HOME:$PGDB_HOME \
           neo4j:5.22.0
 
         docker run -d \
           --name influxdb \
           -p 8086:8086 \
           -v $PGDB_HOME/influxdb/conf:/etc/influxdb \
-          -v /tmp:/tmp \
           influxdb:1.8
 
     - name: Checkout private repository with LFS support
