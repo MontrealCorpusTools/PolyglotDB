@@ -51,7 +51,13 @@ jobs:
         wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
         tar -xzf praat.tar.gz
         echo "praat_path=$(pwd)/praat" >> $GITHUB_ENV
-        
+
+    - name: Run duration.py
+      run: |
+        source venv/bin/activate
+        python $TEST_REPO_ROOT/duration.py -r ice-can
+        python $TEST_REPO_ROOT/check_duration.py
+
     - name: Run sibilant.py
       run: |
         source venv/bin/activate
@@ -70,9 +76,3 @@ jobs:
         source venv/bin/activate
         python $TEST_REPO_ROOT/formant_track.py -r ice-can
         python $TEST_REPO_ROOT/check_formant_tracks.py
-
-    - name: Run duration.py
-      run: |
-        source venv/bin/activate
-        python $TEST_REPO_ROOT/duration.py -r ice-can
-        python $TEST_REPO_ROOT/check_duration.py
