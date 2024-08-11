@@ -16,7 +16,7 @@ jobs:
           - 7474:7474
           - 7687:7687
         options: |
-          --volume=${{ env.PGDB_HOME }}/neo4j/conf:/conf \
+          --volume=${{ github.workspace }}/pgdb_home/neo4j/conf:/conf \
           --volume=/tmp:/tmp
 
       influxdb:
@@ -24,7 +24,7 @@ jobs:
         ports:
           - 8086:8086
         options: |
-          --volume=${{ env.PGDB_HOME }}/influxdb/conf:/etc/influxdb
+          --volume=${{ github.workspace }}/pgdb_home/influxdb/conf:/etc/influxdb
     
     steps:
     - name: Checkout main repository
