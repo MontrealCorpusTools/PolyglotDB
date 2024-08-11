@@ -17,14 +17,16 @@ jobs:
 
     - name: Setup PGDB_HOME directory
       run: |
+        mkdir -p $PGDB_HOME/neo4j
         mkdir -p $PGDB_HOME/neo4j/conf
+        mkdir -p $PGDB_HOME/influxdb
         mkdir -p $PGDB_HOME/influxdb/conf
 
     - name: Copy configuration files
       run: |
         cp .github/config/neo4j.conf $PGDB_HOME/neo4j/conf/
         cp .github/config/influxdb.conf $PGDB_HOME/influxdb/conf/
-        cp .github/config/config.ini $PGDB_HOME
+        cp .github/config/config.ini $PGDB_HOME/
 
     - name: Start services
       run: |
@@ -32,7 +34,7 @@ jobs:
           --name neo4j \
           -p 7474:7474 -p 7687:7687 \
           -v $PGDB_HOME/neo4j/conf:/conf \
-          -v /home/runner/work/PolyglotDB/PolyglotDB/pgdb_home:/home/runner/work/PolyglotDB/PolyglotDB/pgdb_home \
+          -v /tmp:/tmp \
           neo4j:5.22.0
 
         docker run -d \
