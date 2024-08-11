@@ -47,18 +47,9 @@ jobs:
         python -m venv venv
         source venv/bin/activate
         pip install --upgrade pip
-        pip install polyglotdb pyyaml setuptools
+        pip install polyglotdb pyyaml setuptools pandas
         pgdb install $PGDB_HOME
         pgdb start
-
-    - name: Check PolyglotDB Temporary Directories
-      run: |
-        echo "Listing contents of PGDB_HOME:"
-        ls -la $PGDB_HOME
-        echo "Checking write permissions:"
-        touch $PGDB_HOME/test_file.tmp
-        ls -la $PGDB_HOME
-        rm $PGDB_HOME/test_file.tmp
 
     - name: Download and set up Praat
       run: |
