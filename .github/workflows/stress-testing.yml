@@ -59,29 +59,29 @@ jobs:
 
     - name: Run duration.py
       run: |
-        cd testing
         source venv/bin/activate
+        cd testing
         python $TEST_REPO_ROOT/duration.py -r ice-can
         python $TEST_REPO_ROOT/check_duration.py
 
     - name: Run sibilant.py
       run: |
-        cd testing
         source venv/bin/activate
-        python $TEST_REPO_ROOT/sibilant.py -r ice-can
-        python $TEST_REPO_ROOT/check_sibilants.py
+        cd testing
+        python sibilant.py -r ice-can
+        python check_sibilants.py
 
     - name: Run formant.py
       run: |
-        cd testing
         source venv/bin/activate
-        python $TEST_REPO_ROOT/formant.py -r ice-can
-        python $TEST_REPO_ROOT/check_formants.py
+        cd testing
+        python formant.py -r ice-can
+        python check_formants.py
 
 
     - name: Run formant_track.py
       run: |
-        cd testing
         source venv/bin/activate
-        python $TEST_REPO_ROOT/formant_track.py -r ice-can
-        python $TEST_REPO_ROOT/check_formant_tracks.py
+        cd testing
+        python formant_track.py -r ice-can
+        python check_formant_tracks.py
