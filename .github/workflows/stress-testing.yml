@@ -45,7 +45,7 @@ jobs:
     - name: Checkout private repository with LFS support
       uses: actions/checkout@v3
       with:
-        repository: your-username/testing
+        repository: lxy2304/testing
         token: ${{ secrets.PAT }}
         lfs: true  # Enable LFS support
 
