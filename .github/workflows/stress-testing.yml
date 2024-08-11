@@ -42,7 +42,7 @@ jobs:
           --name neo4j \
           -p 7474:7474 -p 7687:7687 \
           -v /home/runner/work/PolyglotDB/PolyglotDB/pgdb_home/neo4j/conf:/conf \
-          -v /home/runner/work/PolyglotDB/PolyglotDB/pgdb_home/:/home/runner/work/PolyglotDB/PolyglotDB/pgdb_home/ \
+          -v /home/runner/work/PolyglotDB/PolyglotDB/pgdb_home:/home/runner/work/PolyglotDB/PolyglotDB/pgdb_home \
           neo4j:5.22.0
 
         docker run -d \
