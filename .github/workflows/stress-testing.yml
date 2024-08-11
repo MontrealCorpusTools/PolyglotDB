@@ -24,6 +24,7 @@ jobs:
     - name: Clone the private repository
       run: |
         git clone https://x-access-token:${{ secrets.PAT }}@github.com/lxy2304/testing.git
+        cd testing
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
 
