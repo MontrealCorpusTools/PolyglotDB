@@ -16,12 +16,16 @@ jobs:
         repository: lxy2304/PolyglotDB
         ref: add-stress-test
 
-    - name: Checkout private repository with LFS support
-      uses: actions/checkout@v3
-      with:
-        repository: lxy2304/testing
-        token: ${{ secrets.PAT }}
-        lfs: true  # Enable LFS support
+    - name: Set up Git for cloning
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
+    - name: Clone the private repository
+      run: |
+        git clone https://github.com/lxy2304/testing.git
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
 
     - name: Set environment variable for private repo root
       run: echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
