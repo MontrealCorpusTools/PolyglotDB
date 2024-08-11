@@ -54,8 +54,9 @@ jobs:
     - name: Download and set up Praat
       run: |
         wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
-        tar -xzf praat.tar.gz
-        echo "praat_path=$(pwd)/praat" >> $GITHUB_ENV
+        mkdir praat_directory
+        tar -xzf praat.tar.gz -C praat_directory --strip-components=1
+        echo "praat_path=$(pwd)/praat_directory/praat" >> $GITHUB_ENV
 
     - name: Run duration.py
       run: |
