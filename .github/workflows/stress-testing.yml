@@ -28,7 +28,10 @@ jobs:
         cp .github/config/neo4j.conf $PGDB_HOME/neo4j/conf/
         cp .github/config/influxdb.conf $PGDB_HOME/influxdb/conf/
         cp .github/config/config.ini $PGDB_HOME/
-
+        
+    - name: List files after copying
+      run: ls -R $PGDB_HOME
+      
     - name: Start services
       run: |
         docker run -d \
