@@ -6,9 +6,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-      PGDB_HOME: ${{ runner.temp }}/pgdb_home  # Use workspace directory
-
     steps:
     - name: Checkout main repository
       uses: actions/checkout@v3
@@ -18,6 +15,7 @@ jobs:
 
     - name: Setup PGDB_HOME directory
       run: |
+        echo "PGDB_HOME=${{ runner.temp }}/pgdb_home" >> $GITHUB_ENV
         mkdir -p $PGDB_HOME/neo4j/conf
         mkdir -p $PGDB_HOME/influxdb/conf
 
