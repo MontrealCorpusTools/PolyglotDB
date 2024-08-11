@@ -24,7 +24,7 @@ jobs:
         lfs: true  # Enable LFS support
 
     - name: Set environment variable for private repo root
-      run: echo "TEST_REPO_ROOT=$(pwd)" >> $GITHUB_ENV
+      run: echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v4
