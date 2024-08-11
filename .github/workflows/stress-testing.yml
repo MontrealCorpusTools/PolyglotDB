@@ -24,13 +24,12 @@ jobs:
     - name: Clone the private repository
       run: |
         git lfs clone https://x-access-token:${{ secrets.PAT }}@github.com/lxy2304/testing.git testing
-        cd testing
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
 
 
     - name: Set environment variable for private repo root
-      run: echo "TEST_REPO_ROOT=$(pwd)" >> $GITHUB_ENV
+      run: echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v4
@@ -60,18 +59,21 @@ jobs:
 
     - name: Run duration.py
       run: |
+        cd testing
         source venv/bin/activate
         python $TEST_REPO_ROOT/duration.py -r ice-can
         python $TEST_REPO_ROOT/check_duration.py
 
     - name: Run sibilant.py
       run: |
+        cd testing
         source venv/bin/activate
         python $TEST_REPO_ROOT/sibilant.py -r ice-can
         python $TEST_REPO_ROOT/check_sibilants.py
 
     - name: Run formant.py
       run: |
+        cd testing
         source venv/bin/activate
         python $TEST_REPO_ROOT/formant.py -r ice-can
         python $TEST_REPO_ROOT/check_formants.py
@@ -79,6 +81,7 @@ jobs:
 
     - name: Run formant_track.py
       run: |
+        cd testing
         source venv/bin/activate
         python $TEST_REPO_ROOT/formant_track.py -r ice-can
         python $TEST_REPO_ROOT/check_formant_tracks.py
