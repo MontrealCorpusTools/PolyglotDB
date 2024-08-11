@@ -34,15 +34,11 @@ jobs:
         echo "PGDB_HOME is set to $PGDB_HOME"
         ls -l $PGDB_HOME/config.ini
         cat $PGDB_HOME/config.ini
-
-      
-    - name: Start services
-      run: |
         docker run -d \
           --name neo4j \
           -p 7474:7474 -p 7687:7687 \
-          -v /home/runner/work/PolyglotDB/PolyglotDB/pgdb_home/neo4j/conf:/conf \
-          -v /home/runner/work/PolyglotDB/PolyglotDB/pgdb_home:/home/runner/work/PolyglotDB/PolyglotDB/pgdb_home \
+          -v $PGDB_HOME/neo4j/conf:/conf \
+          -v /tmp:/tmp \
           neo4j:5.22.0
 
         docker run -d \
