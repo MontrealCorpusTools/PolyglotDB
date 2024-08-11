@@ -61,8 +61,8 @@ jobs:
       run: |
         source venv/bin/activate
         cd testing
-        python $TEST_REPO_ROOT/duration.py -r ice-can
-        python $TEST_REPO_ROOT/check_duration.py
+        python duration.py -r ice-can
+        python check_duration.py
 
     - name: Run sibilant.py
       run: |
