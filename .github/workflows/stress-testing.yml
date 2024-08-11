@@ -16,37 +16,6 @@ jobs:
         repository: lxy2304/PolyglotDB
         ref: add-stress-test
 
-    - name: Setup PGDB_HOME directory
-      run: |
-        mkdir -p $PGDB_HOME/neo4j
-        mkdir -p $PGDB_HOME/neo4j/conf
-        mkdir -p $PGDB_HOME/influxdb
-        mkdir -p $PGDB_HOME/influxdb/conf
-
-    - name: Copy configuration files
-      run: |
-        cp .github/config/neo4j.conf $PGDB_HOME/neo4j/conf/
-        cp .github/config/influxdb.conf $PGDB_HOME/influxdb/conf/
-        cp .github/config/config.ini $PGDB_HOME/
-        
-    - name: Check PGDB_HOME and config.ini
-      run: |
-        echo "PGDB_HOME is set to $PGDB_HOME"
-        ls -l $PGDB_HOME/config.ini
-        cat $PGDB_HOME/config.ini
-        docker run -d \
-          --name neo4j \
-          -p 7474:7474 -p 7687:7687 \
-          -v $PGDB_HOME/neo4j/conf:/conf \
-          -v /tmp:/tmp \
-          neo4j:5.22.0
-
-        docker run -d \
-          --name influxdb \
-          -p 8086:8086 \
-          -v $PGDB_HOME/influxdb/conf:/etc/influxdb \
-          influxdb:1.8
-
     - name: Checkout private repository with LFS support
       uses: actions/checkout@v3
       with:
@@ -61,13 +30,21 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
-
+        
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'  # This specifies the JDK distribution. Temurin is a popular choice.
+        java-version: '21'   
+        
     - name: Install required packages
       run: |
         python -m venv venv
         source venv/bin/activate
         pip install --upgrade pip
         pip install polyglotdb pyyaml setuptools
+        pgdb install $PGDB_HOME
+        pgdb start
 
     - name: Download and set up Praat
       run: |
