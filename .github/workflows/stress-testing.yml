@@ -16,8 +16,8 @@ jobs:
           - 7474:7474
           - 7687:7687
         options: |
-          --volume=$PGDB_HOME/neo4j/conf:$PGDB_HOME/neo4j/conf \
-          --volume=$PGDB_HOME:$PGDB_HOME
+          --volume=$PGDB_HOME/neo4j/conf:/conf \
+          --volume=/tmp:/tmp
 
       influxdb:
         image: influxdb:1.8
