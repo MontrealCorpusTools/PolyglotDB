@@ -1,0 +1,88 @@
+name: stress testing
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      PGDB_HOME: ${{ github.workspace }}/pgdb_home  # Use workspace directory
+
+    steps:
+    - name: Checkout main repository
+      uses: actions/checkout@v3
+      with:
+        repository: lxy2304/PolyglotDB
+        ref: add-stress-test
+
+    - name: Set up Git for cloning
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
+    - name: Clone the private repository
+      run: |
+        git lfs clone https://x-access-token:${{ secrets.PAT }}@github.com/lxy2304/testing.git testing
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
+
+
+    - name: Set environment variable for private repo root
+      run: echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'  # This specifies the JDK distribution. Temurin is a popular choice.
+        java-version: '21'   
+        
+    - name: Install required packages
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -e .
+        pip install pyyaml setuptools pandas
+        pgdb install $PGDB_HOME
+        pgdb start
+        
+    - name: Download and set up Praat
+      run: |
+        wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
+        tar -xvzf praat.tar.gz
+        echo "praat_path=$(pwd)/praat_barren" >> $GITHUB_ENV
+
+    - name: Run duration.py
+      run: |
+        source venv/bin/activate
+        cd testing
+        python duration.py -r ice-can
+        python check_duration.py
+
+    - name: Run sibilant.py
+      run: |
+        source venv/bin/activate
+        cd testing
+        python sibilant.py -r ice-can
+        python check_sibilants.py
+
+    - name: Run formant.py
+      run: |
+        source venv/bin/activate
+        cd testing
+        python formant.py -r ice-can
+        python check_formants.py
+
+
+    - name: Run formant_track.py
+      run: |
+        source venv/bin/activate
+        cd testing
+        python formant_track.py -r ice-can
+        python check_formant_tracks.py
