@@ -47,7 +47,8 @@ jobs:
         python -m venv venv
         source venv/bin/activate
         pip install --upgrade pip
-        pip install polyglotdb pyyaml setuptools pandas
+        pip install -e .
+        pip install pyyaml setuptools pandas
         pgdb install $PGDB_HOME
         pgdb start
         
@@ -57,19 +58,19 @@ jobs:
         tar -xvzf praat.tar.gz
         echo "praat_path=$(pwd)/praat_barren" >> $GITHUB_ENV
 
-    # - name: Run duration.py
-    #   run: |
-    #     source venv/bin/activate
-    #     cd testing
-    #     python duration.py -r ice-can
-    #     python check_duration.py
+    - name: Run duration.py
+      run: |
+        source venv/bin/activate
+        cd testing
+        python duration.py -r ice-can
+        python check_duration.py
 
-    # - name: Run sibilant.py
-    #   run: |
-    #     source venv/bin/activate
-    #     cd testing
-    #     python sibilant.py -r ice-can
-    #     python check_sibilants.py
+    - name: Run sibilant.py
+      run: |
+        source venv/bin/activate
+        cd testing
+        python sibilant.py -r ice-can
+        python check_sibilants.py
 
     - name: Run formant.py
       run: |
