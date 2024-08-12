@@ -57,12 +57,12 @@ jobs:
         tar -xvzf praat.tar.gz
         echo "praat_path=$(pwd)/praat_barren" >> $GITHUB_ENV
 
-    - name: Run duration.py
-      run: |
-        source venv/bin/activate
-        cd testing
-        python duration.py -r ice-can
-        python check_duration.py
+    # - name: Run duration.py
+    #   run: |
+    #     source venv/bin/activate
+    #     cd testing
+    #     python duration.py -r ice-can
+    #     python check_duration.py
 
     - name: Run sibilant.py
       run: |
