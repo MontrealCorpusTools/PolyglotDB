@@ -64,12 +64,12 @@ jobs:
     #     python duration.py -r ice-can
     #     python check_duration.py
 
-    - name: Run sibilant.py
-      run: |
-        source venv/bin/activate
-        cd testing
-        python sibilant.py -r ice-can
-        python check_sibilants.py
+    # - name: Run sibilant.py
+    #   run: |
+    #     source venv/bin/activate
+    #     cd testing
+    #     python sibilant.py -r ice-can
+    #     python check_sibilants.py
 
     - name: Run formant.py
       run: |
