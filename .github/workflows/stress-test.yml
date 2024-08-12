@@ -22,7 +22,7 @@ jobs:
 
     - name: Clone the private repository
       run: |
-        git lfs clone https://x-access-token:${{ secrets.PAT }}@github.com/MontrealCorpusTools/polyglotdb-testing.git testing
+        git clone https://x-access-token:${{ secrets.PAT }}@github.com/MontrealCorpusTools/polyglotdb-testing.git testing
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
 
