@@ -20,8 +20,14 @@ jobs:
       with:
         distribution: 'temurin' 
         java-version: '21'   
-        
-    - name: Install required packages and start database
+
+    - name: Download and set up Praat
+      run: |
+        wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
+        tar -xvzf praat.tar.gz
+        echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
+
+    - name: Install required packages and run pytest
       run: |
         python -m venv venv
         source venv/bin/activate
@@ -30,17 +36,8 @@ jobs:
         pip install pyyaml setuptools pytest
         pgdb install $PGDB_HOME
         pgdb start
-    
-    - name: Download and set up Praat
-      run: |
-        wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
-        tar -xvzf praat.tar.gz
-        echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
-
-    - name: run pytest
-      run: | 
         pytest
-
+  
     - name: Stop database instance
       run: | 
         pgdb stop
