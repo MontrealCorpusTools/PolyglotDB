@@ -37,7 +37,4 @@ jobs:
         pgdb install $PGDB_HOME
         pgdb start
         pytest
-  
-    - name: Stop database instance
-      run: | 
         pgdb stop
