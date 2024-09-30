@@ -39,6 +39,12 @@ jobs:
       with:
         distribution: 'temurin'  # This specifies the JDK distribution. Temurin is a popular choice.
         java-version: '21'   
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsndfile1 
+
         
     - name: Install required packages
       run: |
@@ -52,7 +58,7 @@ jobs:
         
     - name: Download and set up Praat
       run: |
-        wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
+        wget https://www.fon.hum.uva.nl/praat/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz
         tar -xvzf praat.tar.gz
         echo "praat_path=$(pwd)/praat_barren" >> $GITHUB_ENV
 
