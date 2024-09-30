@@ -23,7 +23,7 @@ jobs:
 
     - name: Download and set up Praat
       run: |
-        wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
+        wget https://www.fon.hum.uva.nl/praat/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz
         tar -xvzf praat.tar.gz
         echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
 
