@@ -15,15 +15,29 @@
 
 .. _pitch: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.Rmd
  
+.. _tutorial scripts: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial
+
+.. _Steps to use PolyglotDB: https://polyglotdb.readthedocs.io/en/latest/getting_started.html#steps-to-use-polyglotdb
+
 .. _tutorial_first_steps:
 
 ***********************
 Tutorial 1: First steps
 ***********************
 
+**Prerequisites:**
+
+- Ensure you are inside the correct Conda environment where PolyglotDB is installed.
+- Start the local databases. For detailed instructions, refer to the `Steps to use PolyglotDB`_.
+
 The main objective of this tutorial is to import a downloaded corpus consisting of sound files and TextGrids into a Polyglot
 database so that they can be queried.
-This tutorial is available as a `Jupyter notebook`_ as well.
+
+.. note::
+   The following Python scripts are presented in step-by-step blocks to guide you through the process. 
+   However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
+   #. The complete Python script is available here `tutorial scripts`_.
+   #. If you prefer running the steps in blocks, this tutorial is also available as a `Jupyter notebook`_.
 
 .. _tutorial_download:
 

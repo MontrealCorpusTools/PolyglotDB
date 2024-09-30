@@ -536,12 +536,10 @@ def partitur_corpus_config(graph_db, partitur_test_dir):
 def praat_path():
     if sys.platform == 'win32':
         return 'praat.exe'
-    elif os.environ.get('TRAVIS', False):
-        return os.path.join(os.environ.get('HOME'), 'tools', 'praat')
     elif sys.platform == 'darwin':
         return '/Applications/Praat.app/Contents/MacOS/Praat'
     else:
-        return 'praat'
+        return os.environ.get('praat')
 
 
 @pytest.fixture(scope='session')
