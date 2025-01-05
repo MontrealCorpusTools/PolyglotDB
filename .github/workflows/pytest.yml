@@ -1,7 +1,10 @@
 name: pytest
 
-on: push
-
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  
 jobs:
   test:
     runs-on: ubuntu-latest
