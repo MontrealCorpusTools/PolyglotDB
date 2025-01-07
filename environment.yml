@@ -5,8 +5,8 @@ dependencies:
     - openjdk=21
     - pip
     - librosa
-    - scipy<=1.12.0
-    - praatio<=5.0
+    - scipy
+    - praatio
     - textgrid
     - influxdb
     - tqdm

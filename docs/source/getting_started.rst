@@ -46,7 +46,7 @@ If you don't have conda installed on your device:
 
 To install via pip:
 
-#. Create the a conda environment via :code:`conda create -n polyglotdb -c conda-forge openjdk=21 pip`
+#. Create the a conda environment via :code:`conda create -n polyglotdb -c conda-forge openjdk=21 python=3.12 librosa`
 #. Activate conda environment :code:`conda activate polyglotdb`
 #. Install PolyglotDB via :code:`pip install polyglotdb`, which will install the ``pgdb`` utility that can be run inside your conda environment 
    and manages a local database.

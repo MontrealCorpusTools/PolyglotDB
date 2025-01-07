@@ -27,6 +27,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+_version.py
 
 # Mac files
 .DS_Store
