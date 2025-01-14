@@ -65,21 +65,21 @@ class ImportContext(StructuredContext):
 
         with self.graph_driver.session() as session:
             try:
-                session.write_transaction(_corpus_index)
+                session.execute_write(_corpus_index)
             except neo4j.exceptions.ClientError as e:
                 if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                     raise
             try:
-                session.write_transaction(_discourse_index)
+                session.execute_write(_discourse_index)
             except neo4j.exceptions.ClientError as e:
                 if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                     raise
             try:
-                session.write_transaction(_speaker_index)
+                session.execute_write(_speaker_index)
             except neo4j.exceptions.ClientError as e:
                 if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                     raise
-            session.write_transaction(_corpus_create, self.corpus_name)
+            session.execute_write(_corpus_create, self.corpus_name)
 
     def finalize_import(self, speakers, token_headers, hierarchy, call_back=None, stop_check=None):
         """
@@ -125,9 +125,9 @@ class ImportContext(StructuredContext):
         with self.graph_driver.session() as session:
             for s in data.speakers:
                 if s in data.speaker_channel_mapping:
-                    session.write_transaction(_create_speaker_discourse, s, data.name, data.speaker_channel_mapping[s])
+                    session.execute_write(_create_speaker_discourse, s, data.name, data.speaker_channel_mapping[s])
                 else:
-                    session.write_transaction(_create_speaker_discourse, s, data.name, 0)
+                    session.execute_write(_create_speaker_discourse, s, data.name, 0)
         data.corpus_name = self.corpus_name
         data_to_graph_csvs(self, data)
         self.hierarchy.update(data.hierarchy)

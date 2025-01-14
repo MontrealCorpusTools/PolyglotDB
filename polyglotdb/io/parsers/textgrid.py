@@ -76,7 +76,7 @@ class TextgridParser(BaseParser):
         """
         tg = self.load_textgrid(path)
 
-        if len(tg.tierNameList) != len(self.annotation_tiers):
+        if len(tg.tierNames) != len(self.annotation_tiers):
             raise (TextGridError(
                 "The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(
                     path)))
@@ -92,12 +92,12 @@ class TextgridParser(BaseParser):
             a.speaker = speaker
 
         # Parse the tiers
-        for i, tier_name in enumerate(tg.tierNameList):
-            ti = tg.tierDict[tier_name]
+        for i, tier_name in enumerate(tg.tierNames):
+            ti = tg.getTier(tier_name)
             if isinstance(ti, textgrid.IntervalTier):
-                self.annotation_tiers[i].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entryList))
+                self.annotation_tiers[i].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entries))
             else:
-                self.annotation_tiers[i].add(((text.strip(), time) for time, text in ti.entryList))
+                self.annotation_tiers[i].add(((text.strip(), time) for time, text in ti.entries))
 
         is_empty_textgrid = True
 

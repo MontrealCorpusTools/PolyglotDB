@@ -1,7 +1,10 @@
 name: pytest
 
-on: push
-
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -23,10 +26,15 @@ jobs:
 
     - name: Download and set up Praat
       run: |
-        wget https://www.fon.hum.uva.nl/praat/praat6417_linux-intel64-barren.tar.gz -O praat.tar.gz
+        wget https://www.fon.hum.uva.nl/praat/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz
         tar -xvzf praat.tar.gz
         echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
-
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsndfile1 
+        
     - name: Install required packages and run pytest
       run: |
         python -m venv venv

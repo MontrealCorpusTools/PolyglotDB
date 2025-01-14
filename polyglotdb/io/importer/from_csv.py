@@ -149,7 +149,7 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                 else:
                     rel_path = 'file:///{}'.format(make_path_safe(path))
                 try:
-                    session.write_transaction(_unique_function, at)
+                    session.execute_write(_unique_function, at)
                 except neo4j.exceptions.ClientError as e:
                     if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                         raise
@@ -161,14 +161,14 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                         continue
                     properties.append(prop_temp.format(name=x))
                     try:
-                        session.write_transaction(_prop_index, at, x)
+                        session.execute_write(_prop_index, at, x)
                     except neo4j.exceptions.ClientError as e:
                         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                             raise
                 if 'label' in token_headers[at]:
                     properties.append('label_insensitive: toLower(csvLine.label)')
                     try:
-                        session.write_transaction(_label_index, at)
+                        session.execute_write(_label_index, at)
                     except neo4j.exceptions.ClientError as e:
                         if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                             raise
@@ -233,12 +233,12 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
                 speaker_statements.append((node_statement, rel_statement, path, at, s))
                 begin = time.time()
                 try:
-                    session.write_transaction(_begin_index, at)
+                    session.execute_write(_begin_index, at)
                 except neo4j.exceptions.ClientError as e:
                     if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                         raise
                 try:
-                    session.write_transaction(_end_index, at)
+                    session.execute_write(_end_index, at)
                 except neo4j.exceptions.ClientError as e:
                     if e.code != 'Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists':
                         raise
