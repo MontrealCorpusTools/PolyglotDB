@@ -536,3 +536,18 @@ class BaseContext(object):
             word_name=self.word_name, corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(statement)
         return [r['label'] for r in results]
+
+    @property
+    def syllables(self):
+        """
+        Get a list of all syllable labels in the corpus (if syllable encoding available)
+
+        Returns
+        -------
+        list
+            All syllable labels in the corpus
+        """
+        statement = '''MATCH (s:syllable_type:{corpus_name}) return s.label as label'''.format(
+            corpus_name=self.cypher_safe_name)
+        results = self.execute_cypher(statement)
+        return [r['label'] for r in results]
