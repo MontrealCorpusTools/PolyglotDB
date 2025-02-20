@@ -179,7 +179,7 @@ contains.
 
    with CorpusContext(config) as c:
        q = c.query_graph(c.word)
-       q = q.columns(c.word.phone.label.column('phones'))
+       q = q.columns(c.word.phone.label.column_name('phones'))
        results = q.all()
        print(results)
 
@@ -210,8 +210,8 @@ The keyword ``count`` will return the number of elements.
 
    with CorpusContext(config) as c:
        q = c.query_graph(c.word)
-       q = q.columns(c.word.phone.rate.column('phones_per_second'))
-       q = q.columns(c.word.phone.count.column('num_phones'))
+       q = q.columns(c.word.phone.rate.column_name('phones_per_second'))
+       q = q.columns(c.word.phone.count.column_name('num_phones'))
        results = q.all()
        print(results)
 
@@ -221,9 +221,9 @@ These keywords can also leverage subsets, as above:
 
    with CorpusContext(config) as c:
        q = c.query_graph(c.word)
-       q = q.columns(c.word.phone.rate.column('phones_per_second'))
-       q = q.columns(c.word.phone.filter_by_subset('+syllabic').count.column('num_syllabic_phones'))
-       q = q.columns(c.word.phone.count.column('num_phones'))
+       q = q.columns(c.word.phone.rate.column_name('phones_per_second'))
+       q = q.columns(c.word.phone.filter_by_subset('+syllabic').count.column_name('num_syllabic_phones'))
+       q = q.columns(c.word.phone.count.column_name('num_phones'))
        results = q.all()
        print(results)
 

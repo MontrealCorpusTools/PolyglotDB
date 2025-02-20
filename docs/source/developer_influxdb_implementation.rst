@@ -42,8 +42,8 @@ along with the ``time`` in seconds will always give a unique acoustic time point
 
 
 In addition to these tags, there are several queryable fields which are always present in addition to the measurement fields.
-First, the ``phone`` for the time point is saved to allow for efficient aggregation across phones.  Second, the ``utterance_id``
-for the time point is also saved.  The ``utterance_id`` is used for general querying, where each utterance's track for the
+First, the ``phone``, ``word``, ``syllable``(if syllable encoding has been performed for the corpus) for the time point are saved to allow for efficient aggregation across annotations.  
+Second, the ``utterance_id``for the time point is also saved.  The ``utterance_id`` is used for general querying, where each utterance's track for the
 requested acoustic property is queried once and then cached for any further results to use without needing to query the
 InfluxDB again.  For instance, a query on phone formant tracks might return 2000 phones.  Without the ``utterance_id``, there
 would be 2000 look ups for formant tracks (each InfluxDB query would take about 0.15 seconds), but using the utterance-based caching,
@@ -51,7 +51,7 @@ the number of hits to the InfluxDB database would be a fraction (though the quer
 
 .. note::
 
-   For performance reasons internal to InfluxDB, ``phone`` and ``utterance_id`` are ``fields`` rather than ``tags``, because
+   For performance reasons internal to InfluxDB, ``phone``, ``syllable``, ``word``, and ``utterance_id`` are ``fields`` rather than ``tags``, because
    the cross of them with ``speaker``, ``discourse``, and ``channel`` would lead to an extremely large cross of possible tag
    combinations.  This mix of tags and fields has been found to be the most performant.
 

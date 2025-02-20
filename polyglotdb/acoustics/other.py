@@ -34,9 +34,8 @@ def generate_praat_script_function(praat_path, script_path, arguments=None):
 
 
 def analyze_script(corpus_context,
-                   phone_class=None,
+                   annotation_type='phone',
                    subset=None,
-                   annotation_type=None,
                    script_path=None,
                    duration_threshold=0.01,
                    arguments=None,
@@ -58,8 +57,6 @@ def analyze_script(corpus_context,
     ----------
     corpus_context : :class:`~polyglot.corpus.context.CorpusContext`
         corpus context to use
-    phone_class : str
-        DEPRECATED, the name of an already encoded subset of phones on which the analysis will be run
     subset : str, optional
         the name of an already encoded subset of an annotation type, on which the analysis will be run
     annotation_type : str
@@ -81,12 +78,13 @@ def analyze_script(corpus_context,
     """
     if file_type not in ['consonant', 'vowel', 'low_freq']:
         raise ValueError('File type must be one of: consonant, vowel, or low_freq')
-
-    if phone_class is not None:
-        raise DeprecationWarning("The phone_class parameter has now been deprecated, please use annotation_type='phone' and subset='{}'".format(phone_class))
-        annotation_type = corpus_context.phone_name
-        subset = phone_class
-
+    
+    if not annotation_type in corpus_context.hierarchy.annotation_types:
+        raise ValueError('Annotation type does not exists')
+    
+    if script_path is None: 
+        raise ValueError('Please specify script path')
+    
     if call_back is not None:
         call_back('Analyzing {}...'.format(annotation_type))
     time_section = time.time()
@@ -111,25 +109,35 @@ def analyze_script(corpus_context,
 def analyze_track_script(corpus_context,
                          acoustic_name,
                          properties,
-                         script_path,
+                         script_path=None,
+                         subset=None,
+                         annotation_type='phone',
                          duration_threshold=0.01,
-                         phone_class=None,
                          arguments=None,
                          call_back=None,
                          file_type='consonant',
                          stop_check=None, multiprocessing=True):
+    
     if file_type not in ['consonant', 'vowel', 'low_freq']:
         raise ValueError('File type must be one of: consonant, vowel, or low_freq')
+
+    if not annotation_type in corpus_context.hierarchy.annotation_types:
+        raise ValueError('Annotation type does not exists')
+    
+    if script_path is None: 
+        raise ValueError('Please specify script path')
+    
     if acoustic_name not in corpus_context.hierarchy.acoustics:
         corpus_context.hierarchy.add_acoustic_properties(corpus_context, acoustic_name, properties)
         corpus_context.encode_hierarchy()
+    else: 
+        raise ValueError('Acoustic measure already exists')
+
     if call_back is not None:
-        call_back('Analyzing phones...')
-    if phone_class is None:
-        segment_mapping = generate_utterance_segments(corpus_context, padding=PADDING)
-    else:
-        segment_mapping = generate_segments(corpus_context, corpus_context.phone_name, phone_class, file_type=file_type,
-                                            padding=PADDING, duration_threshold=duration_threshold)
+        call_back('Analyzing track...')
+
+    segment_mapping = generate_segments(corpus_context, annotation_type, subset, file_type=file_type,
+                                        padding=PADDING, duration_threshold=duration_threshold)
 
     segment_mapping = segment_mapping.grouped_mapping('speaker')
     praat_path = corpus_context.config.praat_path

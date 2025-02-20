@@ -54,7 +54,7 @@ def test_analyze_track_script(acoustic_utt_config, praat_path, praatscript_test_
         script_path = os.path.join(praatscript_test_dir, 'formants.praat')
         props =  [('F1', float), ('F2', float), ('F3', float)]
         arguments = [0.01, 0.025, 5, 5500]
-        g.analyze_track_script('formants_other', props, script_path, phone_class='vowel', file_type='vowel', arguments=arguments)
+        g.analyze_track_script('formants_other', props, script_path, annotation_type='phone', subset='vowel', file_type='vowel', arguments=arguments)
 
         assert 'formants_other' in g.hierarchy.acoustics
 
