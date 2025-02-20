@@ -1012,7 +1012,7 @@ class AudioContext(SyllabicContext):
             return False
         return True
 
-    def encode_acoustic_statistic(self, acoustic_name, statistic, by_annotation=None, by_speaker=False):
+    def encode_acoustic_statistic(self, acoustic_name, statistic, by_annotation=None, by_speaker=True):
         """
         Computes and saves as type properties summary statistics on a by speaker or by phone basis (or both) for a
         given acoustic measure.
@@ -1024,7 +1024,7 @@ class AudioContext(SyllabicContext):
             Name of the acoustic type
         statistic : str
             One of `mean`, `median`, `stddev`, `sum`, `mode`, `count`
-        by_speaker : bool, defaults to False
+        by_speaker : bool, defaults to True
             Flag for calculating summary statistic by speaker
         by_annotation : str, defaults to None
             One of annotation types to calculate summary statistic over
@@ -1316,7 +1316,7 @@ class AudioContext(SyllabicContext):
         self.hierarchy.remove_acoustic_properties(self, acoustic_name, to_remove)
         self.encode_hierarchy()
 
-    def relativize_acoustic_measure(self, acoustic_name, by_speaker=True, by_annotation=None):
+    def relativize_acoustic_measure(self, acoustic_name, by_annotation=None, by_speaker=True):
         """
         Relativize acoustic tracks by taking the z-score of the points (using by speaker or by annotation means and standard
         deviations, or both by-speaker, by annotation) and save them as separate measures, i.e., F0_relativized from F0.
