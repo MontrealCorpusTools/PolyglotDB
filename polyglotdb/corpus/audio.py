@@ -15,7 +15,7 @@ from ..acoustics.formants.helper import save_formant_point_data
 from ..acoustics.classes import Track, TimePoint
 from .syllabic import SyllabicContext
 from ..acoustics.utils import load_waveform, generate_spectrogram
-
+from ..io.importer.from_csv import import_track_csv, import_track_csvs
 
 def sanitize_value(value, type):
     """
@@ -438,7 +438,7 @@ class AudioContext(SyllabicContext):
         """
         analyze_intensity(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
-    def analyze_script(self, subset=None, annotation_type=None, script_path=None, duration_threshold=0.01, arguments=None, stop_check=None,
+    def analyze_script(self, subset=None, annotation_type=None, script_path=None, duration_threshold=0.01, padding=0, arguments=None, stop_check=None,
                        call_back=None, multiprocessing=True, file_type='consonant'):
         """
         Use a Praat script to analyze annotation types in the corpus.  The Praat script must return properties per phone (i.e.,
@@ -473,11 +473,10 @@ class AudioContext(SyllabicContext):
             List of the names of newly added properties to the Neo4j database
         """
         return analyze_script(self, subset=subset, annotation_type=annotation_type, script_path=script_path, duration_threshold=duration_threshold,
-                              arguments=arguments,
-                              stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
+                              padding=padding, arguments=arguments, stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
 
     def analyze_track_script(self, acoustic_name,properties, script_path=None, subset=None, annotation_type='phone',
-                                  duration_threshold=0.01,arguments=None, call_back=None, file_type='consonant', stop_check=None, multiprocessing=True):
+                                  duration_threshold=0.01, padding=0, arguments=None, call_back=None, file_type='consonant', stop_check=None, multiprocessing=True):
         """
         Use a Praat script to analyze phones in the corpus.  The Praat script must return a track, and these tracks will
         be saved to the InfluxDB database.
@@ -510,7 +509,7 @@ class AudioContext(SyllabicContext):
             Sampling rate type to use, one of ``consonant``, ``vowel``, or ``low_freq``
         """
         return analyze_track_script(self, acoustic_name=acoustic_name, properties=properties, script_path=script_path, subset=subset, annotation_type=annotation_type,
-                                  duration_threshold=duration_threshold, arguments=arguments, call_back=call_back, file_type=file_type, stop_check=stop_check, multiprocessing=multiprocessing)
+                                  duration_threshold=duration_threshold, padding=padding, arguments=arguments, call_back=call_back, file_type=file_type, stop_check=stop_check, multiprocessing=multiprocessing)
     
     def reset_formant_points(self):
         """
@@ -907,14 +906,15 @@ class AudioContext(SyllabicContext):
                     phone_type.begin.column_name('begin'), 
                     phone_type.end.column_name('end'),
                     phone_type.word.label.column_name('word_label'),
-                    phone_type.speaker.name.column_name('speaker')]
+                    phone_type.speaker.name.column_name('speaker'),
+                    phone_type.utterance.id.column_name('utterance_id')]
         if 'syllable' in self.annotation_types:
             columns.append(phone_type.syllable.label.column_name('syllable_label'))
             q = q.columns(*columns).order_by(phone_type.begin)
-            phones = [(x['label'], x['begin'], x['end'], x['word_label'], x['speaker'], x['syllable_label']) for x in q.all()]
+            phones = [(x['label'], x['begin'], x['end'], x['word_label'], x['speaker'], x['utterance_id'], x['syllable_label']) for x in q.all()]
         else:
             q = q.columns(*columns).order_by(phone_type.begin)
-            phones = [(x['label'], x['begin'], x['end'], x['word_label'], x['speaker']) for x in q.all()]
+            phones = [(x['label'], x['begin'], x['end'], x['word_label'], x['speaker'], x['utterance_id']) for x in q.all()]
         for time_point, value in track.items():
             fields = {}
             for name, type in measures:
@@ -931,8 +931,9 @@ class AudioContext(SyllabicContext):
                 label = p[0]
                 speaker = p[4]
                 if 'syllable' in self.annotation_types:
-                    syllable_label = p[5]
+                    syllable_label = p[6]
                 word_label = p[3]
+                utterance_id = p[5]
                 if i == len(phones) - 1:
                     break
             else:
@@ -1261,7 +1262,7 @@ class AudioContext(SyllabicContext):
                 annotation_label=annotation_label, corpus_name=self.cypher_safe_name, return_list=', '.join(returns))
             
             results = self.execute_cypher(statement)
-            results = {(x['speaker'], x['annotation']): [x[n] for n in measures] for x in results}
+            results = {(x['speaker'], x['annotation']): [(n,x[n]) for n in measures] for x in results}
 
         elif by_annotation:
             annotation_label = annotation_map[by_annotation]
@@ -1274,7 +1275,7 @@ class AudioContext(SyllabicContext):
                 annotation_label=annotation_label, corpus_name=self.cypher_safe_name, return_list=', '.join(returns))
             
             results = self.execute_cypher(statement)
-            results = {x['annotation']: [x[n] for n in measures] for x in results}
+            results = {x['annotation']: [(n,x[n]) for n in measures] for x in results}
 
         elif by_speaker:
             if not self.hierarchy.has_speaker_property(measures[0]):
@@ -1284,7 +1285,7 @@ class AudioContext(SyllabicContext):
                         RETURN n.name AS speaker, {return_list}'''.format(
                 corpus_name=self.cypher_safe_name, return_list=', '.join(returns))     
             results = self.execute_cypher(statement)
-            results = {x['speaker']: [x[n] for n in measures] for x in results}
+            results = {x['speaker']: [(n,x[n]) for n in measures] for x in results}
         return results
 
     def reset_relativized_acoustic_measure(self, acoustic_name):
@@ -1486,3 +1487,44 @@ class AudioContext(SyllabicContext):
                              }
                         data.append(d)
             client.write_points(data, batch_size=1000, time_precision='ms')
+
+    def save_track_from_csv(self, acoustic_name, path, properties):
+        """
+        Reads a CSV file containing measurement tracks and saves each track using the _save_measurement API.
+
+        Parameters:
+        corpus_context : object
+            The corpus context for accessing the database and helper methods.
+        acoustic_name : str
+            The name of the acoustic measure.
+        path : str
+            Path to the CSV file containing the measurement data.
+        properties : list
+            list of properties to read from the csv 
+        discourse : str
+            Name of the discourse to store the track.
+        time_column : str
+            Name of the column in the CSV that contains time. 
+        """
+        import_track_csv(self, acoustic_name=acoustic_name, path=path, properties=properties)
+
+    def save_track_from_csvs(self, acoustic_name, directory_path, properties):
+        """
+        Reads a directory of CSV files containing measurement tracks, identifies the corresponding utterance,
+        and saves each track using the _save_measurement_tracks API.
+
+        Parameters:
+        corpus_context : object
+            The corpus context for accessing the database and helper methods.
+        acoustic_name : str
+            The name of the acoustic measure.
+        path : str
+            Path to the CSV file containing the measurement data.
+        properties : list
+            list of properties to read from the csv 
+        discourse : str
+            Name of the discourse to store the track.
+        time_column : str
+            Name of the column in the CSV that contains time. 
+        """
+        import_track_csvs(self, acoustic_name, directory_path, properties)

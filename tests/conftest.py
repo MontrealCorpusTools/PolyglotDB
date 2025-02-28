@@ -581,3 +581,11 @@ def acoustic_discourse_enrich_file(test_dir):
 @pytest.fixture(scope='session')
 def acoustic_inventory_enrich_file(test_dir):
     return os.path.join(test_dir, 'features', 'basic.txt')
+
+@pytest.fixture(scope='session')
+def timed_csv_enrich_file(test_dir):
+    return os.path.join(test_dir, 'csv', 'timed_token_enrichment.txt')
+
+@pytest.fixture(scope='session')
+def track_import_file(test_dir):
+    return os.path.join(test_dir, 'csv', 'acoustic_corpus.txt')

@@ -3,6 +3,10 @@ import logging
 import time
 import neo4j
 import re
+import numpy as np
+import csv 
+from ...acoustics.classes import (Track, TimePoint)
+
 
 def make_path_safe(path):
     '''Takes a path and returns it with the associated Javascript URL-safe characters'''
@@ -1301,7 +1305,24 @@ def import_token_csv(corpus_context, path, annotated_type, id_column, properties
             corpus_context.hierarchy.add_token_properties(corpus_context, annotated_type, props_to_add)
         corpus_context.encode_hierarchy()
 
-    property_update = ', '.join(["x.{} = csvLine.{}".format(p, p) for p in properties])
+    type_map = _infer_csv_types(path,30)
+
+    type_functions = {
+        "int": "toInteger",
+        "float": "toFloat",
+        "bool": "toBoolean",
+        "date": "date",
+        "datetime": "datetime",
+        "string": "" 
+    }
+
+    property_update = ', '.join([
+        "x.{p} = {func}(csvLine.{p})".format(
+            p=p, func=type_functions.get(type_map.get(p, "string"), "")
+        ) if type_map.get(p, "string") != "string" else "x.{p} = csvLine.{p}".format(p=p)
+        for p in properties
+    ])
+
     statement = '''
     CALL {{
         LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
@@ -1312,3 +1333,171 @@ def import_token_csv(corpus_context, path, annotated_type, id_column, properties
                        id_column=id_column, property_update=property_update)
     corpus_context.execute_cypher(statement)
     os.remove(path)
+
+
+def _infer_csv_types(path, sample_size=10):
+    """
+    Reads a sample of the CSV file and infers column types (integer, float, boolean, string only)
+    """
+    type_map = {}
+    
+    with open(path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        sample_rows = []
+        
+        for _ in range(sample_size):
+            try:
+                sample_rows.append(next(reader))
+            except StopIteration:
+                break  
+        
+        if not sample_rows:
+            return {} 
+    
+    column_data = {key: [] for key in sample_rows[0].keys()}
+    
+    for row in sample_rows:
+        for key, value in row.items():
+            column_data[key].append(value.strip())
+    
+    for key, values in column_data.items():
+        np_values = np.array(values, dtype=str)
+        
+        if np.all(np.char.lower(np_values) == 'true') or np.all(np.char.lower(np_values) == 'false'):
+            inferred_type = "bool"
+        elif np.all(np.char.isnumeric(np_values)):
+            inferred_type = "int"
+        else:
+            try:
+                np.array(np_values, dtype=float)
+                inferred_type = "float"
+            except ValueError:
+                inferred_type = "string"
+        
+        type_map[key] = inferred_type
+    
+    
+    return type_map    
+
+def import_token_csv_with_timestamp(corpus_context, path, annotated_type, timestamp_column, discourse_column, properties=None):
+    """
+    Adds new properties to a list of tokens of a given type based on timestamp and discourse matching.
+
+    Parameters
+    ----------
+    corpus_context: :class:`~polyglotdb.corpus.AnnotatedContext`
+        The corpus to load into.
+    path : str
+        The file name of the CSV.
+    annotated_type : str
+        The type of the tokens that are being updated.
+    timestamp_column : str
+        The header name for the column containing timestamps.
+    discourse_column : str
+        The header name for the column containing discourse names.
+    properties : list
+        A list of column names to update; if None, assume all columns will be updated (default).
+    """
+    if properties is None:
+        with open(path, 'r') as f:
+            properties = [x.strip() for x in f.readline().split(',') if x.strip() not in [timestamp_column, discourse_column]]
+    
+    if not annotated_type in corpus_context.hierarchy.annotation_types:
+        raise KeyError("Annotation type {} does not exist in this corpus".format(annotated_type))
+
+    props_to_add = []
+    for p in properties:
+        if not corpus_context.hierarchy.has_token_property(annotated_type, p):
+            props_to_add.append((p, str))
+
+    if props_to_add:
+        corpus_context.hierarchy.add_token_properties(corpus_context, annotated_type, props_to_add)
+        corpus_context.encode_hierarchy()
+
+    type_map = _infer_csv_types(path,30)
+
+    type_functions = {
+        "int": "toInteger",
+        "float": "toFloat",
+        "bool": "toBoolean",
+        "date": "date",
+        "datetime": "datetime",
+        "string": "" 
+    }
+
+    property_update = ', '.join([
+        "x.{p} = {func}(csvLine.{p})".format(
+            p=p, func=type_functions.get(type_map.get(p, "string"), "")
+        ) if type_map.get(p, "string") != "string" else "x.{p} = csvLine.{p}".format(p=p)
+        for p in properties
+    ])
+
+    statement = '''
+    CALL {{
+        LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
+        MATCH (d:Discourse {{name: csvLine.{discourse_column}}})
+        MATCH (x:{a_type}:{corpus})-[:spoken_in]->(d)
+        WHERE x.begin <= toFloat(csvLine.{timestamp_column}) <= x.end
+        SET {property_update}
+    }} IN TRANSACTIONS OF 500 ROWS
+    '''.format(
+        path=path, a_type=annotated_type, corpus=corpus_context.cypher_safe_name,
+        timestamp_column=timestamp_column, discourse_column=discourse_column, property_update=property_update
+    )
+
+    corpus_context.execute_cypher(statement)
+
+
+def import_track_csv(corpus_context, acoustic_name, path, properties):
+        
+    """
+    Reads a CSV file containing measurement tracks, and saves each track using the _save_measurement API.
+
+    Parameters:
+    corpus_context : object
+        The corpus context for accessing the database and helper methods.
+    acoustic_name : str
+        The name of the acoustic measure.
+    path : str
+        Path to the CSV file containing the measurement data.
+    properties : list
+        list of properties to read from the csv 
+    """
+    if acoustic_name not in corpus_context.hierarchy.acoustics:
+        corpus_context.hierarchy.add_acoustic_properties(corpus_context, acoustic_name, [(p, float) for p in properties])
+        corpus_context.encode_hierarchy()
+    with open(path, 'r', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        discourse = os.path.splitext(os.path.basename(path))[0]
+        for row in reader:
+            time = float(row['time'])
+
+            track = {}
+
+            measurements = {}
+            for p in properties:
+                measurements[p] = float(row[p])
+
+            track[time] = measurements
+            corpus_context._save_measurement(discourse, track, acoustic_name)
+
+def import_track_csvs(self, acoustic_name, directory_path, properties):
+    """
+    Reads a directory of CSV files containing measurement tracks, identifies the corresponding utterance,
+    and saves each track using the _save_measurement_tracks API.
+
+    Parameters
+    corpus_context : object
+        The corpus context for accessing the database and helper methods.
+    acoustic_name : str
+        The name of the acoustic measure.
+    directory_path : str
+        Path to the CSV file containing the measurement data.
+    properties : list
+        list of properties to read from the csv 
+    """
+    directory_path = os.path.expanduser(directory_path)
+    for file_name in os.listdir(directory_path):
+        if file_name.endswith('.csv'):
+            full_path = os.path.join(directory_path, file_name)
+            import_track_csv(self, acoustic_name, full_path, properties)
