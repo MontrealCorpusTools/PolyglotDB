@@ -95,3 +95,26 @@ def test_speaker_enrichment(acoustic_config):
         c.encode_measure('duration', 'mean', 'phone', True)
 
         # need a better way to test this
+
+def test_timed_token_enrichment(acoustic_config, timed_csv_enrich_file):
+    with CorpusContext(acoustic_config) as c:
+        c.enrich_tokens_with_csv(timed_csv_enrich_file, 'word', discourse_id_column="discourse", timestamp_column="time")
+        q = c.query_graph(c.word)
+        q = q.filter(c.word.label=="slow")
+        results = q.all()
+
+        assert (results[0]['prop2'] == 2)
+        assert (results[0]['prop1'] == 1.0)
+        assert (results[0]['prop3'] == True)
+
+def test_track_import(acoustic_config, track_import_file): 
+    with CorpusContext(acoustic_config) as c:
+        c.save_track_from_csv('formant_external', track_import_file, ['f1','f2'])
+
+        assert (c.discourse_has_acoustics('formant_external', 'acoustic_corpus'))
+        q = c.query_graph(c.phone)
+        q = q.columns(c.phone.label, c.phone.begin, c.phone.end, c.phone.formant_external.track).filter(c.phone.begin<=3,c.phone.end>=3)
+        q = q.order_by(c.phone.begin)
+        results = q.all()
+        first_time, first_values = next(results[0].track.items())
+        assert(first_values.get('f1')==100)

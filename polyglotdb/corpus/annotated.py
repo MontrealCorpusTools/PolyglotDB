@@ -1,6 +1,6 @@
 from .summarized import SummarizedContext
 
-from ..io.importer import (subannotations_data_to_csv, import_subannotation_csv, import_token_csv)
+from ..io.importer import (subannotations_data_to_csv, import_subannotation_csv, import_token_csv, import_token_csv_with_timestamp)
 
 
 class AnnotatedContext(SummarizedContext):
@@ -15,5 +15,10 @@ class AnnotatedContext(SummarizedContext):
         subannotations_data_to_csv(self, subannotation_name, data)
         import_subannotation_csv(self, subannotation_name, annotation_type, ["id", "annotated_id"] + [x[0] for x in property_data])
 
-    def enrich_tokens_with_csv(self, path, annotated_type, id_column, properties=None):
-        import_token_csv(self, path, annotated_type, id_column, properties=properties)
+    def enrich_tokens_with_csv(self, path, annotated_type, id_column=None, discourse_id_column=None, timestamp_column=None, properties=None):
+        if id_column == None and discourse_id_column == None: 
+            raise Exception('Must provide node id column name or discourse id column name')
+        if id_column:
+            import_token_csv(self, path, annotated_type, id_column, properties=properties)
+        else:
+            import_token_csv_with_timestamp(self, path, annotated_type, timestamp_column=timestamp_column, discourse_column=discourse_id_column, properties=properties)
