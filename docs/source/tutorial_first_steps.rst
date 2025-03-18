@@ -9,7 +9,7 @@
 
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1.py
 
-.. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_1_subset_output.txt
+.. _expected results: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_1_subset_output.txt
 
 .. _formant: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
 
@@ -34,10 +34,13 @@ The main objective of this tutorial is to import a downloaded corpus consisting 
 database so that they can be queried.
 
 .. note::
+
    The following Python scripts are presented in step-by-step blocks to guide you through the process. 
    However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
-   #. The complete Python script is available here `tutorial scripts`_.
-   #. If you prefer running the steps in blocks, this tutorial is also available as a `Jupyter notebook`_.
+   
+   The complete Python script is available here `tutorial scripts`_.
+   
+   If you prefer running the steps in blocks, this tutorial is also available as a `Jupyter notebook`_.
 
 .. _tutorial_download:
 

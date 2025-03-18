@@ -1,3 +1,6 @@
+.. _FastTrack: https://github.com/santiagobarreda/FastTrack
+
+.. _AutoVOT:  https://github.com/mlml/autovot
 
 **************************
 Encoding acoustic measures
@@ -194,9 +197,9 @@ Encoding Voice Onset Time(VOT)
 ==============================
 
 Currently there is only one method to encode Voice Onset Times(VOTs) into PolyglotDB.
-This makes use of the `AutoVOT <https://github.com/mlml/autovot>`_ program which automatically calculates VOTs based on various acoustic properties.
+This makes use of the `AutoVOT`_ program which automatically calculates VOTs based on various acoustic properties.
 
-VOTs are encoded over a specific subset of phones using :code: `analyze_vot` as follows:
+VOTs are encoded over a specific subset of phones using :code:`analyze_vot` as follows:
 
 .. code-block:: python
 
@@ -215,7 +218,7 @@ VOTs are encoded over a specific subset of phones using :code: `analyze_vot` as 
 
 Parameters
 ----------
-The :code: `analyze_vot` function has a variety of parameters that are important for running the function properly.
+The :code:`analyze_vot` function has a variety of parameters that are important for running the function properly.
 `classifier` is a string which has a paht to an AutoVOT classifier directory. 
 A default classifier is available in `/tests/data/classifier/sotc_classifiers`.
 
@@ -227,6 +230,8 @@ The `AutoVOT repo <https://github.com/mlml/autovot>` has some sane defaults for 
 `window_min` and `window_max` refer to the edges of a given phone's duration.
 So, a `window_min` of -30 means that AutoVOT will look up to 30 milliseconds before the start of a phone for the burst, and
 a `window_max` of 30 means that it will look up to 30 milliseconds after the end of a phone.
+
+.. _custom_script_encoding:
 
 Encoding other measures using a Praat script
 ============================================
@@ -257,14 +262,28 @@ In this format, the system generates temporary sound files, each containing one 
 
 - One required input: the full path to the sound file. This input will be automatically filled by the system. You can define additional attributes as needed.
 
-Example input section for a Praat script using Format 1::
+Example Praat script using Format 1::
 
     form Variables
         sentence filename
-        # add more arguments here 
     endform
 
+    # Read the sound file
     Read from file... 'filename$'
+
+    # Extract the pitch
+    To Pitch... 0 75 600
+
+    # Compute the mean F0
+    averageF0 = Get mean... 0 0 Hertz
+
+    # Print the result
+    output$ = "mean_pitch" + newline$ + string$(averageF0)
+    echo 'output$'
+
+    # Clean up
+    select all
+    Remove
 
 Format 2 (for optimized analysis):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -282,37 +301,58 @@ This format is more efficient as it reuses the same discourse sound file for all
 Do not assign values to these five fields; the system will populate them during processing. You may include additional 
 attributes beyond these five, but ensure that values are passed as an array via the API.
 
-Example Praat script for Format 2::
+Example Praat script using Format 2::
 
     form Variables
-        sentence filename 
-        real begin 
-        real end
-        integer channel
-        real padding
-        # add more arguments here
+        sentence filename  # path to the sound file
+        real begin # actual begin time (not including the padding)
+        real end # actual end time (not including the padding)
+        integer channel # Channel number of the speaker (for discourse with multiple speakers)
+        real padding # Padding time around the segment (s)
     endform
 
+    # Load the long sound file
     Open long sound file... 'filename$'
 
+    # Adjust segment boundaries with padding
     seg_begin = begin - padding
     if seg_begin < 0
         seg_begin = 0
     endif
 
     seg_end = end + padding
+    duration = Get total duration
     if seg_end > duration
         seg_end = duration
     endif
 
+    # Extract padded segment
     Extract part... seg_begin seg_end 1
     channel = channel + 1
     Extract one channel... channel
 
+    # Extract pitch from full padded segment
+    # Padding is added specifically for this step because pitch extraction 
+    # requires a minimum window length, which could be too short for certain
+    # segments (e.g. a phone/word segment)
+    To Pitch... 0 75 600
+
+    # Compute the mean F0 only over the **unpadded** segment
+    averageF0 = Get mean... begin end Hertz
+
+    # Print the result in the required format
+    output$ = "mean_pitch" + newline$ + string$(averageF0)
+    echo 'output$''
+
+    # Clean up
+    select all
+    Remove
+
+
 **Key Notes:**
 
 - Always use :code:`Open long sound file` to ensure compatibility with the system.
-- The `padding` field allows flexibility by extending the actual start and end times of the segment (default is 0.1s).
+- The `padding` field allows flexibility by extending the actual start and end times of the segment (default is 0).
 - Channel indexing starts at 0 in the system, so increment by 1 for use in Praat (Praat uses 1-based indexing).
 
 **Output Requirements:**
@@ -339,7 +379,11 @@ To run :code:`analyze_script`, follow these steps:
 .. code-block:: python
 
     with CorpusContext(config) as c:
+        # Defines a subset of phones called "sibilant"
         c.encode_type_subset('phone', ['S', 'Z', 'SH', 'ZH'], 'sibilant')
+
+        # Uses a praat script that takes as input a filename and begin/end time, and outputs measures we'd like to take for sibilants
+        # The analyze_script call then applies this script to every phone of type "sibilant" in the corpus.
         c.analyze_script(subset='sibilant', annotation_type="phone", script_path='path/to/script/sibilant.praat')
 
 
@@ -360,10 +404,11 @@ The script will then run separately for each instance of the selected annotation
 
 Example output::
 
-    time    f1  f2  f3  f4
-    0.000   502 1497    2502    3498
-    0.050   518 1483    2475    3452
-    0.100   537 1471    2462    3441
+    time    H1_A1  H1_A2  H1_A3  H1_H2
+    0.242   1.378   -4.326  14.369  8.522
+    0.277   -3.169  -10.276 9.383   3.002
+    0.312   -0.217  -4.195  3.497   7.215
+
 
 .. code-block:: python
 
@@ -373,6 +418,40 @@ Example output::
         props = [('H1_H2', float), ('H1_A1',float), ('H1_A2',float), ('H1_A3',float)]
         c.analyze_track_script('voice_quality', props, script_path, annotation_type='phone')
 
+A detailed example of using this functionality for voice quality analysis, along with a sample Praat script, is provided in the tutorial. See (:ref:`tutorial_vq`) for more details.
+
+Encoding acoustic tracks from CSV
+=================================
+
+Sometimes, you may want to use external software to extract specific measurement tracks. For example, `FastTrack`_ is a Praat plugin that can generate formant tracks.
+If you have generated tracks using other software, you can import them into PolyglotDB using the functions :code:`save_track_from_csvs` and :code:`save_track_from_csv` as long as the files 
+follow the expected structure.
+
+CSV Format:: 
+    
+    time, measurement1, measurement2, measurement3, ...
+
+Additionally, the file name should match the name of the discourse for which the track should be saved.
+
+Calling the function :code:`save_track_from_csv` with the file path will save the track. You must also provide a list of the columns that the system should read. It is assumed that all columns are of type float.
+
+To load multiple CSV files at once, pass a directory path to :code:`save_track_from_csvs`.
+
+**Example** (FastTrack output): 
+
+.. image:: images/fasttrack_csvoutput.png
+   :width: 600
+
+To load all the measures from the generated tracks: 
+
+.. code-block:: python 
+
+    with CorpusContext(config) as c:
+        # loading one file
+        c.save_track_from_csv('formants', '/path/to/csv', ['f1','b1','f2','b2','f3','b3','f1p','f2p','f3p','f0','intensity','harmonicity'])
+        # loading multiple csv files 
+        c.save_track_from_csvs('formants', '/path/to/directory', ['f1','b1','f2','b2','f3','b3','f1p','f2p','f3p','f0','intensity','harmonicity'])
+
 
 Encoding acoustic track statistics
 ==================================
@@ -380,18 +459,22 @@ Encoding acoustic track statistics
 After encoding an acoustic track measurement—either through the built-in algorithms or custom Praat scripts—
 you can perform statistical aggregation on these data tracks. The supported statistical measures are: mean, median, 
 standard deviation (stddev), sum, mode, and count. 
+
 Aggregation can be performed on a specified annotation type, such as phones, words, or syllables 
 (if syllable encoding is available). The aggregation is conducted for all annotations with the same label.
+
 Aggregation can be performed by speaker, in which case the results will be grouped by speaker, 
 and each (annotation_label, speaker) pair will have its corresponding statistical measure computed.
+
 Once encoded, the computed statistics are stored and can be queried later.
 
 .. code-block:: python
 
     with CorpusContext(config) as c:        
         # Encode a statistic for an acoustic measure
-        c.encode_acoustic_statistic('formants', 'mean', by_annotation='phone', by_speaker=True)
+        c.encode_acoustic_statistic('voice_quality', 'mean', by_annotation='phone', by_speaker=True)
         
         # Alternatively, call the get function directly; it will encode the statistic if not already available
-        results = c.get_acoustic_statistic('formants', 'mean', by_annotation='phone', by_speaker=True)
-
+        results = c.get_acoustic_statistic('voice_quality', 'mean', by_annotation='phone', by_speaker=True)
+        # This would compute, save, and return the mean values for all voice quality measurements on a by speaker and by phone basis. 
+        # for example ('speaker1', 'AO1'): [1.4283178345991416, 5.21375241700153, 28.8672225446156, 18.57861883658481]

@@ -1,0 +1,2 @@
+discourse,time,prop1,prop2,prop3
+acoustic_corpus,10,1.0,2,true

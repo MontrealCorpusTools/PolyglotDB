@@ -38,6 +38,7 @@ def analyze_script(corpus_context,
                    subset=None,
                    script_path=None,
                    duration_threshold=0.01,
+                   padding=0,
                    arguments=None,
                    call_back=None,
                    file_type='consonant',
@@ -89,7 +90,7 @@ def analyze_script(corpus_context,
         call_back('Analyzing {}...'.format(annotation_type))
     time_section = time.time()
     segment_mapping = generate_segments(corpus_context, annotation_type, subset, file_type=file_type,
-                                        padding=0, duration_threshold=duration_threshold)
+                                        padding=padding, duration_threshold=duration_threshold)
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
     praat_path = corpus_context.config.praat_path
@@ -113,6 +114,7 @@ def analyze_track_script(corpus_context,
                          subset=None,
                          annotation_type='phone',
                          duration_threshold=0.01,
+                         padding=0,
                          arguments=None,
                          call_back=None,
                          file_type='consonant',
@@ -137,8 +139,7 @@ def analyze_track_script(corpus_context,
         call_back('Analyzing track...')
 
     segment_mapping = generate_segments(corpus_context, annotation_type, subset, file_type=file_type,
-                                        padding=PADDING, duration_threshold=duration_threshold)
-
+                                        padding=padding, duration_threshold=duration_threshold) 
     segment_mapping = segment_mapping.grouped_mapping('speaker')
     praat_path = corpus_context.config.praat_path
     script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
