@@ -47,7 +47,11 @@ if __name__ == '__main__':
         print("mean measures: {}".format(value))
 
         # You may export this distionary to csv
-        with open(export_path_2, 'w') as csv_file:  
+        with open(export_path_2, 'w', newline='') as csv_file:
             writer = csv.writer(csv_file)
-            for key, value in acoustic_statistics.items():
-                writer.writerow([key, value])
+            header = ['speaker', 'vowel'] + [k for k, _ in next(iter(acoustic_statistics.values()))]
+            writer.writerow(header)
+
+            for (speaker, vowel), measures in acoustic_statistics.items():
+                row = [speaker, vowel] + [v for _, v in measures]
+                writer.writerow(row)

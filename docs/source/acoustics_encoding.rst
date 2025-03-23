@@ -2,6 +2,8 @@
 
 .. _AutoVOT:  https://github.com/mlml/autovot
 
+.. _VoiceSauce: https://www.phonetics.ucla.edu/voicesauce/
+
 **************************
 Encoding acoustic measures
 **************************
@@ -262,28 +264,8 @@ In this format, the system generates temporary sound files, each containing one 
 
 - One required input: the full path to the sound file. This input will be automatically filled by the system. You can define additional attributes as needed.
 
-Example Praat script using Format 1::
-
-    form Variables
-        sentence filename
-    endform
-
-    # Read the sound file
-    Read from file... 'filename$'
-
-    # Extract the pitch
-    To Pitch... 0 75 600
-
-    # Compute the mean F0
-    averageF0 = Get mean... 0 0 Hertz
-
-    # Print the result
-    output$ = "mean_pitch" + newline$ + string$(averageF0)
-    echo 'output$'
-
-    # Clean up
-    select all
-    Remove
+Example Praat script using Format 1 can be found `here <https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/praat_scripts/mean_pitch.praat>`_.
+This script computes the mean F0 (pitch) over a sound file. 
 
 Format 2 (for optimized analysis):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -301,58 +283,14 @@ This format is more efficient as it reuses the same discourse sound file for all
 Do not assign values to these five fields; the system will populate them during processing. You may include additional 
 attributes beyond these five, but ensure that values are passed as an array via the API.
 
-Example Praat script using Format 2::
-
-    form Variables
-        sentence filename  # path to the sound file
-        real begin # actual begin time (not including the padding)
-        real end # actual end time (not including the padding)
-        integer channel # Channel number of the speaker (for discourse with multiple speakers)
-        real padding # Padding time around the segment (s)
-    endform
-
-    # Load the long sound file
-    Open long sound file... 'filename$'
-
-    # Adjust segment boundaries with padding
-    seg_begin = begin - padding
-    if seg_begin < 0
-        seg_begin = 0
-    endif
-
-    seg_end = end + padding
-    duration = Get total duration
-    if seg_end > duration
-        seg_end = duration
-    endif
-
-    # Extract padded segment
-    Extract part... seg_begin seg_end 1
-    channel = channel + 1
-    Extract one channel... channel
-
-    # Extract pitch from full padded segment
-    # Padding is added specifically for this step because pitch extraction 
-    # requires a minimum window length, which could be too short for certain
-    # segments (e.g. a phone/word segment)
-    To Pitch... 0 75 600
-
-    # Compute the mean F0 only over the **unpadded** segment
-    averageF0 = Get mean... begin end Hertz
-
-    # Print the result in the required format
-    output$ = "mean_pitch" + newline$ + string$(averageF0)
-    echo 'output$''
-
-    # Clean up
-    select all
-    Remove
-
+Example Praat script using Format 2 can be found `here <https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/praat_scripts/mean_pitch_optimized.praat>`_. 
+Similar to the previous example script, this script computes the mean F0 (pitch) over a sound file, but this time includes the extra four inputs. 
 
 **Key Notes:**
 
 - Always use :code:`Open long sound file` to ensure compatibility with the system.
-- The `padding` field allows flexibility by extending the actual start and end times of the segment (default is 0).
+- Must manually extract the segment within the script using the `begin`` and `end` inputs.
+- The `padding` field allows flexibility by extending the actual begin and end times of the segment (default is 0).
 - Channel indexing starts at 0 in the system, so increment by 1 for use in Praat (Praat uses 1-based indexing).
 
 **Output Requirements:**
@@ -423,7 +361,12 @@ A detailed example of using this functionality for voice quality analysis, along
 Encoding acoustic tracks from CSV
 =================================
 
-Sometimes, you may want to use external software to extract specific measurement tracks. For example, `FastTrack`_ is a Praat plugin that can generate formant tracks.
+Sometimes you may want to use external software to generate measurement tracks. Examples include:
+
+    - F0 (pitch) tracks computed by an external library, across entire files
+    - Voice quality tracks for each vowel, computed using `VoiceSauce`_
+    - Vowel formant tracks, e.g. using `FastTrack`_.
+
 If you have generated tracks using other software, you can import them into PolyglotDB using the functions :code:`save_track_from_csvs` and :code:`save_track_from_csv` as long as the files 
 follow the expected structure.
 

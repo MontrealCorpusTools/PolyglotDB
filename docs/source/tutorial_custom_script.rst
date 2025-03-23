@@ -118,11 +118,14 @@ To understand the general trend, we can encode acoustic statistics (mean).
         print("mean measures: {}".format(value))
 
         # Export to CSV
-        with open(export_path_2, 'w') as csv_file:
+        with open(export_path_2, 'w', newline='') as csv_file:
             writer = csv.writer(csv_file)
-            writer.writerow(['Speaker', 'Phone', 'mean_H1_H2', 'mean_H1_A1', 'mean_H1_A2', 'mean_H1_A3'])
-            for key, value in acoustic_statistics.items():
-                writer.writerow([key[0], key[1], *value])
+            header = ['speaker', 'vowel'] + [k for k, _ in next(iter(acoustic_statistics.values()))]
+            writer.writerow(header)
+
+            for (speaker, vowel), measures in acoustic_statistics.items():
+                row = [speaker, vowel] + [v for _, v in measures]
+                writer.writerow(row)
 
 
 The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_ and its `expected output`_ when run on the 'LibriSpeech-subset' corpora.
