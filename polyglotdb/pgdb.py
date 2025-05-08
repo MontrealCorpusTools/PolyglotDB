@@ -269,6 +269,7 @@ def main():
     args = parser.parse_args()
     if not hasattr(args, 'which') or args.which == 'help':
         parser.print_usage()
+        return
     elif args.which == 'install':
         directory = os.path.expanduser(args.directory)
         if not directory:
