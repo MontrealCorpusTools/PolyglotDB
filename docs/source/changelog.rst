@@ -3,6 +3,11 @@
 Changelog
 *********
 
+Version 1.3.2
+=============
+
+* Removed usage of Python 3.12-only features for compatibility with Python 3.9
+
 Version 1.3.1
 =============
 

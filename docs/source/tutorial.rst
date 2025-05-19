@@ -15,5 +15,6 @@ Contents:
    tutorial_query.rst
    tutorial_formants.rst
    tutorial_pitch.rst
+   tutorial_custom_script.rst
 
 
