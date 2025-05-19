@@ -7,7 +7,6 @@ dependencies:
     - librosa
     - scipy
     - praatio
-    - textgrid
     - influxdb
     - tqdm
     - future
