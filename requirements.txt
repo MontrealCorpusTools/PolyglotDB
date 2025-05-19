@@ -2,7 +2,6 @@ neo4j
 librosa
 scipy
 praatio
-textgrid
 influxdb
 tqdm
 conch_sounds
