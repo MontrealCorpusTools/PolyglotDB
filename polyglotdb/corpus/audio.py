@@ -1247,7 +1247,7 @@ class AudioContext(SyllabicContext):
                 LIMIT 1'''.format(
                     annotation_label=annotation_label, 
                     corpus_name=self.cypher_safe_name, 
-                    return_list=f'[{", ".join(f"'{r}'" for r in measures)}]'
+                    return_list='[' + ', '.join("'{}'".format(r) for r in measures) + ']'
                 )
 
             results = self.execute_cypher(statement)
@@ -1346,7 +1346,7 @@ class AudioContext(SyllabicContext):
         template = 'mean("{0}") as mean_{0}, stddev("{0}") as sd_{0}'
         props = [x for x in self.hierarchy.acoustic_properties[acoustic_name] if x[1] in [int, float] and not x[0].endswith('relativized')]
         statistics = {x[0]: template.format(x[0]) for x in props}
-        aliases = {x[0]: (f'mean_{x[0]}', f'sd_{x[0]}') for x in props}
+        aliases = {x[0]: ('mean_{}'.format(x[0]), 'sd_{}'.format(x[0])) for x in props}
         
         summary_data = {}
 
@@ -1358,24 +1358,38 @@ class AudioContext(SyllabicContext):
         
             for item in getattr(self, by_annotation + 's', []):
                 if by_speaker:
-                    query = f'''select {", ".join(statistics.values())} from "{acoustic_name}" 
-                                where "{db_field}" = '{item.replace("'", "\\'")}' group by "speaker";'''
+                    query = '''select {} from "{}" 
+                                where "{}" = '{}' group by "speaker";'''.format(
+                        ', '.join(statistics.values()), 
+                        acoustic_name, 
+                        db_field, 
+                        item.replace("'", r"\'")
+                    )
                     result = client.query(query)
                     for k, v in result.items():
                         v = list(v)
                         for measure, (mean_name, sd_name) in aliases.items():
                             summary_data[(k[1]['speaker'], item, measure)] = v[0].get(mean_name), v[0].get(sd_name)
                 else:
-                    query = f'''select {", ".join(statistics.values())} from "{acoustic_name}" 
-                                where "{db_field}" = '{item.replace("'", "\\'")}';'''
+                    query = '''select {} from "{}" 
+                                where "{}" = '{}';'''.format(
+                        ', '.join(statistics.values()), 
+                        acoustic_name, 
+                        db_field, 
+                        item.replace("'", r"\'")
+                    )
                     result = client.query(query)
                     for k, v in result.items():
                         v = list(v)
                         for measure, (mean_name, sd_name) in aliases.items():
                             summary_data[(item, measure)] = v[0].get(mean_name), v[0].get(sd_name)
         else:
-            query = f'''select {", ".join(statistics.values())} from "{acoustic_name}" 
-                        where "{db_field}" != '' group by "speaker";'''
+            query = '''select {} from "{}" 
+                        where "{}" != '' group by "speaker";'''.format(
+                ', '.join(statistics.values()), 
+                acoustic_name, 
+                db_field
+            )
             result = client.query(query)
             for k, v in result.items():
                 v = list(v)
@@ -1384,8 +1398,12 @@ class AudioContext(SyllabicContext):
 
         for s in self.speakers:
             safe_speaker = s.replace("'", r"\'")
-            all_query = f'''select * from "{acoustic_name}" 
-                            where '{db_field}' != '' and "speaker" = '{safe_speaker}';'''
+            all_query = '''select * from "{}" 
+                            where '{}' != '' and "speaker" = '{}';'''.format(
+                acoustic_name, 
+                db_field, 
+                safe_speaker
+            )
             all_results = client.query(all_query)
             data = []
             for _, records in all_results.items():
