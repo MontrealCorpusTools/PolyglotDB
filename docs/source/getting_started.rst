@@ -9,6 +9,7 @@
 .. _Praat: https://www.fon.hum.uva.nl/praat/
 
 .. _Docker: https://docs.docker.com/get-started/get-docker/
+
 ***************
 Getting started
 ***************
@@ -32,7 +33,7 @@ dependencies that must be installed prior to using a Polyglot database, dependin
 Installation
 ============
 
-It is recommended to create an insolated conda environment for using PolyglotDB, for ensuring the correct Java version as well as better package management with Python. 
+PolyglotDB is now available directly via conda-forge! We recommend using Conda for installation, as it ensures compatibility with required system dependencies like Java and makes it easier to manage environments across platforms.
 
 If you don't have conda installed on your device: 
 
@@ -44,12 +45,12 @@ If you don't have conda installed on your device:
    On Windows, you must use the Anaconda Prompt or Miniforge Prompt to effectively manage and execute conda commands. 
    This is crucial to avoid potential issues specific to the Windows environment and to ensure that all functionalities work as intended.
 
-To install via pip:
 
-#. Create the a conda environment via :code:`conda create -n polyglotdb -c conda-forge openjdk=21 python=3.12 librosa`
+Quick Installation via conda-forge (Recommended):
+
+#. You can install PolyglotDB using a single Conda command :code:`conda create -n polyglotdb -c conda-forge polyglotdb`
 #. Activate conda environment :code:`conda activate polyglotdb`
-#. Install PolyglotDB via :code:`pip install polyglotdb`, which will install the ``pgdb`` utility that can be run inside your conda environment 
-   and manages a local database.
+#. You then have the ``pgdb`` utility that can be run inside your conda environment and manages a local database.
 
 To install from source (primarily for development):
 
