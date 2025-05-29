@@ -48,7 +48,7 @@ If you don't have conda installed on your device:
 
 Quick Installation via conda-forge (Recommended):
 
-#. You can install PolyglotDB using a single Conda command :code:`conda create -n polyglotdb -c conda-forge polyglotdb`
+#. You can install PolyglotDB using a single Conda command :code:`conda create -n polyglotdb -c conda-forge polyglotdb python=3.12`
 #. Activate conda environment :code:`conda activate polyglotdb`
 #. You then have the ``pgdb`` utility that can be run inside your conda environment and manages a local database.
 
