@@ -3,6 +3,8 @@
 
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_2.py
 
+.. _tutorial scripts: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial
+
 .. _tutorial_enrichment:
 
 ************************************
@@ -12,7 +14,15 @@ Tutorial 2: Adding extra information
 The main objective of this tutorial is to enrich an already imported corpus (see :ref:`tutorial_first_steps`) with additional
 information not present in the original audio and transcripts.  This additional information will then be used for creating
 linguistically interesting queries in the next tutorial (:ref:`tutorial_query`).
-This tutorial is available as a `Jupyter notebook`_ as well.
+
+.. note::
+
+   The following Python scripts are presented in step-by-step blocks to guide you through the process. 
+   However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
+   
+   The complete Python script is available here `tutorial scripts`_.
+   
+   If you prefer running the steps in blocks, this tutorial is also available as a `Jupyter notebook`_.
 
 .. note::
 

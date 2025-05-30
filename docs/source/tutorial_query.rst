@@ -7,6 +7,8 @@
 
 .. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_3_subset_output.csv
 
+.. _tutorial scripts: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial
+
 .. _tutorial_query:
 
 ***********************************
@@ -15,7 +17,15 @@ Tutorial 3: Getting information out
 
 The main objective of this tutorial is to export a CSV file using a query on an imported (:ref:`tutorial_first_steps`) and
 enriched (:ref:`tutorial_enrichment`) corpus.
-This tutorial is available as a `Jupyter notebook`_ as well.
+
+.. note::
+
+   The following Python scripts are presented in step-by-step blocks to guide you through the process. 
+   However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
+   
+   The complete Python script is available here `tutorial scripts`_.
+   
+   If you prefer running the steps in blocks, this tutorial is also available as a `Jupyter notebook`_.
 
 As in the other tutorials, import statements and the corpus name (as it is stored in pgdb) must be set for the code in this tutorial
 to be runnable:

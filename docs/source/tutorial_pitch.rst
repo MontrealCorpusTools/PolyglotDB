@@ -9,6 +9,8 @@
 
 .. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.Rmd
 
+.. _tutorial scripts: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial
+
 .. _tutorial_pitch:
 
 ***********************************
@@ -19,6 +21,14 @@ The main objective of this tutorial is to perform pitch extraction on the enrich
 
 As in the other tutorials, import statements and the corpus name (as it is stored in pgdb) must be set for the code in this tutorial
 to be runnable. The example given below continues to make use of the "tutorial-subset" corpus we have been using in tutorials 1-3.
+
+.. note::
+
+   The following Python scripts are presented in step-by-step blocks to guide you through the process. 
+   However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
+   
+   The complete Python script is available here `tutorial scripts`_.
+   
 
 .. code-block:: python
 
