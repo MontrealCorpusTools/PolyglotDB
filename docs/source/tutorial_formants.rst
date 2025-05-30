@@ -11,6 +11,8 @@
 
 .. _rmd script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
 
+.. _related ISCAN tutorial: https://iscan.readthedocs.io/en/latest/tutorials_iscan.html#step-4-examining-analysing-the-data
+
 .. _tutorial_formants:
 
 

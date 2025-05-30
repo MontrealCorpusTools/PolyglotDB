@@ -2,7 +2,7 @@
 
 .. _UCLA Phonetics Lab: https://phonetics.linguistics.ucla.edu/
 
-.. _script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial/tutorial_6_vq_script.praat
+.. _Praat script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial/tutorial_6_vq_script.praat
 
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_6.py
 

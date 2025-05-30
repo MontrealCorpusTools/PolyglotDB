@@ -105,4 +105,4 @@ Next steps
 ===============
 At this point, the corpus is ready for pitch analysis using R. We have provided an `rmd script`_ showcasing a possible approach. We have also provided results for running this script on the "LibriSpeech-aligned" (the full dataset) in a `follow-up analysis`_ html. These results contains many more speakers than the subset we have been using in tutorials so far to provide sufficient data for coherent analysis.
 
-See :ref:`tutorial_formants` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
+See :ref:`tutorial_formants` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R.
