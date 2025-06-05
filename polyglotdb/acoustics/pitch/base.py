@@ -193,7 +193,7 @@ def analyze_pitch(corpus_context,
             call_back('Getting original speaker means and SDs...')
         for i, ((k,), v) in enumerate(segment_mapping.items()):
             if call_back is not None:
-                call_back('Analyzing speaker {} ({} of {})'.format(k, i, num_speakers))
+                call_back('Analyzing speaker {} ({} of {})'.format(k, i + 1, num_speakers))
             output = analyze_segments(v, pitch_function, stop_check=stop_check, multiprocessing=multiprocessing)
 
             sum_pitch = 0
@@ -211,7 +211,7 @@ def analyze_pitch(corpus_context,
 
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):
         if call_back is not None:
-            call_back('Analyzing speaker {} ({} of {})'.format(speaker, i, num_speakers))
+            call_back('Analyzing speaker {} ({} of {})'.format(speaker, i + 1, num_speakers))
         if algorithm == 'gendered':
             min_pitch = absolute_min_pitch
             max_pitch = absolute_max_pitch
