@@ -74,7 +74,7 @@ if __name__ == '__main__':
         ## phone comes at beginning of utterance
         q = c.query_graph(c.phone).filter(c.phone.word.begin == c.phone.word.utterance.begin)
         ## restrict just to phone = vowels
-        q = q.filter(c.phone.subset == 'vowel')
+        q = q.filter(c.phone.label.in_(vowel_set))
         ## preceding phone is at beginning of the word
         q = q.filter(c.phone.previous.begin == c.phone.word.begin)
         q = q.columns(
