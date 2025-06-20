@@ -167,11 +167,51 @@ The query is first constructed by calling the `query_graph`, which defines what 
 		## speech rate & speaker information
 		c.syllable.word.utterance.speech_rate.column_name('utterance_speech_rate'),
 		c.syllable.speaker.name.column_name('speaker'),
-		c.syllable.discourse.name.column_name('file')
-	)
+		c.syllable.discourse.name.column_name('file'))
 
 	print("Writing query to file...")
 	q.to_csv(export_path)
 
 Step 4: Analysis
 ----------------
+
+With the syllable duration data extracted, the data can be analysed with respect to the research question. First the data is loaded into `R`.
+
+.. code-block:: r
+
+	library(tidyverse)
+	df <- read.csv("polysyllabic.csv")
+
+Next data quantity is checked, particularly the number of word types and tokens for each number of syllables.
+
+.. code-block:: r
+
+	df %>% group_by(word_num_syllables) %>% summarise(types = n_distinct(word), tokens = n())
+	# A tibble: 5 × 3
+	#  word_num_syllables types tokens
+	#              <int> <int>  <int>
+	#                  1   999   2892
+	#                  2   815   1376
+	#                  3   263    355
+	#                  4    38     40
+	#                  5     2      2
+
+We see that there are only 2 tokens (and 2 unique types) for 5-syllable words, these are excluded from further analysis.
+
+.. code-block:: r
+
+	df <- filter(df, word_num_syllables <= 4)
+
+The plot of syllable duration as a function of the number of syllables demonstrate that there is a large reduction in syllable duration between 1-syllable and 2-syllable words. 3+ syllable words are also generally shorter, though this difference is much less pronounced.
+
+.. code-block:: r
+
+	df %>% ggplot(aes(x = factor(word_num_syllables), y = syllable_duration)) +
+		geom_boxplot() +
+		scale_y_sqrt() +
+		xlab("Number of syllables") +
+		ylab("Syllable duration (sec)")
+
+.. image:: ../images/vowel_duration_plot.png
+	:width: 400
+
