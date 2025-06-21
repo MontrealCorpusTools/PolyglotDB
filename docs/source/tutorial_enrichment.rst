@@ -1,6 +1,4 @@
 
-.. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_2_enrichment.ipynb
-
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_2.py
 
 .. _tutorial scripts: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial
@@ -22,8 +20,6 @@ linguistically interesting queries in the next tutorial (:ref:`tutorial_query`).
    
    The complete Python script is available here `tutorial scripts`_.
    
-   If you prefer running the steps in blocks, this tutorial is also available as a `Jupyter notebook`_.
-
 .. note::
 
    Different kinds of enrichment, corresponding to different
