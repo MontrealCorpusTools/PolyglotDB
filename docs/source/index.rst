@@ -12,6 +12,7 @@ Contents:
    introduction.rst
    getting_started.rst
    tutorial.rst
+   case_studies.rst
    usage.rst
    import.rst
    enrichment.rst
