@@ -1,4 +1,4 @@
-.. _case_study_duration:
+.. _case_study_vowel_dynamics:
 
 ****************************
 Case study 2: Vowel dynamics
