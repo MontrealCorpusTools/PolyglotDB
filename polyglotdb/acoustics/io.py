@@ -4,8 +4,8 @@ import shutil
 import re
 import csv
 import librosa
-import audioread
 import neo4j
+import soundfile
 
 from conch.utils import write_wav
 
@@ -39,7 +39,7 @@ def resample_audio(file_path, new_file_path, new_sr):
 
 
 def add_discourse_sound_info(corpus_context, discourse, filepath):
-    with audioread.audio_open(filepath) as f:
+    with soundfile.SoundFile(filepath) as f:
         sample_rate = f.samplerate
         n_channels = f.channels
     try:
@@ -53,8 +53,10 @@ def add_discourse_sound_info(corpus_context, discourse, filepath):
                 print(w)
         duration = float(re.search(r'Length \(seconds\):\s+([0-9.]+)', err).groups()[0])
     except:
-        with audioread.audio_open(filepath) as f:
-            duration = f.duration
+        with soundfile.SoundFile(filepath) as f:
+            frames = f.frames
+            sample_rate = f.samplerate
+            duration = frames / sample_rate
     audio_dir = corpus_context.discourse_audio_directory(discourse)
     os.makedirs(audio_dir, exist_ok=True)
     consonant_rate = 16000
