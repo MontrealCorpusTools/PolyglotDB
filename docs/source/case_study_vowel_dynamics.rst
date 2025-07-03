@@ -14,7 +14,7 @@ Vowel-inherent spectral change is by now well-documented in English, but compara
 Step 0: Preliminaries
 =====================
 
-For this case study, the data come from a corpus of parliamentary speech, the *ParlBleu* corpus (Lipari et al., 2024). We'll be using a subset of 6 speakers (3 female, 3 male), which can be downloaded `here <https://github.com/massimolipari/ParlBleu-subset>`_. The full corpus is `also available on GitHub by request <https://github.com/massimolipari/Corpus_ParlBleu>`_.
+For this case study, the data come from a corpus of parliamentary speech, the *ParlBleu* corpus (Lipari et al., 2024). We'll be using a subset of 6 speakers (3 female, 3 male), which can be downloaded `here <https://github.com/massimolipari/ParlBleu-subset>`__. The full corpus is `also available on GitHub by request <https://github.com/massimolipari/Corpus_ParlBleu>`__.
 
 To begin, we'll assume a file structure that looks like the following:
 
@@ -78,7 +78,7 @@ By default, ``analyze_formant_tracks()`` will generate acoustic tracks over enti
 Option B: "Refined" measures
 ----------------------------
 
-Alternatively, PolyglotDB implements the formant 'refinement' algorithm described in `Mielke et al. (2019) <https://eprints.gla.ac.uk/183724/>`_ though the ``analyze_formant_point_refinement()`` function. In short, this approach generates multiple canadidate analyses for each vowel token by varying the number of formants (while keeping the formant frequency ceiling fixed at 5500 Hz), and automatically selecting the candidate which minimizes the `Mahalanobis distance <https://en.wikipedia.org/wiki/Mahalanobis_distance>`_ between the observation and the multidimensional distribution of the corresponding vowel phoneme in acoustic space, which is referred to as a 'prototype'. For the implementation here, prototypes consist of means and a covariance matrix on 6 acoustic dimensions (the frequencies and bandwidths of the first three formants taken at 33% of duration) for each of the vowel phones being analyzed. The algorithm can be run with multiple iterations: new prototypes are computed for each speaker-phoneme pair at the end of each iteration and used for the following one.
+Alternatively, PolyglotDB implements the formant 'refinement' algorithm described in `Mielke et al. (2019) <https://eprints.gla.ac.uk/183724/>`__ though the ``analyze_formant_point_refinement()`` function. In short, this approach generates multiple canadidate analyses for each vowel token by varying the number of formants (while keeping the formant frequency ceiling fixed at 5500 Hz), and automatically selecting the candidate which minimizes the `Mahalanobis distance <https://en.wikipedia.org/wiki/Mahalanobis_distance>`__ between the observation and the multidimensional distribution of the corresponding vowel phoneme in acoustic space, which is referred to as a 'prototype'. For the implementation here, prototypes consist of means and a covariance matrix on 6 acoustic dimensions (the frequencies and bandwidths of the first three formants taken at 33% of duration) for each of the vowel phones being analyzed. The algorithm can be run with multiple iterations: new prototypes are computed for each speaker-phoneme pair at the end of each iteration and used for the following one.
 
 To get formants tracks (rather than points), we add the ``output_tracks = True`` paramter. (This is admittedly a little confusing, given the name of the function.)
 
@@ -99,7 +99,7 @@ Before we can run *Fast Track*, we need to obtain the random sample of vowels we
 	:language: python
 
 
-We then use an R script to take a random subset of this data. From there, the script will create a new directory (called ``fasttrack`` here), where it'll put a copy of the data in the correct format for use with *Fast Track* `(see here for an explanation) <https://github.com/santiagobarreda/FastTrack/wiki/Preparing-sounds>`_. A copy of each vowel token is extracted from its original sound file with 25 ms of padding on either end and saved as its own sound file in a ``sounds`` directory.
+We then use an R script to take a random subset of this data. From there, the script will create a new directory (called ``fasttrack`` here), where it'll put a copy of the data in the correct format for use with *Fast Track* `(see here for an explanation) <https://github.com/santiagobarreda/FastTrack/wiki/Preparing-sounds>`__. A copy of each vowel token is extracted from its original sound file with 25 ms of padding on either end and saved as its own sound file in a ``sounds`` directory.
 
 In order to limit the number of spurious candidates considered (and therefore maximize the efficiency and efficacy of the automatic winner selection algorithm), it's helpful to keep the specified formant ceiling range relatively narrow. However, a relatively wide interval is often needed to accomodate the range of interspeaker variation. We can get around this tension by splitting our speakers into groups based on approximate vocal tract length and using different ranges for each group. Here, we'll try and achieve this result by grouping speakers by gender. The script will automatically create separate ``female`` and ``male`` folders, and create a ``sounds`` folder within each where the appropriate sound snippets will be copied.
 
@@ -123,7 +123,7 @@ The script will thus produce the following folder structure:
 	:language: R
 
 
-We can now run the *Fast Track* analysis: `see Santiago Barreda's tutorials for instructions <https://github.com/santiagobarreda/FastTrack/wiki>`_. We'll obtain 20 candidates using the formant ceiling range of 4000--6000 Hz for male speakers and 4500--6500 Hz for female speakers, and output 3 formants. Once this finishes, feel free to edit the ``winners.csv`` files to select alternate analyses, or to edit formant tracks directly, as desired. (Note that this is not done for this example.)
+We can now run the *Fast Track* analysis: `see Santiago Barreda's tutorials for instructions <https://github.com/santiagobarreda/FastTrack/wiki>`__. We'll obtain 20 candidates using the formant ceiling range of 4000--6000 Hz for male speakers and 4500--6500 Hz for female speakers, and output 3 formants. Once this finishes, feel free to edit the ``winners.csv`` files to select alternate analyses, or to edit formant tracks directly, as desired. (Note that this is not done for this example.)
 
 We now run another R script to collect the final acoustic tracks for all tokens into a single CSV file.
 
@@ -131,7 +131,7 @@ We now run another R script to collect the final acoustic tracks for all tokens 
 	:language: R
 
 
-Finally, one last R script (adapted from `code for Mielke et al., 2019 <https://github.com/MontrealCorpusTools/SPADE/blob/main/make_formant_prototypes.r>`_) is used to interpolate the tracks to the 33% point before obtaining the means and covariance matrix for each phoneme: this gives us our prototypes file.
+Finally, one last R script (adapted from `code for Mielke et al., 2019 <https://github.com/MontrealCorpusTools/SPADE/blob/main/make_formant_prototypes.r>`__) is used to interpolate the tracks to the 33% point before obtaining the means and covariance matrix for each phoneme: this gives us our prototypes file.
 
 .. literalinclude:: ../../examples/case_studies/vowel_dynamics/3bo4_make-vowel-prototypes.R
 	:language: R
