@@ -12,6 +12,7 @@ Tutorial 2: Adding extra information
 The main objective of this tutorial is to enrich an already imported corpus (see :ref:`tutorial_first_steps`) with additional
 information not present in the original audio and transcripts.  This additional information will then be used for creating
 linguistically interesting queries in the next tutorial (:ref:`tutorial_query`).
+All the enrichment files that we will use in this tutorial are already bundled in with the tutorial corpus.
 
 .. note::
 

@@ -1,8 +1,5 @@
-import os
 import re
 from polyglotdb import CorpusContext
-from polyglotdb.query.base.func import Count, Average
-from polyglotdb.acoustics.formants.base import analyze_formant_points
 
 if __name__ == '__main__':
     # corpus_root = './data/LibriSpeech-aligned/'

@@ -1,10 +1,10 @@
-import os
 from polyglotdb import CorpusContext
 
 # corpus_name = 'tutorial'
 # export_path = './results/tutorial_3_output.csv'
 corpus_name = 'tutorial-subset'
 export_path = './results/tutorial_3_subset_output.csv'
+# change export_path to the location where you want the CSV file to be saved
 
 with CorpusContext(corpus_name) as c:
     q = c.query_graph(c.syllable)

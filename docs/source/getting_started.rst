@@ -1,5 +1,3 @@
-.. _installation:
-
 .. _ISCAN documentation: https://iscan.readthedocs.io/en/latest/
 
 .. _ISCAN: https://github.com/MontrealCorpusTools/ISCAN
@@ -11,6 +9,8 @@
 .. _Praat: https://www.fon.hum.uva.nl/praat/
 
 .. _Docker: https://docs.docker.com/get-started/get-docker/
+
+.. _installation:
 
 ***************
 Getting started

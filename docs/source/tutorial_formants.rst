@@ -38,7 +38,8 @@ to be runnable. The example given below continues to make use of the "tutorial-s
 .. code-block:: python
 
     from polyglotdb import CorpusContext
-
+    import re 
+    
     # corpus_root = './data/LibriSpeech-aligned/'
     # corpus_name = 'tutorial'
     # export_path = './results/tutorial_4_formants.csv')
