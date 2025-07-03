@@ -12,3 +12,4 @@ Contents:
 
    case_study_duration.rst
    case_study_vowel_dynamics.rst
+   case_study_sibilants.rst
