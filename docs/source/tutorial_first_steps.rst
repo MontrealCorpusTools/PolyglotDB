@@ -5,8 +5,6 @@
 
 .. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:f:/g/personal/morgan_sonderegger_mcgill_ca/EipFbcOfR31JnM4XYprp14oBuYW9lYA9IzOBcEERFZxwyA?e=tiV8bW
 
-.. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1_first_steps.ipynb
-
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1.py
 
 .. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_1_subset_output.txt
@@ -37,8 +35,8 @@ database so that they can be queried.
 
    This tutorial can be followed in two ways:
    
-   1. **Step-by-step** — You can copy and paste each code block below into your Python environment to better understand each stage.
-   2. **Script mode** — You can run the entire script directly as a standalone Python file.
+   1. **Step-by-step** - In your ``polyglotdb`` conda environment, start the python interpreter with ``python`` and then copy and paste each code block one at a time.
+   2. **Script mode** - You can run the entire script directly as a standalone Python file.
 
    To run the full tutorial script from the command line:
 
@@ -47,10 +45,7 @@ database so that they can be queried.
       python tutorial_1.py
 
    Before running this, make sure to edit the `corpus_root` variable in `tutorial_1.py` to point to the correct path where you downloaded the tutorial corpus.
-
    The full script is available here: `tutorial scripts`_.
-
-   If you prefer working interactively, this tutorial is also available as a `Jupyter notebook`_.
 
 .. _tutorial_download:
 
@@ -61,7 +56,7 @@ There are two corpora made available for usage with this tutorial. These are bot
 
 The corpora are made available for download here: `tutorial corpus download link`_. The larger corpus, LibriSpeech-aligned, contains dozens of speakers and 490MB of data. The smaller corpus, LibriSpeech-aligned-subset, contains just two speakers from the previous corpus and therefore much less data (25MB).
 
-In tutorials 1-3, we show how to prepare the LibriSpeech-aligned-subset corpus for linguistic analysis using polyglotdb. The subset is chosen for these tutorials to allow users to quickly test commands and compare their results with `expected results`_ while getting used to interacting with polyglotdb, since some enrichment commands can be timeconsuming when run on large datasets.
+In tutorials 1-3, we show how to prepare the LibriSpeech-aligned-subset corpus for linguistic analysis using polyglotdb. The subset is chosen for these tutorials to allow users to quickly test commands and compare their results with `expected output`_ while getting used to interacting with polyglotdb, since some enrichment commands can be timeconsuming when run on large datasets.
 
 In tutorials 4 and 5, vowel `formant`_ and `pitch`_ analysis is performed and expected results are provided. These experiments are performed using the larger corpus to allow for more coherent analysis.
 

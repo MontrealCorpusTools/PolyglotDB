@@ -32,6 +32,8 @@ to be runnable. The example given below continues to make use of the "tutorial-s
 
 .. code-block:: python
 
+   import os
+   import re
    from polyglotdb import CorpusContext
 
    # corpus_root = './data/LibriSpeech-aligned/'
