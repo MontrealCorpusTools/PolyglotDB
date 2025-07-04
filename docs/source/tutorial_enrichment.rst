@@ -1,6 +1,4 @@
 
-.. _Jupyter notebook: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_2_enrichment.ipynb
-
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_2.py
 
 .. _tutorial scripts: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial
@@ -14,6 +12,7 @@ Tutorial 2: Adding extra information
 The main objective of this tutorial is to enrich an already imported corpus (see :ref:`tutorial_first_steps`) with additional
 information not present in the original audio and transcripts.  This additional information will then be used for creating
 linguistically interesting queries in the next tutorial (:ref:`tutorial_query`).
+All the enrichment files that we will use in this tutorial are already bundled in with the tutorial corpus.
 
 .. note::
 
@@ -22,8 +21,6 @@ linguistically interesting queries in the next tutorial (:ref:`tutorial_query`).
    
    The complete Python script is available here `tutorial scripts`_.
    
-   If you prefer running the steps in blocks, this tutorial is also available as a `Jupyter notebook`_.
-
 .. note::
 
    Different kinds of enrichment, corresponding to different

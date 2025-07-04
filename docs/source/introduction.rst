@@ -27,6 +27,16 @@ Introduction
 
 .. _@esteng: https://github.com/esteng
 
+.. _@lxy2304: https://github.com/lxy2304
+
+.. _@massimolipari: https://github.com/massimolipari
+
+.. _@michaelhaaf: https://github.com/michaelhaaf
+
+.. _@james-tanner: https://github.com/james-tanner
+
+.. _@msonderegger: https://github.com/msonderegger
+
 .. _@samihuc: https://github.com/samihuc
 
 .. _@MichaelGoodale: https://github.com/MichaelGoodale
@@ -60,36 +70,19 @@ General Background
 
 **PolyglotDB** is a Python package that focuses on representing linguistic
 data in scalable, high-performance databases (called "Polyglot"
-databases here) to apply acoustic
-analysis and other algorithms to large speech corpora.  
+databases here) to apply acoustic analysis and other algorithms to large speech corpora.  
 
-In general there are two ways to leverage PolyglotDB for analyzing a
-dataset:
+Users interact with PolyglotDB primarily through its Python API: writing Python scripts 
+that import functions and classes from PolyglotDB. See :ref:`installation` for setting up PolyglotDB
+, followed by :ref:`tutorial` for walk-through examples.
 
-1. The first way, more appropriate for technically skilled users, is
-   through a Python API: writing Python scripts that import functions
-   and classes from PolyglotDB.  (For this route, see
-   :ref:`installation` for setting up PolyglotDB, followed by
-   :ref:`tutorial` for walk-through examples.)  This way also makes
-   more sense for users in an individual lab, where it can be assumed
-   that all users have the same level of access to datasets (without
-   any ethical issues).
+.. note::
 
-2.  The second way, more appropriate for a user group dispersed across
-    multiple sites and where some users are less comfortable with
-    Python scripting, is by setting up an ISCAN (Integrated Speech
-    Corpus ANalysis) server---see the `ISCAN documentation`_ for more
-    details.  ISCAN servers allow users to view information and
-    perform most functions of PolyglotDB through a web browser.  In
-    addition, ISCAN servers include features for the use case of
-    multiple datasets with differential access: by user/corpus
-    permissions level, and functionality for managing multiple
-    Polyglot databases.  
+  For those interested in a web-based interface, ISCAN (Integrated Speech Corpus ANalysis) is a separate 
+  project built on top of PolyglotDB. ISCAN servers allow users to view information and perform 
+  most functions of PolyglotDB through a web browser. 
+  See the `ISCAN documentation`_ for more details on setting it up.
 
-This documentation site is relevant for ways PolyglotDB canbeused, but
-is geared towards a technically-skilled user and thus focuses more on
-the use case of using PolyglotDB "by script" (#1).
-    
 The general workflow for working with PolyglotDB is:
 
 * **Import**
@@ -207,11 +200,16 @@ Contributors
 ------------
 
 * Michael McAuliffe (`@mmcauliffe`_)
+* Xiaoyi Li (`@lxy2304`_)
+* Michael Haaf (`@michaelhaaf`_)
 * Elias Stengel-Eskin (`@esteng`_)
+* Arlie Coles (`@a-coles`_)
 * Sarah Mihuc (`@samihuc`_)
 * Michael Goodale (`@MichaelGoodale`_)
+* Massimo Lipari  (`@massimolipari`_)
 * Jeff Mielke (`@jeffmielke`_)
-* Arlie Coles (`@a-coles`_)
+* James Tanner (`@james-tanner`_)
+* Morgan Sonderegger (`@msonderegger`_)
 
 
 Citation

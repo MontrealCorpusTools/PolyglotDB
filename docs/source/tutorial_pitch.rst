@@ -32,6 +32,8 @@ to be runnable. The example given below continues to make use of the "tutorial-s
 
 .. code-block:: python
 
+   import os
+   import re
    from polyglotdb import CorpusContext
 
    # corpus_root = './data/LibriSpeech-aligned/'
@@ -83,7 +85,7 @@ We can now query the results using a similar set of commands as in the previous 
     q = c.query_graph(c.phone).filter(c.phone.word.begin == c.phone.word.utterance.begin)
 
     # restrict just to phone = vowels
-    q = q.filter(c.phone.label.in_(vowel_set))
+    q = q.filter(c.phone.subset == 'vowel')
 
     # preceding phone is at beginning of the word
     q = q.filter(c.phone.previous.begin == c.phone.word.begin)
