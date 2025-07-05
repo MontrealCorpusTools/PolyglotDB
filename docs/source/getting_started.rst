@@ -61,13 +61,34 @@ If you don't have conda installed on your device:
 
    After completing these steps, you should be able to use conda in the Windows Command Prompt and configure your IDE accordingly.
 
-**Quick Installation via conda-forge (Recommended)**:
+Pathway to installation
+-----------------------
+
+There are four steps to install PolyglotDB: 
+
+#. :ref:`Quick Installation<quick_install>` via ``conda-forge``
+#. :ref:`Installation from source with pip<pip_install>`
+#. :ref:`Configure Your IDE<configure_IDE>` (Optional) 
+#. :ref:`Setting up a local database<local_setup>`
+
+You must complete either Step 1 or Step 2, and Step 4 to use PolyglotDB.
+
+.. _quick_install: 
+
+Quick Installation via conda-forge (Recommended)
+------------------------------------------------
 
 #. You can install PolyglotDB using a single Conda command :code:`conda create -n polyglotdb -c conda-forge polyglotdb python=3.12`
 #. Activate conda environment :code:`conda activate polyglotdb`
 #. You then have the ``pgdb`` utility that can be run inside your conda environment and manages a local database.
 
-**To install from source (primarily for development)**:
+.. _pip_install:
+
+To install from source (primarily for development)
+-------------------------------------------------
+.. note:: 
+
+   Skip this step if you have installed PolyglotDB via conda-forge
 
 #. Clone or download the Git repository (https://github.com/MontrealCorpusTools/PolyglotDB).
 #. Navigate to the directory via command line and create the conda environment via :code:`conda env create -f environment.yml`
@@ -75,7 +96,15 @@ If you don't have conda installed on your device:
 #. Install PolyglotDB via :code:`pip install -e .`, which will install the ``pgdb`` utility that can be run inside your conda environment
    and manages a local database.
 
-**Using the Conda Environment in your IDE's integrated terminal**: (VSCode example)
+.. _configure_IDE: 
+
+Configure Your IDE (Optional)
+-----------------------------
+
+.. note:: 
+
+    This step is not required for general use of PolyglotDB. You only need to do this if you plan 
+    to write/run PolyglotDB scripts within an IDE, such as Visual Studio Code, PyCharm, or similar tools.
 
 If you are using an IDE, you may encounter issues where the IDE's default Python interpreter is different from the one set up in your Conda environment.
 This can lead to errors such as missing packages, even if you've installed everything correctly in Conda.
@@ -133,9 +162,9 @@ To return to your root environment:
 .. _start_local_databases:
 
 Steps to use PolyglotDB
------------------------
+=======================
 
-Now that you have set up the PolyglotDB environment and installed local databases, 
+Now that you have set up the PolyglotDB conda environment and installed local databases, 
 follow these steps each time you use PolyglotDB:
 
 #. Navigate to your working directory, either in your IDE or via the command line. 
@@ -153,6 +182,7 @@ Alternative Installation (Using Docker Environment)
 
 Running PolyglotDB in a `Docker`_ container is a great way to maintain a consistent environment, isolate dependencies, and streamline your setup process. 
 This section will guide you through setting up and using PolyglotDB within Docker. Note that this method is an alternative to the default installation with conda environment. 
+If you already installed via conda-forge above, do not re-install with Docker.
 
 Prerequisites
 -------------

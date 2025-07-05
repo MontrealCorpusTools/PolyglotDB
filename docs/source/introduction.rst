@@ -82,6 +82,9 @@ that import functions and classes from PolyglotDB. See :ref:`installation` for s
   project built on top of PolyglotDB. ISCAN servers allow users to view information and perform 
   most functions of PolyglotDB through a web browser. 
   See the `ISCAN documentation`_ for more details on setting it up.
+  Note, however, that ISCAN is not actively maintained as of 2025 and may require additional effort 
+  to configure and use. It is not the recommended or default option for most users. The primary and 
+  supported way to interact with PolyglotDB remains through its Python API.
 
 The general workflow for working with PolyglotDB is:
 

@@ -35,7 +35,7 @@ database so that they can be queried.
 
    This tutorial can be followed in two ways:
    
-   1. **Step-by-step** - In your ``polyglotdb`` conda environment, start the python interpreter with ``python`` and then copy and paste each code block one at a time.
+   1. **Step-by-step** - Activate your polyglotdb conda environment with ``conda activate polyglotdb``, run ``pgdb start`` to boot up neo4j, start the python interpreter with ``python`` and then copy and paste each code block one at a time.
    2. **Script mode** - You can run the entire script directly as a standalone Python file.
 
    To run the full tutorial script from the command line:
