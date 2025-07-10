@@ -107,7 +107,11 @@ In order for the script to run, we must also download a few additional scripts d
 
 Making sure we're in the ``sibilants`` folder, we'll now run ``4_generate-mts-measures.R`` from the command line. We do this twice: the first pass will generate the utterance mean spectra used for normalization, and the second pass will generate the sibilant spectra.
 
-First, we run the command: ``Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_utterances.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p mean_spectrum``. Here's what each argument does:
+First, we run the command:
+
+``Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_utterances.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p mean_spectrum``
+
+Here's what each argument does:
 
 1. The positional arguments specify (in order) the path to the CSV file containing the utterances to measure, the path to the root of the corpus, and the path to the directory where the output data (the RData file containing the utterance spectra) should be saved;
 2. The ``-f`` flag specifies the length of the analysis window to use in seconds--here, ``0.035`` (35 ms);
@@ -115,7 +119,9 @@ First, we run the command: ``Rscript 4_generate-mts-measures.R ./output/ParlBleu
 4. The ``-w`` flag specifies the column of the CSV which contains the sound file names;
 5. The ``-p`` flag, with the value `mean_spectrum`, tells the program we want spectra for *utterances* (rather than for *sibilants*).
 
-Once this finishes, we run the command: `Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_sibilants.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p sibilant -z -m 0.5`. Here's what each argument does:
+Once this finishes, we run the command: ``Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_sibilants.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p sibilant -z -m 0.5``
+
+Here's what each argument does:
 
 1. The positional arguments do the same thing as above (note: the output directory must be the same as that used in the `mean_spectrum` step);
 2. The ``-f``, ``-d``, ``-w`` flags do the same as above; 
@@ -130,7 +136,7 @@ Once this finishes, we run the command: `Rscript 4_generate-mts-measures.R ./out
 Step 5: Analysis
 ================
 
-Finally, we make a quick plot of each of the three measures by phone and by speaker.
+Finally, we use an R script to make a quick plot of each of the three measures by phone and by speaker.
 
 .. literalinclude:: ../../examples/case_studies/sibilants/5_analysis.R
 	:language: r

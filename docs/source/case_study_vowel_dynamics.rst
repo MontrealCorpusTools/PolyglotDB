@@ -180,7 +180,7 @@ By default, the query will output every measurement from the beginning to the en
 Step 5: Analysis
 ================
 
-Finally, we plot the average position of all phones in F1 × F2 space. We exmaine only the middle portion of the vowel here (the endpoints are not always theoretically interesting, as they can be disporprotionately affected by coarticulation with surrounding vowels). We draw the vowel label at the 25% timepoint: this is also the beginning of an arrow whose head points to the 75% timepoint.
+Finally, we use an R script to plot the average position of all phones in F1 × F2 space. We exmaine only the middle portion of the vowel here (the endpoints are not always theoretically interesting, as they can be disporprotionately affected by coarticulation with surrounding vowels). We draw the vowel label at the 25% timepoint: this is also the beginning of an arrow whose head points to the 75% timepoint.
 
 .. literalinclude:: ../../examples/case_studies/vowel_dynamics/5_analysis.R
 	:language: r
