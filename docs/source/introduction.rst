@@ -57,34 +57,26 @@ Introduction
 
 .. _ISCAN conference paper: https://spade.glasgow.ac.uk/wp-content/uploads/2019/04/iscan-icphs2019-revised.pdf
 
+.. _PolyglotDB conference paper: https://www.isca-archive.org/interspeech_2017/mcauliffe17b_interspeech.pdf
+
 .. _SPADE project: https://spade.glasgow.ac.uk
 
 .. _MCQLL lab: http://mcqll.org/
-
-
 
 .. _InterSpeech proceedings paper: https://pdfs.semanticscholar.org/ddc4/5a4c828a248d34cc92275fff5ba7e23d1a32.pdf
 
 General Background
 ==================
 
-**PolyglotDB** is a Python package that focuses on representing linguistic
-data in scalable, high-performance databases (called "Polyglot"
-databases here) to apply acoustic analysis and other algorithms to large speech corpora.  
+**PolyglotDB** is a Python package for storage, phonetic analysis, and querying of speech corpora. It
+represents linguistic data in scalable, high-performance databases (called "Polyglot"
+databases here) to apply acoustic analysis and other algorithms to speech corpora.  While PolyglotDB can be
+used with corpora of any size, it is built to scale to very large corpora.
 
 Users interact with PolyglotDB primarily through its Python API: writing Python scripts 
 that import functions and classes from PolyglotDB. See :ref:`installation` for setting up PolyglotDB
-, followed by :ref:`tutorial` for walk-through examples.
+, followed by :ref:`tutorial` for walk-through examples.  :ref:`case_studies` show concrete cases of PolyglotDB's use to address different kinds of phonetic research questions.
 
-.. note::
-
-  For those interested in a web-based interface, ISCAN (Integrated Speech Corpus ANalysis) is a separate 
-  project built on top of PolyglotDB. ISCAN servers allow users to view information and perform 
-  most functions of PolyglotDB through a web browser. 
-  See the `ISCAN documentation`_ for more details on setting it up.
-  Note, however, that ISCAN is not actively maintained as of 2025 and may require additional effort 
-  to configure and use. It is not the recommended or default option for most users. The primary and 
-  supported way to interact with PolyglotDB remains through its Python API.
 
 The general workflow for working with PolyglotDB is:
 
@@ -92,10 +84,6 @@ The general workflow for working with PolyglotDB is:
 
   - Parse and load initial data from corpus files into a Polyglot
     database
-
-    * This step can take a while, from a couple of minutes to hours depending on corpus size.
-
-    * Intended to be done once per corpus
       
   - See :ref:`tutorial_import` for an example
     
@@ -105,11 +93,6 @@ The general workflow for working with PolyglotDB is:
 
   - Add further information through analysis algorithms or from CSV files
 
-    * Can take a while, from a couple of minutes to hours depending on
-      enrichment and corpus size
-
-    * Intended to be done once per corpus
-
   - See :ref:`tutorial_enrichment` for an example
 
   - See :ref:`enrichment` for more details on the enrichment process
@@ -117,11 +100,6 @@ The general workflow for working with PolyglotDB is:
 * **Query**
   
   - Find specific linguistic units
-    
-    * Should be quick, from a couple of minutes to ~10 minutes
-      depending on corpus size
-      
-    * Intended to be done many times per corpus, for different queries
     
   - See :ref:`tutorial_query` for an example
   
@@ -132,21 +110,17 @@ The general workflow for working with PolyglotDB is:
 
   - Generate a CSV file for data analysis with specific information extracted from the previous query
 
-    * Should be quick, and intended to be done many times per corpus
-      (like Query)
-
   - See :ref:`tutorial_export` for an example
   
   - See :ref:`export` for more details on the export process
 
 
-The thinking behind this workflow is explained in more detail in the
+The thinking behind this workflow is explained in more detail in the `PolyglotDB conference paper`_ and the
 `ISCAN conference paper`_.
     
 .. note::
-
-   There are also many PolyglotDB scripts written for the `SPADE project`_ that can be used as examples.  These scripts are
-   available in the `SPADE GitHub repo`_.
+   Worked examples of PolyglotDB's use are in :ref:`case_studies`. Further examples of PolyglotDB scripts used in the `SPADE project`_ are
+   available in the `SPADE GitHub repo`_.  Both contain scripts which can be used as examples to work from for your own studies.
 
 High level overview
 -------------------
@@ -182,22 +156,17 @@ databases, as "polyglot persistence."
 More detailed information on specific implementation details is available in the :ref:`developer`, as well as in the
 `InterSpeech proceedings paper`_.
 
-Development history
-===================
 
-PolyglotDB was originally conceptualized for use in `Phonological CorpusTools`_, developed at the
-University of British Columbia.  However, primary development shifted to the
-umbrella of `Montreal Corpus Tools`_, developed by members of the `Montreal
-Language Modelling Lab`_ at McGill University (now part of `MCQLL Lab`_).
+.. note::
 
-A graphical program named `Speech Corpus Tools`_ was originally
-developed to allow users to interact with Polyglot without writing
-scripts.  However, in the context of the the Speech Across Dialects of
-English (SPADE) project, a more flexible solution was needed to
-accommodate use cases involving multiple users, with physical
-separation between users and data, and differing levels of permission
-across datasets.  ISCAN has been developed within the SPADE project
-with these requirements in mind.
+  For those interested in a web-based interface, ISCAN (Integrated Speech Corpus ANalysis) is a separate 
+  project built on top of PolyglotDB. ISCAN servers allow users to view information and perform 
+  most functions of PolyglotDB through a web browser. 
+  See the `ISCAN documentation`_ for more details on setting it up.
+  Note, however, that ISCAN is not actively maintained as of 2025 and may require additional effort 
+  to configure and use. It is not the recommended or default option for most users. The primary and 
+  supported way to interact with PolyglotDB remains through its Python API.
+
 
 Contributors
 ------------
@@ -221,10 +190,4 @@ Citation
 A citeable paper for PolyglotDB is:
 
 McAuliffe, Michael, Elias Stengel-Eskin, Michaela Socolof, and Morgan Sonderegger (2017). Polyglot and Speech Corpus Tools:
-a system for representing, integrating, and querying speech corpora. In Proceedings of Interspeech 2017. `[PDF]`_
-
-Or you can cite it via:
-
-McAuliffe, Michael, Elias Stengel-Eskin, Michaela Socolof, Arlie Coles, Sarah Mihuc, Michael Goodale, and Morgan Sonderegger (2019).
-PolyglotDB [Computer program]. Version 0.1.0, retrieved 26 March 2019 from https://github.com/MontrealCorpusTools/PolyglotDB.
-
+a system for representing, integrating, and querying speech corpora. In *Proceedings of Interspeech 2017*, pp. 3887–3891. [https://doi.org/10.21437/Interspeech.2017-1390](https://doi.org/10.21437/Interspeech.2017-1390).`[PDF]`_
