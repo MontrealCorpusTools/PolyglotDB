@@ -71,21 +71,21 @@ In recent years, it has become standard to use *multitaper spectra* (Thomson, 19
 Step 4: Multitaper spectra
 ==========================
 
-To compute the multitaper spectra and obtain the desired acoustic measures, we'll adapt the R script used in Sonderegger et al. (2023), `which is available on that paper's OSF repository <https://osf.io/xubqm/>`__ in the `measurement` directory. This script implements a clever amplitude normalization scheme for the sibilant spectra (described in detail in the paper), which attempts to determine the average noise profile of each utterance and uses this to scale the spectra for each token bin-by-bin.
+To compute the multitaper spectra and obtain the desired acoustic measures, we'll adapt the R script used in Sonderegger et al. (2023), `which is available on that paper's OSF repository <https://osf.io/xubqm/>`__ in the ``measurement`` directory. This script implements a clever amplitude normalization scheme for the sibilant spectra (described in detail in the paper), which attempts to determine the average noise profile of each utterance and uses this to scale the spectra for each token bin-by-bin.
 
-The modified script is labelled `4_generate-mts-measures.R`: it's too long to show here, but is available for download `at the following link <https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/case_studies/sibilants/4_generate-mts-measures.R>`__. The set of acoustic measures extracted was changed to better suit our purposes. (Additional changes were made to allow measures from multiple timepoints over the course of the sibilant to be extracted, rather than just measures at the midpoint, but this functionality won't be used here.)
+The modified script is labelled ``4_generate-mts-measures.R``: it's too long to show here, but is available for download `at the following link <https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/case_studies/sibilants/4_generate-mts-measures.R>`__. The set of acoustic measures extracted was changed to better suit our purposes. (Additional changes were made to allow measures from multiple timepoints over the course of the sibilant to be extracted, rather than just measures at the midpoint, but this functionality won't be used here.)
 
 There are a few technical details about the implementation in the script that are worth noting now:
 
-1. With this script, the multitaper spectra are always generated using 8 tapers (`k = 8`) and a bandwidth parameter of 4 (`nW = 4`);
+1. With this script, the multitaper spectra are always generated using 8 tapers (``k = 8``) and a bandwidth parameter of 4 (``nW = 4``);
 2. Although the original sampling rate of the audio files is 44100 Hz, audio will be downsampled to 22050 Hz before the analysis;
-3. As is common in the literature, peak and COG are not quite calculated over the entire frequency interval. A lower limit of 1000 Hz (to essentially eliminate the effects of voicing) and an upper limit of 11000 Hz (ever so slightly velow the Nyquist frequency) are used;
+3. As is common in the literature, peak and COG are not quite calculated over the entire frequency interval. A lower limit of 1000 Hz (to essentially eliminate the effects of voicing) and an upper limit of 11000 Hz (ever so slightly below the Nyquist frequency) are used;
 4. The ranges used here for F\ :subscript:`M` are those suggested as reasonable estimates in Shadle (2023): for /s/, 3000-8000 Hz for women and 3000-7000 Hz for men; for /ʃ/, 2000-4000 Hz for both women and men.
 
 .. note::
-	The above ranges for F\ :subscript:`M` may not be suitable for all speakers: notably, some speakers (especially women) may produce /s/ with a main peak above 8000 Hz. Shadle (2023) cautions that it is generally best to determine speaker- and sibilant- specific ranges after having manually examined a certain number of sibilant spectra. Of course, this may not always be feasible for large corpora. For a more sophisticated F\ :subscript:`M` detection algorithm than is used here, see the `fricative()` function of Keith Johnson and Ronald Sprouse's `phonlab` package `(documention) here <https://phonlab.readthedocs.io/en/latest/acoustphon.html>`__.
+	The above ranges for F\ :subscript:`M` may not be suitable for all speakers: notably, some speakers (especially women) may produce /s/ with a main peak above 8000 Hz. Shadle (2023) cautions that it is generally best to determine speaker- and sibilant- specific ranges after having manually examined a certain number of sibilant spectra. Of course, this may not always be feasible for large corpora. For a more sophisticated F\ :subscript:`M` detection algorithm than is used here, see the ``fricative()`` function of Keith Johnson and Ronald Sprouse's ``phonlab`` package `(documention here) <https://phonlab.readthedocs.io/en/latest/acoustphon.html>`__.
 
-In order for the script to run, we must also download a few additional scripts developed by Patrick Reidy (and make a single change to one of them), as described `here <https://osf.io/ynzup>`__. These must be placed in an `auxiliary` folder, which itself must be in the same directory as `4_generate-mts-measures.R`. You should end up with a folder structure which looks like the following:
+In order for the script to run, we must also download a few additional scripts developed by Patrick Reidy (and make a single change to one of them), as described `here <https://osf.io/ynzup>`__. These must be placed in an ``auxiliary`` folder, which itself must be in the same directory as ``4_generate-mts-measures.R``. You should end up with a folder structure which looks like the following:
 
 .. code-block:: text
 
@@ -105,26 +105,26 @@ In order for the script to run, we must also download a few additional scripts d
 		│	├──	* (scripts for steps 1-3)
 		│	├── 4_generate-mts-measures.R
 
-Making sure we're in the `sibilants` folder, we'll now run `4_generate-mts-measures.R` from the command line. We do this twice: the first pass will generate the utterance mean spectra used for normalization, and the second pass will generate the sibilant spectra.
+Making sure we're in the ``sibilants`` folder, we'll now run ``4_generate-mts-measures.R`` from the command line. We do this twice: the first pass will generate the utterance mean spectra used for normalization, and the second pass will generate the sibilant spectra.
 
-First, we run the command: `Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_utterances.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p mean_spectrum`. Here's what each argument does:
+First, we run the command: ``Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_utterances.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p mean_spectrum``. Here's what each argument does:
 
 1. The positional arguments specify (in order) the path to the CSV file containing the utterances to measure, the path to the root of the corpus, and the path to the directory where the output data (the RData file containing the utterance spectra) should be saved;
-2. The `-f` flag specifies the length of the analysis window to use in seconds--here, `0.035` (35 ms);
-3. The `-d` flag tells the script that the corpora is organized such that each speaker has their own directory (rather than all sound files being in a single directory);
-4. The `-w` flag specifies the column of the CSV which contains the sound file names;
-5. The `-p` flag, with the value `mean_spectrum`, tells the program we want spectra for *utterances* (rather than for *sibilants*).
+2. The ``-f`` flag specifies the length of the analysis window to use in seconds--here, ``0.035`` (35 ms);
+3. The ``-d`` flag tells the script that the corpora is organized such that each speaker has their own directory (rather than all sound files being in a single directory);
+4. The ``-w`` flag specifies the column of the CSV which contains the sound file names;
+5. The ``-p`` flag, with the value `mean_spectrum`, tells the program we want spectra for *utterances* (rather than for *sibilants*).
 
 Once this finishes, we run the command: `Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_sibilants.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p sibilant -z -m 0.5`. Here's what each argument does:
 
 1. The positional arguments do the same thing as above (note: the output directory must be the same as that used in the `mean_spectrum` step);
-2. The `-f`, `-d`, `-w` flags do the same as above; 
-3. The `-p` flag, with the value `sibilant`, tells the program we want spectra for *sibilants* (rather than for *utterances*);
-4. The `-z` flag specifies that we want to apply the amplitude normalization scheme;
-5. The `-m` flag specifies the timepoint(s) at which measurements are desired--in our case, a value of `0.5` is used to obtain measurements at sibilant midpoint.
+2. The ``-f``, ``-d``, ``-w`` flags do the same as above; 
+3. The ``-p`` flag, with the value ``sibilant``, tells the program we want spectra for *sibilants* (rather than for *utterances*);
+4. The ``-z`` flag specifies that we want to apply the amplitude normalization scheme;
+5. The ``-m`` flag specifies the timepoint(s) at which measurements are desired--in our case, a value of ``0.5`` is used to obtain measurements at sibilant midpoint.
 
 .. note::
-	`4_generate-mts-measures.R` uses multiprocessing to speed up run times. By default, 8 cores are used: this can be changed with the -j flag.
+	``4_generate-mts-measures.R`` uses multiprocessing to speed up run times. By default, 8 cores are used: this can be changed with the ``-j`` flag.
 
 
 Step 5: Analysis
