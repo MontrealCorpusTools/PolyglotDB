@@ -7,7 +7,7 @@ Case study 3: Sibilant acoustics
 Motivation
 ==========
 
-Various acoustic measures have been used over the years in the literature on sibilant fricatives (henceforth, just *sibilants*). Measures of the overall spectral peak and of the spectral center of gravity (the weighted mean frequency of the spectrum)--referred to as *peak* and *COG* below--both have long histories. More recently, it has become common to instead look for a 'main' peak (meant to correspond to the lowest resonance of the cavity anterior to the principal constriction) over a relatively narrow, pre-specified frequency range that can vary by sibilant and by speaker--this measure is sometimes referred to as F:subscript:`M` (Koenig et al, 2013).
+Various acoustic measures have been used over the years in the literature on sibilant fricatives (henceforth, just *sibilants*). Measures of the overall spectral peak and of the spectral center of gravity (the weighted mean frequency of the spectrum)--referred to as *peak* and *COG* below--both have long histories. More recently, it has become common to instead look for a 'main' peak (meant to correspond to the lowest resonance of the cavity anterior to the principal constriction) over a relatively narrow, pre-specified frequency range that can vary by sibilant and by speaker--this measure is sometimes referred to as F\ :subscript:`M` (Koenig et al, 2013).
 
 In this case study, we'll compare the three measures for tokens of the voiceless sibilants /s/ and /ʃ/ in Quebec French.
 
@@ -80,10 +80,10 @@ There are a few technical details about the implementation in the script that ar
 1. With this script, the multitaper spectra are always generated using 8 tapers (`k = 8`) and a bandwidth parameter of 4 (`nW = 4`);
 2. Although the original sampling rate of the audio files is 44100 Hz, audio will be downsampled to 22050 Hz before the analysis;
 3. As is common in the literature, peak and COG are not quite calculated over the entire frequency interval. A lower limit of 1000 Hz (to essentially eliminate the effects of voicing) and an upper limit of 11000 Hz (ever so slightly velow the Nyquist frequency) are used;
-4. The ranges used here for F:subscript:`M` are those suggested as reasonable estimates in Shadle (2023): for /s/, 3000-8000 Hz for women and 3000-7000 Hz for men; for /ʃ/, 2000-4000 Hz for both women and men.
+4. The ranges used here for F\ :subscript:`M` are those suggested as reasonable estimates in Shadle (2023): for /s/, 3000-8000 Hz for women and 3000-7000 Hz for men; for /ʃ/, 2000-4000 Hz for both women and men.
 
 .. note::
-	The above ranges for F:subscript:`M` may not be suitable for all speakers: notably, some speakers (especially women) may produce /s/ with a main peak above 8000 Hz. Shadle (2023) cautions that it is generally best to determine speaker- and sibilant- specific ranges after having manually examined a certain number of sibilant spectra. Of course, this may not always be feasible for large corpora. For a more sophisticated F:subscript:`M` detection algorithm than is used here, see the `fricative()` function of Keith Johnson and Ronald Sprouse's `phonlab` package `(documention) here <https://phonlab.readthedocs.io/en/latest/acoustphon.html>`__.
+	The above ranges for F\ :subscript:`M` may not be suitable for all speakers: notably, some speakers (especially women) may produce /s/ with a main peak above 8000 Hz. Shadle (2023) cautions that it is generally best to determine speaker- and sibilant- specific ranges after having manually examined a certain number of sibilant spectra. Of course, this may not always be feasible for large corpora. For a more sophisticated F\ :subscript:`M` detection algorithm than is used here, see the `fricative()` function of Keith Johnson and Ronald Sprouse's `phonlab` package `(documention) here <https://phonlab.readthedocs.io/en/latest/acoustphon.html>`__.
 
 In order for the script to run, we must also download a few additional scripts developed by Patrick Reidy (and make a single change to one of them), as described `here <https://osf.io/ynzup>`__. These must be placed in an `auxiliary` folder, which itself must be in the same directory as `4_generate-mts-measures.R`. You should end up with a folder structure which looks like the following:
 
@@ -137,15 +137,15 @@ Finally, we make a quick plot of each of the three measures by phone and by spea
 
 The output looks like this:
 
-.. image:: ../images/sibilant-measures.png
+.. image:: ../images/sibilant_measures.png
   :width: 800
-  :alt: By-phone and by-speaker peak, COG, and F:subscript:`M` values.
+  :alt: By-phone and by-speaker peak, COG, and F\ :subscript:`M` values.
 
 Overall, the three measures seem to tell a similar story (which is expected). There are, however, several things worth noting.
 
 1. Amongst the measures, peak has the highest variance and produces a sizeable number of both high and low outliers (especially for /s/).
-2. While the speaker means of peak and F:subscript:`M` are roughly the same (since for a large number of tokens, peak == F:subscript:`M`), that of COG tends to be slightly higher. This is especially evident for /ʃ/ and for the male speakers, and likely reflects the presence of an additional, higher-frequency (but lower-amplitude) peak in these spectra (assuming this peak would often be above 11 kHz in female /s/).
-3. The distribution of F:subscript:`M` for speaker 14401's /s/, appears slightly right-skewed. This may be an indication that an upper limit of 8000 Hz may be somewhat too low for this speaker.
+2. While the speaker means of peak and F\ :subscript:`M` are roughly the same (since for a large number of tokens, peak == F\ :subscript:`M`\ ), that of COG tends to be slightly higher. This is especially evident for /ʃ/ and for the male speakers, and likely reflects the presence of an additional, higher-frequency (but lower-amplitude) peak in these spectra (assuming this peak would often be above 11 kHz in female /s/).
+3. The distribution of F\ :subscript:`M` for speaker 14401's /s/, appears slightly right-skewed. This may be an indication that an upper limit of 8000 Hz may be somewhat too low for this speaker.
 
 
 References
