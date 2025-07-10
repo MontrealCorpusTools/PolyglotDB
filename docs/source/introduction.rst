@@ -63,7 +63,6 @@ Introduction
 
 .. _MCQLL lab: http://mcqll.org/
 
-.. _InterSpeech proceedings paper: https://pdfs.semanticscholar.org/ddc4/5a4c828a248d34cc92275fff5ba7e23d1a32.pdf
 
 General Background
 ==================
@@ -153,8 +152,7 @@ The idea of using multiple languages or technologies that suit individual
 problems has been known, particularly in the realm of merging SQL and NoSQL
 databases, as "polyglot persistence."
 
-More detailed information on specific implementation details is available in the :ref:`developer`, as well as in the
-`InterSpeech proceedings paper`_.
+More detailed information on specific implementation details is available in the :ref:`developer`, as well as in the `PolyglotDB conference paper`_ and the `ISCAN conference paper`_.
 
 
 .. note::
@@ -190,4 +188,4 @@ Citation
 A citeable paper for PolyglotDB is:
 
 McAuliffe, Michael, Elias Stengel-Eskin, Michaela Socolof, and Morgan Sonderegger (2017). Polyglot and Speech Corpus Tools:
-a system for representing, integrating, and querying speech corpora. In *Proceedings of Interspeech 2017*, pp. 3887–3891. [https://doi.org/10.21437/Interspeech.2017-1390](https://doi.org/10.21437/Interspeech.2017-1390).`[PDF]`_
+a system for representing, integrating, and querying speech corpora. In *Proceedings of Interspeech 2017*, pp. 3887–3891. https://doi.org/10.21437/Interspeech.2017-1390. `[PDF]`_
