@@ -7,7 +7,7 @@ PolyglotDB
 [![PyPI version](https://badge.fury.io/py/polyglotdb.svg)](https://badge.fury.io/py/polyglotdb)
 
 
-PolyglotDB is a Python package for storing, phonetically analyzing, and querying speech corpora. It can be used with corpora of any size, and is built to scale to very large corpora.  It constructs a "polyglot" NoSQL database mirroring the structure of phonetic data, and has a consistent Python API for interacting with the underlying databases.  The online documentation is
+PolyglotDB is a Python package for storing, phonetically analyzing, and querying speech corpora. It can be used with corpora of any size, and is built to scale to very large corpora.  It constructs a "polyglot" NoSQL database mirroring the structure of phonetic data, and has a consistent Python API for interacting with the underlying databases.  The online documentation, which contains tutorials and case studies, is
 available at http://polyglotdb.readthedocs.io/en/latest/.
 
 Citation
