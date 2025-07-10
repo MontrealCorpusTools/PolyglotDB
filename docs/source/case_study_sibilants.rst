@@ -137,7 +137,7 @@ Finally, we make a quick plot of each of the three measures by phone and by spea
 
 The output looks like this:
 
-.. image:: ../images/sibilant-measures.png
+.. image:: ../images/sibilant_measures.png
   :width: 800
   :alt: By-phone and by-speaker peak, COG, and F\ :subscript:`M` values.
 
