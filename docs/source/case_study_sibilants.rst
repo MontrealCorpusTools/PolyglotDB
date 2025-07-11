@@ -151,7 +151,7 @@ Overall, the three measures seem to tell a similar story (which is expected). Th
 
 1. Amongst the measures, peak has the highest variance and produces a sizeable number of both high and low outliers (especially for /s/).
 2. While the speaker means of peak and F\ :subscript:`M` are roughly the same (since for a large number of tokens, peak == F\ :subscript:`M`\ ), that of COG tends to be slightly higher. This is especially evident for /ʃ/ and for the male speakers, and likely reflects the presence of an additional, higher-frequency (but lower-amplitude) peak in these spectra (assuming this peak would often be above 11 kHz in female /s/).
-3. The distribution of F\ :subscript:`M` for speaker 14401's /s/, appears slightly right-skewed. This may be an indication that an upper limit of 8000 Hz may be somewhat too low for this speaker.
+3. The distribution of F\ :subscript:`M` for speaker 14401's /s/ appears slightly left-skewed. This may be an indication that an upper limit of 8000 Hz may be somewhat too low for this speaker.
 
 
 References
