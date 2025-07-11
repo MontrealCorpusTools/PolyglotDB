@@ -107,9 +107,7 @@ In order for the script to run, we must also download a few additional scripts d
 
 Making sure we're in the ``sibilants`` folder, we'll now run ``4_generate-mts-measures.R`` from the command line. We do this twice: the first pass will generate the utterance mean spectra used for normalization, and the second pass will generate the sibilant spectra.
 
-First, we run the command:
-
-``Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_utterances.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p mean_spectrum``
+First, we run the command: ``Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_utterances.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p mean_spectrum``.
 
 Here's what each argument does:
 
@@ -119,7 +117,7 @@ Here's what each argument does:
 4. The ``-w`` flag specifies the column of the CSV which contains the sound file names;
 5. The ``-p`` flag, with the value `mean_spectrum`, tells the program we want spectra for *utterances* (rather than for *sibilants*).
 
-Once this finishes, we run the command: ``Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_sibilants.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p sibilant -z -m 0.5``
+Once this finishes, we run the command: ``Rscript 4_generate-mts-measures.R ./output/ParlBleu-subset_sibilants.csv ../ParlBleu-subset/ output/ -f 0.035 -d -w discourse -p sibilant -z -m 0.5``.
 
 Here's what each argument does:
 
