@@ -14,5 +14,3 @@ dependencies:
     - neo4j-python-driver
     - pip:
         - conch-sounds
-        - standard-aifc
-        - standard-sunau
