@@ -1,7 +1,6 @@
 import os
 import re
 from polyglotdb import CorpusContext
-from polyglotdb.query.base.func import Count, Average
 
 if __name__ == '__main__':
     # corpus_root = './data/LibriSpeech-aligned/'

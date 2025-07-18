@@ -8,6 +8,8 @@
 
 .. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_6_subset_voice_quality_mean.csv
 
+.. _tutorial scripts: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial
+
 .. _tutorial_vq:
 
 *************************

@@ -26,7 +26,7 @@ MOCK_MODULES = ['textgrid', 'textgrid.textgrid',
                 'sqlalchemy.orm', 'sqlalchemy.sql', 'sqlalchemy.sql.expression',
                 'sqlalchemy.ext', 'sqlalchemy.ext.hybrid','sqlalchemy.ext.declarative', 'sqlalchemy.ext.orderinglist',
                 'sqlalchemy.ext.associationproxy', 'sqlalchemy.ext.hybrid',
-                'numpy', 'resampy', 'audioread',
+                'numpy', 'resampy',
                 'scipy', 'scipy.signal', 'scipy.io',
                 'librosa', 'librosa.core.spectrum', 'neo4j.v1',
                 'pyraat',
@@ -70,7 +70,11 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
+    'sphinxcontrib.bibtex',
     'numpydoc',]
+
+bibtex_bibfiles = ['refs.bib']  
+bibtex_reference_style = 'author_year'  # Use author-year style for citations
 
 autosummary_generate = True
 autodoc_default_flags = ['members']
@@ -94,7 +98,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'PolyglotDB'
-copyright = '2015-2024, Montreal Corpus Tools'
+copyright = '2015-2025, Montreal Corpus Tools'
 author = 'Montreal Corpus Tools'
 
 release: str = get_version("polyglotdb")
