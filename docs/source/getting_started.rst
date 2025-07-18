@@ -67,7 +67,7 @@ Optionally, you can :ref:`Configure Your IDE<configure_IDE>` between Step 1 and 
 Quick Installation via conda-forge (Recommended)
 ------------------------------------------------
 
-#. You can install PolyglotDB using a single Conda command :code:`conda create -n polyglotdb -c conda-forge polyglotdb python=3.12`
+#. You can install PolyglotDB using a single Conda command :code:`conda create -n polyglotdb -c conda-forge polyglotdb`
 #. Activate conda environment :code:`conda activate polyglotdb`
 
 .. _pip_install:
