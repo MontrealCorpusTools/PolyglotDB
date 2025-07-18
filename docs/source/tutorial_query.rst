@@ -15,7 +15,7 @@ Tutorial 3: Getting information out
 
 
 Preliminaries
-===============================
+=============
 
 The main objective of this tutorial is to export a CSV file using a query on an imported (:ref:`tutorial_first_steps`) and
 enriched (:ref:`tutorial_enrichment`) corpus.
@@ -23,10 +23,10 @@ enriched (:ref:`tutorial_enrichment`) corpus.
 The complete Python script for Tutorial 3 is available here: `tutorial scripts`_.
 
 Workflow
-===============================
+========
 
 
-This tutorial assumes you have already done Tutorials 1 and 2.   Tutorial 3 can be followed in two ways, like Tutorials 1-2 (see :ref:`here<tutorial_1_workflow>`): 
+This tutorial assumes you have already done Tutorials 1 and 2. Tutorial 3 can be followed in two ways, like Tutorials 1-2 (see :ref:`here<tutorial_1_workflow>`): 
 
 * Pasting in commands one by one into the Python interpreter
 * Running the entire script at once
@@ -44,6 +44,7 @@ to be runnable:
     corpus_name = 'tutorial-subset'
     export_path = './results/tutorial_3_subset_output.csv'
     # change export_path to the location where you want the CSV file to be saved
+
 
 Creating an initial query
 =========================
@@ -70,7 +71,6 @@ For this example, we will query for all *syllables*, which are:
 
 Next, we want to specify the particular information to extract for each syllable found.
 
-
 .. code-block:: python
 
     # duplicated from above
@@ -96,7 +96,6 @@ With the above, we extract information of interest about the syllable, the word 
 speaker and the sound file (``discourse`` in PolyglotDB's API).
 
 To test out the query, we can ``limit`` the results (for readability) and print them:
-
 
 .. code-block:: python
 
@@ -126,14 +125,14 @@ To test out the query, we can ``limit`` the results (for readability) and print 
         results = q.all()
         print(results)
 
-Which will show the first ten rows that would be exported to a csv.
+Which will show the first ten rows that would be exported to a CSV file.
 
 .. _tutorial_export:
 
 Exporting a CSV file
 ====================
 
-Once the query is constructed with filters and columns, exporting to a CSV is a simple method call on the query object.
+Once the query is constructed with filters and columns, exporting to a CSV file is a simple method call on the query object.
 For completeness, the full code for the query and export is given below.
 
 .. code-block:: python

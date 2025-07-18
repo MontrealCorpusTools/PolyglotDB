@@ -1,7 +1,5 @@
 
-
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1.py
-
 
 .. _formant: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
 
@@ -13,7 +11,6 @@
 
 .. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_1_subset_output.txt
 
-
 .. _tutorial_first_steps:
 
 ***********************
@@ -22,25 +19,23 @@ Tutorial 1: First steps
 
 
 Preliminaries
-===============================
+=============
 
 Before starting, make sure you have:
 
-* Activated your polyglotdb conda environment with ``conda activate polyglotdb``
-* Started a local PolyglotDB database with ``pgdb start``
-* Downloaded the tutorial corpus (see :ref:`here<tutorial_download>`)
+* Activated your PolyglotDB conda environment with ``conda activate polyglotdb``.
+* Started the local PolyglotDB database with ``pgdb start``.
+* Downloaded the tutorial corpus (see :ref:`here<tutorial_download>`).
 
 See `Steps to use PolyglotDB`_ for detailed instructions.
-
 
 The objective of this tutorial is to import a downloaded corpus consisting of sound files and TextGrids into a Polyglot
 database, which will then be enriched and queried (in Tutorials 2-3).
 
-
 .. _tutorial_1_workflow:
 
 Workflow
------------------------------
+--------
 
 After the preliminary steps above, this tutorial can be followed in two ways:
    
@@ -61,7 +56,7 @@ The full script is available here: `tutorial scripts`_.
 Importing the tutorial corpus
 =============================
 
-The first step is to prepare our python environment. We begin by importing the PolyglotDB libraries we need and setting useful variables:
+The first step is to prepare our Python environment. We begin by importing the PolyglotDB libraries we need and setting useful variables:
 
 .. code-block:: python
 
@@ -86,22 +81,22 @@ Then run following lines of code to import corpus data into the PolyglotDB datab
    with CorpusContext(corpus_name) as c:
       c.load(parser, corpus_root)
 
-The ``pgio`` module handles all import and export functionality in polyglotdb.  The principle functions that a user will encounter
+The ``pgio`` module handles all import and export functionality in PolyglotDB.  The principle functions that a user will encounter
 are the ``inspect_X`` functions that generate parsers for corpus formats.  In the above code, the MFA parser is used because
 the tutorial corpus was aligned using the MFA.  See :ref:`importing` for more information on the inspect functions and parser
 objects they generate for various formats.
 
-
 .. warning::
 
    If during the running of the import code, a ``neo4j.exceptions.ServiceUnavailable`` error is raised, then double check
-   that the  database is running.  Once polyglotdb is installed, simply call ``pgdb start``, assuming ``pgdb install``
-   has already been called.  See :ref:`local_setup` for more information.
+   that the  database is running.  Once PolyglotDB is installed, simply call ``pgdb start``, assuming ``pgdb install``
+   has already been called. See :ref:`local_setup` for more information.
+
 
 .. admonition:: Technical detail
 
    The import statements at the top get the necessary classes and functions for importing, namely the ``CorpusContext`` class and
-   the ``pgio`` ("PolyglotDB input-output") module.  ``CorpusContext`` objects are how all interactions with the database are handled.  The ``CorpusContext`` is
+   the ``pgio`` ("PolyglotDB input-output") module.  ``CorpusContext`` objects are how all interactions with the database are handled. The ``CorpusContext`` is
    created as a context manager in Python (the ``with ... as ...`` pattern), so that clean up and closing of connections are
    automatically handled both on successful completion of the code as well as if errors are encountered.
 
@@ -123,8 +118,9 @@ fresh state via the following code:
 .. warning::
 
    Be careful when running this code as it will delete any and all information in the corpus.  For smaller corpora such
-   as the one presented here, the time to set up is not huge, but for larger corpora this can result in several hours worth
-   of time to reimport and re-enrich the corpus.
+   as the one presented here, set up time is not huge, but for larger corpora this can result in several hours worth
+   of time to re-import and re-enrich the corpus.
+
 
 Testing some simple queries
 ===========================
