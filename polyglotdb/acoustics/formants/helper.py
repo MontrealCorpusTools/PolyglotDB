@@ -264,13 +264,9 @@ def extract_and_save_formant_tracks(corpus_context, data, num_formants=False, st
     formant_tracks = ['F1', 'F2', 'F3', 'B1', 'B2', 'B3']
     tracks = {}
     for k, v in outputs.items():
-        vowel_id = k.properties["id"]
-        track = Track()
+        track = {}
         for time, formants in v.items():
-            tp = TimePoint(time)
-            for f in formant_tracks:
-                tp.add_value(f, formants[f])
-            track.add(tp)
+             track[time] = {f: formants[f] for f in formant_tracks}
         if not k["speaker"] in tracks:
             tracks[k["speaker"]] = {}
         tracks[k["speaker"]][k] = track
