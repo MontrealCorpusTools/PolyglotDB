@@ -13,17 +13,28 @@
 Tutorial 3: Getting information out
 ***********************************
 
+
+Preliminaries
+===============================
+
 The main objective of this tutorial is to export a CSV file using a query on an imported (:ref:`tutorial_first_steps`) and
 enriched (:ref:`tutorial_enrichment`) corpus.
 
-.. note::
+The complete Python script for Tutorial 3 is available here: `tutorial scripts`_.
 
-   The following Python scripts are presented in step-by-step blocks to guide you through the process. 
-   However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
-   
-   The complete Python script is available here `tutorial scripts`_.
-   
-As in the other tutorials, import statements and the corpus name (as it is stored in pgdb) must be set for the code in this tutorial
+Workflow
+===============================
+
+
+This tutorial assumes you have already done Tutorials 1 and 2.   Tutorial 3 can be followed in two ways, like Tutorials 1-2 (see :ref:`here<tutorial_1_workflow>`): 
+
+* Pasting in commands one by one into the Python interpreter
+* Running the entire script at once
+
+Running the whole script is the usual workflow for PolyglotDB, but the commands are shown one by one here to make it easier to follow along.
+
+
+As in Tutorials 1-2, ``import`` statements and the location of the corpus (``corpus_root``) must be set for the code in this tutorial
 to be runnable:
 
 .. code-block:: python
@@ -148,7 +159,7 @@ For completeness, the full code for the query and export is given below.
         q = q.order_by(c.syllable.label)
         q.to_csv(export_path)
 
-The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_, as well as `expected output`_ when run on the 'LibriSpeech-subset' corpora.
+The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_, as well as `expected output`_ when run on the 'LibriSpeech-subset' corpus.
 
 Next steps
 ==========

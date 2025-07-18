@@ -1,13 +1,7 @@
 
-.. _LibriSpeech: http://www.openslr.org/12/
-
-.. _Montreal Forced Aligner: https://montreal-forced-aligner.readthedocs.io/en/latest/
-
-.. _tutorial corpus download link: https://mcgill-my.sharepoint.com/:f:/g/personal/morgan_sonderegger_mcgill_ca/EipFbcOfR31JnM4XYprp14oBuYW9lYA9IzOBcEERFZxwyA?e=tiV8bW
 
 .. _full version of the script: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/tutorial_1.py
 
-.. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_1_subset_output.txt
 
 .. _formant: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
 
@@ -17,55 +11,57 @@
 
 .. _Steps to use PolyglotDB: https://polyglotdb.readthedocs.io/en/latest/getting_started.html#steps-to-use-polyglotdb
 
+.. _expected output: https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_1_subset_output.txt
+
+
 .. _tutorial_first_steps:
 
 ***********************
 Tutorial 1: First steps
 ***********************
 
-**Prerequisites:**
 
-- Ensure you are inside the correct Conda environment where PolyglotDB is installed.
-- Start the local databases. For detailed instructions, refer to the `Steps to use PolyglotDB`_.
-
-The main objective of this tutorial is to import a downloaded corpus consisting of sound files and TextGrids into a Polyglot
-database so that they can be queried.
-
-.. note::
-
-   This tutorial can be followed in two ways:
-   
-   1. **Step-by-step** - Activate your polyglotdb conda environment with ``conda activate polyglotdb``, run ``pgdb start`` to boot up neo4j, start the python interpreter with ``python`` and then copy and paste each code block one at a time.
-   2. **Script mode** - You can run the entire script directly as a standalone Python file.
-
-   To run the full tutorial script from the command line:
-
-   .. code-block:: bash
-
-      python tutorial_1.py
-
-   Before running this, make sure to edit the `corpus_root` variable in `tutorial_1.py` to point to the correct path where you downloaded the tutorial corpus.
-   The full script is available here: `tutorial scripts`_.
-
-.. _tutorial_download:
-
-Downloading the tutorial corpus
+Preliminaries
 ===============================
 
-There are two corpora made available for usage with this tutorial. These are both subsets of the `LibriSpeech`_ test-clean dataset, forced aligned with the `Montreal Forced Aligner`_ 
+Before starting, make sure you have:
 
-The corpora are made available for download here: `tutorial corpus download link`_. The larger corpus, LibriSpeech-aligned, contains dozens of speakers and 490MB of data. The smaller corpus, LibriSpeech-aligned-subset, contains just two speakers from the previous corpus and therefore much less data (25MB).
+* Activated your polyglotdb conda environment with ``conda activate polyglotdb``
+* Started a local PolyglotDB database with ``pgdb start``
+* Downloaded the tutorial corpus (see :ref:`here<tutorial_download>`)
 
-In tutorials 1-3, we show how to prepare the LibriSpeech-aligned-subset corpus for linguistic analysis using polyglotdb. The subset is chosen for these tutorials to allow users to quickly test commands and compare their results with `expected output`_ while getting used to interacting with polyglotdb, since some enrichment commands can be timeconsuming when run on large datasets.
+See `Steps to use PolyglotDB`_ for detailed instructions.
 
-In tutorials 4 and 5, vowel `formant`_ and `pitch`_ analysis is performed and expected results are provided. These experiments are performed using the larger corpus to allow for more coherent analysis.
+
+The objective of this tutorial is to import a downloaded corpus consisting of sound files and TextGrids into a Polyglot
+database, which will then be enriched and queried (in Tutorials 2-3).
+
+
+.. _tutorial_1_workflow:
+
+Workflow
+-----------------------------
+
+After the preliminary steps above, this tutorial can be followed in two ways:
+   
+1. **Step-by-step** - start the python interpreter with ``python`` and then copy and paste each code block one at a time.
+2. **Script mode** -  run the entire script directly as a standalone Python file.
+
+To run the full tutorial script from the command line:
+
+.. code-block:: bash
+
+   python tutorial_1.py
+
+Before running this, make sure to edit the `corpus_root` variable in `tutorial_1.py` to point to the correct path where you downloaded the tutorial corpus.
+The full script is available here: `tutorial scripts`_.
 
 .. _tutorial_import:
 
 Importing the tutorial corpus
 =============================
 
-The first step is to prepare our python environment. We begin by importing the polyglotdb libraries we need and setting useful variables:
+The first step is to prepare our python environment. We begin by importing the PolyglotDB libraries we need and setting useful variables:
 
 .. code-block:: python
 
@@ -80,7 +76,7 @@ The first step is to prepare our python environment. We begin by importing the p
    corpus_name = 'tutorial-subset'
    # corpus_name = 'tutorial'
 
-Then run following lines of code to import corpus data into pgdb. For any given corpora, these commands only need to be run once: corpora are preserved in pgdb after import.
+Then run following lines of code to import corpus data into the PolyglotDB database. For any given corpus, these commands only need to be run once: corpora are preserved in the database after import.
 
 .. code-block:: python
 
@@ -90,22 +86,27 @@ Then run following lines of code to import corpus data into pgdb. For any given 
    with CorpusContext(corpus_name) as c:
       c.load(parser, corpus_root)
 
-.. important::
-
-   If during the running of the import code, a ``neo4j.exceptions.ServiceUnavailable`` error is raised, then double check
-   that the pgdb database is running.  Once polyglotdb is installed, simply call ``pgdb start``, assuming ``pgdb install``
-   has already been called.  See :ref:`local_setup` for more information.
-
-The import statements at the top get the necessary classes and functions for importing, namely the CorpusContext class and
-the polyglot IO module.  CorpusContext objects are how all interactions with the database are handled.  The CorpusContext is
-created as a context manager in Python (the ``with ... as ...`` pattern), so that clean up and closing of connections are
-automatically handled both on successful completion of the code as well as if errors are encountered.
-
-The IO module handles all import and export functionality in polyglotdb.  The principle functions that a user will encounter
+The ``pgio`` module handles all import and export functionality in polyglotdb.  The principle functions that a user will encounter
 are the ``inspect_X`` functions that generate parsers for corpus formats.  In the above code, the MFA parser is used because
 the tutorial corpus was aligned using the MFA.  See :ref:`importing` for more information on the inspect functions and parser
 objects they generate for various formats.
 
+
+.. warning::
+
+   If during the running of the import code, a ``neo4j.exceptions.ServiceUnavailable`` error is raised, then double check
+   that the  database is running.  Once polyglotdb is installed, simply call ``pgdb start``, assuming ``pgdb install``
+   has already been called.  See :ref:`local_setup` for more information.
+
+.. admonition:: Technical detail
+
+   The import statements at the top get the necessary classes and functions for importing, namely the ``CorpusContext`` class and
+   the ``pgio`` ("PolyglotDB input-output") module.  ``CorpusContext`` objects are how all interactions with the database are handled.  The ``CorpusContext`` is
+   created as a context manager in Python (the ``with ... as ...`` pattern), so that clean up and closing of connections are
+   automatically handled both on successful completion of the code as well as if errors are encountered.
+
+
+.. _resetting:
 
 Resetting the corpus
 --------------------

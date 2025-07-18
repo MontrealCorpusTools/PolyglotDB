@@ -9,17 +9,31 @@
 Tutorial 2: Adding extra information
 ************************************
 
-The main objective of this tutorial is to enrich an already imported corpus (see :ref:`tutorial_first_steps`) with additional
+
+Preliminaries
+===============================
+
+
+The  objective of this tutorial is to enrich an already imported corpus (see :ref:`tutorial_first_steps`) with additional
 information not present in the original audio and transcripts.  This additional information will then be used for creating
 linguistically interesting queries in the next tutorial (:ref:`tutorial_query`).
 All the enrichment files (``iscan_lexicon.csv`` and ``SPEAKERS.csv``) that we will use in this tutorial are already bundled in with the tutorial corpus.
 
-.. note::
 
-   The following Python scripts are presented in step-by-step blocks to guide you through the process. 
-   However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
-   
-   The complete Python script is available here `tutorial scripts`_.
+The complete Python script for Tutorial 2 is available here: `tutorial scripts`_.
+
+Workflow
+===============================
+
+
+This tutorial assumes you have already done Tutorial 1.   Tutorial 2 can be followed in two ways, like Tutorial 1 (see :ref:`here<tutorial_1_workflow>`): 
+
+* Pasting in commands one by one into the Python interpreter
+* Running the entire script at once
+
+Running the whole script is the usual workflow for PolyglotDB, but the commands are shown one by one here to make it easier to follow along.
+
+
    
 .. note::
 
@@ -30,9 +44,9 @@ All the enrichment files (``iscan_lexicon.csv`` and ``SPEAKERS.csv``) that we wi
    database will be the same. Within a section, however (i.e.,
    :ref:`tutorial_syllable_enrichment`), the ordering of steps matters. For example, syllabic segments must be specified before
    syllables can be encoded, because the syllable encoding algorithm
-   builds up syllalbes around syllabic phones.
+   builds up syllables around syllabic phones.
 
-As in the other tutorials, import statements and the location of the corpus root must be set for the code in this tutorial
+As in Tutorial 1, ``import`` statements and the location of the corpus (``corpus_root``) must be set for the code in this tutorial
 to be runnable:
 
 .. code-block:: python
@@ -54,7 +68,13 @@ to be runnable:
 Encoding syllables
 ==================
 
-To create syllables requires two steps. The first is to specify the subset of phones in the corpus that are syllabic segments and function as syllabic nuclei. In general these will be vowels, but can also include syllabic consonants. Subsets in PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references; see :ref:`enrichment_subsets` for more details.
+Creating syllables requires two steps.
+
+**Step 1: Specifying syllabic segments** 
+
+We first specify the subset of phones in the corpus that are syllabic segments and function as syllabic nuclei.  In general these will be vowels, but can also include syllabic consonants. 
+
+Subsets in PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references; see :ref:`enrichment_subsets` for more details.
 
 .. code-block:: python
 
@@ -72,8 +92,10 @@ The database now contains the information that each phone type above
 phone token, which belongs to one of these phone types, is also a
 syllabic.
 
-Once the syllabic segments have been marked as such in the phone
-inventory, the next step is to actually create the syllable
+**Step 2: Encoding syllables**
+
+With the syllabic segments specified  in the phone
+inventory, we create the syllable
 annotations as follows:
 
 .. code-block:: python
@@ -98,10 +120,14 @@ list of possible onsets would in include ``S T R`` and ``JH``, but not ``N JH``,
 Encoding utterances
 ===================
 
-As with syllables, encoding utterances consists of two steps.  The first is marking the "words" that are actually non-speech
-elements within the transcript.  When a corpus is first imported,
-every annotation is treated as speech.  So we must first encode
-labels like ``<SIL>`` as pause elements and not actual speech sounds:
+As with syllables, encoding utterances consists of two steps.
+
+**Step 1: encoding non-speech**
+
+When a corpus is first imported,
+every annotation is treated as speech.   There are typically "words" that are actually non-speech
+elements within the transcript. We will encode these non-speech
+labels like ``<SIL>`` as "pauses" and not actual speech sounds:
 
 .. code-block:: python
 
@@ -115,7 +141,9 @@ labels like ``<SIL>`` as pause elements and not actual speech sounds:
 possible non-speech "word", but in other corpora there will probably
 be others, so you'd use a different ``pause_labels`` list.)
 
-Once pauses are encoded, the next step is to actually create the utterance annotations as follows:
+**Step 2: encoding utterances**
+
+The next step is to  create the utterance annotations based on these pauses.
 
 .. code-block:: python
 
@@ -126,7 +154,7 @@ The `min_pause_length` argument specifies how long (in seconds) a non-speech
 element has to be to act as an utterance boundary. In many cases,
 "pauses" that are short enough, such as those inserted by a forced
 alignment error, are not good utterance boundaries (or just signal a
-smaller unit than an "utterance").
+smaller unit than an "utterance").  Thus, we set the minimum pause length to 150 msec (0.15 seconds).
 
 .. note::
 
@@ -138,7 +166,7 @@ smaller unit than an "utterance").
 Speaker enrichment
 ==================
 
-Included in the tutorial corpus is a CSV containing speaker information, namely their gender and their actual name rather
+Included in the tutorial corpus is a CSV containing speaker information (``SPEAKERS.csv``), namely their gender and their actual name rather
 than the numeric code used in LibriSpeech.  This information can be imported into the corpus as follows:
 
 .. code-block:: python
@@ -186,7 +214,7 @@ of ``stress`` that can be queried on and extracted.
 
 .. note::
 
-    See :ref:`stress_enrichment` for more details on how to encode stress in various ways.
+    See :ref:`stress_enrichment` for more details on how to encode stress, as well as how to add tone rather than stress information to syllables for tone languages.  
 
 .. _tutorial_additional_enrichment:
 
