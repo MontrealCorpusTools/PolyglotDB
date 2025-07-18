@@ -4,7 +4,6 @@
 Introduction
 ************
 
-
 .. _Phonological CorpusTools: http://phonologicalcorpustools.github.io/CorpusTools/
 
 .. _GitHub repository: https://github.com/PhonologicalCorpusTools/PolyglotDB/
@@ -65,11 +64,8 @@ Introduction
 
 .. _MCQLL lab: http://mcqll.org/
 
-
-
-
 Background
-==================
+==========
 
 **PolyglotDB** is a Python package for storage, phonetic analysis, and querying of speech corpora. It
 represents linguistic data in scalable, high-performance databases (called "Polyglot"
@@ -78,8 +74,8 @@ used with corpora of any size, it is built to scale to very large corpora.  It i
 with the `Montreal Forced Aligner <https://montreal-forced-aligner.readthedocs.io/en/latest/>`_, but accepts corpora in other formats as well.
 
 Users interact with PolyglotDB primarily through its Python API: writing Python scripts 
-that import functions and classes from PolyglotDB. See :ref:`installation` for setting up PolyglotDB
-, followed by :ref:`tutorials` for walk-through examples.  :ref:`case_studies` show concrete cases of PolyglotDB's use to address different kinds of phonetic research 
+that import functions and classes from PolyglotDB. See :ref:`installation` for setting up PolyglotDB, 
+followed by :ref:`tutorials` for walk-through examples.  :ref:`case_studies` show concrete cases of PolyglotDB's use to address different kinds of phonetic research 
 questions.
 
 
@@ -88,7 +84,7 @@ The general workflow for working with PolyglotDB is:
 * **Import**
 
   - Parse and load initial data from corpus files into a Polyglot
-    database
+    database.
       
   - See :ref:`tutorial_first_steps` for an example, using a tutorial corpus.
     
@@ -124,16 +120,13 @@ More detailed information on specific implementation details is available in the
 as well as in the `PolyglotDB conference paper`_ and the `ISCAN conference paper`_.
 
 
-
-
 Applications
-==================
+============
 
 In addition to tutorials, there are worked examples of PolyglotDB's use to answer real-world research questions,
 in :ref:`case_studies`. These are Python scripts along with explanations of the entire workflow.  
 
-
-Further examples of PolyglotDB scripts used in the `SPADE project`_ are available in the `SPADE GitHub repo`_ (but without accompanying explanations).  Both contain scripts which can be used as examples to work from for your own studies. 
+Further examples of PolyglotDB scripts used in the `SPADE project`_ are available in the `SPADE GitHub repo`_ (but without accompanying explanations). Both contain scripts which can be used as examples to work from for your own studies. 
 
 Some studies which have used PolyglotDB are:
 
@@ -146,7 +139,6 @@ Some studies which have used PolyglotDB are:
 * f0: :cite:t:`ting2025crosslinguistic`
 
 * Finding tokens: :cite:t:`johnson2024language`
-
 
 .. note::
 
@@ -161,7 +153,8 @@ Some studies which have used PolyglotDB are:
 
 
 Contributors
-===================
+============
+
 * Michael McAuliffe (`@mmcauliffe`_)
 * Xiaoyi Li (`@lxy2304`_)
 * Michael Haaf (`@michaelhaaf`_)
@@ -175,10 +168,9 @@ Contributors
 * Morgan Sonderegger (`@msonderegger`_)
 
 
-
-
 Citation
-====================
+========
+
 If you use PolyglotDB in your research, please cite the following paper:
 
 McAuliffe, Michael, Elias Stengel-Eskin, Michaela Socolof, and Morgan Sonderegger (2017). Polyglot and Speech Corpus Tools:
@@ -186,6 +178,7 @@ a system for representing, integrating, and querying speech corpora. In *Proceed
 
 
 References
-=====================
+==========
+
 .. bibliography::
    :style: plain

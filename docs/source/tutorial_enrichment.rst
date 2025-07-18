@@ -9,32 +9,27 @@
 Tutorial 2: Adding extra information
 ************************************
 
-
 Preliminaries
-===============================
-
+=============
 
 The  objective of this tutorial is to enrich an already imported corpus (see :ref:`tutorial_first_steps`) with additional
 information not present in the original audio and transcripts.  This additional information will then be used for creating
 linguistically interesting queries in the next tutorial (:ref:`tutorial_query`).
 All the enrichment files (``iscan_lexicon.csv`` and ``SPEAKERS.csv``) that we will use in this tutorial are already bundled in with the tutorial corpus.
 
-
 The complete Python script for Tutorial 2 is available here: `tutorial scripts`_.
 
+
 Workflow
-===============================
+========
 
-
-This tutorial assumes you have already done Tutorial 1.   Tutorial 2 can be followed in two ways, like Tutorial 1 (see :ref:`here<tutorial_1_workflow>`): 
+This tutorial assumes you have already done Tutorial 1. Tutorial 2 can be followed in two ways, like Tutorial 1 (see :ref:`here<tutorial_1_workflow>`): 
 
 * Pasting in commands one by one into the Python interpreter
 * Running the entire script at once
 
 Running the whole script is the usual workflow for PolyglotDB, but the commands are shown one by one here to make it easier to follow along.
 
-
-   
 .. note::
 
    Different kinds of enrichment, corresponding to different
@@ -54,7 +49,7 @@ to be runnable:
     import os
     from polyglotdb import CorpusContext
 
-    ## CHANGE THIS PATH to location of the corpus on your system
+    ## CHANGE THIS PATH to the location of the corpus on your system
     corpus_root = './data/LibriSpeech-aligned-subset/'
     corpus_name = 'tutorial-subset'
 
@@ -68,11 +63,11 @@ to be runnable:
 Encoding syllables
 ==================
 
-Creating syllables requires two steps.
+Creating syllable annotations requires two steps.
 
 **Step 1: Specifying syllabic segments** 
 
-We first specify the subset of phones in the corpus that are syllabic segments and function as syllabic nuclei.  In general these will be vowels, but can also include syllabic consonants. 
+We first specify the subset of phones in the corpus that are syllabic segments and function as syllabic nuclei. In general these will be vowels, but can also include syllabic consonants. 
 
 Subsets in PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references; see :ref:`enrichment_subsets` for more details.
 
@@ -125,7 +120,7 @@ As with syllables, encoding utterances consists of two steps.
 **Step 1: encoding non-speech**
 
 When a corpus is first imported,
-every annotation is treated as speech.   There are typically "words" that are actually non-speech
+every annotation is treated as speech. There are typically "words" that are actually non-speech
 elements within the transcript. We will encode these non-speech
 labels like ``<SIL>`` as "pauses" and not actual speech sounds:
 
@@ -143,7 +138,7 @@ be others, so you'd use a different ``pause_labels`` list.)
 
 **Step 2: encoding utterances**
 
-The next step is to  create the utterance annotations based on these pauses.
+The next step is to create the utterance annotations based on these pauses.
 
 .. code-block:: python
 
@@ -167,7 +162,7 @@ Speaker enrichment
 ==================
 
 Included in the tutorial corpus is a CSV containing speaker information (``SPEAKERS.csv``), namely their gender and their actual name rather
-than the numeric code used in LibriSpeech.  This information can be imported into the corpus as follows:
+than the numeric code used in LibriSpeech. This information can be imported into the corpus as follows:
 
 .. code-block:: python
 
@@ -177,7 +172,7 @@ than the numeric code used in LibriSpeech.  This information can be imported int
         c.enrich_speakers_from_csv(speaker_enrichment_path)
 
 Note that the CSV file could have an arbitrary name and location, in
-general.   The command above assumes the name and location for the
+general.  The command above assumes the name and location for the
 tutorial corpus.
 	
 Once enrichment is complete, we can then query information and extract information about these characteristics of speakers.
@@ -216,6 +211,7 @@ of ``stress`` that can be queried on and extracted.
 
     See :ref:`stress_enrichment` for more details on how to encode stress, as well as how to add tone rather than stress information to syllables for tone languages.  
 
+
 .. _tutorial_additional_enrichment:
 
 Additional enrichment
@@ -226,7 +222,7 @@ Additional enrichment
    Speech rate enrichment requires that both the :ref:`tutorial_syllable_enrichment` and :ref:`tutorial_utterance_enrichment`
    steps have been completed.
 
-One of the final enrichment in this tutorial is to encode speech rate onto utterance annotations.  The speech rate measure used
+One of the final enrichment in this tutorial is to encode speech rate onto utterance annotations. The speech rate measure used
 here is going to to be syllables per second.
 
 .. code-block:: python
@@ -248,6 +244,7 @@ annotations, as well as one for ``num_syllables`` on word tokens.
 
    See :ref:`enrichment_hierarchical` for more details on encoding properties based on the rate/count/position of lower
    annotations (i.e., phones or syllables) within higher annotations (i.e., syllables, words, or utterances).
+
 
 Next steps
 ==========

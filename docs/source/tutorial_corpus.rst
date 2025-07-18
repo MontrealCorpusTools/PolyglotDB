@@ -4,7 +4,6 @@
 
 .. _tutorial corpus download: https://mcgill-my.sharepoint.com/:f:/g/personal/morgan_sonderegger_mcgill_ca/EipFbcOfR31JnM4XYprp14oBuYW9lYA9IzOBcEERFZxwyA?e=tiV8bW
 
-
 .. _tutorial_download:
 
 Downloading the tutorial corpus
@@ -17,9 +16,6 @@ These are both subsets of the `LibriSpeech`_ test-clean dataset, forced aligned 
 
 The corpora are made available for download here: `tutorial corpus download`_. 
 
-In tutorials 1-3, the smaller corpus is a better choice so that you can quickly test commands while getting used to interacting with polyglotdb, since some enrichment commands can be timeconsuming when run on large datasets.
+In tutorials 1-3, the smaller corpus is a better choice so that you can quickly test commands while getting used to interacting with PolyglotDB, since some enrichment commands can be time-consuming when run on large datasets.
 
 Tutorials 4-6 should be performed using the larger corpus to allow for more coherent results.
-
-
-

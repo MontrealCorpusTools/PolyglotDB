@@ -35,7 +35,7 @@ If you don't have conda installed on your device:
 .. Note::
 
    On Windows, it is recommended to use the Anaconda Prompt or Miniforge Prompt to manage and execute conda commands effectively.
-   This is because, by default, installing Anaconda or Miniforge does not add the conda command to your system's PATH environment variable.
+   This is because, by default, installing Anaconda or Miniforge does not add the ``conda`` command to your system's PATH environment variable.
    However, if you prefer to use the regular Windows Command Prompt or run Python scripts directly from your IDE, you will need to manually add the necessary directories to your PATH.
    To do so, follow these steps:
 
@@ -113,8 +113,8 @@ Now, you can run PolyglotDB commands and scripts directly within VSCode's integr
 
 .. _local_setup:
 
-Set up local database
----------------------
+Setting up local database
+-------------------------
 
 Installing the PolyglotDB package also installs a utility script (``pgdb``) that is then callable from the command line inside your conda environment. 
 The ``pgdb`` command allows for the administration of a single Polyglot database (install/start/stop/uninstall).
@@ -131,7 +131,7 @@ Installing the local database
 
 .. Warning:: 
    #. On Windows, make sure you are running as an Administrator (right-click on Anaconda Prompt/Miniforge Prompt/Command Prompt/Your IDE and select "Run as administrator"), as Neo4j will be installed as a Windows service.
-   #. Do not use ``sudo`` with ``pgdb install`` on Macs, as it will lead to permissions issues later on.
+   #. Do not use ``sudo`` with ``pgdb install`` on macOS, as it will lead to permissions issues later on.
 
 .. _managing_the_local_database:
 Managing the local database
@@ -165,7 +165,7 @@ follow these steps each time you use PolyglotDB:
 #. Navigate to your working directory, either in your IDE or via the command line. 
 #. Activate the conda environment: :code:`conda activate polyglotdb`.
 #. Start the local databases: :code:`pgdb start`.
-#. Put your Python scripts (which use the :code:`polyglotdb` library)  inside this working directory.
+#. Put your Python scripts (which use the :code:`polyglotdb` library) inside this working directory.
 #. Run the scripts using: :code:`python your_script.py`.
 #. When finished, stop the local databases: :code:`pgdb stop`.
 #. Deactivate the conda environment: :code:`conda deactivate`.
@@ -210,7 +210,7 @@ Follow these steps to get your Docker container up and running:
       **Note for Mac Users:**  
       If you're using a Mac, you might need to run :code:`docker compose run polyglotdb`
 
-   The docker compose run automatically starts the databases server therefore there's no extra steps to set up the databases. 
+   The docker compose run automatically starts the databases server, so there's no extra steps to set up the databases. 
    This command launches an interactive shell inside the `polyglotdb` container, allowing you to execute PolyglotDB scripts directly.
 
 3. **Working with the Default Folder Structure:**
