@@ -16,19 +16,28 @@
 Tutorial 6: Custom Script 
 *************************
 
-The main objective of this tutorial is to perform `voice quality`_ analysis on the corpus using a Praat script and extract 
-spectral measures like H1-H2, H1-A1, H1-A2, and H1-A3.
 
-As in the other tutorials, import statements and the corpus name (as it is stored in pgdb) must be set for the code in this tutorial
-to be runnable. The example given below continues to make use of the "tutorial-subset" corpus we have been using in tutorials 1-5.
+This tutorial shows an example of applying a custom Praat script to make phonetic measures on an (already imported/enriched) PolyglotDB corpus. 
+We use the corpus from Tutorials 1-3, and apply a Praat script to extract spectral measures for `voice quality`_ analysis, including H1-H2, H1-A1, H1-A2, and H1-A3.
 
-.. note::
 
-   The following Python scripts are presented in step-by-step blocks to guide you through the process. 
-   However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
-   
-   The complete Python script is available here `tutorial scripts`_.
-   
+The complete Python script for Tutorial  is available here: `tutorial scripts`_.
+
+
+Workflow
+========
+
+**This tutorial assumes you have already run Tutorials 1 and 2**, which import and enrich the corpus with syllable, speaker, and utterance information.
+
+Tutorial 6 can be followed in two ways, like other tutorials (see :ref:`here<tutorial_1_workflow>`): 
+
+* Pasting in commands one by one into the Python interpreter
+* Running the entire script at once (``python tutorial_6.py``)
+
+Running the whole script is the usual workflow for PolyglotDB, but the commands are shown one by one here to make it easier to follow along.
+
+As in previous tutorials, ``import`` statements and the location of the corpus (``corpus_root``) must be set for the code in this tutorial
+to be runnable.  (You also need to make sure the directory where you will save the CSV file, here ``results/``, exists.)
 
 .. code-block:: python
 

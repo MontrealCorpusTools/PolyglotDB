@@ -26,7 +26,7 @@ Workflow
 This tutorial assumes you have already done Tutorial 1. Tutorial 2 can be followed in two ways, like Tutorial 1 (see :ref:`here<tutorial_1_workflow>`): 
 
 * Pasting in commands one by one into the Python interpreter
-* Running the entire script at once
+* Running the entire script at once (``python tutorial_2.py``)
 
 Running the whole script is the usual workflow for PolyglotDB, but the commands are shown one by one here to make it easier to follow along.
 

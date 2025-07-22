@@ -14,6 +14,8 @@ These tutorials walk you through the basic workflow of using PolyglotDB, from se
 
 **Tutorials 4-6** are independent. They cover additional types of acoustic analysis—formant tracking for vowels, pitch analysis, and applying a custom Praat script (to analyze voice quality, in this example). You can do these in any order.
 
+- **Note**: each of Tutorials 4-6  assumes that you have first run Tutorials 1-2 (which import and enrich the corpus).
+
 Before doing any tutorial you need to download one or both tutorial corpora. 
 
 For all tutorials, you can compare your results with the `expected output`_.

@@ -22,18 +22,34 @@
 Tutorial 4: Vowel formant analysis
 ***********************************
 
-The main objective of this tutorial is to perform `vowel formant`_ analysis on the enriched polyglot corpus we used in the previous three tutorials.
+The main objective of this tutorial is to perform `vowel formant`_ analysis on the enriched polyglot corpus we used in Tutorials 1-3.
 
-As in the other tutorials, import statements and the corpus name (as it is stored in pgdb) must be set for the code in this tutorial
-to be runnable. The example given below continues to make use of the "tutorial-subset" corpus we have been using in tutorials 1-3.
+The complete Python script for Tutorial  is available here: `tutorial scripts`_.
 
-.. note::
 
-   The following Python scripts are presented in step-by-step blocks to guide you through the process. 
-   However, it is expected that you run the entire Python script as a single unit when using PolyglotDB.
-   
-   The complete Python script is available here `tutorial scripts`_.
-   
+Workflow
+========
+
+**This tutorial assumes you have already run Tutorials 1 and 2**, which import and enrich the corpus with syllable, speaker, and utterance information.
+
+Tutorial 4 can be followed in two ways, like other tutorials (see :ref:`here<tutorial_1_workflow>`): 
+
+* Pasting in commands one by one into the Python interpreter
+* Running the entire script at once (``python tutorial_4.py``)
+
+Running the whole script is the usual workflow for PolyglotDB, but the commands are shown one by one here to make it easier to follow along.
+
+..    Different kinds of enrichment, corresponding to different
+..    subsections of this section, can be performed in any order. For
+..    example, speaker enrichment is independent of syllable encoding, so
+..    you can perform either one before the other and the resulting
+..    database will be the same. Within a section, however (i.e.,
+..    :ref:`tutorial_syllable_enrichment`), the ordering of steps matters. For example, syllabic segments must be specified before
+..    syllables can be encoded, because the syllable encoding algorithm
+..    builds up syllables around syllabic phones.
+
+As in previous tutorials, ``import`` statements and the location of the corpus (``corpus_root``) must be set for the code in this tutorial
+to be runnable.  (You also need to make sure the directory where you will save the CSV file, here ``results/``, exists.)
 
 .. code-block:: python
 

@@ -17,7 +17,7 @@ Tutorial 3: Getting information out
 Preliminaries
 =============
 
-The main objective of this tutorial is to export a CSV file using a query on an imported (:ref:`tutorial_first_steps`) and
+The objective of this tutorial is to export a CSV file using a query on an imported (:ref:`tutorial_first_steps`) and
 enriched (:ref:`tutorial_enrichment`) corpus.
 
 The complete Python script for Tutorial 3 is available here: `tutorial scripts`_.
@@ -29,7 +29,7 @@ Workflow
 This tutorial assumes you have already done Tutorials 1 and 2. Tutorial 3 can be followed in two ways, like Tutorials 1-2 (see :ref:`here<tutorial_1_workflow>`): 
 
 * Pasting in commands one by one into the Python interpreter
-* Running the entire script at once
+* Running the entire script at once (``python tutorial_3.py``)
 
 Running the whole script is the usual workflow for PolyglotDB, but the commands are shown one by one here to make it easier to follow along.
 
@@ -162,4 +162,10 @@ The CSV file generated will then be ready to open in other programs or in R for 
 
 Next steps
 ==========
-See :ref:`tutorial_formants` and :ref:`tutorial_pitch` for practical examples of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
+
+Tutorials 4-6 show examples of acoustic analyses that can be performed on enriched corpora: adding vowel formants, pitch tracks, or using a custom Praat script.
+
+
+
+Tutorials 1-3 are identical to :ref:`Case Study 1<case_study_duration>`.  See "Step 4" there for R code to visualize and analyze the exported results from Tutorial 3 (in ``tutorial_3_subset_output.csv``).
+
