@@ -4,12 +4,23 @@
 Case study 2: Vowel dynamics
 ****************************
 
+**Author** : `Massimo Lipari <https://massimolipari.github.io/>`_
+
+
+
+
 Motivation
 ==========
 
 It has long been known that even vowels traditionally described as monopthongs show gradual changes in formant frequencies over the course of the segment, which appear to be play a significant role in phoneme identification :cite:p:`nearey86modeling,hillenbrand95acoustic`. This phenomenon, referred to as *vowel-inherent spectral change*, motivates analyzing whole formant *tracks*, rather than reducing observations to point measures (e.g., formant frequencies at vowel midpoint).
 
 Vowel-inherent spectral change is by now well-documented in English, but comparatively less so in other languages. Here, we'll be investigating formant dynamics across the vowel system of Quebec French.
+
+This case study demonstrates **workflows for formant measurement in PolyglotDB**:
+	- Default
+	- Using prototypes
+	- Incorporating an external tool for manual measurement
+
 
 Step 0: Preliminaries
 =====================
@@ -67,7 +78,7 @@ We are now ready to measure F1-F3 tracks for vowels in the corpus. There are two
 Option A: Quick and dirty
 -------------------------
 
-The easiest way to get formant tracks is to use the ``analyze_formant_tracks()`` function in PolyglotDB. This will ultimately call *Praat* in the background, looking for 5 formants with a ceiling frequency of 5500 Hz. These parameters are not guaranteed to produce sensible results for speaker-vowel pairs: accrodingly, this method is *not* recommended, but included for completeness in case it's sufficient for your purposes.
+The easiest way to get formant tracks is to use the ``analyze_formant_tracks()`` function in PolyglotDB. This will ultimately call *Praat* in the background, looking for 5 formants with a ceiling frequency of 5500 Hz. These parameters are not guaranteed to produce sensible results for speaker-vowel pairs: accordingly, this method is *not* recommended, but included for completeness in case it's sufficient for your purposes.
 
 By default, ``analyze_formant_tracks()`` will generate acoustic tracks over entire utterances (which requires utterance encoding to have previously been performed). If we instead want formant tracks only over vowel intervals, we can use the ``vowel_label`` argument to specify the subset of phones for which formant tracks are desired. We simply enter the name of some previously encoded phone subset: in this case, the ``'vowel'`` subset encoded in step 2.
 
@@ -80,7 +91,7 @@ Option B: "Refined" measures
 
 Alternatively, PolyglotDB implements the formant 'refinement' algorithm described in :cite:t:`mielke2019age` through the ``analyze_formant_point_refinement()`` function. In short, this approach generates multiple canadidate analyses for each vowel token by varying the number of formants (while keeping the formant frequency ceiling fixed at 5500 Hz), and automatically selecting the candidate which minimizes the `Mahalanobis distance <https://en.wikipedia.org/wiki/Mahalanobis_distance>`__ between the observation and the multidimensional distribution of the corresponding vowel phoneme in acoustic space, which is referred to as a 'prototype'. For the implementation here, prototypes consist of means and a covariance matrix on 6 acoustic dimensions (the frequencies and bandwidths of the first three formants taken at 33% of duration) for each of the vowel phones being analyzed. The algorithm can be run with multiple iterations: new prototypes are computed for each speaker-phoneme pair at the end of each iteration and used for the following one.
 
-To get formants tracks (rather than points), we add the ``output_tracks = True`` paramter. (This is admittedly a little confusing, given the name of the function.)
+To get formants tracks (rather than points), we add the ``output_tracks = True`` parameter. (This is admittedly a little confusing, given the name of the function.)
 
 i. Getting vowel prototypes
 ```````````````````````````
@@ -91,7 +102,8 @@ It's possible to instead specify prototypes for each phone from a CSV file (for 
 
 *Making prototypes from scratch*
 
-A good way to obtain prototypes for a corpus is to hand-measure a random subset of vowels from the corpus at hand. For this, we'll use the excellent *Praat* plugin *Fast Track* :cite:p:`barreda21fast`. Like PolyglotDB, *Fast Track* obtains multiple candidate analyses for every token and attempts to automatically select the best one, albeit in a slightly different way: the number of formants is fixed at 5.5, and the formant ceiling is manipulated within a user-defined range. The optimal candidate is determined based on the smoothness of the formant tracks (and optionally, also using some simple heuristics)--the idea being that excessive jitter is typically a sign of a formant tracking error (since articulators can only move relatively slowly and gradually). While convenient, this method is still suceceptible to errors (since it's possible to have a candidate which hallucinates or skips a formant while having smooth tracks), and should not be trusted blindly. The beauty of *Fast Track* is that it allows the user to easily compare the different candidates visually against the spectrogram and override the automatic selection procedure as needed.
+A good way to obtain prototypes for a corpus is to hand-measure a random subset of vowels from the corpus at hand. For this, we'll use the excellent *Praat* plugin 
+`Fast Track <https://github.com/santiagobarreda/FastTrack/>`_ :cite:p:`barreda21fast`. Like PolyglotDB, *Fast Track* obtains multiple candidate analyses for every token and attempts to automatically select the best one, albeit in a slightly different way: the number of formants is fixed at 5.5, and the formant ceiling is manipulated within a user-defined range. The optimal candidate is determined based on the smoothness of the formant tracks (and optionally, also using some simple heuristics)--the idea being that excessive jitter is typically a sign of a formant tracking error (since articulators can only move relatively slowly and gradually). While convenient, this method is still suceceptible to errors (since it's possible to have a candidate which hallucinates or skips a formant while having smooth tracks), and should not be trusted blindly. The beauty of *Fast Track* is that it allows the user to easily compare the different candidates visually against the spectrogram and override the automatic selection procedure as needed.
 
 Before we can run *Fast Track*, we need to obtain the random sample of vowels we want to manually analyze. First, we run a simple PolyglotDB query for all vowel tokens of interest in the corpus. Here, we'll require the vowels be at least 50 ms long in order to avoid any overly-reduced tokens.
 

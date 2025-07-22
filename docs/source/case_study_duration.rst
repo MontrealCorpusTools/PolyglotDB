@@ -9,8 +9,8 @@ Motivation
 
 Polysyllabic shortening refers to the "same" rhythmic unit (syllable or vowel) becoming shorter as the size of the containing domain (word or prosodic domain) increases. Two classic examples:
 
-* English: stick, sticky, stickiness (Lehiste, 1972)
-* French: pâte, pâté, pâtisserie (Grammont, 1914)
+* English: stick, sticky, stickiness :cite:p:`lehiste1972timing`
+* French: pâte, pâté, pâtisserie :cite:p:`grammont1914traite`
 
 Polysyllabic shortening is often – but not always – defined as being restricted to accented syllables. (As in the English, but not the French example.) Using PolyglotDB, we can check whether a simple version of polysyllabic shortening holds in the tutorial corpus, namely:
 

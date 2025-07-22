@@ -4,12 +4,25 @@
 Case study 3: Sibilant acoustics
 ********************************
 
+**Author**: `Massimo Lipari <https://massimolipari.github.io/>`_
+
+
+
+
+
 Motivation
 ==========
 
 Various acoustic measures have been used over the years in the literature on sibilant fricatives (henceforth, just *sibilants*). Measures of the overall spectral peak and of the spectral center of gravity (the weighted mean frequency of the spectrum)--referred to as *peak* and *COG* below--both have long histories. More recently, it has become common to instead look for a 'main' peak (meant to correspond to the lowest resonance of the cavity anterior to the principal constriction) over a relatively narrow, pre-specified frequency range that can vary by sibilant and by speaker--this measure is sometimes referred to as F\ :subscript:`M` :cite:p:`koenig13towards`.
 
 In this case study, we'll compare the three measures for tokens of the voiceless sibilants /s/ and /ʃ/ in Quebec French.
+
+This case study demonstrates **workflow for using an external tool to make measures**:
+	- Export token locations
+	- Use external tool (here, an R script) to make measures per token
+	- Import back into the database
+
+
 
 Step 0: Preliminaries
 =====================
@@ -51,7 +64,7 @@ We now enrich the corpus with the information required for our case study.
 
 1. We specify the set of phones which represent vowels in the corpus in the ``vowel_set`` variable. We then automatically syllabify all words, in this case assuming that vowels and only vowels are syllabic in this language.
 
-2. We then specify the set of *word* labels used to represent silences in the corpus with the ``pause_labels`` variable. This allows us to split sound files into 'utternaces'--periods of speech surrounded by periods of silence of a predetermined minimum length (150 ms by default, but this can be changed by modifying the ``min_pause_length`` parameter to the ``encode_utterances()`` function).
+2. We then specify the set of *word* labels used to represent silences in the corpus with the ``pause_labels`` variable. This allows us to split sound files into 'utterances'--periods of speech surrounded by periods of silence of a predetermined minimum length (150 ms by default, but this can be changed by modifying the ``min_pause_length`` parameter to the ``encode_utterances()`` function).
 
 3. Finally, we want to add basic biographical information about the speakers (e.g., gender, year of birth), which we have stored in the ``speaker_metadata.csv`` file. The values in the first column of this file must match the PolyglotDB speaker ID (the name of the folder containing that speaker's data); every other column is used to create new properties of speakers in the database (with the column name used as the property name).
 
@@ -62,7 +75,7 @@ We now enrich the corpus with the information required for our case study.
 Step 3: Querying
 ================
 
-In recent years, it has become standard to use *multitaper spectra* :cite:p:`thomson82spectrum` rather than garden-variety DFT spectra, for the reasons explained in :cite:t:`reidy2013introduction`. However, multitaper has not yet been implemented in PolyglotDB: we must therefore use external software--in this case, an R script, described in the next section. Accordingly, we need to run a simple query to extract all sibilant tokens we want to analyze (all prevocalic voiceless sibilants in onset position greater than 50 ms in duration), a total of 1434 tokens. For reasons which will become clear shortly, we'll also need to query the list of *utterances* in the corpus.
+In recent years, it has become standard to use *multitaper spectra* :cite:p:`thomson82spectrum` rather than garden-variety DFT spectra, for the reasons explained in :cite:t:`reidy13`. However, multitaper has not yet been implemented in PolyglotDB: we must therefore use external software--in this case, an R script, described in the next section. Accordingly, we need to run a simple query to extract all sibilant tokens we want to analyze (all prevocalic voiceless sibilants in onset position greater than 50 ms in duration), a total of 1434 tokens. For reasons which will become clear shortly, we'll also need to query the list of *utterances* in the corpus.
 
 .. literalinclude:: ../../examples/case_studies/sibilants/3_query.py
 	:language: python

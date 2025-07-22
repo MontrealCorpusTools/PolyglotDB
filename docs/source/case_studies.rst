@@ -5,6 +5,7 @@
 Case studies
 ************
 
+
 Contents:
 
 .. toctree::
