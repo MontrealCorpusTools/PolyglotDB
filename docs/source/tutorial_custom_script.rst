@@ -18,8 +18,7 @@ Tutorial 6: Custom Script
 
 
 This tutorial shows an example of applying a custom Praat script to make phonetic measures on an (already imported/enriched) PolyglotDB corpus. 
-We use the corpus from Tutorials 1-3, and apply a Praat script to extract spectral measures for `voice quality`_ analysis, including H1-H2, H1-A1, H1-A2, and H1-A3.
-
+We use the corpus from Tutorials 1-3, and apply a Praat script to extract spectral measures for `voice quality`_ analysis, including H1-H2, H1-A1, H1-A2, and H1-A3.  A time trajectory for each spectral measure is extracted for each vowel token.
 
 The complete Python script for Tutorial  is available here: `tutorial scripts`_.
 
@@ -55,6 +54,9 @@ The Example Praat script
 =======================
 The `Praat script`_ used for this analysis will extract H1-H2 and amplitude differences for higher harmonics (A1, A2, A3).
 It is adopted from an online script from the `UCLA Phonetics Lab`_.
+
+Each measure is extracted at 10 time points per vowel.
+
 For more information on how to format your Praat script, check out (:ref:`custom_script_encoding`)
 
 .. _tutorial_vq_analysis:
@@ -99,7 +101,9 @@ The CSV file will contain the following columns:
 
 - Phone label: The label of the phone.
 - Begin/End time: The time range for the phone.
-- Voice quality measures: H1-H2, H1-A1, H1-A2, and H1-A3 values.
+- Speaker information
+- Current and following word information 
+- Voice quality measures: H1-H2, H1-A1, H1-A2, and H1-A3 values, as well as the timepoint at which they were measured.
 
 
 .. code-block:: python 
@@ -108,7 +112,19 @@ The CSV file will contain the following columns:
     print("Querying results...")
     with CorpusContext(corpus_name) as c:
         q = c.query_graph(c.phone).filter(c.phone.subset=='vowel')
-        q = q.columns(c.phone.label.column_name('label'), c.phone.begin.column_name('begin'), c.phone.end.column_name('end'), c.phone.voice_quality.track)
+        q = q.columns(
+            c.phone.label.column_name('label'),
+            c.phone.begin.column_name('begin'), 
+            c.phone.end.column_name('end'), 
+            c.phone.speaker.name.column_name('speaker'),
+            c.phone.speaker.sex.column_name('sex'),
+            c.phone.discourse.name.column_name('discourse'),
+            c.phone.word.following.transcription.column_name('following_word_transcription'),
+            c.phone.word.label.column_name('word'),
+            c.phone.word.begin.column_name('word_begin'),
+            c.phone.word.end.column_name('word_end'),
+            c.phone.voice_quality.track
+             )
         q = q.order_by(c.phone.begin)
         results = q.all()
 
@@ -117,6 +133,7 @@ The CSV file will contain the following columns:
 
         # Export to CSV
         q.to_csv(export_path_1)
+
 
 
 .. _tutorial_vq_statistics:
@@ -147,4 +164,17 @@ To understand the general trend, we can encode acoustic statistics (mean).
                 writer.writerow(row)
 
 
-The CSV file generated will then be ready to open in other programs or in R for data analysis. You can see a `full version of the script`_ and its `expected output`_ when run on the 'LibriSpeech-subset' corpora.
+The CSV file generated will then be ready to open in other programs or in R for data analysis. 
+
+Note that the resulting CSV file, `tutorial_6_subset_voice_quality.csv`, contains measures at multiple time points per vowel.
+
+You can see a `full version of the script`_ and its `expected output`_ when run on the 'LibriSpeech-subset' corpora.
+
+Next steps
+==========
+
+
+This tutorial uses a Praat script to do *dynamic* analysis: tracks for each measure (H1-H2) for each vowel, as a function of time, are generated and stored in the database.
+
+:ref:`Case Study 4<case_study_praat>` shows an example of using a Praat script for static analysis, where one value per acoustic measure (e.g. H1-H2 average, across a vowel) is stored in the database.
+

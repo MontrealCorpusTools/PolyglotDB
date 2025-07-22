@@ -4,10 +4,10 @@ import csv
 if __name__ == '__main__':
 
     corpus_name = 'tutorial-subset'
-    script_path = '/path/to/your/praat/script'
+    script_path = './tutorial_6_vq_script.praat'
     export_path_1 = './results/tutorial_6_subset_voice_quality.csv'
     export_path_2 = './results/tutorial_6_subset_voice_quality_mean.csv'
-    praat_path = "/usr/bin/praat"   # Make sure to check where Praat executable is stored on your device and change accordingly
+    praat_path =  "/Applications/Praat.app/Contents/MacOS/Praat"  # Make sure to check where Praat executable is stored on your device and change accordingly
 
     # 1. Perform voice quality analysis
     with CorpusContext(corpus_name) as c:
@@ -27,7 +27,19 @@ if __name__ == '__main__':
     print("Querying results...")
     with CorpusContext(corpus_name) as c:
         q = c.query_graph(c.phone).filter(c.phone.subset=='vowel')
-        q = q.columns(c.phone.label.column_name('label'), c.phone.begin.column_name('begin'), c.phone.end.column_name('end'), c.phone.voice_quality.track)
+        q = q.columns(
+            c.phone.label.column_name('label'), 
+            c.phone.begin.column_name('begin'), 
+            c.phone.end.column_name('end'), 
+            c.phone.speaker.name.column_name('speaker'),
+            c.phone.speaker.sex.column_name('sex'),
+            c.phone.discourse.name.column_name('discourse'),
+            c.phone.word.following.transcription.column_name('following_word_transcription'),
+            c.phone.word.label.column_name('word'),
+            c.phone.word.begin.column_name('word_begin'),
+            c.phone.word.end.column_name('word_end'),
+            c.phone.voice_quality.track
+        )
         q = q.order_by(c.phone.begin)
         results = q.all()
         print(results[0].track)
