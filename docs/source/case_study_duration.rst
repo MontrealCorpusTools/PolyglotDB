@@ -12,9 +12,11 @@ Polysyllabic shortening refers to the "same" rhythmic unit (syllable or vowel) b
 * English: stick, sticky, stickiness (Lehiste, 1972)
 * French: pâte, pâté, pâtisserie (Grammont, 1914)
 
-Polysyllabic shortening is often – but not always – defined as being restricted to accented syllables. (As in the English, but not the French example.) Using ISCAN, we can check whether a simple version of polysyllabic shortening holds in the tutorial corpus, namely:
+Polysyllabic shortening is often – but not always – defined as being restricted to accented syllables. (As in the English, but not the French example.) Using PolyglotDB, we can check whether a simple version of polysyllabic shortening holds in the tutorial corpus, namely:
 
 * Considering all utterance-final words, does the initial vowel duration decrease as word length increases?
+
+This case study is essentially the same as Tutorials 1-3 together, run on a larger corpus, and visualizing the results.
 
 Step 0: Preliminaries
 ---------------------
@@ -29,7 +31,8 @@ Before importing the corpus data, the following Python libraries are loaded, inc
 	from polyglotdb import CorpusContext
 	import polyglotdb.io as pgio
 
-The data used here is the full Librispeech-aligned corpus (available here).
+The data used here is the full Librispeech-aligned corpus (available :ref:`here<tutorial_download>`).
+
 
 .. code-block:: python
 
@@ -138,7 +141,7 @@ Now that the database has been enriched with all of the properties necessary for
 
 Queries can be typically thought of as having two distinct sections: the *filtering* of the database for the particular objects of interest (e.g., stressed word-initial syllables, word-final nasals, etc), and the definition of *columns* to be exported (e.g., the start and end times of segments, speech rate, speaker names, etc).
 
-The query is first constructed by calling the `query_graph`, which defines what linguistic level should be queried (e.g., syllables, phonemes, utterances, etc). This can then be filtered. This case study is interested in stressed word-initial, utterance-final syllables. Columns for the syllable and word information are extracted, along with the speaker name and speech rate, as well as the name of the audio file (`discourse`). Finally, the query is written to CSV format
+The query is first constructed by calling the ``query_graph()`` function, which defines what linguistic level should be queried (e.g., syllables, phonemes, utterances, etc). This can then be filtered. This case study is interested in stressed word-initial, utterance-final syllables. Columns for the syllable and word information are extracted, along with the speaker name and speech rate, as well as the name of the audio file (`discourse`). Finally, the query is written to CSV format
 
 
 .. code-block:: python
