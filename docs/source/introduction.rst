@@ -176,9 +176,3 @@ If you use PolyglotDB in your research, please cite the following paper:
 McAuliffe, Michael, Elias Stengel-Eskin, Michaela Socolof, and Morgan Sonderegger (2017). Polyglot and Speech Corpus Tools:
 a system for representing, integrating, and querying speech corpora. In *Proceedings of Interspeech 2017*, pp. 3887–3891. https://doi.org/10.21437/Interspeech.2017-1390.
 
-
-References
-==========
-
-.. bibliography::
-   :style: plain

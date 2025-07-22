@@ -19,6 +19,8 @@ Contents:
    queries.rst
    developer.rst
    changelog.rst
+   references.rst
+
 
 See `the PolyglotDB wiki`_ for the changelog.
 
