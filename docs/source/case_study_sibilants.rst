@@ -7,14 +7,14 @@ Case study 3: Sibilant acoustics
 Motivation
 ==========
 
-Various acoustic measures have been used over the years in the literature on sibilant fricatives (henceforth, just *sibilants*). Measures of the overall spectral peak and of the spectral center of gravity (the weighted mean frequency of the spectrum)--referred to as *peak* and *COG* below--both have long histories. More recently, it has become common to instead look for a 'main' peak (meant to correspond to the lowest resonance of the cavity anterior to the principal constriction) over a relatively narrow, pre-specified frequency range that can vary by sibilant and by speaker--this measure is sometimes referred to as F\ :subscript:`M` (Koenig et al, 2013).
+Various acoustic measures have been used over the years in the literature on sibilant fricatives (henceforth, just *sibilants*). Measures of the overall spectral peak and of the spectral center of gravity (the weighted mean frequency of the spectrum)--referred to as *peak* and *COG* below--both have long histories. More recently, it has become common to instead look for a 'main' peak (meant to correspond to the lowest resonance of the cavity anterior to the principal constriction) over a relatively narrow, pre-specified frequency range that can vary by sibilant and by speaker--this measure is sometimes referred to as F\ :subscript:`M` :cite:p:`koenig13towards`.
 
 In this case study, we'll compare the three measures for tokens of the voiceless sibilants /s/ and /ʃ/ in Quebec French.
 
 Step 0: Preliminaries
 =====================
 
-For this case study, the data come from a corpus of parliamentary speech, the *ParlBleu* corpus (Lipari et al., 2024). We'll be using a subset of 6 speakers (3 female, 3 male), which can be downloaded `here <https://github.com/massimolipari/ParlBleu-subset>`__. The full corpus is `also available on GitHub by request <https://github.com/massimolipari/Corpus_ParlBleu>`__.
+For this case study, the data come from a corpus of parliamentary speech, the *ParlBleu* corpus :cite:p:`lipari24donnees`. We'll be using a subset of 6 speakers (3 female, 3 male), which can be downloaded `here <https://github.com/massimolipari/ParlBleu-subset>`__. The full corpus is `also available on GitHub by request <https://github.com/massimolipari/Corpus_ParlBleu>`__.
 
 To begin, we'll assume a file structure that looks like the following:
 
@@ -62,7 +62,7 @@ We now enrich the corpus with the information required for our case study.
 Step 3: Querying
 ================
 
-In recent years, it has become standard to use *multitaper spectra* (Thomson, 1982) rather than garden-variety DFT spectra, for the reasons explained in Reidy (2013). However, multitaper has not yet been implemented in PolyglotDB: we must therefore use external software--in this case, an R script, described in the next section. Accordingly, we need to run a simple query to extract all sibilant tokens we want to analyze (all prevocalic voiceless sibilants in onset position greater than 50 ms in duration), a total of 1434 tokens. For reasons which will become clear shortly, we'll also need to query the list of *utterances* in the corpus.
+In recent years, it has become standard to use *multitaper spectra* :cite:p:`thomson82spectrum` rather than garden-variety DFT spectra, for the reasons explained in :cite:t:`reidy2013introduction`. However, multitaper has not yet been implemented in PolyglotDB: we must therefore use external software--in this case, an R script, described in the next section. Accordingly, we need to run a simple query to extract all sibilant tokens we want to analyze (all prevocalic voiceless sibilants in onset position greater than 50 ms in duration), a total of 1434 tokens. For reasons which will become clear shortly, we'll also need to query the list of *utterances* in the corpus.
 
 .. literalinclude:: ../../examples/case_studies/sibilants/3_query.py
 	:language: python
@@ -71,7 +71,7 @@ In recent years, it has become standard to use *multitaper spectra* (Thomson, 19
 Step 4: Multitaper spectra
 ==========================
 
-To compute the multitaper spectra and obtain the desired acoustic measures, we'll adapt the R script used in Sonderegger et al. (2023), `which is available on that paper's OSF repository <https://osf.io/xubqm/>`__ in the ``measurement`` directory. This script implements a clever amplitude normalization scheme for the sibilant spectra (described in detail in the paper), which attempts to determine the average noise profile of each utterance and uses this to scale the spectra for each token bin-by-bin.
+To compute the multitaper spectra and obtain the desired acoustic measures, we'll adapt the R script used in :cite:t:`sonderegger2023how`, `which is available on that paper's OSF repository <https://osf.io/xubqm/>`__ in the ``measurement`` directory. This script implements a clever amplitude normalization scheme for the sibilant spectra (described in detail in the paper), which attempts to determine the average noise profile of each utterance and uses this to scale the spectra for each token bin-by-bin.
 
 The modified script is labelled ``4_generate-mts-measures.R``: it's too long to show here, but is available for download `at the following link <https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/case_studies/sibilants/4_generate-mts-measures.R>`__. The set of acoustic measures extracted was changed to better suit our purposes. (Additional changes were made to allow measures from multiple timepoints over the course of the sibilant to be extracted, rather than just measures at the midpoint, but this functionality won't be used here.)
 
@@ -80,10 +80,10 @@ There are a few technical details about the implementation in the script that ar
 1. With this script, the multitaper spectra are always generated using 8 tapers (``k = 8``) and a bandwidth parameter of 4 (``nW = 4``);
 2. Although the original sampling rate of the audio files is 44100 Hz, audio will be downsampled to 22050 Hz before the analysis;
 3. As is common in the literature, peak and COG are not quite calculated over the entire frequency interval. A lower limit of 1000 Hz (to essentially eliminate the effects of voicing) and an upper limit of 11000 Hz (ever so slightly below the Nyquist frequency) are used;
-4. The ranges used here for F\ :subscript:`M` are those suggested as reasonable estimates in Shadle (2023): for /s/, 3000-8000 Hz for women and 3000-7000 Hz for men; for /ʃ/, 2000-4000 Hz for both women and men.
+4. The ranges used here for F\ :subscript:`M` are those suggested as reasonable estimates in :cite:t:`shadle23alternatives`: for /s/, 3000-8000 Hz for women and 3000-7000 Hz for men; for /ʃ/, 2000-4000 Hz for both women and men.
 
 .. note::
-	The above ranges for F\ :subscript:`M` may not be suitable for all speakers: notably, some speakers (especially women) may produce /s/ with a main peak above 8000 Hz. Shadle (2023) cautions that it is generally best to determine speaker- and sibilant- specific ranges after having manually examined a certain number of sibilant spectra. Of course, this may not always be feasible for large corpora. For a more sophisticated F\ :subscript:`M` detection algorithm than is used here, see the ``fricative()`` function of Keith Johnson and Ronald Sprouse's ``phonlab`` package `(documention here) <https://phonlab.readthedocs.io/en/latest/acoustphon.html>`__.
+	The above ranges for F\ :subscript:`M` may not be suitable for all speakers: notably, some speakers (especially women) may produce /s/ with a main peak above 8000 Hz. :cite:t:`shadle23alternatives` cautions that it is generally best to determine speaker- and sibilant- specific ranges after having manually examined a certain number of sibilant spectra. Of course, this may not always be feasible for large corpora. For a more sophisticated F\ :subscript:`M` detection algorithm than is used here, see the ``fricative()`` function of Keith Johnson and Ronald Sprouse's ``phonlab`` package `(documention here) <https://phonlab.readthedocs.io/en/latest/acoustphon.html>`__.
 
 In order for the script to run, we must also download a few additional scripts developed by Patrick Reidy (and make a single change to one of them), as described `here <https://osf.io/ynzup>`__. These must be placed in an ``auxiliary`` folder, which itself must be in the same directory as ``4_generate-mts-measures.R``. You should end up with a folder structure which looks like the following:
 
@@ -155,14 +155,5 @@ Overall, the three measures seem to tell a similar story (which is expected). Th
 References
 ==========
 
-Koenig, Laura L., Christine H. Shadle, Jonathan L. Preston, and Christine R. Mooshammer. 2013. “Toward Improved Spectral Measures of /s/: Results from Adolescents.” Journal of Speech, Language, and Hearing Research 56(4):1175–89. doi:10.1044/1092-4388(2012/12-0038).
-
-Lipari, Massimo, Peter Milne, and Morgan Sonderegger. 2024. “Les « données trouvées » et la variation phonétique en français québécois.” Presented at the 9e colloque Les français d’ici, June 10, Shippagan (Canada).
-
-Reidy, Patrick F. 2013. “An Introduction to Random Processes for the Spectral Analysis of Speech Data.” Ohio State University Working Papers in Linguistics 60:67–116.
-
-Shadle, Christine H. 2023. “Alternatives to Moments for Characterizing Fricatives: Reconsidering Forrest et al. (1988).” The Journal of the Acoustical Society of America 153(2):1412–26. doi:10.1121/10.0017231.
-
-Sonderegger, Morgan, Jane Stuart-Smith, Jeff Mielke, and The SPADE Consortium. 2023. “How Variable Are English Sibilants?” Pp. 3196–3200 in Proceedings of the 20th International Congress of Phonetic Sciences. Prague: Guarant International.
-
-Thomson, D. J. 1982. “Spectrum Estimation and Harmonic Analysis.” Proceedings of the IEEE 70(9):1055–96. doi:10.1109/PROC.1982.12433.
+.. bibliography::
+   :style: plain

@@ -7,14 +7,14 @@ Case study 2: Vowel dynamics
 Motivation
 ==========
 
-It has long been known that even vowels traditionally described as monopthongs show gradual changes in formant frequencies over the course of the segment, which appear to be play a significant role in phoneme identification (Nearey & Assmann, 1986; Hillenbrand et al, 1996). This phenomenon, referred to as *vowel-inherent spectral change*, motivates analyzing whole formant *tracks*, rather than reducing observations to point measures (e.g., formant frequencies at vowel midpoint).
+It has long been known that even vowels traditionally described as monopthongs show gradual changes in formant frequencies over the course of the segment, which appear to be play a significant role in phoneme identification :cite:p:`nearey86modeling,hillenbrand95acoustic`. This phenomenon, referred to as *vowel-inherent spectral change*, motivates analyzing whole formant *tracks*, rather than reducing observations to point measures (e.g., formant frequencies at vowel midpoint).
 
 Vowel-inherent spectral change is by now well-documented in English, but comparatively less so in other languages. Here, we'll be investigating formant dynamics across the vowel system of Quebec French.
 
 Step 0: Preliminaries
 =====================
 
-For this case study, the data come from a corpus of parliamentary speech, the *ParlBleu* corpus (Lipari et al., 2024). We'll be using a subset of 6 speakers (3 female, 3 male), which can be downloaded `here <https://github.com/massimolipari/ParlBleu-subset>`__. The full corpus is `also available on GitHub by request <https://github.com/massimolipari/Corpus_ParlBleu>`__.
+For this case study, the data come from a corpus of parliamentary speech, the *ParlBleu* corpus :cite:p:`lipari24donnees`. We'll be using a subset of 6 speakers (3 female, 3 male), which can be downloaded `here <https://github.com/massimolipari/ParlBleu-subset>`__. The full corpus is `also available on GitHub by request <https://github.com/massimolipari/Corpus_ParlBleu>`__.
 
 To begin, we'll assume a file structure that looks like the following:
 
@@ -78,7 +78,7 @@ By default, ``analyze_formant_tracks()`` will generate acoustic tracks over enti
 Option B: "Refined" measures
 ----------------------------
 
-Alternatively, PolyglotDB implements the formant 'refinement' algorithm described in `Mielke et al. (2019) <https://eprints.gla.ac.uk/183724/>`__ though the ``analyze_formant_point_refinement()`` function. In short, this approach generates multiple canadidate analyses for each vowel token by varying the number of formants (while keeping the formant frequency ceiling fixed at 5500 Hz), and automatically selecting the candidate which minimizes the `Mahalanobis distance <https://en.wikipedia.org/wiki/Mahalanobis_distance>`__ between the observation and the multidimensional distribution of the corresponding vowel phoneme in acoustic space, which is referred to as a 'prototype'. For the implementation here, prototypes consist of means and a covariance matrix on 6 acoustic dimensions (the frequencies and bandwidths of the first three formants taken at 33% of duration) for each of the vowel phones being analyzed. The algorithm can be run with multiple iterations: new prototypes are computed for each speaker-phoneme pair at the end of each iteration and used for the following one.
+Alternatively, PolyglotDB implements the formant 'refinement' algorithm described in :cite:t:`mielke2019age` through the ``analyze_formant_point_refinement()`` function. In short, this approach generates multiple canadidate analyses for each vowel token by varying the number of formants (while keeping the formant frequency ceiling fixed at 5500 Hz), and automatically selecting the candidate which minimizes the `Mahalanobis distance <https://en.wikipedia.org/wiki/Mahalanobis_distance>`__ between the observation and the multidimensional distribution of the corresponding vowel phoneme in acoustic space, which is referred to as a 'prototype'. For the implementation here, prototypes consist of means and a covariance matrix on 6 acoustic dimensions (the frequencies and bandwidths of the first three formants taken at 33% of duration) for each of the vowel phones being analyzed. The algorithm can be run with multiple iterations: new prototypes are computed for each speaker-phoneme pair at the end of each iteration and used for the following one.
 
 To get formants tracks (rather than points), we add the ``output_tracks = True`` paramter. (This is admittedly a little confusing, given the name of the function.)
 
@@ -87,11 +87,11 @@ i. Getting vowel prototypes
 
 By default, ``analyze_formant_points_refinement()`` automatically generates prototypes for the first iteration of the algorithm from first-pass acoustic measures (using the default paramters--5 formants and a formant ceiling of 5500 Hz). Since prototypes are only as good as the acoustic measures from which they are generated, this approach may not always be reliable. In our experience, however, even mediocre prototypes have produced better results than not doing any sort of 'refinement' (for example, using option A above instead), but your mileage may vary.
 
-It's possible to instead specify prototypes for each phone from a CSV file (for any phones lacking prototypes, the default method will be used instead). Ideally, these will have been generated from a decently-large set of robustly hand-checked formant measures obtained from data that are as representative as possible of the new data for which acoustic measures are being obtained. Here, we'll use prototypes generated from hand measurements of 100 randomly sampled tokens of each of the 17 vowel phones from the *ParlBleu* corpus: these can be found in the ``prototypes.csv`` file. (If you use these in your own research, please cite Lipari et al., forthcoming.) The general method (but not the exact implementation details) used to generate these prototypes is shown below. (When re-running the scripts for yourself, you may skip to step ii.)
+It's possible to instead specify prototypes for each phone from a CSV file (for any phones lacking prototypes, the default method will be used instead). Ideally, these will have been generated from a decently-large set of robustly hand-checked formant measures obtained from data that are as representative as possible of the new data for which acoustic measures are being obtained. Here, we'll use prototypes generated from hand measurements of 100 randomly sampled tokens of each of the 17 vowel phones from the *ParlBleu* corpus: these can be found in the ``prototypes.csv`` file. (If you use these in your own research, please cite :cite:alp:`lipari24donnees`.) The general method (but not the exact implementation details) used to generate these prototypes is shown below. (When re-running the scripts for yourself, you may skip to step ii.)
 
 *Making prototypes from scratch*
 
-A good way to obtain prototypes for a corpus is to hand-measure a random subset of vowels from the corpus at hand. For this, we'll use the excellent *Praat* plugin *Fast Track* (Barreda, 2021). Like PolyglotDB, *Fast Track* obtains multiple candidate analyses for every token and attempts to automatically select the best one, albeit in a slightly different way: the number of formants is fixed at 5.5, and the formant ceiling is manipulated within a user-defined range. The optimal candidate is determined based on the smoothness of the formant tracks (and optionally, also using some simple heuristics)--the idea being that excessive jitter is typically a sign of a formant tracking error (since articulators can only move relatively slowly and gradually). While convenient, this method is still suceceptible to errors (since it's possible to have a candidate which hallucinates or skips a formant while having smooth tracks), and should not be trusted blindly. The beauty of *Fast Track* is that it allows the user to easily compare the different candidates visually against the spectrogram and override the automatic selection procedure as needed.
+A good way to obtain prototypes for a corpus is to hand-measure a random subset of vowels from the corpus at hand. For this, we'll use the excellent *Praat* plugin *Fast Track* :cite:p:`barreda21fast`. Like PolyglotDB, *Fast Track* obtains multiple candidate analyses for every token and attempts to automatically select the best one, albeit in a slightly different way: the number of formants is fixed at 5.5, and the formant ceiling is manipulated within a user-defined range. The optimal candidate is determined based on the smoothness of the formant tracks (and optionally, also using some simple heuristics)--the idea being that excessive jitter is typically a sign of a formant tracking error (since articulators can only move relatively slowly and gradually). While convenient, this method is still suceceptible to errors (since it's possible to have a candidate which hallucinates or skips a formant while having smooth tracks), and should not be trusted blindly. The beauty of *Fast Track* is that it allows the user to easily compare the different candidates visually against the spectrogram and override the automatic selection procedure as needed.
 
 Before we can run *Fast Track*, we need to obtain the random sample of vowels we want to manually analyze. First, we run a simple PolyglotDB query for all vowel tokens of interest in the corpus. Here, we'll require the vowels be at least 50 ms long in order to avoid any overly-reduced tokens.
 
@@ -131,7 +131,7 @@ We now run another R script to collect the final acoustic tracks for all tokens 
 	:language: R
 
 
-Finally, one last R script (adapted from `code for Mielke et al., 2019 <https://github.com/MontrealCorpusTools/SPADE/blob/main/make_formant_prototypes.r>`__) is used to interpolate the tracks to the 33% point before obtaining the means and covariance matrix for each phoneme: this gives us our prototypes file.
+Finally, one last R script (adapted from `code on this GitHub repository <https://github.com/MontrealCorpusTools/SPADE/blob/main/make_formant_prototypes.r>`__) is used to interpolate the tracks to the 33% point before obtaining the means and covariance matrix for each phoneme: this gives us our prototypes file.
 
 .. literalinclude:: ../../examples/case_studies/vowel_dynamics/3bo4_make-vowel-prototypes.R
 	:language: R
@@ -151,7 +151,7 @@ e. ``vowel_prototypes_path = vowel_prototypes_path`` (default: ``''``), to set t
 This function first determines the optimal parameters for each phone using point measures taken at the 1/3 point. It then uses these parameters to calculate formant tracks, taking measures every 10 ms.
 
 .. note:: 
-	Mielke et al. (2019) describe a second version of the formant refinement algorithm which considers additional candidate analyses for each phone: new candidates are created from the aforementioned ones by 'dropping' one of the formants, in an attempt to remove any false formants which may have been accidentally tracked. This version of the algortihm can be enabled by passing the ``drop_formant = True`` argument to ``analyze_formant_points_refinement``. It appears to largely depend on the data which version of the algortihm performs better--or indeed, whether there's an appreciable difference in performance at all. We encourage users to experiment with both methods.
+	:cite:t:`mielke2019age` describe a second version of the formant refinement algorithm which considers additional candidate analyses for each phone: new candidates are created from the aforementioned ones by 'dropping' one of the formants, in an attempt to remove any false formants which may have been accidentally tracked. This version of the algortihm can be enabled by passing the ``drop_formant = True`` argument to ``analyze_formant_points_refinement``. It appears to largely depend on the data which version of the algortihm performs better--or indeed, whether there's an appreciable difference in performance at all. We encourage users to experiment with both methods.
 
 
 .. literalinclude:: ../../examples/case_studies/vowel_dynamics/3b_measure-formants-refined.py
@@ -191,22 +191,11 @@ This gives the following plot:
   :width: 800
   :alt: The vowel space obtained from the extracted formant measures.
 
-This vowel space looks fairly reasonable (cf. MacKenzie & Sankoff, 2010; Riverin-Coutlée & Gubian, 2024). This is despite only 6 speakers being represented, very few controls for nuisance variables having been included, and no speaker normalization having been performed!
+This vowel space looks fairly reasonable (cf. :cite:alp:`mackenzie10quantittative,coutlee24data`). This is despite only 6 speakers being represented, very few controls for nuisance variables having been included, and no speaker normalization having been performed!
 
 
 References
 ==========
 
-Barreda, Santiago. 2021. “Fast Track: Fast (Nearly) Automatic Formant-Tracking Using Praat.” Linguistics Vanguard 7(1). doi:10.1515/lingvan-2020-0051.
-
-Hillenbrand, James, Laura A. Getty, Michael J. Clark, and Kimberlee Wheeler. 1995. “Acoustic Characteristics of American English Vowels.” The Journal of the Acoustical Society of America 97(5):3099–3111. doi:10.1121/1.411872.
-
-Lipari, Massimo, Peter Milne, and Morgan Sonderegger. 2024. “Les « données trouvées » et la variation phonétique en français québécois.” Presented at the 9e colloque Les français d’ici, June 10, Shippagan (Canada).
-
-MacKenzie, Laurel, and Gillian Sankoff. 2010. “A Quantitative Analysis of Diphthongization in Montreal French.” Selected Papers from NWAV 37 (2):91–100.
-
-Mielke, Jeff, Erik R. Thomas, Josef Fruehwald, Michael McAuliffe, Morgan Sonderegger, Jane Stuart-Smith, and Robin Dodsworth. 2019. “Age Vectors vs. Axes of Intraspeaker Variation in Vowel Formants Measured Automatically from Several English Speech Corpora.” Proceedings of the XIXth ICPhS 1258–62.
-
-Nearey, Terrance M., and Peter F. Assmann. 1986. “Modeling the Role of Inherent Spectral Change in Vowel Identification.” The Journal of the Acoustical Society of America 80(5):1297–1308. doi:10.1121/1.394433.
-
-Riverin-Coutlée, Josiane, and Michele Gubian. 2024. “A Data-Driven Assessment of Harmony in Quebec French [e] and [ɛ].” JASA Express Letters 4(4):045203. doi:10.1121/10.0025831.
+.. bibliography::
+   :style: plain
