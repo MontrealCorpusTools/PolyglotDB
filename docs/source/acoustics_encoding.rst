@@ -172,6 +172,8 @@ point 33% of the way through the vowel for every vowel specified.
    See :ref:`enrichment_queries` for more details on creating subsets
 
 
+.. _refined_formant_encoding:
+
 Refined formant points and tracks
 ---------------------------------
 

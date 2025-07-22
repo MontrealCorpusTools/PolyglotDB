@@ -101,10 +101,10 @@ The corpus can then be enriched with syllables that have vowels as their nuclei:
 Using Praat to measure verb formants
 =========================
 
-Now that all vowel syllables are isolated and easily queriable, polyglotdb can perform formant analysis on these vowels. The executable run to perform formant analysis is configurable: a common option is to use `praat`_:
+Now that all vowel syllables are isolated and easily queriable, PolyglotDB can perform formant analysis on these vowels. The executable run to perform formant analysis is configurable: a common option is to use `praat`_:
 
 .. note::
-  When performing analysis with Praat, you might encounter an ``EOFError`` due to the use of multiprocessing by polyglotdb. To avoid this, include the statement: ``if __name__ == '__main__':`` at the beginning of your program.
+  When performing analysis with Praat, you might encounter an ``EOFError`` due to the use of multiprocessing by PolyglotDB. To avoid this, include the statement: ``if __name__ == '__main__':`` at the beginning of your program.
 
 .. code-block:: python
 
@@ -120,6 +120,7 @@ Now that all vowel syllables are isolated and easily queriable, polyglotdb can p
     c.analyze_formant_points(vowel_label='vowel', call_back=print)
 
 This step will enrich the corpus with formant variables (F1, F2, F3) aassociated with each vowel phoneme in the corpus.
+
 
 Exporting a CSV file
 =========================
@@ -155,6 +156,14 @@ The CSV file generated will then be ready to open in other programs or in R for 
 
 Next steps
 ==========
-At this point, the corpus is ready for formant analysis using R. We have provided an `rmd script`_ showcasing a possible approach. We have also provided results for running this script in a `follow-up analysis`_ html. These results were found using the full LibriSpeech-aligned dataset, which contains many more speakers than the subset we have been using in tutorials so far.
+At this point, the corpus is ready for formant analysis using R. 
+We have provided an `rmd script`_ showcasing a possible approach, compiled  
+`here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_4_formants.html>`_ (`source <https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html>`_). We have also provided results for running this script in a  html. 
+These results were found using the full LibriSpeech-aligned dataset, which contains many more speakers than the subset we have been using in tutorials so far.
 
-See :ref:`tutorial_pitch` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R. You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
+.. See :ref:`tutorial_pitch` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R.
+
+.. This You can also see the `related ISCAN tutorial`_ for R code on visualizing and analyzing the exported results.
+
+In this tutorial we have used the simplest possible formant measurement algorithm to measure static formants (one measure per vowel token).
+See :ref:`refined_formant_encoding` for a more accurate/slower option, and :ref:`case_study_vowel_dynamics` for workflows for *dynamic* formant analysis (one track per vowel token).
