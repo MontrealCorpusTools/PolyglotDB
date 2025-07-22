@@ -8,9 +8,6 @@ Introduction
 
 .. _GitHub repository: https://github.com/PhonologicalCorpusTools/PolyglotDB/
 
-.. _Neo4j: http://neo4j.com/
-
-.. _InfluxDB: http://influxdb.com/
 
 .. _michael.e.mcauliffe@gmail.com: michael.e.mcauliffe@gmail.com
 

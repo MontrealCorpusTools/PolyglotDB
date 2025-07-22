@@ -152,8 +152,3 @@ Overall, the three measures seem to tell a similar story (which is expected). Th
 3. The distribution of F\ :subscript:`M` for speaker 14401's /s/ appears slightly left-skewed. This may be an indication that an upper limit of 8000 Hz may be somewhat too low for this speaker.
 
 
-References
-==========
-
-.. bibliography::
-   :style: plain

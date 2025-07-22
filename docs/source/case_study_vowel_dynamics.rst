@@ -192,10 +192,3 @@ This gives the following plot:
   :alt: The vowel space obtained from the extracted formant measures.
 
 This vowel space looks fairly reasonable (cf. :cite:alp:`mackenzie10quantittative,coutlee24data`). This is despite only 6 speakers being represented, very few controls for nuisance variables having been included, and no speaker normalization having been performed!
-
-
-References
-==========
-
-.. bibliography::
-   :style: plain

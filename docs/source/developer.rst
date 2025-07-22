@@ -8,6 +8,11 @@
 
 .. _ISCAN documentation: https://iscan.readthedocs.io/en/latest/
 
+.. _Neo4j: http://neo4j.com/
+
+.. _InfluxDB: http://influxdb.com/
+
+
 .. _developer:
 
 ***********************
@@ -15,13 +20,14 @@ Developer documentation
 ***********************
 
 This section of the documentation explains implementation details of PolyglotDB.
+
 .. In large part this is currently a brain dump of Michael McAuliffe to hopefully allow for easier implementation of new features in the future.
 
 Overview
 --------
 
 PolyglotDB represents language (speech and text corpora) using the
-annotation graph formalism put forth in Bird and Liberman (2001).
+annotation graph formalism put forth by :cite:t:`bird2001formal`.
 Annotations are represented in a directed acyclic graph, where nodes
 are points in time in an audio file or points in a text file.  Directed
 edges are labelled with annotations, and multiple levels of annotations

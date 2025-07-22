@@ -131,6 +131,20 @@ The CSV file generated will then be ready to open in other programs or in R for 
 
 Next steps
 ===============
-At this point, the corpus is ready for pitch analysis using R. We have provided an `rmd script`_ showcasing a possible approach. We have also provided results for running this script on the "LibriSpeech-aligned" (the full dataset) in a `follow-up analysis`_ html. These results contains many more speakers than the subset we have been using in tutorials so far to provide sufficient data for coherent analysis.
+At this point, the corpus is ready for pitch analysis using R. We have provided an `rmd script`_ showcasing a possible approach, compiled 
+`here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_5_pitch.html>`_ 
+(`source <https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.html>`_)
+These results were found using the full LibriSpeech-aligned dataset, 
+which contains many more speakers than the subset we have been using in tutorials so far.
 
-See :ref:`tutorial_formants` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R.
+
+
+.. We have also provided results for running this script on the "LibriSpeech-aligned" (the full dataset) in a `follow-up analysis`_ html. These results contains many more speakers than the subset we have been using in tutorials so far to provide sufficient data for coherent analysis.
+
+.. At this point, the corpus is ready for formant analysis using R. 
+.. We have provided an `rmd script`_ showcasing a possible approach, compiled  
+.. `here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_4_formants.html>`_ (`source <https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html>`_). We have also provided results for running this script in a  html. 
+.. These results were found using the full LibriSpeech-aligned dataset, which contains many more speakers than the subset we have been using in tutorials so far.
+
+
+.. See :ref:`tutorial_formants` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R.
