@@ -70,6 +70,15 @@ def test_maxonset_syllabification(timed_config):
         print(s, e, result)
         assert (e == result)
 
+def test_maxonset_syllabification_custom(syllabification_config):
+    with CorpusContext(syllabification_config) as c:
+        onsets = {('S', 'T', 'R')}
+        syllabics = ['EH1','AH0']
+        c.encode_type_subset('phone', syllabics, 'syllabic')
+        c.encode_syllables()
+        print(c.syllables)
+        c.encode_syllables(custom_onsets=onsets)
+        assert c.syllables[0] == 'EH1.K' or c.syllables[0] == 'S.T.R.AH0'
 
 def test_syllabify():
     expected = {('n', 'ay', 'iy', 'v'): [{'label': 'n.ay'}, {'label': 'iy.v'}],

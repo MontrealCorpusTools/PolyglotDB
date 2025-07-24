@@ -244,7 +244,7 @@ class SyllabicContext(UtteranceContext):
         """
         return 'syllable' in self.hierarchy.annotation_types
 
-    def encode_syllables(self, algorithm='maxonset', syllabic_label='syllabic', call_back=None, stop_check=None):
+    def encode_syllables(self, algorithm='maxonset', syllabic_label='syllabic', call_back=None, stop_check=None, custom_onsets=None):
         """
         Encodes syllables to a corpus
 
@@ -258,17 +258,37 @@ class SyllabicContext(UtteranceContext):
             Function to monitor progress
         stop_check : callable
             Function the check whether the process should terminate early
+        custom_onsets: set, defaults to None
+            A set of custom onsets to use instead of finding them from the corpus.
+            If None, the onsets will be found from the corpus.
         """
 
         self.reset_syllables(call_back, stop_check)
 
-        onsets = self.find_onsets(syllabic_label=syllabic_label)
+        if  algorithm == 'maxonset' and custom_onsets is not None: 
+            phones = set(self.phones)
+            onsets = set()
+            for onset in custom_onsets:
+                if not isinstance(onset, tuple):
+                    raise ValueError(f"Each onset must be a tuple, got: {repr(onset)} ({type(onset)}).")
+                if onset == ():
+                    onsets.add(onset)
+                    continue
+                for seg in onset:
+                    if seg not in phones:
+                        print(f"Skipping onset '{onset}' since phone segment '{seg}' is not present in the corpus.")
+                        break
+                onsets.add(onset)
+        else: 
+            onsets = self.find_onsets(syllabic_label=syllabic_label)
         if algorithm == 'probabilistic':
             onsets = norm_count_dict(onsets, onset=True)
             codas = self.find_codas(syllabic_label=syllabic_label)
             codas = norm_count_dict(codas, onset=False)
         elif algorithm == 'maxonset':
-            onsets = set(onsets.keys())
+            if custom_onsets is None:
+                onsets = set(onsets.keys())
+                print(onsets)
         else:
             raise NotImplementedError
 
@@ -283,7 +303,6 @@ class SyllabicContext(UtteranceContext):
         create_syllabic_csvs(self)
         create_nonsyllabic_csvs(self)
 
-        splits = self.speakers
         process_string = 'Processing speaker {} of {} ({})...'
         if call_back is not None:
             call_back(0, len(self.speakers))

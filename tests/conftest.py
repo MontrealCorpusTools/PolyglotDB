@@ -589,3 +589,36 @@ def timed_csv_enrich_file(test_dir):
 @pytest.fixture(scope='session')
 def track_import_file(test_dir):
     return os.path.join(test_dir, 'csv', 'acoustic_corpus.txt')
+
+
+@pytest.fixture(scope='session')
+def corpus_data_syllabification():
+    levels = [SegmentTier('label', 'phone'),
+              OrthographyTier('label', 'word'),
+              GroupingTier('line', 'line')]
+    
+    levels[0].add([('EH1', 0.0, 0.1), ('K', 0.1, 0.2), ('S', 0.2, 0.3), ('T', 0.3, 0.4), ('R', 0.4, 0.5), ('AH0', 0.5, 0.6) ])
+    
+    levels[1].add([('extra', 0.0, 0.6)])
+    
+    levels[2].add([(0.0, 0.6)])
+
+    hierarchy = Hierarchy({'phone': 'word', 'word': 'line', 'line': None})
+    parser = BaseParser(levels, hierarchy)
+    data = parser.parse_discourse('test_syllabification')
+    return data
+
+@pytest.fixture(scope='session')
+def syllabification_config(graph_db, corpus_data_syllabification):
+    config = CorpusConfig('syllabification', **graph_db)
+    with CorpusContext(config) as c:
+        c.reset()
+        c.add_types(*corpus_data_syllabification.types('syllabification'))
+        c.initialize_import(corpus_data_syllabification.speakers,
+                            corpus_data_syllabification.token_headers,
+                            corpus_data_syllabification.hierarchy.subannotations)
+        c.add_discourse(corpus_data_syllabification)
+        c.finalize_import(corpus_data_syllabification.speakers,
+                          corpus_data_syllabification.token_headers,
+                          corpus_data_syllabification.hierarchy)
+    return config
