@@ -596,17 +596,33 @@ def corpus_data_syllabification():
     levels = [SegmentTier('label', 'phone'),
               OrthographyTier('label', 'word'),
               GroupingTier('line', 'line')]
-    
-    levels[0].add([('EH1', 0.0, 0.1), ('K', 0.1, 0.2), ('S', 0.2, 0.3), ('T', 0.3, 0.4), ('R', 0.4, 0.5), ('AH0', 0.5, 0.6) ])
-    
-    levels[1].add([('extra', 0.0, 0.6)])
-    
-    levels[2].add([(0.0, 0.6)])
+
+    # Add phones: "extra" = EH1 K S T R AH0 (0.0 - 0.6)
+    levels[0].add([
+        ('EH1', 0.0, 0.1), ('K', 0.1, 0.2), ('S', 0.2, 0.3),
+        ('T', 0.3, 0.4), ('R', 0.4, 0.5), ('AH0', 0.5, 0.55)
+    ])
+
+    # Add phones: "astronaut" = AE1 S T R AH0 N AO2 T (0.6 - 1.4)
+    levels[0].add([
+        ('AE1', 0.6, 0.7), ('S', 0.7, 0.8), ('T', 0.8, 0.9), ('R', 0.9, 1.0),
+        ('AH0', 1.0, 1.1), ('N', 1.1, 1.2), ('AO2', 1.2, 1.3), ('T', 1.3, 1.4)
+    ])
+
+    # Word tiers
+    levels[1].add([
+        ('extra', 0.0, 0.55),
+        ('astronaut', 0.6, 1.4)
+    ])
+
+    # Line tier (single line containing both words)
+    levels[2].add([(0.0, 1.4)])
 
     hierarchy = Hierarchy({'phone': 'word', 'word': 'line', 'line': None})
     parser = BaseParser(levels, hierarchy)
     data = parser.parse_discourse('test_syllabification')
     return data
+
 
 @pytest.fixture(scope='session')
 def syllabification_config(graph_db, corpus_data_syllabification):
