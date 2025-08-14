@@ -49,6 +49,18 @@ Encoding syllables
    The function `encode_syllables` can be given a keyword argument for `call_back`, which is a function like `print` that
    allows for progress to be output to the console.
 
+Two algorithms are available for encoding syllables: `maximal onset` (default) and `probabilistic`.
+You can restrict the allowed onsets by passing a set of phone tuples to the `custom_onsets` keyword argument.For example, to allow only
+`[B, D, G]` as onsets, you would call:
+
+.. code-block:: python
+
+   with CorpusContext(config) as c:
+        c.encode_syllables(custom_onsets={('B',), ('D',), ('G',)})
+
+The maximal onset algorithm automatically marks any word-initial non-syllabic cluster as a syllable onset.
+This means you do not need to manually include onsets that typically occur only at the beginnings of words 
+and may otherwise cause incorrect syllable boundary placement — for example, ('S', 'T') or ('S', 'P') in English.
 Following encoding, syllables are available to queried and used as any other linguistic unit. For example, to get a list of
 all the instances of syllables at the beginnings of words:
 
