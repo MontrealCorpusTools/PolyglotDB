@@ -4,8 +4,7 @@ import time
 import neo4j
 import re
 import numpy as np
-import csv 
-from ...acoustics.classes import (Track, TimePoint)
+import csv
 
 
 def make_path_safe(path):
@@ -1398,6 +1397,12 @@ def import_token_csv_with_timestamp(corpus_context, path, annotated_type, timest
     properties : list
         A list of column names to update; if None, assume all columns will be updated (default).
     """
+
+    # If on the Docker version, the files live in /site/proj
+    if os.path.exists('/site/proj') and not path.startswith('/site/proj'):
+        csv_path = 'file:///site/proj/{}'.format(make_path_safe(path))
+    else:
+        csv_path = 'file:///{}'.format(make_path_safe(path))
     if properties is None:
         with open(path, 'r') as f:
             properties = [x.strip() for x in f.readline().split(',') if x.strip() not in [timestamp_column, discourse_column]]
@@ -1434,14 +1439,14 @@ def import_token_csv_with_timestamp(corpus_context, path, annotated_type, timest
 
     statement = '''
     CALL {{
-        LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
+        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
         MATCH (d:Discourse {{name: csvLine.{discourse_column}}})
         MATCH (x:{a_type}:{corpus})-[:spoken_in]->(d)
         WHERE x.begin <= toFloat(csvLine.{timestamp_column}) <= x.end
         SET {property_update}
     }} IN TRANSACTIONS OF 500 ROWS
     '''.format(
-        path=path, a_type=annotated_type, corpus=corpus_context.cypher_safe_name,
+        path=csv_path, a_type=annotated_type, corpus=corpus_context.cypher_safe_name,
         timestamp_column=timestamp_column, discourse_column=discourse_column, property_update=property_update
     )
 
