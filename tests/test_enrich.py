@@ -27,6 +27,33 @@ def test_stress_enrichment(stressed_config):
         assert (c.hierarchy.has_type_property("syllable", "stress"))
 
 
+def test_stress_enrichment_no_clean(stressed_config):
+    syllabics = "AA0,AA1,AA2,AH0,AH1,AH2,AE0,AE1,AE2,AY0,AY1,AY2,ER0,ER1,ER2,EH0,EH1,EH2,EY1,EY2,IH0,IH1,IH2,IY0,IY1,IY2,UW0,UW1,UW2".split(
+        ",")
+    with CorpusContext(stressed_config) as c:
+        c.encode_syllabic_segments(syllabics)
+        c.encode_syllables("maxonset")
+        c.encode_stress_to_syllables(clean_phone_label=False)
+
+        assert (c.hierarchy.has_type_property("syllable", "stress"))
+
+        q = c.query_graph(c.syllable)
+        q = q.filter(c.syllable.word.label == "began")
+
+        q = q.columns(
+            c.syllable.label.column_name('syllable'),
+            c.syllable.stress.column_name('syllable_stress'),
+            c.syllable.word.label.column_name('word'),
+            c.syllable.word.begin.column_name('word_begin'),
+            c.syllable.word.end.column_name('word_end'),
+            c.syllable.discourse.name.column_name('file'),
+        )
+        q = q.limit(10)
+        res = q.all()
+        for r in res:
+            assert r['syllable_stress'] is not None
+
+
 def test_relativized_enrichment_syllables(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         # c.encode_measure("word_median")

@@ -508,7 +508,7 @@ def summarized_config(graph_db, textgrid_test_dir):
     return config
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def stressed_config(graph_db, textgrid_test_dir):
     config = CorpusConfig('stressed', **graph_db)
 

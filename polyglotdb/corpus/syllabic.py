@@ -456,7 +456,7 @@ class SyllabicContext(UtteranceContext):
         self.hierarchy.add_type_properties(self, 'syllable', type_data.items())
         self.encode_hierarchy()
 
-    def _generate_stress_enrichment(self, pattern):
+    def _generate_stress_enrichment(self, pattern, clean_phone_label=True):
         syllable = self.syllable
         all_syls = self.query_graph(syllable).all()
         enrich_dict = {}
@@ -473,11 +473,12 @@ class SyllabicContext(UtteranceContext):
                 end = nucleus[r.start(0):r.end(0)].replace("_", "")
                 nucleus = re.sub(pattern, "", nucleus)
                 fullpatt = str(nucleus) + str(pattern).replace("$", "")
-                syl = re.sub(fullpatt, nucleus, syl)
+                if clean_phone_label:
+                    syl = re.sub(fullpatt, nucleus, syl)
                 enrich_dict.update({syl: {'stress': end}})
         return enrich_dict
 
-    def _generate_tone_enrichment(self, pattern):
+    def _generate_tone_enrichment(self, pattern, clean_phone_label=True):
         syllable = self.syllable
         all_syls = self.query_graph(syllable).all()
         enrich_dict = {}
@@ -494,7 +495,8 @@ class SyllabicContext(UtteranceContext):
                     end = nucleus[r.start(0):r.end(0)].replace("_", "")
                     nucleus = re.sub(pattern, "", nucleus)
                     fullpatt = str(nucleus) + str(pattern).replace("$", "")
-                    syl = re.sub(fullpatt, nucleus, syl)
+                    if clean_phone_label:
+                        syl = re.sub(fullpatt, nucleus, syl)
 
                     enrich_dict.update({syl: {'tone': end}})
         return enrich_dict
@@ -514,8 +516,7 @@ class SyllabicContext(UtteranceContext):
         if regex is None:
             regex = '[0-9]'
 
-        enrich_dict = self._generate_stress_enrichment(regex)
-
+        enrich_dict = self._generate_stress_enrichment(regex, clean_phone_label)
         if clean_phone_label:
             self.remove_pattern(regex)
         self.enrich_syllables(enrich_dict)
@@ -536,7 +537,7 @@ class SyllabicContext(UtteranceContext):
         if regex is None:
             regex = '[0-9]'
 
-        enrich_dict = self._generate_tone_enrichment(regex)
+        enrich_dict = self._generate_tone_enrichment(regex, clean_phone_label)
 
         if clean_phone_label:
             self.remove_pattern(regex)
