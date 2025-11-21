@@ -4,7 +4,7 @@ from .base import AnnotationNode, AnnotationCollectionNode, AnnotationCollection
 
 class SubPathAnnotation(AnnotationCollectionNode):
     non_optional = False
-    subquery_match_template = '({def_collection_type_alias})<-[:is_a]-({def_collection_alias})-[:contained_by{depth}]->({anchor_node_alias})'
+    subquery_match_template = '({def_collection_type_alias})<-[:is_a]-({def_collection_alias})-[:contained_by]->({anchor_node_alias})'
     subquery_order_by_template = 'ORDER BY {collection_alias}.begin'
     subannotation_subquery_template = '''OPTIONAL MATCH ({def_subannotation_alias})-[:annotates]->({collection_alias})
         WITH {output_with_string}'''
@@ -21,14 +21,9 @@ class SubPathAnnotation(AnnotationCollectionNode):
                     relevant.append(c.for_cypher())
             if relevant:
                 where_string = 'WHERE ' + '\nAND '.join(relevant)
-        depth = self.hierarchy.get_depth(self.collected_node.node_type, self.anchor_node.node_type)
-        depth_string = ''
-        if depth > 1:
-            depth_string = '*{}'.format(depth)
         for_match = self.subquery_match_template.format(anchor_node_alias=self.anchor_node.alias,
                                                         def_collection_alias=self.def_collection_alias,
-                                                        def_collection_type_alias=self.def_collection_type_alias,
-                                                        depth=depth_string)
+                                                        def_collection_type_alias=self.def_collection_type_alias)
         order_by = self.subquery_order_by_template.format(collection_alias=self.collection_alias)
         subannotation_query = ''
         if self.with_subannotations:

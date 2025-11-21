@@ -155,9 +155,9 @@ def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_te
                       g.phone.syllable.following.pitch.mean.column_name('following_syllable_pitch_mean'),
                       g.phone.syllable.following.following.pitch.mean.column_name(
                           'following_following_syllable_pitch_mean'),
-                      g.phone.syllable.word.utterance.pitch.mean.column_name('utterance_pitch_mean'),
-                      g.phone.syllable.word.utterance.pitch.min.column_name('utterance_pitch_min'),
-                      g.phone.syllable.word.utterance.pitch.max.column_name('utterance_pitch_max'),
+                      g.phone.utterance.pitch.mean.column_name('utterance_pitch_mean'),
+                      g.phone.utterance.pitch.min.column_name('utterance_pitch_min'),
+                      g.phone.utterance.pitch.max.column_name('utterance_pitch_max'),
                       )
         results = q.all()
         assert (len(results) > 0)

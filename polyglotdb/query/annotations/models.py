@@ -276,7 +276,7 @@ class LinguisticAnnotation(BaseAnnotation):
                 print('Warning: fetching {0} information from the database, '
                       'preload {0} annotations for faster access.'.format(key))
                 res = self.corpus_context.execute_cypher(
-                    '''MATCH (lower_type)<-[:is_a]-(lower_token:{a_type})-[:contained_by*1..]->(token {{id: $id}})
+                    '''MATCH (lower_type)<-[:is_a]-(lower_token:{a_type})-[:contained_by]->(token {{id: $id}})
                         RETURN lower_token, lower_type, labels(lower_token) as neo4j_labels ORDER BY lower_token.begin'''.format(a_type=key), id=self._id)
                 self._subs[key] = []
                 for r in res:
@@ -295,7 +295,7 @@ class LinguisticAnnotation(BaseAnnotation):
                 print('Warning: fetching {0} information from the database, '
                       'preload {0} annotations for faster access.'.format(key))
                 res = list(self.corpus_context.execute_cypher(
-                    '''MATCH (higher_type)<-[:is_a]-(higher_token:{a_type})<-[:contained_by*1..]-(token {{id: $id}})
+                    '''MATCH (higher_type)<-[:is_a]-(higher_token:{a_type})<-[:contained_by]-(token {{id: $id}})
                         RETURN higher_token, higher_type, labels(higher_token) as neo4j_labels'''.format(a_type=key), id=self._id))
                 if len(res) == 0:
                     return None

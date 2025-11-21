@@ -72,30 +72,6 @@ class Hierarchy(object):
     def __str__(self):
         return str(self.to_json())
 
-    def get_depth(self, lower_type, higher_type):
-        """
-        Get the distance between two annotation types in the hierarchy
-
-        Parameters
-        ----------
-        lower_type : str
-            Name of the lower type
-        higher_type : str
-            Name of the higher type
-
-        Returns
-        -------
-        int
-            Distance between the two types
-        """
-        depth = 1
-        t = self.get_higher_types(lower_type)
-        for i in t:
-            if i == higher_type:
-                break
-            depth += 1
-        return depth
-
     @property
     def annotation_types(self):
         """

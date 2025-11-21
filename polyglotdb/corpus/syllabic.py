@@ -60,18 +60,18 @@ class SyllabicContext(UtteranceContext):
             for d in discourses:
                 statement = '''match (w:{word_name}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}),
                 (w)-[:spoken_in]->(d:Discourse:{corpus_name})
-        where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
+        where (w)<-[:contained_by]-()-[:is_a]->(:{syllabic_name})
         AND s.name = $speaker
         AND d.name = $discourse
         with w
         match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
-        (n)-[:contained_by*1..2]->(w)
+        (n)-[:contained_by]->(w)
         with w, n
         order by n.begin
         with w,collect(n)[0..1] as coll unwind coll as n
         
-        MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
-        where not (pn)<-[:precedes]-()-[:contained_by*1..2]->(w)
+        MATCH (pn:{phone_name}:{corpus_name})-[:contained_by]->(w)
+        where not (pn)<-[:precedes]-()-[:contained_by]->(w)
         with w, n,pn
         match p = shortestPath((pn)-[:precedes*0..10]->(n))
         with [x in nodes(p)[0..-1]|x.label] as onset
@@ -105,18 +105,18 @@ class SyllabicContext(UtteranceContext):
             for d in discourses:
                 statement = '''match (w:{word_name}:{corpus_name})-[:spoken_by]->(s:Speaker:{corpus_name}),
                 (w)-[:spoken_in]->(d:Discourse:{corpus_name})
-        where (w)<-[:contained_by*1..2]-()-[:is_a]->(:{syllabic_name})
+        where (w)<-[:contained_by]-()-[:is_a]->(:{syllabic_name})
         AND s.name = $speaker
         AND d.name = $discourse
         with w
         match (n:{phone_name}:{corpus_name})-[:is_a]->(t:{corpus_name}:{syllabic_name}),
-        (n)-[:contained_by*1..2]->(w)
+        (n)-[:contained_by]->(w)
         with w, n
         order by n.begin DESC
         with w,collect(n)[0..1] as coll unwind coll as n
         
-        MATCH (pn:{phone_name}:{corpus_name})-[:contained_by*1..2]->(w)
-        where not (pn)-[:precedes]->()-[:contained_by*1..2]->(w)
+        MATCH (pn:{phone_name}:{corpus_name})-[:contained_by]->(w)
+        where not (pn)-[:precedes]->()-[:contained_by]->(w)
         with w, n,pn
         match p = shortestPath((n)-[:precedes*0..10]->(pn))
         with [x in nodes(p)[1..]|x.label] as coda
@@ -287,8 +287,8 @@ class SyllabicContext(UtteranceContext):
             codas = norm_count_dict(codas, onset=False)
         elif algorithm == 'maxonset':
             if custom_onsets is None:
-                onsets = set(onsets.keys())
-                print(onsets)
+                onsets = sorted(set(onsets.keys()))
+                print(f"Onsets found by max onset: {onsets}")
         else:
             raise NotImplementedError
 

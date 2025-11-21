@@ -58,6 +58,9 @@ def test_path_on_type_subset(acoustic_config):
 
 def test_multiple_path_on_type_subset(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        syllabics = ['aa', 'ih']
+        q = g.query_lexicon(g.lexicon_phone).filter(g.lexicon_phone.label.in_(syllabics))
+        q.create_subset('syllabic')
         print('begin aa.k number of syllabics/segments in word')
         q = g.query_graph(g.phone).filter(g.phone.label == 'aa')
         q = q.filter(g.phone.following.label == 'k')
@@ -74,6 +77,8 @@ def test_multiple_path_on_type_subset(acoustic_config):
 
 def test_filter_following_on_type_subset(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        q = g.query_lexicon(g.lexicon_phone).filter(g.lexicon_phone.label == 'aa')
+        q.create_subset('+syllabic')
         q = g.query_graph(g.phone).filter(g.phone.label == 't')
         q = q.filter(g.phone.following.subset == '+syllabic')
         print(g.phone.following.subset)
@@ -86,6 +91,9 @@ def test_filter_following_on_type_subset(acoustic_config):
 
 def test_cache_subset_count(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        syllabics = ['aa', 'ih']
+        q = g.query_lexicon(g.lexicon_phone).filter(g.lexicon_phone.label.in_(syllabics))
+        q.create_subset('syllabic')
         q = g.query_graph(g.word)
         q.cache(g.word.phone.filter_by_subset('syllabic').count.column_name('num_syllables'))
         print(q.cypher())

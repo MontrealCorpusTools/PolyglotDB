@@ -197,12 +197,18 @@ class QueryResults(BaseQueryResults):
                     for k in a.output_columns:
                         r.add_acoustic(k, None)
                 else:
-                    utterance_id = r[a.utterance_alias]
                     discourse = r[a.discourse_alias]
                     speaker = r[a.speaker_alias]
-                    if utterance_id not in a.attribute.cache:
-                        data = self.corpus.get_utterance_acoustics(a.attribute.label, utterance_id, discourse, speaker)
-                        a.attribute.cache[utterance_id] = data
+                    if "utterance" in self.corpus.annotation_types:
+                        utterance_id = r[a.utterance_alias]
+                        if utterance_id not in a.attribute.cache:
+                            data = self.corpus.get_utterance_acoustics(a.attribute.label, utterance_id, discourse, speaker)
+                            a.attribute.cache[utterance_id] = data
+                    else:
+                        utterance_id = (discourse, speaker)
+                        if utterance_id not in a.attribute.cache:
+                            data = self.corpus.get_utterance_acoustics(a.attribute.label, None, discourse, speaker)
+                            a.attribute.cache[utterance_id] = data
                     t = a.hydrate(self.corpus, utterance_id,
                                   r[a.begin_alias],
                                   r[a.end_alias])

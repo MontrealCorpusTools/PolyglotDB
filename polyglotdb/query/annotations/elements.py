@@ -162,16 +162,6 @@ class AlignmentClauseElement(AnnotationClauseElement):
         if not isinstance(first, HierarchicalAnnotation) and not isinstance(second, HierarchicalAnnotation):
             second = getattr(self.first, second.node_type)
         self.second = second
-        self.depth = 1
-        lower = self.first.node_type
-        higher = self.second.node_type
-        if lower not in self.first.hierarchy.get_lower_types(higher):
-            lower, higher = higher, lower
-        t = self.first.hierarchy.get_higher_types(lower)
-        for i in t:
-            if i == higher:
-                break
-            self.depth += 1
 
     def __hash__(self):
         return hash((self.first, self.template, self.second))
@@ -211,10 +201,6 @@ class AlignmentClauseElement(AnnotationClauseElement):
         """
         kwargs = {'second_node_alias': self.second.alias,
                   'first_node_alias': self.first.alias}
-        if self.depth != 1:
-            kwargs['depth'] = '*' + str(self.depth)
-        else:
-            kwargs['depth'] = ''
         return self.template.format(**kwargs)
 
     def is_matrix(self):
@@ -245,8 +231,8 @@ class RightAlignedClauseElement(AlignmentClauseElement):
     """
     Clause for filtering based on right alignment.
     """
-    template = '''not ({first_node_alias})-[:precedes]->()-[:contained_by{depth}]->({second_node_alias})
-    AND ({first_node_alias})-[:contained_by{depth}]->({second_node_alias})'''
+    template = '''not ({first_node_alias})-[:precedes]->()-[:contained_by]->({second_node_alias})
+    AND ({first_node_alias})-[:contained_by]->({second_node_alias})'''
     side = 'right'
     aligned = True
 
@@ -255,8 +241,8 @@ class LeftAlignedClauseElement(AlignmentClauseElement):
     """
     Clause for filtering based on left alignment.
     """
-    template = '''not ({first_node_alias})<-[:precedes]-()-[:contained_by{depth}]->({second_node_alias})
-    AND ({first_node_alias})-[:contained_by{depth}]->({second_node_alias})'''
+    template = '''not ({first_node_alias})<-[:precedes]-()-[:contained_by]->({second_node_alias})
+    AND ({first_node_alias})-[:contained_by]->({second_node_alias})'''
     side = 'left'
     aligned = True
 
@@ -265,8 +251,8 @@ class NotRightAlignedClauseElement(RightAlignedClauseElement):
     """
     Clause for filtering based on not being right aligned.
     """
-    template = '''({first_node_alias})-[:precedes]->()-[:contained_by{depth}]->({second_node_alias})
-    AND ({first_node_alias})-[:contained_by{depth}]->({second_node_alias})'''
+    template = '''({first_node_alias})-[:precedes]->()-[:contained_by]->({second_node_alias})
+    AND ({first_node_alias})-[:contained_by]->({second_node_alias})'''
     side = 'right'
     aligned = False
 
@@ -275,8 +261,8 @@ class NotLeftAlignedClauseElement(LeftAlignedClauseElement):
     """
     Clause for filtering based on not being left aligned.
     """
-    template = '''({first_node_alias})<-[:precedes]-()-[:contained_by{depth}]->({second_node_alias})
-    AND ({first_node_alias})-[:contained_by{depth}]->({second_node_alias})'''
+    template = '''({first_node_alias})<-[:precedes]-()-[:contained_by]->({second_node_alias})
+    AND ({first_node_alias})-[:contained_by]->({second_node_alias})'''
     side = 'left'
     aligned = False
 

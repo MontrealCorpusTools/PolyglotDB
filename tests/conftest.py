@@ -1,3 +1,5 @@
+import shutil
+
 import pytest
 import os
 import sys
@@ -49,6 +51,7 @@ def buckeye_test_dir(test_dir):
 @pytest.fixture(scope='session')
 def results_test_dir(test_dir):
     results = os.path.join(test_dir, 'generated', 'results')
+    shutil.rmtree(results, ignore_errors=True)
     os.makedirs(results, exist_ok=True)
     return results
 
@@ -408,7 +411,7 @@ def lexicon_test_data():
     return data
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def acoustic_config(graph_db, textgrid_test_dir):
     config = CorpusConfig('acoustic', **graph_db)
 
@@ -495,7 +498,7 @@ def fave_corpus_config(graph_db, fave_test_dir):
     return config
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def summarized_config(graph_db, textgrid_test_dir):
     config = CorpusConfig('summarized', **graph_db)
 

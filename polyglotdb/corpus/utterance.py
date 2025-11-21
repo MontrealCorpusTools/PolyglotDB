@@ -65,7 +65,6 @@ class UtteranceContext(PauseContext):
                 call_back(i)
                 call_back('Parsing utterances for discourse {} of {} ({})...'.format(i, len(discourses), d))
             utt_data = self.get_utterance_ids(d, min_pause_length, min_utterance_length)
-            speaker_data = {}
             for s, utterances in utt_data.items():
                 speaker_data = []
                 prev_id = None

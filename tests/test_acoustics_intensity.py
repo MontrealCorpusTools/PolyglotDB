@@ -25,7 +25,7 @@ def test_query_intensity(acoustic_utt_config):
             g.hierarchy.add_acoustic_properties(g, 'intensity',
                                                 properties)
             g.encode_hierarchy()
-        g.save_acoustic_track('intensity','acoustic_corpus', expected_intensity , utterance_id=utt_id)
+        g.save_acoustic_track('intensity','acoustic_corpus', expected_intensity, utterance_id=utt_id)
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
@@ -79,7 +79,7 @@ def test_relativize_intensity(acoustic_utt_config):
 
 
 @pytest.mark.acoustic
-def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path, results_test_dir):
+def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path, results_test_dir, acoustic_syllabics):
     with CorpusContext(acoustic_utt_config) as g:
         g.config.praat_path = praat_path
         g.analyze_intensity()
@@ -92,6 +92,52 @@ def test_analyze_intensity_basic_praat(acoustic_utt_config, praat_path, results_
         assert (len(results) > 0)
         for r in results:
             assert (len(r.track))
+        q = g.query_graph(g.phone).filter(g.phone.label.not_in_(acoustic_syllabics),
+                                          g.phone.previous.subset == 'syllabic',
+                                          g.phone.following.subset == 'syllabic',
+                                          g.phone.begin == g.phone.syllable.begin
+                                          )
+        q_onset = q.columns(
+            g.phone.id.column_name('traj_id'),
+            g.phone.label.column_name('onset'),
+            g.phone.intensity.track.column_name('intensity')
+            )
+        results = q_onset.all()
+        assert len(results) > 0
+        q_onset.to_csv(os.path.join(results_test_dir, 'intensity_data_onset.csv'))
+        q = g.query_graph(g.phone).filter(g.phone.label.not_in_(acoustic_syllabics),
+                                          g.phone.previous.subset == 'syllabic',
+                                          g.phone.following.subset == 'syllabic',
+                                          g.phone.begin == g.phone.syllable.begin
+                                          )
+        q_prev = q.columns(
+            g.phone.id.column_name('traj_id'),
+            g.phone.label.column_name('onset'),
+            g.phone.previous.label.column_name('previous'),
+            g.phone.previous.begin.column_name('previous_begin'),
+            g.phone.previous.end.column_name('previous_end'),
+            g.phone.previous.intensity.track.column_name('intensity_prev')
+        )
+        results = q_prev.all()
+        assert len(results) > 0
+        q_prev.to_csv(os.path.join(results_test_dir, 'intensity_data_prev.csv'))
+        q = g.query_graph(g.phone).filter( g.phone.label.not_in_(acoustic_syllabics),
+                                          g.phone.previous.subset == 'syllabic',
+                                          g.phone.following.subset == 'syllabic',
+                          g.phone.begin == g.phone.syllable.begin
+                      )
+        # to get the intensity track of the following vowel
+        q_foll = q.columns(
+                g.phone.id.column_name('traj_id'),
+                g.phone.label.column_name('onset'),
+                g.phone.following.label.column_name('following'),
+                g.phone.following.begin.column_name('following_begin'),
+                g.phone.following.end.column_name('following_end'),
+                g.phone.following.intensity.track.column_name('intensity_foll')
+        )
+        q_foll.to_csv(os.path.join(results_test_dir, 'intensity_data_foll.csv'))
+        results = q_foll.all()
+        assert len(results) > 0
 
         g.reset_acoustic_measure('intensity')
         assert not g.discourse_has_acoustics('intensity', g.discourses[0])

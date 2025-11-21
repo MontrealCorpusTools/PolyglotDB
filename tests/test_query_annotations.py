@@ -474,14 +474,15 @@ def test_hierarchy_following(acoustic_config):
 def test_hierarchy_skips(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         q = g.query_graph(g.phone)
-        q = q.filter(g.phone.syllable.word.label == 'words')
+        q = q.filter(g.phone.word.label == 'words')
+        q = q.columns(g.phone.label, g.phone.syllable.label)
         print(g.phone.syllable.word.nodes)
         print(q.cypher())
-        assert q.required_nodes() == {g.phone, g.phone.syllable, g.phone.syllable.word}
+        assert q.required_nodes() == {g.phone, g.phone.syllable, g.phone.word}
 
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.word.label == 'words')
-        assert q.required_nodes() == {g.phone, g.phone.syllable, g.phone.syllable.word}
+        assert q.required_nodes() == {g.phone, g.phone.word}
 
 
 def test_or_clause(timed_config):

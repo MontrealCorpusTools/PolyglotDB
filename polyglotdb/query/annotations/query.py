@@ -8,7 +8,7 @@ from .attributes import (HierarchicalAnnotation)
 
 from .results import QueryResults
 
-from polyglotdb.exceptions import GraphQueryError
+from polyglotdb.exceptions import GraphQueryError, AnnotationAttributeError
 
 from ..base import BaseQuery
 
@@ -107,7 +107,7 @@ class GraphQuery(BaseQuery):
 
     def filter_left_aligned(self, annotation_type):
         """
-        Short cut function for aligning the queried annotations with
+        Shortcut function for aligning the queried annotations with
         another annotation type.
 
         Same as query.filter(g.word.begin == g.phone.begin).
@@ -119,7 +119,7 @@ class GraphQuery(BaseQuery):
 
     def filter_right_aligned(self, annotation_type):
         """
-        Short cut function for aligning the queried annotations with
+        Shortcut function for aligning the queried annotations with
         another annotation type.
 
         Same as query.filter(g.word.end == g.phone.end).
@@ -131,7 +131,7 @@ class GraphQuery(BaseQuery):
 
     def filter_not_left_aligned(self, annotation_type):
         """
-        Short cut function for aligning the queried annotations with
+        Shortcut function for aligning the queried annotations with
         another annotation type.
 
         Same as query.filter(g.word.begin != g.phone.begin).
@@ -143,7 +143,7 @@ class GraphQuery(BaseQuery):
 
     def filter_not_right_aligned(self, annotation_type):
         """
-        Short cut function for aligning the queried annotations with
+        Shortcut function for aligning the queried annotations with
         another annotation type.
 
         Same as query.filter(g.word.end != g.phone.end).
@@ -218,7 +218,7 @@ class GraphQuery(BaseQuery):
                     self._hidden_columns.append(a.node.begin.column_name(a.begin_alias))
                 if not end_found:
                     self._hidden_columns.append(a.node.end.column_name(a.end_alias))
-                if not utterance_id_found:
+                if not utterance_id_found and "utterance" in self.corpus.annotation_types:
                     if self.to_find.node_type == 'utterance':
                         self._hidden_columns.append(a.node.id.column_name(a.utterance_alias))
                     else:

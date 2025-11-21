@@ -223,6 +223,9 @@ def test_encode_utterances(acoustic_config):
 
 def test_speech_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+
+        g.encode_pauses(['sil'])
+        g.encode_utterances(min_pause_length=0)
         q = g.query_graph(g.utterance)
         q = q.columns(g.utterance.word.rate.column_name('words_per_second'), g.utterance.word.label)
         q = q.order_by(g.utterance.begin)
@@ -233,6 +236,9 @@ def test_speech_rate(acoustic_config):
 
 def test_query_speaking_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+
+        g.encode_pauses(['sil'])
+        g.encode_utterances(min_pause_length=0)
         q = g.query_graph(g.word).filter(g.word.label == 'talking')
         q = q.columns(g.word.utterance.word.rate.column_name('words_per_second'))
         q = q.order_by(g.word.begin)
