@@ -42,13 +42,32 @@ def test_query_intensity(acoustic_utt_config):
 
 def test_relativize_intensity(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        mean_f0 = 97.72
-        sd_f0 = 1.88997
-        expected_intensity = {Decimal('4.23'): {'Intensity': 98, 'Intensity_relativized': (98 - mean_f0) / sd_f0},
-                              Decimal('4.24'): {'Intensity': 100, 'Intensity_relativized': (100 - mean_f0) / sd_f0},
-                              Decimal('4.25'): {'Intensity': 99, 'Intensity_relativized': (99 - mean_f0) / sd_f0},
-                              Decimal('4.26'): {'Intensity': 95.8, 'Intensity_relativized': (95.8 - mean_f0) / sd_f0},
-                              Decimal('4.27'): {'Intensity': 95.8, 'Intensity_relativized': (95.8 - mean_f0) / sd_f0}}
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.utterance.id.column_name('id'))
+        utt_id = q.all()[0]['id']
+
+        expected_intensity = {Decimal('4.23'): {'Intensity': 98},
+                              Decimal('4.24'): {'Intensity': 100},
+                              Decimal('4.25'): {'Intensity': 99},
+                              Decimal('4.26'): {'Intensity': 95.8},
+                              Decimal('4.27'): {'Intensity': 95.8}}
+        properties = [('Intensity', float)]
+
+        if 'intensity' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'intensity',
+                                                properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('intensity','acoustic_corpus', expected_intensity, utterance_id=utt_id)
+
+        mean_intensity = 97.72
+        sd_intensity = 1.88997
+        expected_intensity = {Decimal('4.23'): {'Intensity': 98, 'Intensity_relativized': (98 - mean_intensity) / sd_intensity},
+                              Decimal('4.24'): {'Intensity': 100, 'Intensity_relativized': (100 - mean_intensity) / sd_intensity},
+                              Decimal('4.25'): {'Intensity': 99, 'Intensity_relativized': (99 - mean_intensity) / sd_intensity},
+                              Decimal('4.26'): {'Intensity': 95.8, 'Intensity_relativized': (95.8 - mean_intensity) / sd_intensity},
+                              Decimal('4.27'): {'Intensity': 95.8, 'Intensity_relativized': (95.8 - mean_intensity) / sd_intensity}}
         g.relativize_acoustic_measure('intensity', by_speaker=True)
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
