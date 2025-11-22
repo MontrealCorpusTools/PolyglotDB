@@ -21,8 +21,9 @@ def test_analyze_discourse_pitch(acoustic_utt_config, praat_path):
 
 
 @pytest.mark.acoustic
-def test_save_new_pitch_track(acoustic_utt_config_praat_pitch):
+def test_save_new_pitch_track(acoustic_utt_config_praat_pitch, praat_path):
     with CorpusContext(acoustic_utt_config_praat_pitch) as g:
+        g.config.praat_path = praat_path
         r = g.query_graph(g.utterance).all()
         assert (len(r))
         for u in r:
