@@ -215,7 +215,7 @@ def stop():
             pid = int(f.read().strip())
         try:
             os.kill(pid, signal.SIGINT)
-        except ProcessLookupError:
+        except (ProcessLookupError, OSError):
             pass
         os.remove(pid_file)
     except FileNotFoundError:

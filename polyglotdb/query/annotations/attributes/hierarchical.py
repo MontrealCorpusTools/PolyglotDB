@@ -21,6 +21,15 @@ class HierarchicalAnnotation(AnnotationNode):
             return False
         return True
 
+    def reset_anchor_node(self, to_find):
+        while True:
+            anchor = self.anchor_node
+            if anchor.node_type == to_find:
+                break
+            if not isinstance(anchor, HierarchicalAnnotation):
+                break
+            self.anchor_node = self.anchor_node.anchor_node
+
     @property
     def key(self):
         return self.anchor_node.key + "_" + self.higher_node.node_type

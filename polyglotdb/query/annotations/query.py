@@ -62,13 +62,8 @@ class GraphQuery(BaseQuery):
         self._add_subannotations = []
 
     def required_nodes(self):
-        from .attributes.hierarchical import HierarchicalAnnotation
         tf_type = type(self.to_find)
         ns = super(GraphQuery, self).required_nodes()
-        for c in self._columns + self._aggregate + self._preload + self._cache:
-            ns.update(x for x in c.nodes if isinstance(x, HierarchicalAnnotation))
-        for c, _ in self._order_by:
-            ns.update(x for x in c.nodes if isinstance(x, HierarchicalAnnotation))
         for c in self._acoustic_columns:
             ns.update(x for x in c.nodes if type(x) is not tf_type)
         return ns
