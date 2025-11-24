@@ -1128,6 +1128,21 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
+            rel_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
+                    (w)-[:contained_by]->(n)
+                WITH s, collect(n) as superunits
+                UNWIND superunits AS u
+                CREATE (s)-[:contained_by]->(u)
+            }} IN TRANSACTIONS OF 2000 ROWS
+            '''
+            statement = rel_statement.format(path=csv_path,
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Hierarchical and spoken relationship creation took {} seconds.'.format(time.time() - begin))
 
