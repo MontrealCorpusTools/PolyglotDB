@@ -8,7 +8,7 @@ from .attributes import (HierarchicalAnnotation)
 
 from .results import QueryResults
 
-from polyglotdb.exceptions import GraphQueryError
+from polyglotdb.exceptions import GraphQueryError, AnnotationAttributeError
 
 from ..base import BaseQuery
 
@@ -62,13 +62,8 @@ class GraphQuery(BaseQuery):
         self._add_subannotations = []
 
     def required_nodes(self):
-        from .attributes.hierarchical import HierarchicalAnnotation
         tf_type = type(self.to_find)
         ns = super(GraphQuery, self).required_nodes()
-        for c in self._columns + self._aggregate + self._preload + self._cache:
-            ns.update(x for x in c.nodes if isinstance(x, HierarchicalAnnotation))
-        for c, _ in self._order_by:
-            ns.update(x for x in c.nodes if isinstance(x, HierarchicalAnnotation))
         for c in self._acoustic_columns:
             ns.update(x for x in c.nodes if type(x) is not tf_type)
         return ns
@@ -107,7 +102,7 @@ class GraphQuery(BaseQuery):
 
     def filter_left_aligned(self, annotation_type):
         """
-        Short cut function for aligning the queried annotations with
+        Shortcut function for aligning the queried annotations with
         another annotation type.
 
         Same as query.filter(g.word.begin == g.phone.begin).
@@ -119,7 +114,7 @@ class GraphQuery(BaseQuery):
 
     def filter_right_aligned(self, annotation_type):
         """
-        Short cut function for aligning the queried annotations with
+        Shortcut function for aligning the queried annotations with
         another annotation type.
 
         Same as query.filter(g.word.end == g.phone.end).
@@ -131,7 +126,7 @@ class GraphQuery(BaseQuery):
 
     def filter_not_left_aligned(self, annotation_type):
         """
-        Short cut function for aligning the queried annotations with
+        Shortcut function for aligning the queried annotations with
         another annotation type.
 
         Same as query.filter(g.word.begin != g.phone.begin).
@@ -143,7 +138,7 @@ class GraphQuery(BaseQuery):
 
     def filter_not_right_aligned(self, annotation_type):
         """
-        Short cut function for aligning the queried annotations with
+        Shortcut function for aligning the queried annotations with
         another annotation type.
 
         Same as query.filter(g.word.end != g.phone.end).
@@ -218,7 +213,7 @@ class GraphQuery(BaseQuery):
                     self._hidden_columns.append(a.node.begin.column_name(a.begin_alias))
                 if not end_found:
                     self._hidden_columns.append(a.node.end.column_name(a.end_alias))
-                if not utterance_id_found:
+                if not utterance_id_found and "utterance" in self.corpus.annotation_types:
                     if self.to_find.node_type == 'utterance':
                         self._hidden_columns.append(a.node.id.column_name(a.utterance_alias))
                     else:

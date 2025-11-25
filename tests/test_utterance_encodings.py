@@ -9,6 +9,17 @@ def test_encode_positions(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
         g.encode_utterance_position()
 
+        q = g.query_graph(g.phone).columns(g.phone.word.label.column_name('label'),
+                                          g.phone.word.position_in_utterance.column_name('pos'),
+                                           g.phone.utterance.begin.column_name("begin"),
+                                           g.phone.syllable.word.utterance.end.column_name("end"),
+                                           )
+        q = q.order_by(g.phone.word.begin)
+        results = q.all()
+        assert len(results) > 0
+        assert (results[0]['label'] == 'this')
+        assert (results[0]['pos'] == 1)
+
         q = g.query_graph(g.word).columns(g.word.label.column_name('label'),
                                           g.word.position_in_utterance.column_name('pos'))
         q = q.order_by(g.word.begin)

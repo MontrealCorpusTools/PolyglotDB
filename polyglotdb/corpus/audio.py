@@ -742,10 +742,15 @@ class AudioContext(SyllabicContext):
         columns = '"time", {}'.format(', '.join(property_names))
         speaker = speaker.replace("'", r"\'") # Escape apostrophes
         discourse = discourse.replace("'", r"\'") # Escape apostrophes
-        query = '''select {} from "{}"
-                        WHERE "utterance_id" = '{}'
-                        AND "discourse" = '{}'
-                        AND "speaker" = '{}';'''.format(columns, acoustic_name, utterance_id, discourse, speaker)
+        if utterance_id is not None:
+            query = '''select {} from "{}"
+                            WHERE "utterance_id" = '{}'
+                            AND "discourse" = '{}'
+                            AND "speaker" = '{}';'''.format(columns, acoustic_name, utterance_id, discourse, speaker)
+        else:
+            query = '''select {} from "{}"
+                            WHERE "discourse" = '{}'
+                            AND "speaker" = '{}';'''.format(columns, acoustic_name, discourse, speaker)
         result = self.execute_influxdb(query)
         track = Track()
         for r in result.get_points(acoustic_name):
@@ -906,15 +911,16 @@ class AudioContext(SyllabicContext):
                     phone_type.begin.column_name('begin'), 
                     phone_type.end.column_name('end'),
                     phone_type.word.label.column_name('word_label'),
-                    phone_type.speaker.name.column_name('speaker'),
-                    phone_type.utterance.id.column_name('utterance_id')]
+                    phone_type.speaker.name.column_name('speaker')]
+        column_labels = ['label', 'begin', 'end', 'word_label', 'speaker']
+        if "utterance" in self.annotation_types:
+            columns.append(phone_type.syllable.label.column_name('utterance_id'))
+            column_labels.append('utterance_id')
         if 'syllable' in self.annotation_types:
             columns.append(phone_type.syllable.label.column_name('syllable_label'))
-            q = q.columns(*columns).order_by(phone_type.begin)
-            phones = [(x['label'], x['begin'], x['end'], x['word_label'], x['speaker'], x['utterance_id'], x['syllable_label']) for x in q.all()]
-        else:
-            q = q.columns(*columns).order_by(phone_type.begin)
-            phones = [(x['label'], x['begin'], x['end'], x['word_label'], x['speaker'], x['utterance_id']) for x in q.all()]
+            column_labels.append('syllable_label')
+        q = q.columns(*columns).order_by(phone_type.begin)
+        phones = [{y: x[y] for y in column_labels} for x in q.all()]
         for time_point, value in track.items():
             fields = {}
             for name, type in measures:
@@ -925,20 +931,20 @@ class AudioContext(SyllabicContext):
                 continue
             label = None
             speaker = None
+            word_label = None
+            syllable_label = None
             for i, p in enumerate(phones):
-                if p[1] > time_point:
+                if p['begin'] > time_point:
                     break
-                label = p[0]
-                speaker = p[4]
+                label = p['label']
+                speaker = p['speaker']
                 if 'syllable' in self.annotation_types:
-                    syllable_label = p[6]
-                word_label = p[3]
-                utterance_id = p[5]
+                    syllable_label = p['syllable_label']
+                word_label = p['word_label']
+                if utterance_id is None:
+                    utterance_id = p.get('utterance_id', None)
                 if i == len(phones) - 1:
                     break
-            else:
-                label = None
-                speaker = None
             if speaker is None:
                 continue
             t_dict = {'speaker': speaker}

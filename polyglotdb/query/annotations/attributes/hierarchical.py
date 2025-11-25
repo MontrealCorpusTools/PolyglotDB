@@ -4,8 +4,6 @@ from .base import AnnotationNode, key_for_cypher
 class HierarchicalAnnotation(AnnotationNode):
     match_template = '''({anchor_alias})-[:contained_by]->({higher_alias})-[:is_a]->({higher_type_alias})'''
 
-    # template = '''({contained_alias})-[:contained_by*{depth}]->({containing_alias})'''
-
     def __init__(self, anchor_node, higher_node):
         super(HierarchicalAnnotation, self).__init__(higher_node.node_type, higher_node.corpus, higher_node.hierarchy)
         self.anchor_node = anchor_node
@@ -17,11 +15,20 @@ class HierarchicalAnnotation(AnnotationNode):
     def __eq__(self, other):
         if not isinstance(other, HierarchicalAnnotation):
             return False
-        if self.anchor_node != other.anchor_node:
+        if self.anchor_node.node_type != other.anchor_node.node_type:
             return False
-        if self.higher_node != other.higher_node:
+        if self.higher_node.node_type != other.higher_node.node_type:
             return False
         return True
+
+    def reset_anchor_node(self, to_find):
+        while True:
+            anchor = self.anchor_node
+            if anchor.node_type == to_find:
+                break
+            if not isinstance(anchor, HierarchicalAnnotation):
+                break
+            self.anchor_node = self.anchor_node.anchor_node
 
     @property
     def key(self):
@@ -34,27 +41,6 @@ class HierarchicalAnnotation(AnnotationNode):
     def for_json(self):
         base = [x for x in self.anchor_node.for_json()] + [self.node_type]
         return base
-
-    def hierarchy_path(self, to_find):
-        """ 
-        Generates a path for the hierarchy
-
-        Returns
-        -------
-        real_path : list
-
-        """
-        path = [self.node_type]
-        a = self.contained_annotation
-        while True:
-            path.insert(0, a.node_type)
-            if not isinstance(a, HierarchicalAnnotation):
-                break
-            a = a.contained_annotation
-        real_path = [path[0]]
-        while real_path[-1] != self.node_type:
-            real_path.append(self.hierarchy[real_path[-1]])
-        return real_path
 
     def __repr__(self):
         return '<HierarchicalAnnotation object of \'{}\' type from \'{}\'>'.format(self.node_type,

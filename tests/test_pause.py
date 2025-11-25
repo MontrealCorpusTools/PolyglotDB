@@ -107,6 +107,7 @@ def test_pause_both_sides(acoustic_config):
 
 def test_hierarchical_pause_query(acoustic_config):
     with CorpusContext(acoustic_config) as g:
+        g.encode_pauses(['sil'])
         q = g.query_graph(g.phone).filter(g.phone.word.label == 'words')
         q = q.filter(g.phone.label == 'w')
         q = q.columns(g.phone.word.following.label.column_name('following'),
@@ -114,6 +115,7 @@ def test_hierarchical_pause_query(acoustic_config):
                       g.phone.word.following_pause.duration.column_name('following_pause_duration'))
         q = q.order_by(g.phone.word.begin)
         print(q.cypher())
+        print(q.cypher_params())
         results = q.all()
         assert (results[0]['following'] == 'and')
         assert (results[0]['following_pause'] == ['sil'])
@@ -131,6 +133,7 @@ def test_hierarchical_pause_query(acoustic_config):
                       g.phone.word.following_pause.duration.column_name('following_pause_duration'))
         q = q.order_by(g.phone.word.begin)
         print(q.cypher())
+        print(q.cypher_params())
         results = q.all()
         assert (len(results) == 5)
         assert (results[0]['following'] == 'and')

@@ -110,14 +110,25 @@ def test_query_formants(acoustic_utt_config):
 
 def test_relative_formants(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        means = {'F1': 503, 'F2': 1498, 'F3': 2500}
-        sds = {'F1': 1.5811, 'F2': 1.5811, 'F3': 1.4142}
-
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.utterance.id.column_name('id'))
+        utt_id = q.all()[0]['id']
         expected_formants = {Decimal('4.23'): {'F1': 501, 'F2': 1500, 'F3': 2500},
                              Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2498},
                              Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
                              Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2502},
                              Decimal('4.27'): {'F1': 505, 'F2': 1496, 'F3': 2500}}
+        properties = [('F1', float), ('F2', float), ('F3', float)]
+        if 'formants' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'formants',
+                                                             properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('formants', 'acoustic_corpus', expected_formants, utterance_id=utt_id)
+        means = {'F1': 503, 'F2': 1498, 'F3': 2500}
+        sds = {'F1': 1.5811, 'F2': 1.5811, 'F3': 1.4142}
+
         for k, v in expected_formants.items():
             for f in ['F1', 'F2', 'F3']:
                 expected_formants[k]['{}_relativized'.format(f)] = (v[f] - means[f]) / sds[f]
@@ -160,6 +171,24 @@ def test_query_aggregate_formants(acoustic_utt_config):
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.utterance.id.column_name('id'))
+        utt_id = q.all()[0]['id']
+        g.reset_acoustics()
+        expected_formants = {Decimal('4.23'): {'F1': 501, 'F2': 1500, 'F3': 2500},
+                             Decimal('4.24'): {'F1': 502, 'F2': 1499, 'F3': 2498},
+                             Decimal('4.25'): {'F1': 503, 'F2': 1498, 'F3': 2500},
+                             Decimal('4.26'): {'F1': 504, 'F2': 1497, 'F3': 2502},
+                             Decimal('4.27'): {'F1': 505, 'F2': 1496, 'F3': 2500}}
+        properties = [('F1', float), ('F2', float), ('F3', float)]
+        if 'formants' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'formants',
+                                                             properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('formants', 'acoustic_corpus', expected_formants, utterance_id=utt_id)
+
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
         q = q.columns(g.phone.label, g.phone.formants.min,
                       g.phone.formants.max, g.phone.formants.mean)
         print(q.cypher())
@@ -196,7 +225,6 @@ def test_formants(acoustic_utt_config, praat_path, export_test_dir):
             assert (r['F1'])
 
 
-
 def test_extract_formants_full(acoustic_utt_config, praat_path, export_test_dir):
     output_path = os.path.join(export_test_dir, 'full_formant_vowel_data.csv')
     with CorpusContext(acoustic_utt_config) as g:
@@ -215,9 +243,6 @@ def test_extract_formants_full(acoustic_utt_config, praat_path, export_test_dir)
         for r in results:
             assert (r['F1'])
 
-
-def test_reset_refined_formants(acoustic_utt_config):
-    with CorpusContext(acoustic_utt_config) as g:
         assert (g.hierarchy.has_token_property('phone', 'F1'))
         g.reset_formant_points()
         assert (not g.hierarchy.has_token_property('phone', 'F1'))

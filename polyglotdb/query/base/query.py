@@ -51,13 +51,23 @@ class BaseQuery(object):
         raise NotImplementedError
 
     def required_nodes(self):
+        from polyglotdb.query.annotations.attributes.hierarchical import HierarchicalAnnotation
         ns = {self.to_find}
         tf_type = type(self.to_find)
         for c in self._criterion:
+            for n in c.nodes:
+                if isinstance(n, HierarchicalAnnotation):
+                    n.reset_anchor_node(self.to_find)
             ns.update(x for x in c.nodes if type(x) is not tf_type)
         for c in self._columns + self._hidden_columns + self._aggregate + self._preload + self._cache:
+            for n in c.nodes:
+                if isinstance(n, HierarchicalAnnotation):
+                    n.reset_anchor_node(self.to_find)
             ns.update(x for x in c.nodes if type(x) is not tf_type and x.non_optional)
         for c, _ in self._order_by:
+            for n in c.nodes:
+                if isinstance(n, HierarchicalAnnotation):
+                    n.reset_anchor_node(self.to_find)
             ns.update(x for x in c.nodes if type(x) is not tf_type and x.non_optional)
         return ns
 

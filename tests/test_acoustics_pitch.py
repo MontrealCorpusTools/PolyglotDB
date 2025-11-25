@@ -21,11 +21,9 @@ def test_analyze_discourse_pitch(acoustic_utt_config, praat_path):
 
 
 @pytest.mark.acoustic
-def test_save_new_pitch_track(acoustic_utt_config, praat_path):
-    with CorpusContext(acoustic_utt_config) as g:
+def test_save_new_pitch_track(acoustic_utt_config_praat_pitch, praat_path):
+    with CorpusContext(acoustic_utt_config_praat_pitch) as g:
         g.config.praat_path = praat_path
-        g.reset_acoustics()
-        g.analyze_pitch('praat')
         r = g.query_graph(g.utterance).all()
         assert (len(r))
         for u in r:
@@ -49,11 +47,8 @@ def test_save_new_pitch_track(acoustic_utt_config, praat_path):
 
 
 @pytest.mark.acoustic
-def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
-    with CorpusContext(acoustic_utt_config) as g:
-        g.reset_acoustics()
-        g.config.praat_path = praat_path
-        g.analyze_pitch()
+def test_analyze_pitch_basic_praat(acoustic_utt_config_praat_pitch):
+    with CorpusContext(acoustic_utt_config_praat_pitch) as g:
         assert (g.discourse_has_acoustics('pitch', g.discourses[0]))
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin, g.phone.end, g.phone.pitch.track)
@@ -65,11 +60,8 @@ def test_analyze_pitch_basic_praat(acoustic_utt_config, praat_path):
 
 
 @pytest.mark.acoustic
-def test_reset_utterances(acoustic_utt_config, praat_path):
-    with CorpusContext(acoustic_utt_config) as g:
-        g.reset_acoustics()
-        g.config.praat_path = praat_path
-        g.analyze_pitch()
+def test_reset_utterances(acoustic_utt_config_praat_pitch):
+    with CorpusContext(acoustic_utt_config_praat_pitch) as g:
         assert (g.discourse_has_acoustics('pitch', g.discourses[0]))
         g.reset_utterances()
         g.encode_utterances(0.15)
@@ -83,8 +75,11 @@ def test_reset_utterances(acoustic_utt_config, praat_path):
 
 
 @pytest.mark.acoustic
-def test_track_mean_query(acoustic_utt_config):
+def test_track_mean_query(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.praat_path = praat_path
+        g.analyze_pitch()
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track, g.phone.pitch.mean)
         results = q.all()
@@ -98,8 +93,11 @@ def test_track_mean_query(acoustic_utt_config):
 
 
 @pytest.mark.acoustic
-def test_track_following_mean_query(acoustic_utt_config):
+def test_track_following_mean_query(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.praat_path = praat_path
+        g.analyze_pitch()
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track,
                       g.phone.following.pitch.mean.column_name('following_phone_pitch_mean'))
@@ -114,8 +112,11 @@ def test_track_following_mean_query(acoustic_utt_config):
 
 
 @pytest.mark.acoustic
-def test_track_hierarchical_mean_query(acoustic_utt_config):
+def test_track_hierarchical_mean_query(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.praat_path = praat_path
+        g.analyze_pitch()
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track,
                       g.phone.word.pitch.mean.column_name('word_pitch_mean'))
@@ -130,8 +131,11 @@ def test_track_hierarchical_mean_query(acoustic_utt_config):
 
 
 @pytest.mark.acoustic
-def test_track_hierarchical_following_mean_query(acoustic_utt_config):
+def test_track_hierarchical_following_mean_query(acoustic_utt_config, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.praat_path = praat_path
+        g.analyze_pitch()
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.begin.column_name('begin'), g.phone.end, g.phone.pitch.track,
                       g.phone.word.pitch.mean.column_name('word_pitch_mean'),
@@ -148,16 +152,19 @@ def test_track_hierarchical_following_mean_query(acoustic_utt_config):
 
 
 @pytest.mark.acoustic
-def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_test_dir):
+def test_track_hierarchical_utterance_mean_query(acoustic_utt_config, results_test_dir, praat_path):
     with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.praat_path = praat_path
+        g.analyze_pitch()
         q = g.query_graph(g.phone).filter(g.phone.label == 'ow')
         q = q.columns(g.phone.label, g.phone.pitch.track,
                       g.phone.syllable.following.pitch.mean.column_name('following_syllable_pitch_mean'),
                       g.phone.syllable.following.following.pitch.mean.column_name(
                           'following_following_syllable_pitch_mean'),
-                      g.phone.syllable.word.utterance.pitch.mean.column_name('utterance_pitch_mean'),
-                      g.phone.syllable.word.utterance.pitch.min.column_name('utterance_pitch_min'),
-                      g.phone.syllable.word.utterance.pitch.max.column_name('utterance_pitch_max'),
+                      g.phone.utterance.pitch.mean.column_name('utterance_pitch_mean'),
+                      g.phone.utterance.pitch.min.column_name('utterance_pitch_min'),
+                      g.phone.utterance.pitch.max.column_name('utterance_pitch_max'),
                       )
         results = q.all()
         assert (len(results) > 0)
@@ -238,8 +245,8 @@ def test_query_pitch(acoustic_utt_config):
             assert (round(point['F0'], 1) == expected_pitch[point.time]['F0'])
 
 
-def test_query_aggregate_pitch(acoustic_utt_config):
-    with CorpusContext(acoustic_utt_config) as g:
+def test_query_aggregate_pitch(acoustic_utt_config_basic_pitch):
+    with CorpusContext(acoustic_utt_config_basic_pitch) as g:
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))
@@ -253,8 +260,8 @@ def test_query_aggregate_pitch(acoustic_utt_config):
         assert (round(results[0]['Mean_F0'], 2) == 97.72)
 
 
-def test_relativize_pitch(acoustic_utt_config):
-    with CorpusContext(acoustic_utt_config) as g:
+def test_relativize_pitch(acoustic_utt_config_basic_pitch):
+    with CorpusContext(acoustic_utt_config_basic_pitch) as g:
         mean_f0 = 97.72
         sd_f0 = 1.88997
         expected_pitch = {Decimal('4.23'): {'F0': 98, 'F0_relativized': (98 - mean_f0) / sd_f0},
@@ -310,8 +317,8 @@ def test_relativize_pitch(acoustic_utt_config):
                 assert not p.has_value('F0_relativized')
 
 
-def test_export_pitch(acoustic_utt_config):
-    with CorpusContext(acoustic_utt_config) as g:
+def test_export_pitch(acoustic_utt_config_basic_pitch):
+    with CorpusContext(acoustic_utt_config_basic_pitch) as g:
         q = g.query_graph(g.phone)
         q = q.filter(g.phone.label == 'ow')
         q = q.order_by(g.phone.begin.column_name('begin'))

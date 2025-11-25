@@ -1,6 +1,9 @@
+import shutil
+
 import pytest
 import os
 import sys
+from decimal import Decimal
 
 from polyglotdb.io.types.parsing import (SegmentTier, OrthographyTier,
                                          GroupingTier, TextOrthographyTier,
@@ -49,6 +52,7 @@ def buckeye_test_dir(test_dir):
 @pytest.fixture(scope='session')
 def results_test_dir(test_dir):
     results = os.path.join(test_dir, 'generated', 'results')
+    shutil.rmtree(results, ignore_errors=True)
     os.makedirs(results, exist_ok=True)
     return results
 
@@ -408,7 +412,7 @@ def lexicon_test_data():
     return data
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def acoustic_config(graph_db, textgrid_test_dir):
     config = CorpusConfig('acoustic', **graph_db)
 
@@ -428,7 +432,7 @@ def acoustic_syllabics():
             'uh', 'ah', 'ao', 'er', 'ow']
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def acoustic_utt_config(graph_db, textgrid_test_dir, acoustic_syllabics):
     config = CorpusConfig('acoustic_utt', **graph_db)
 
@@ -446,6 +450,39 @@ def acoustic_utt_config(graph_db, textgrid_test_dir, acoustic_syllabics):
     config.pitch_algorithm = 'acousticsim'
     config.formant_source = 'acousticsim'
     return config
+
+
+@pytest.fixture(scope='function')
+def acoustic_utt_config_basic_pitch(acoustic_utt_config):
+    with CorpusContext(acoustic_utt_config) as g:
+        q = g.query_graph(g.phone)
+        q = q.filter(g.phone.label == 'ow')
+        q = q.order_by(g.phone.begin.column_name('begin'))
+        q = q.columns(g.phone.utterance.id.column_name('id'))
+        utt_id = q.all()[0]['id']
+
+        g.reset_acoustics()
+        expected_pitch = {Decimal('4.23'): {'F0': 98},
+                          Decimal('4.24'): {'F0': 100},
+                          Decimal('4.25'): {'F0': 99},
+                          Decimal('4.26'): {'F0': 95.8},
+                          Decimal('4.27'): {'F0': 95.8}}
+        properties = [('F0', float)]
+        if 'pitch' not in g.hierarchy.acoustics:
+            g.hierarchy.add_acoustic_properties(g, 'pitch',
+                                                properties)
+            g.encode_hierarchy()
+        g.save_acoustic_track('pitch', 'acoustic_corpus', expected_pitch, utterance_id=utt_id)
+    return acoustic_utt_config
+
+
+@pytest.fixture(scope='function')
+def acoustic_utt_config_praat_pitch(acoustic_utt_config, praat_path):
+    with CorpusContext(acoustic_utt_config) as g:
+        g.reset_acoustics()
+        g.config.praat_path = praat_path
+        g.analyze_pitch()
+    return acoustic_utt_config
 
 
 @pytest.fixture(scope='session')
@@ -495,7 +532,7 @@ def fave_corpus_config(graph_db, fave_test_dir):
     return config
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def summarized_config(graph_db, textgrid_test_dir):
     config = CorpusConfig('summarized', **graph_db)
 

@@ -133,7 +133,7 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
 
     def _end_index(tx, at):
         tx.run('CREATE INDEX FOR (n:%s) ON (n.end)' % at)
-
+    corpus_name = corpus_context.cypher_safe_name
     with corpus_context.graph_driver.session() as session:
         for i, s in enumerate(speakers):
             speaker_statements = []
@@ -258,12 +258,15 @@ def import_csvs(corpus_context, speakers, token_headers, hierarchy, call_back=No
             except:
                 raise
             finally:
-                # with open(path, 'w'):
-                #    pass
                 os.remove(s[2])
             log.info('Finished loading {} relationships for speaker {}!'.format(s[3], s[4]))
             log.debug('{} relationships loading took: {} seconds.'.format(s[3], time.time() - begin))
-
+    statement = f"""
+    MATCH (subunit:{corpus_name}:speech)-[:contained_by*2..]->(superunit:{corpus_name}:speech)
+    with subunit, superunit
+    CREATE (subunit)-[:contained_by]->(superunit)
+    """
+    corpus_context.execute_cypher(statement)
     log.info('Finished importing into the graph database!')
     log.debug('Graph importing took: {} seconds'.format(time.time() - initial_begin))
 
@@ -768,6 +771,19 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                                               corpus=corpus_context.cypher_safe_name,
                                               word_type=corpus_context.word_name)
             corpus_context.execute_cypher(statement)
+            word_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (n)-[:contained_by*]->()-[:contained_by]->(utt:utterance:{corpus}:speech {{id: csvLine.id}})
+                WITH utt, collect(n) AS subunits
+                UNWIND subunits AS w
+                CREATE (w)-[:contained_by]->(utt)
+            }} IN TRANSACTIONS OF 1000 ROWS
+            '''
+            statement = word_statement.format(path=csv_path,
+                                              corpus=corpus_context.cypher_safe_name,
+                                              word_type=corpus_context.word_name)
+            corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
             os.remove(path)
@@ -895,6 +911,21 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
+            rel_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
+                    (w)-[:contained_by]->(n)
+                WITH s, collect(n) as superunits
+                UNWIND superunits AS u
+                CREATE (s)-[:contained_by]->(u)
+            }} IN TRANSACTIONS OF 2000 ROWS
+            '''
+            statement = rel_statement.format(path=csv_path,
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Hierarchical relationship creation took {} seconds.'.format(time.time() - begin))
 
@@ -937,21 +968,6 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             if corpus_context.config.debug:
                 print('Precedence relationship creation took {} seconds.'.format(time.time() - begin))
 
-            begin = time.time()
-            del_rel_statement = '''
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
-                MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
-                DELETE r
-            }} IN TRANSACTIONS OF 2000 ROWS
-            '''
-            statement = del_rel_statement.format(path=csv_path,
-                                                 corpus=corpus_context.cypher_safe_name,
-                                                 word_name=corpus_context.word_name,
-                                                 phone_name=corpus_context.phone_name)
-            corpus_context.execute_cypher(statement)
-            if corpus_context.config.debug:
-                print('Phone-word relationship deletion took {} seconds.'.format(time.time() - begin))
 
             begin = time.time()
             onset_statement = '''
@@ -964,12 +980,9 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                     onspath = (onset)-[:precedes*1..10]->(n)
                 WITH n, w, s, csvLine, onspath
                 UNWIND (CASE WHEN onspath IS NOT NULL THEN nodes(onspath)[0..-1] ELSE [NULL] END) AS o
-                OPTIONAL MATCH (o)-[r:contained_by]->(w)
-                WITH n, w, s, csvLine, [x IN collect(o) WHERE x IS NOT NULL | x] AS ons,
-                    [x IN collect(r) WHERE x IS NOT NULL | x] AS rels
+                WITH n, s, csvLine, [x IN collect(o) WHERE x IS NOT NULL | x] AS ons
                 FOREACH (o IN ons | SET o :onset, o.syllable_position = 'onset')
                 FOREACH (o IN ons | CREATE (o)-[:contained_by]->(s))
-                FOREACH (r IN rels | DELETE r)
             }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = onset_statement.format(path=csv_path,
@@ -991,12 +1004,9 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
                     codapath = (n)-[:precedes*1..10]->(coda)
                 WITH n, w, s, codapath
                 UNWIND (CASE WHEN codapath IS NOT NULL THEN nodes(codapath)[1..] ELSE [NULL] END) AS c
-                OPTIONAL MATCH (c)-[r:contained_by]->(w)
-                WITH n, w, s, [x IN collect(c) WHERE x IS NOT NULL | x] AS cod,
-                    [x IN collect(r) WHERE x IS NOT NULL | x] AS rels
+                WITH n, s, [x IN collect(c) WHERE x IS NOT NULL | x] AS cod
                 FOREACH (c IN cod | SET c :coda, c.syllable_position = 'coda')
                 FOREACH (c IN cod | CREATE (c)-[:contained_by]->(s))
-                FOREACH (r IN rels | DELETE r)
             }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = coda_statement.format(path=csv_path,
@@ -1118,6 +1128,21 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                                              word_name=corpus_context.word_name,
                                              phone_name=corpus_context.phone_name)
             corpus_context.execute_cypher(statement)
+            rel_statement = '''
+            CALL {{
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
+                    (w)-[:contained_by]->(n)
+                WITH s, collect(n) as superunits
+                UNWIND superunits AS u
+                CREATE (s)-[:contained_by]->(u)
+            }} IN TRANSACTIONS OF 2000 ROWS
+            '''
+            statement = rel_statement.format(path=csv_path,
+                                             corpus=corpus_context.cypher_safe_name,
+                                             word_name=corpus_context.word_name,
+                                             phone_name=corpus_context.phone_name)
+            corpus_context.execute_cypher(statement)
             if corpus_context.config.debug:
                 print('Hierarchical and spoken relationship creation took {} seconds.'.format(time.time() - begin))
 
@@ -1169,13 +1194,10 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
                     p = (o)-[:precedes*..10]->(c)
                 WITH o, w, s, p, csvLine
                 UNWIND (CASE WHEN p IS NOT NULL THEN nodes(p) ELSE [o] END) AS c
-                OPTIONAL MATCH (c)-[r:contained_by]->(w)
-                WITH w, s, toInteger(csvLine.break) AS break, [x IN collect(c) WHERE x IS NOT NULL | x] AS cod,
-                    [x IN collect(r) WHERE x IS NOT NULL | x] AS rels
+                WITH s, toInteger(csvLine.break) AS break, [x IN collect(c) WHERE x IS NOT NULL | x] AS cod
                 FOREACH (c IN cod[break..] | SET c :coda, c.syllable_position = 'coda')
                 FOREACH (c IN cod[..break] | SET c :onset, c.syllable_position = 'onset')
                 FOREACH (c IN cod | CREATE (c)-[:contained_by]->(s))
-                FOREACH (r IN rels | DELETE r)
             }} IN TRANSACTIONS OF 2000 ROWS
             '''
             statement = phone_statement.format(path=csv_path,
