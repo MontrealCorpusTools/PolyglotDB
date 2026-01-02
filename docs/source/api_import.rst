@@ -12,6 +12,3 @@ Contents:
 
    api_inspect.rst
    api_parsers.rst
-
-
-

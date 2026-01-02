@@ -217,4 +217,3 @@ The plot of syllable duration as a function of the number of syllables demonstra
 
 .. image:: ../images/vowel_duration_plot.png
 	:width: 400
-

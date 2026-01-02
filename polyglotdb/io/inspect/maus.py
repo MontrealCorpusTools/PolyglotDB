@@ -1,8 +1,6 @@
+from polyglotdb.io.parsers import MausParser
+from polyglotdb.io.types.parsing import OrthographyTier
 from polyglotdb.structure import Hierarchy
-
-from ..types.parsing import *
-
-from ..parsers import MausParser
 
 
 def inspect_maus(path):
@@ -21,11 +19,13 @@ def inspect_maus(path):
         Autodetected parser for MAUS TextGrids
     """
 
-    annotation_types = [OrthographyTier(MausParser.word_label, 'word'),
-                        OrthographyTier(MausParser.phone_label, 'phone')]
+    annotation_types = [
+        OrthographyTier(MausParser.word_label, "word"),
+        OrthographyTier(MausParser.phone_label, "phone"),
+    ]
 
     annotation_types[0].label = True
     annotation_types[1].label = True
-    hierarchy = Hierarchy({'phone': 'word', 'word': None})
+    hierarchy = Hierarchy({"phone": "word", "word": None})
 
     return MausParser(annotation_types, hierarchy)

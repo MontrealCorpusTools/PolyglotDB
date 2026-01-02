@@ -70,9 +70,9 @@ databases here) to apply acoustic analysis and other algorithms to speech corpor
 used with corpora of any size, it is built to scale to very large corpora.  It is most often used on corpora aligned
 with the `Montreal Forced Aligner <https://montreal-forced-aligner.readthedocs.io/en/latest/>`_, but accepts corpora in other formats as well.
 
-Users interact with PolyglotDB primarily through its Python API: writing Python scripts 
-that import functions and classes from PolyglotDB. See :ref:`installation` for setting up PolyglotDB, 
-followed by :ref:`tutorials` for walk-through examples.  :ref:`case_studies` show concrete cases of PolyglotDB's use to address different kinds of phonetic research 
+Users interact with PolyglotDB primarily through its Python API: writing Python scripts
+that import functions and classes from PolyglotDB. See :ref:`installation` for setting up PolyglotDB,
+followed by :ref:`tutorials` for walk-through examples.  :ref:`case_studies` show concrete cases of PolyglotDB's use to address different kinds of phonetic research
 questions.
 
 
@@ -82,9 +82,9 @@ The general workflow for working with PolyglotDB is:
 
   - Parse and load initial data from corpus files into a Polyglot
     database.
-      
+
   - See :ref:`tutorial_first_steps` for an example, using a tutorial corpus.
-    
+
   - See :ref:`importing` for more details on the import process.
 
 * **Enrichment**
@@ -96,24 +96,24 @@ The general workflow for working with PolyglotDB is:
   - See :ref:`enrichment` for more details on the enrichment process.
 
 * **Query**
-  
+
   - Find specific linguistic units.
-    
+
   - See :ref:`tutorial_query` for an example.
-  
+
   - See :ref:`queries` for more details on the query process.
 
-  
+
 * **Export**
 
   - Generate a CSV file for data analysis with specific information extracted from the previous query.
 
   - See :ref:`tutorial_export` for an example.
-  
+
   - See :ref:`export` for more details on the export process.
 
 
-More detailed information on specific implementation details is available in the :ref:`developer`, 
+More detailed information on specific implementation details is available in the :ref:`developer`,
 as well as in the `PolyglotDB conference paper`_ and the `ISCAN conference paper`_.
 
 
@@ -121,9 +121,9 @@ Applications
 ============
 
 In addition to tutorials, there are worked examples of PolyglotDB's use to answer real-world research questions,
-in :ref:`case_studies`. These are Python scripts along with explanations of the entire workflow.  
+in :ref:`case_studies`. These are Python scripts along with explanations of the entire workflow.
 
-Further examples of PolyglotDB scripts used in the `SPADE project`_ are available in the `SPADE GitHub repo`_ (but without accompanying explanations). Both contain scripts which can be used as examples to work from for your own studies. 
+Further examples of PolyglotDB scripts used in the `SPADE project`_ are available in the `SPADE GitHub repo`_ (but without accompanying explanations). Both contain scripts which can be used as examples to work from for your own studies.
 
 Some studies which have used PolyglotDB are:
 
@@ -139,13 +139,13 @@ Some studies which have used PolyglotDB are:
 
 .. note::
 
-  For those interested in a web-based interface, `ISCAN <https://github.com/MontrealCorpusTools/ISCAN/>`_ (Integrated Speech Corpus ANalysis) is a separate 
+  For those interested in a web-based interface, `ISCAN <https://github.com/MontrealCorpusTools/ISCAN/>`_ (Integrated Speech Corpus ANalysis) is a separate
   project built on top of PolyglotDB. ISCAN is not actively maintained as of 2025. See :ref:`developer` for more information.
-.. ISCAN servers allow users to view information and perform 
-.. most functions of PolyglotDB through a web browser. 
+.. ISCAN servers allow users to view information and perform
+.. most functions of PolyglotDB through a web browser.
 .. See the `ISCAN documentation`_ for more details on setting it up.
-.. Note, however, that ISCAN is not actively maintained as of 2025 and may require additional effort 
-.. to configure and use. It is not the recommended or default option for most users. The primary and 
+.. Note, however, that ISCAN is not actively maintained as of 2025 and may require additional effort
+.. to configure and use. It is not the recommended or default option for most users. The primary and
 .. supported way to interact with PolyglotDB remains through its Python API.
 
 
@@ -172,4 +172,3 @@ If you use PolyglotDB in your research, please cite the following paper:
 
 McAuliffe, Michael, Elias Stengel-Eskin, Michaela Socolof, and Morgan Sonderegger (2017). Polyglot and Speech Corpus Tools:
 a system for representing, integrating, and querying speech corpora. In *Proceedings of Interspeech 2017*, pp. 3887–3891. https://doi.org/10.21437/Interspeech.2017-1390.
-

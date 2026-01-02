@@ -1,7 +1,7 @@
 form Choices
 sentence wav_file (leave unchanged to test in editor)
-sentence options 
-sentence exclude 
+sentence options
+sentence exclude
 endform
 
 # put the values of any parameters you need here
@@ -17,7 +17,7 @@ sound_name$ = selected$ ("Sound")
 transport.phone_start = Get start time
 transport.phone_end = Get end time
 transport.duration = Get total duration
-textgrid_name$ = "consonant" 
+textgrid_name$ = "consonant"
 #^this line may not actually work and/or is not needed
 
 #output CSV file (unnecessary if your script doesn't produce one: below I've commented all the lines out that were using this, because it was giving me errors)
@@ -53,9 +53,9 @@ procedure sibilant_jane (.argString$)
         if parseArgs.var$[i] == "from_time"
             .from_time = number(parseArgs.val$[i])
         elif parseArgs.var$[i] == "to_time"
-            .to_time = number(parseArgs.val$[i]) 
+            .to_time = number(parseArgs.val$[i])
         elif parseArgs.var$[i] == "window"
-            .window$ = parseArgs.val$[i] 
+            .window$ = parseArgs.val$[i]
         elif parseArgs.var$[i] == "filter_low"
             .filter_low = number(parseArgs.val$[i])
             .filtering = 1
@@ -74,14 +74,14 @@ procedure sibilant_jane (.argString$)
     endfor
 
     #THIS PROCEDURE WILL BE CALLED ONCE TO MAKE THE HEADER, ONCE AT THE END, AND ONCE FOR EACH MATCHING TOKEN...
-    if isHeader = 1 
+    if isHeader = 1
         fileappend 'outfile$' ,peak,slope,cog,spread
 	if interactive_session == 1
-            echo 
+            echo
             printline peak slope cog spread
         endif
     elif isComplete == 1
-	#printline FINISHED  
+	#printline FINISHED
     else
         #EXTRACT AND FILTER
         select Sound 'sound_name$'
@@ -89,11 +89,11 @@ procedure sibilant_jane (.argString$)
         .extract_end = transport.phone_start + transport.duration*.to_time
         Extract part: '.extract_start', '.extract_end', .window$, 1.0, "yes"
         if .filtering == 1
-            .newsamplerate = .filter_high*2            
+            .newsamplerate = .filter_high*2
             Resample: '.filter_high'*2, 50
             Filter (pass Hann band): '.filter_low', '.filter_high', 100
-        endif 
-           
+        endif
+
         #MEASURE THE SPECTRUM
         To Spectrum... yes
         .cog = Get centre of gravity... 2
@@ -106,7 +106,7 @@ procedure sibilant_jane (.argString$)
 
         #WRITE TO THE OUTPUT FILE
 #        fileappend 'outfile$' ,'.peak:3','.slope:3','.cog:3','.spread:3'
-        
+
         #REMOVE OBJECTS
         select Sound 'sound_name$'_part
         if .filtering == 1
@@ -119,7 +119,7 @@ procedure sibilant_jane (.argString$)
             plus Ltas 'sound_name$'_part
         endif
         Remove
-       
+
         #SHOW THE NUMBERS IF THIS IS RUNNING IN THE GUI
         if interactive_session == 1
             cog$ = fixed$(.cog, 4)
@@ -153,7 +153,7 @@ procedure parseOperations
             funWithArgs$ = ops_array$[.i]
             #SEPARATE THE FUNCTION NAME FROM ITS ARGUMENTS
             if index (funWithArgs$, "(") > 0
-                @split ("(", funWithArgs$) 
+                @split ("(", funWithArgs$)
                 funOnly$ = split.array$[1]
                 argString$ = split.array$[2]
                 argString$ = replace$(argString$, ")", "", 0)
@@ -205,7 +205,7 @@ endproc
 #http://www.ucl.ac.uk/~ucjt465/scripts/praat/split.proc.praat
 
 procedure split (.sep$, .str$)
-  .seplen = length(.sep$) 
+  .seplen = length(.sep$)
   .length = 0
   repeat
     .strlen = length(.str$)
@@ -239,7 +239,7 @@ procedure makeMeasurements
 #        fileappend 'outfile$' 'speaker$','textgrid_name$','sound_name$','phone_tier','word_id$','token_id$'
 #        fileappend 'outfile$' ,'transport.lastword$','transport.word$','transport.nextword$','transport.phone$','transport.phone_start:3','transport.phone_end:3','transport.lastphone2$','transport.lastphone1$','transport.lastphone$','transport.nextphone$','transport.nextphone1$','transport.nextphone2$'
 
-        #VARIABLES AVAILABLE TO MEASUREMENT PROCEDURES: 
+        #VARIABLES AVAILABLE TO MEASUREMENT PROCEDURES:
         # - transport.phone$            the phone we're measuring
         # - transport.word$             the word it's in
         # - transport.phone_start       the time the phone starts
@@ -251,7 +251,7 @@ procedure makeMeasurements
         # - transport.nextphone1$       the phone following the following phone
         # - transport.lastphone2$       the third preceding phone
         # - transport.nextphone2$       the third following phone
-        # - transport.lastphone_start   the time the preceding phone starts 
+        # - transport.lastphone_start   the time the preceding phone starts
         # - transport.nextphone_end     the time the following phone ends
         # - transport.word_start        the time the word starts
         # - transport.word_end          the time the word ends
@@ -263,7 +263,7 @@ procedure makeMeasurements
         @parseOperations (operations$)
 
         print .
-    endif   
+    endif
 #    fileappend 'outfile$' 'newline$'
 
 endproc

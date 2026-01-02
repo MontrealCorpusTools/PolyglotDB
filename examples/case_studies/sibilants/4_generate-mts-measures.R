@@ -1,7 +1,7 @@
 ## Script to create SPADE datasets of multitaper normalized spectrum measurements.
 ##
 ## This script requires an auxiliary/ subdirectory to run, which is
-## essentially identical to the spectRum and wavefoRm packages by 
+## essentially identical to the spectRum and wavefoRm packages by
 ## Patrick Riedy (which we do not have permission to distribute):
 ## https://github.com/patrickreidy/spectRum
 ## https://github.com/patrickreidy/wavefoRm
@@ -9,12 +9,12 @@
 ## Input: a SPADE-format sibilants dataset file, such as
 ## spade-Buckeye_sibilants.csv
 ##
-## Output: a file of multi-taper normalized-spectrum measurements, 
+## Output: a file of multi-taper normalized-spectrum measurements,
 ## such as spade-Buckeye_mts_sibilants_normalized.csv
 ##
 ## see README.txt for more detail
 ##
-## Authors:Jeff Mielke, Jane Stuart-Smith, James Tanner, Michael Goodale, 
+## Authors:Jeff Mielke, Jane Stuart-Smith, James Tanner, Michael Goodale,
 ## working from an original script by Patrick Reidy
 ## Date:    2018-2020
 
@@ -148,7 +148,7 @@ waveToOneSpectrum <- function(clip, k=8, nw=4){
     # print(length(frequencies(wave_clip_spectrum)))
     wave_clip_spectrum
 }
-          
+
 spectralSlope <- function(mts, minHz = -Inf, maxHz = Inf) {
     .indices <- (function(.f) {which(minHz < .f & .f < maxHz)})(frequencies(mts))
     .freqs <- frequencies(mts)[.indices] #%>% (function(.x) {(.x - mean(.x)) / sd(.x)})
@@ -191,7 +191,7 @@ F_M <- function(one_window_spectrum, sibilant, gender) {
 
   F_M_min <- F_M_range$min
   F_M_max <- F_M_range$max
-  
+
   return(peakHz(one_window_spectrum, minHz = F_M_min, maxHz = F_M_max))
 }
 
@@ -267,7 +267,7 @@ for (sp in setdiff(unique(corpus_data$speaker),NA)){
         subsubdata <- subset(subdata, discourse==disc)
 
         file_path <- get_file_path(subsubdata, 1, args$sound_dir, args$directories)
-        
+
         if (args$procedure=='sibilant'){
             begin <- subsubdata[1, "phone_begin"]
             end <- subsubdata[1, "phone_end"]
@@ -280,7 +280,7 @@ for (sp in setdiff(unique(corpus_data$speaker),NA)){
         file_midpoint <- begin + (end-begin) / 2
 
         tryCatch(
-            {   
+            {
                 wave_info <- getWaveForClip(file_path, file_midpoint - as.numeric(args$frame)/2, file_midpoint + as.numeric(args$frame)/2, as.numeric(args$rate))
                 one_window <- wave_info$wave
                 original_rate <- wave_info$original_rate
@@ -288,7 +288,7 @@ for (sp in setdiff(unique(corpus_data$speaker),NA)){
                 one_window_spectrum<- waveToOneSpectrum(one_window)
 
                 #save all the multitaper information except for the values
-                all_multitapers[[sp]][[disc]] <- list(values = NULL, 
+                all_multitapers[[sp]][[disc]] <- list(values = NULL,
                                                       frequencies = seq(from = 0, to = one_window_spectrum@nyquist, by = one_window_spectrum@binWidth),
                                                       binWidth = one_window_spectrum@binWidth,
                                                       nyquist = one_window_spectrum@nyquist,
@@ -304,7 +304,7 @@ for (sp in setdiff(unique(corpus_data$speaker),NA)){
                 }else{
                     message_text <- paste("[inspect discourses] file does not seem to exist:", file_path)
                 }
-                message(message_text)  
+                message(message_text)
                 write(message_text,file="mts_logfile.txt",append=TRUE)
             }
         )
@@ -335,7 +335,7 @@ sample_from_utterances <- function(utterances, frame=0.35, clip_n=1000){
     sample_times_real <- c(utterances[1,'left'])
 
     for (row in 1:nrow(utterances)){
-        sample_times_real <- c(sample_times_real, 
+        sample_times_real <- c(sample_times_real,
                                sample_times_cumul[sample_times_cumul>utterances[row,'cumul_start'] & sample_times_cumul<=utterances[row,'cumul_end']] - utterances[row,'cumul_start'] + utterances[row,'left'])
     }
     sample_times_real
@@ -350,34 +350,34 @@ if (args$procedure=='mean_spectrum'){
     clip_n <- 1000
     frame <- as.numeric(args$frame)
 
-    amps_sampled <- list(speaker=c(), discourse=c(), freqs=c(), 
+    amps_sampled <- list(speaker=c(), discourse=c(), freqs=c(),
                          meanvals=c(), maxvals=c(), minvals=c(), sdvals=c(),
                          meanamps=c(), maxamps=c(), minamps=c(), sdamps=c(),
                          meanamps2=c(), maxamps2=c(), minamps2=c(),
-                         vals_10=c(), vals_20=c(), vals_30=c(), 
-                         vals_40=c(), vals_50=c(), vals_60=c(), 
-                         vals_70=c(), vals_80=c(), vals_90=c(), 
-                         amps_10=c(), amps_20=c(), amps_30=c(), 
-                         amps_40=c(), amps_50=c(), amps_60=c(), 
+                         vals_10=c(), vals_20=c(), vals_30=c(),
+                         vals_40=c(), vals_50=c(), vals_60=c(),
+                         vals_70=c(), vals_80=c(), vals_90=c(),
+                         amps_10=c(), amps_20=c(), amps_30=c(),
+                         amps_40=c(), amps_50=c(), amps_60=c(),
                          amps_70=c(), amps_80=c(), amps_90=c(),
                          meannonvals=c(), maxnonvals=c(), minnonvals=c(), sdnonvals=c(),
                          meannonamps=c(), maxnonamps=c(), minnonamps=c(), sdnonamps=c(),
                          meannonamps2=c(), maxnonamps2=c(), minnonamps2=c(),
-                         nonvals_10=c(), nonvals_20=c(), nonvals_30=c(), 
-                         nonvals_40=c(), nonvals_50=c(), nonvals_60=c(), 
-                         nonvals_70=c(), nonvals_80=c(), nonvals_90=c(), 
-                         nonamps_10=c(), nonamps_20=c(), nonamps_30=c(), 
-                         nonamps_40=c(), nonamps_50=c(), nonamps_60=c(), 
+                         nonvals_10=c(), nonvals_20=c(), nonvals_30=c(),
+                         nonvals_40=c(), nonvals_50=c(), nonvals_60=c(),
+                         nonvals_70=c(), nonvals_80=c(), nonvals_90=c(),
+                         nonamps_10=c(), nonamps_20=c(), nonamps_30=c(),
+                         nonamps_40=c(), nonamps_50=c(), nonamps_60=c(),
                          nonamps_70=c(), nonamps_80=c(), nonamps_90=c()
                          )
-    
+
     clip_n <- 1000
 
     # corpus_data <- read.csv('/projects/spade/datasets/datasets_utterances/spade-Scottish-Polish_utterances.csv')
     corpus_data <- corpus_data[order(corpus_data$utterance_begin),]
     corpus_data <- corpus_data[order(corpus_data$discourse),]
     corpus_data <- corpus_data[order(corpus_data$speaker),]
-    
+
     for (sp in unique(corpus_data$speaker)){
     # for (sp in c('3164')){
         print(c(corpus_name,sp,'meanampsmean'))
@@ -419,13 +419,13 @@ if (args$procedure=='mean_spectrum'){
             batch_indices <- rep(0:(n_cores-1), each=(nrow(sample_data) %/% n_cores))
             batch_indices <- c(rep(0, nrow(sample_data)-length(batch_indices)), batch_indices)
             batches <- split(1:nrow(sample_data), batch_indices)
-            
+
             sample_data <- foreach(batch=batches, .combine=rbind) %dopar% {
                 sample_data <- sample_data[batch, ]
                 for (row in 1:nrow(sample_data)){
 
                     tryCatch(
-                        {   
+                        {
                             wave_info <- getWaveForClip(file_path, sample_data[row,'clip_start'], sample_data[row,'clip_end'], as.numeric(args$rate))
                             # wave_info <- getWaveForClip(file_path, sample_data[row,'clip_start'], sample_data[row,'clip_end'], as.numeric(44100))
                             one_window <- wave_info$wave
@@ -438,7 +438,7 @@ if (args$procedure=='mean_spectrum'){
                             }else{
                                 message_text <- paste("[mean_spectrum] file does not seem to exist:", file_path)
                             }
-                            message(message_text)  
+                            message(message_text)
 
                             write(message_text,file="mts_logfile.txt",append=TRUE)
                         }
@@ -453,24 +453,24 @@ if (args$procedure=='mean_spectrum'){
 
             message(paste(sum(!is.na(sample_data[,disc_mts_colnames[1]])), 'of', clip_n*2, 'clips measured successfully'))
 
-            # amps_sampled <- list(speaker=c(), discourse=c(), freqs=c(), 
+            # amps_sampled <- list(speaker=c(), discourse=c(), freqs=c(),
             #                      meanvals=c(), maxvals=c(), minvals=c(), sdvals=c(),
             #                      meanamps=c(), maxamps=c(), minamps=c(), sdamps=c(),
             #                      meanamps2=c(), maxamps2=c(), minamps2=c(),
-            #                      vals_10=c(), vals_20=c(), vals_30=c(), 
-            #                      vals_40=c(), vals_50=c(), vals_60=c(), 
-            #                      vals_70=c(), vals_80=c(), vals_90=c(), 
-            #                      amps_10=c(), amps_20=c(), amps_30=c(), 
-            #                      amps_40=c(), amps_50=c(), amps_60=c(), 
+            #                      vals_10=c(), vals_20=c(), vals_30=c(),
+            #                      vals_40=c(), vals_50=c(), vals_60=c(),
+            #                      vals_70=c(), vals_80=c(), vals_90=c(),
+            #                      amps_10=c(), amps_20=c(), amps_30=c(),
+            #                      amps_40=c(), amps_50=c(), amps_60=c(),
             #                      amps_70=c(), amps_80=c(), amps_90=c(),
             #                      meannonvals=c(), maxnonvals=c(), minnonvals=c(), sdnonvals=c(),
             #                      meannonamps=c(), maxnonamps=c(), minnonamps=c(), sdnonamps=c(),
             #                      meannonamps2=c(), maxnonamps2=c(), minnonamps2=c(),
-            #                      nonvals_10=c(), nonvals_20=c(), nonvals_30=c(), 
-            #                      nonvals_40=c(), nonvals_50=c(), nonvals_60=c(), 
-            #                      nonvals_70=c(), nonvals_80=c(), nonvals_90=c(), 
-            #                      nonamps_10=c(), nonamps_20=c(), nonamps_30=c(), 
-            #                      nonamps_40=c(), nonamps_50=c(), nonamps_60=c(), 
+            #                      nonvals_10=c(), nonvals_20=c(), nonvals_30=c(),
+            #                      nonvals_40=c(), nonvals_50=c(), nonvals_60=c(),
+            #                      nonvals_70=c(), nonvals_80=c(), nonvals_90=c(),
+            #                      nonamps_10=c(), nonamps_20=c(), nonamps_30=c(),
+            #                      nonamps_40=c(), nonamps_50=c(), nonamps_60=c(),
             #                      nonamps_70=c(), nonamps_80=c(), nonamps_90=c()
             #                      )
 
@@ -498,7 +498,7 @@ if (args$procedure=='mean_spectrum'){
                     maxnonvals <- rep(NA, length(freqs))
                     minnonvals <- rep(NA, length(freqs))
                     sdnonvals <- rep(NA, length(freqs))
-                }else{                    
+                }else{
                     print('rows 1')
                     meannonvals <- colMeans(all_nonutterance_values)
                     maxnonvals <- colMax(all_nonutterance_values)
@@ -623,7 +623,7 @@ if (args$procedure=='sibilant'){
         freqs500 <- freqs
         freqs500[freqs500<500] <- 500
         slope_correct <- 6*(log2(500)-log2(freqs500))
-        slope_correct_values <- (10^slope_correct)^0.1  
+        slope_correct_values <- (10^slope_correct)^0.1
         slope_correct_values
     }
 
@@ -652,16 +652,16 @@ if (args$procedure=='sibilant'){
     #Split 0:nrows into (roughly) equal sized batches that are in order
     # ML: Modified to allow for dynamic data (don't break up tokens across batches)
     # Use original corpus to determine batches, then simply repeat indicies n times before splitting
-    
+
     batch_indices <- rep(0:(n_cores-1), each=(nrow(corpus_data_original) %/% n_cores))
     batch_indices <- c(rep(0, nrow(corpus_data_original)-length(batch_indices)), batch_indices)
     batch_indices <- rep(batch_indices, each = length(args$measure_at))
     batches <- split(1:nrow(corpus_data), batch_indices)
     # End modifications
-    
+
     corpus_data <- foreach(batch=batches, .combine=rbind) %dopar% {
         corpus_data <- corpus_data[batch, ]
-        
+
         for (row in 1:nrow(corpus_data)){
             #cat(round(row/nrow(corpus_data),6), "\r")
 
@@ -673,14 +673,14 @@ if (args$procedure=='sibilant'){
             } else {
               file_path <- get_file_path(corpus_data, row, args$sound_dir, args$directories)
             }
-          
+
             begin <- corpus_data[row, "phone_begin"]
             end <- corpus_data[row, "phone_end"]
-            
+
             # Actually the measurement point
             file_midpoint <- begin + (end - begin) * corpus_data[row, "measurement"]
             # End
-            
+
             tryCatch(
                 {
                     wave_info <- getWaveForClip(file_path, file_midpoint - as.numeric(args$frame)/2, file_midpoint + as.numeric(args$frame)/2, as.numeric(args$rate))
@@ -690,7 +690,7 @@ if (args$procedure=='sibilant'){
                     corpus_data[row,'downsampled_to'] <- min(as.numeric(args$rate), wave_info$original_rate)
                     if (one_window@samp.rate != samp.rate_default){
                         message_text <- paste("corpus has inconsistent sample rate:", corpus_name, one_window@samp.rate, samp.rate_default)
-                        # message(message_text)  
+                        # message(message_text)
                         write(message_text,file="mts_logfile.txt",append=TRUE)
                     }
                     one_window_spectrum <- waveToOneSpectrum(one_window)
@@ -712,13 +712,13 @@ if (args$procedure=='sibilant'){
                                 # print('maybe')
                                 n10 <- colMeans(amps_sampled$nonvals_10[sp_rows,])
                                 message_text <- paste("used nonamps from other discourses for:", file_path)
-                                message(message_text)  
+                                message(message_text)
                                 write(message_text,file="mts_logfile.txt",append=TRUE)
                             }else{
                                 # print ('no?')
                                 n10 <- amps_sampled$vals_10[disc_row,]
                                 message_text <- paste("used amps in place of nonamps for:", file_path)
-                                message(message_text)  
+                                message(message_text)
                                 write(message_text,file="mts_logfile.txt",append=TRUE)
                             }
                         # then just use vals from the speech itself
@@ -726,7 +726,7 @@ if (args$procedure=='sibilant'){
                             # print('no')
                             n10 <- amps_sampled$vals_10[disc_row,]
                             message_text <- paste("used amps in place of nonamps for:", file_path)
-                            message(message_text)  
+                            message(message_text)
                             write(message_text,file="mts_logfile.txt",append=TRUE)
                         }
                         one_window_spectrum_norm2b@values <- norm2b(one_window_spectrum@values, frequencies(one_window_spectrum), n10, v90)
@@ -741,11 +741,11 @@ if (args$procedure=='sibilant'){
                     if (file.exists(file_path)){
                         message_text <- paste("could not load waveform data from file at specified time:", file_path, begin)
                     # }else if(is.na(corpus_data[row, "spectral_lower_slope"])){
-                    #     message_text <- paste("problem calculating spectral_slope", file_path, begin)                        
+                    #     message_text <- paste("problem calculating spectral_slope", file_path, begin)
                     }else{
                         message_text <- paste("file does not seem to exist:", file_path)
                     }
-                    message(message_text)  
+                    message(message_text)
                     write(message_text,file="mts_logfile.txt",append=TRUE)
                 }
             )

@@ -1,7 +1,15 @@
-from ..io.importer import (speaker_data_to_csvs, import_speaker_csvs,
-                           discourse_data_to_csvs, import_discourse_csvs)
-from .audio import AudioContext
-from ..io.enrichment.spoken import enrich_speakers_from_csv, enrich_discourses_from_csv, parse_file
+from polyglotdb.corpus.audio import AudioContext
+from polyglotdb.io.enrichment.spoken import (
+    enrich_discourses_from_csv,
+    enrich_speakers_from_csv,
+    parse_file,
+)
+from polyglotdb.io.importer import (
+    discourse_data_to_csvs,
+    import_discourse_csvs,
+    import_speaker_csvs,
+    speaker_data_to_csvs,
+)
 
 
 class SpokenContext(AudioContext):
@@ -78,11 +86,13 @@ class SpokenContext(AudioContext):
         list
             All speakers who spoke in the discourse
         """
-        query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
+        query = """MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE d.name = $discourse_name
-                RETURN s.name as speaker'''.format(corpus_name=self.cypher_safe_name)
+                RETURN s.name as speaker""".format(
+            corpus_name=self.cypher_safe_name
+        )
         results = self.execute_cypher(query, discourse_name=discourse)
-        speakers = [x['speaker'] for x in results]
+        speakers = [x["speaker"] for x in results]
         return speakers
 
     def get_discourses_of_speaker(self, speaker):
@@ -99,11 +109,13 @@ class SpokenContext(AudioContext):
         list
             All discourses the speaker spoke in
         """
-        query = '''MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
+        query = """MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE s.name = $speaker_name
-                RETURN d.name as discourse'''.format(corpus_name=self.cypher_safe_name)
+                RETURN d.name as discourse""".format(
+            corpus_name=self.cypher_safe_name
+        )
         results = self.execute_cypher(query, speaker_name=speaker)
-        discourses = [x['discourse'] for x in results]
+        discourses = [x["discourse"] for x in results]
         return discourses
 
     def get_channel_of_speaker(self, speaker, discourse):
@@ -122,11 +134,13 @@ class SpokenContext(AudioContext):
         int
             Channel of audio that speaker is in
         """
-        query = '''MATCH (d:Discourse:{corpus_name})<-[r:speaks_in]-(s:Speaker:{corpus_name})
+        query = """MATCH (d:Discourse:{corpus_name})<-[r:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE s.name = $speaker_name AND d.name = $discourse_name
-                RETURN r.channel as channel'''.format(corpus_name=self.cypher_safe_name)
+                RETURN r.channel as channel""".format(
+            corpus_name=self.cypher_safe_name
+        )
         results = self.execute_cypher(query, speaker_name=speaker, discourse_name=discourse)
-        return results[0]['channel']
+        return results[0]["channel"]
 
     def enrich_speakers(self, speaker_data, type_data=None):
         """

@@ -1,4 +1,4 @@
-from .annotated import AnnotatedContext
+from polyglotdb.corpus.annotated import AnnotatedContext
 
 
 class CorpusContext(AnnotatedContext):
@@ -13,4 +13,5 @@ class CorpusContext(AnnotatedContext):
     kwargs : kwargs
         sequence of keyword arguments to be passed to a CorpusConfig object
     """
+
     pass

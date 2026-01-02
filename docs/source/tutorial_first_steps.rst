@@ -4,7 +4,7 @@
 .. _formant: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.Rmd
 
 .. _pitch: https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.Rmd
- 
+
 .. _tutorial scripts: https://github.com/MontrealCorpusTools/PolyglotDB/tree/main/examples/tutorial
 
 .. _Steps to use PolyglotDB: https://polyglotdb.readthedocs.io/en/latest/getting_started.html#steps-to-use-polyglotdb
@@ -38,7 +38,7 @@ Workflow
 --------
 
 After the preliminary steps above, this tutorial can be followed in two ways:
-   
+
 1. **Step-by-step** - start the python interpreter with ``python`` and then copy and paste each code block one at a time.
 2. **Script mode** -  run the entire script directly as a standalone Python file.
 

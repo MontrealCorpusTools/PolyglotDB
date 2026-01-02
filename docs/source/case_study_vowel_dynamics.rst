@@ -51,7 +51,7 @@ We first import the corpus into a PolyglotDB database, much like in Tutorial 1.
 .. literalinclude:: ../../examples/case_studies/vowel_dynamics/1_import.py
 	:language: python
 
-.. note:: 
+.. note::
 	All the Python scripts in this case study us the so-called ``if __name__ == '__main__':`` idiom, where the code is wrapped in a function called ``main()`` that is executed only when the script is called directly. This is to avoid issues with the ``multiprocessing`` module.
 
 
@@ -102,7 +102,7 @@ It's possible to instead specify prototypes for each phone from a CSV file (for 
 
 *Making prototypes from scratch*
 
-A good way to obtain prototypes for a corpus is to hand-measure a random subset of vowels from the corpus at hand. For this, we'll use the excellent *Praat* plugin 
+A good way to obtain prototypes for a corpus is to hand-measure a random subset of vowels from the corpus at hand. For this, we'll use the excellent *Praat* plugin
 `Fast Track <https://github.com/santiagobarreda/FastTrack/>`_ :cite:p:`barreda21fast`. Like PolyglotDB, *Fast Track* obtains multiple candidate analyses for every token and attempts to automatically select the best one, albeit in a slightly different way: the number of formants is fixed at 5.5, and the formant ceiling is manipulated within a user-defined range. The optimal candidate is determined based on the smoothness of the formant tracks (and optionally, also using some simple heuristics)--the idea being that excessive jitter is typically a sign of a formant tracking error (since articulators can only move relatively slowly and gradually). While convenient, this method is still suceceptible to errors (since it's possible to have a candidate which hallucinates or skips a formant while having smooth tracks), and should not be trusted blindly. The beauty of *Fast Track* is that it allows the user to easily compare the different candidates visually against the spectrogram and override the automatic selection procedure as needed.
 
 Before we can run *Fast Track*, we need to obtain the random sample of vowels we want to manually analyze. First, we run a simple PolyglotDB query for all vowel tokens of interest in the corpus. Here, we'll require the vowels be at least 50 ms long in order to avoid any overly-reduced tokens.
@@ -162,7 +162,7 @@ e. ``vowel_prototypes_path = vowel_prototypes_path`` (default: ``''``), to set t
 
 This function first determines the optimal parameters for each phone using point measures taken at the 1/3 point. It then uses these parameters to calculate formant tracks, taking measures every 10 ms.
 
-.. note:: 
+.. note::
 	:cite:t:`mielke2019age` describe a second version of the formant refinement algorithm which considers additional candidate analyses for each phone: new candidates are created from the aforementioned ones by 'dropping' one of the formants, in an attempt to remove any false formants which may have been accidentally tracked. This version of the algortihm can be enabled by passing the ``drop_formant = True`` argument to ``analyze_formant_points_refinement``. It appears to largely depend on the data which version of the algortihm performs better--or indeed, whether there's an appreciable difference in performance at all. We encourage users to experiment with both methods.
 
 

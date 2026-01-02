@@ -1,12 +1,9 @@
 import os
 
-from polyglotdb.exceptions import (ILGLinesMismatchError,
-                                   ILGWordMismatchError)
+from polyglotdb.exceptions import ILGLinesMismatchError, ILGWordMismatchError
+from polyglotdb.io.helper import ilg_text_to_lines
+from polyglotdb.io.parsers.base import BaseParser, DiscourseData
 from polyglotdb.structure import Hierarchy
-
-from ..helper import ilg_text_to_lines
-
-from .base import BaseParser, DiscourseData
 
 
 class IlgParser(BaseParser):
@@ -23,12 +20,15 @@ class IlgParser(BaseParser):
         Function to output progress messages
     """
 
-    def __init__(self, annotation_tiers,
-                 stop_check=None, call_back=None):
-        super(IlgParser, self).__init__(annotation_tiers,
-                                        Hierarchy({'word': None}), make_transcription=False,
-                                        make_label=True,
-                                        stop_check=stop_check, call_back=call_back)
+    def __init__(self, annotation_tiers, stop_check=None, call_back=None):
+        super(IlgParser, self).__init__(
+            annotation_tiers,
+            Hierarchy({"word": None}),
+            make_transcription=False,
+            make_label=True,
+            stop_check=stop_check,
+            call_back=call_back,
+        )
 
     def parse_discourse(self, path, types_only=False):
         """
@@ -52,14 +52,14 @@ class IlgParser(BaseParser):
             raise (ILGLinesMismatchError(lines))
 
         if self.call_back is not None:
-            self.call_back('Processing file...')
+            self.call_back("Processing file...")
             self.call_back(0, len(lines))
         index = 0
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         if self.speaker_parser is not None:
             speaker = self.speaker_parser.parse_path(path)
-            name = speaker + '_' + name
+            name = speaker + "_" + name
         else:
             speaker = None
 
@@ -73,7 +73,7 @@ class IlgParser(BaseParser):
             if self.stop_check is not None and self.stop_check():
                 return
             if self.call_back is not None:
-                self.call_back('Processing file...')
+                self.call_back("Processing file...")
                 self.call_back(index)
             cur_line = {}
             mismatch = False
@@ -81,11 +81,15 @@ class IlgParser(BaseParser):
                 if annotation_type.ignored:
                     continue
                 actual_line_ind, line = lines[index + line_ind]
-                if len(cur_line.values()) != 0 and len(line) not in [len(x) for x in cur_line.values()]:
+                if len(cur_line.values()) != 0 and len(line) not in [
+                    len(x) for x in cur_line.values()
+                ]:
                     mismatch = True
 
                 cur_line[line_ind] = line
-                self.annotation_tiers[line_ind].add(((x, num_annotations + j) for j, x in enumerate(line)))
+                self.annotation_tiers[line_ind].add(
+                    ((x, num_annotations + j) for j, x in enumerate(line))
+                )
             if mismatch:
                 start_line = lines[index][0]
                 end_line = start_line + len(self.annotation_tiers)

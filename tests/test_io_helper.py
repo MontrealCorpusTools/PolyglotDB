@@ -1,17 +1,21 @@
-from polyglotdb.io.helper import (inspect_directory, find_wav_path,
-                                  normalize_values_for_neo4j,
-                                  guess_type, text_to_lines)
+from polyglotdb.io.helper import (
+    find_wav_path,
+    guess_type,
+    inspect_directory,
+    normalize_values_for_neo4j,
+    text_to_lines,
+)
 
 
 def test_inspect_directory(textgrid_test_dir, buckeye_test_dir, timit_test_dir):
     likely, _ = inspect_directory(textgrid_test_dir)
-    assert (likely == 'textgrid')
+    assert likely == "textgrid"
 
     likely, _ = inspect_directory(buckeye_test_dir)
-    assert (likely == 'buckeye')
+    assert likely == "buckeye"
 
     likely, _ = inspect_directory(timit_test_dir)
-    assert (likely == 'timit')
+    assert likely == "timit"
 
 
 def test_find_wav_path():

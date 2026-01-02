@@ -80,4 +80,3 @@ Corpus config class
 -------------------
 
 .. autoclass:: polyglotdb.config.CorpusConfig
-

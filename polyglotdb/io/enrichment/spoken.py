@@ -1,5 +1,4 @@
-
-from .helper import parse_file
+from polyglotdb.io.enrichment.helper import parse_file
 
 
 def enrich_speakers_from_csv(corpus_context, path):

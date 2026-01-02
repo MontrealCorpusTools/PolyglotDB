@@ -1,7 +1,7 @@
-from uuid import uuid1
 import hashlib
+from uuid import uuid1
 
-from ..helper import normalize_values_for_neo4j
+from polyglotdb.io.helper import normalize_values_for_neo4j
 
 
 class PGAnnotation(object):
@@ -39,9 +39,9 @@ class PGAnnotation(object):
             a hex string containing the digest of the values as hexadecimal numbers
         """
         m = hashlib.sha1()
-        value = ' '.join(map(str, self.type_values()))
+        value = " ".join(map(str, self.type_values()))
         if corpus is not None:
-            value += ' ' + corpus
+            value += " " + corpus
         m.update(value.encode())
         out = m.hexdigest()
         return out
@@ -52,12 +52,12 @@ class PGAnnotation(object):
 
         Returns
         -------
-        list 
+        list
             sorted list of property keys
         """
         keys = list(self.type_properties.keys())
         if self.label is not None:
-            keys.append('label')
+            keys.append("label")
         return sorted(keys)
 
     def type_values(self):
@@ -68,12 +68,12 @@ class PGAnnotation(object):
         ------
         str
             either the property label or the property if there is no label
-        
+
 
         """
         normalized = normalize_values_for_neo4j(self.type_properties)
         for k in self.type_keys():
-            if k == 'label':
+            if k == "label":
                 yield self.label
             else:
                 yield normalized[k]
@@ -84,12 +84,12 @@ class PGAnnotation(object):
 
         Returns
         -------
-        list 
+        list
             sorted list of property keys
         """
         keys = list(self.token_properties.keys())
         if self.label is not None:
-            keys.append('label')
+            keys.append("label")
         return sorted(keys)
 
     def token_values(self):
@@ -100,12 +100,12 @@ class PGAnnotation(object):
         ------
         str
             either the property label or the property if there is no label
-        
+
 
         """
         normalized = normalize_values_for_neo4j(self.token_properties)
         for k in self.token_keys():
-            if k == 'label':
+            if k == "label":
                 yield self.label
             else:
                 yield normalized[k]
@@ -155,7 +155,9 @@ class PGAnnotationType(object):
                 t = type(v)
             self.type_properties.add((k, t))
         self.token_property_keys.update(annotation.token_keys())
-        self.token_properties.update((k, type(v)) for k, v in annotation.token_properties.items() if v is not None)
+        self.token_properties.update(
+            (k, type(v)) for k, v in annotation.token_properties.items() if v is not None
+        )
 
     @property
     def speakers(self):
@@ -169,7 +171,7 @@ class PGAnnotationType(object):
         """
         speakers = set()
         for x in self:
-            s = 'unknown'
+            s = "unknown"
             if x.speaker is not None:
                 s = x.speaker
             speakers.add(s)
@@ -177,7 +179,7 @@ class PGAnnotationType(object):
 
     def lookup(self, timepoint, speaker=None):
         """
-        Searches the lookup_dict for a particular begin time, and optionally a speaker 
+        Searches the lookup_dict for a particular begin time, and optionally a speaker
 
         Parameters
         ----------
@@ -192,7 +194,7 @@ class PGAnnotationType(object):
                 if timepoint < time:
                     if prev != 0:
                         prev -= 500
-                    lookup_list = self._list[prev:ind + 100]
+                    lookup_list = self._list[prev : ind + 100]
                     break
                 prev = ind
             else:
@@ -202,20 +204,23 @@ class PGAnnotationType(object):
         else:
             lookup_list = self._list
         if speaker is None:
-            return next((x for x in lookup_list
-                         if timepoint >= x.begin and
-                         timepoint <= x.end),
-                        None)
+            return next(
+                (x for x in lookup_list if timepoint >= x.begin and timepoint <= x.end),
+                None,
+            )
         else:
-            return next((x for x in lookup_list
-                         if x.speaker == speaker and
-                         timepoint >= x.begin and
-                         timepoint <= x.end),
-                        None)
+            return next(
+                (
+                    x
+                    for x in lookup_list
+                    if x.speaker == speaker and timepoint >= x.begin and timepoint <= x.end
+                ),
+                None,
+            )
 
     def lookup_range(self, begin, end, speaker=None):
         """
-        Searches the lookup_dict for objects between begin time, end time, and optionally a speaker 
+        Searches the lookup_dict for objects between begin time, end time, and optionally a speaker
 
         Parameters
         ----------
@@ -235,7 +240,7 @@ class PGAnnotationType(object):
                         lookup_list = self._list[prev:ind]
                     else:
                         try:
-                            lookup_list = self._list[prev:mapping[i + 1][0]]
+                            lookup_list = self._list[prev : mapping[i + 1][0]]
                         except IndexError:
                             lookup_list = self._list[prev:]
                     break
@@ -245,16 +250,19 @@ class PGAnnotationType(object):
         else:
             lookup_list = self._list
         if speaker is None:
-            return sorted([x for x in lookup_list
-                           if x.midpoint >= begin and
-                           x.midpoint <= end],
-                          key=lambda x: x.begin)
+            return sorted(
+                [x for x in lookup_list if x.midpoint >= begin and x.midpoint <= end],
+                key=lambda x: x.begin,
+            )
         else:
-            return sorted([x for x in lookup_list
-                           if x.speaker == speaker and
-                           x.midpoint >= begin and
-                           x.midpoint <= end],
-                          key=lambda x: x.begin)
+            return sorted(
+                [
+                    x
+                    for x in lookup_list
+                    if x.speaker == speaker and x.midpoint >= begin and x.midpoint <= end
+                ],
+                key=lambda x: x.begin,
+            )
 
     def __getitem__(self, key):
         return self._list[key]

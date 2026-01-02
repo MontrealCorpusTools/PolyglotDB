@@ -1,14 +1,12 @@
 import os
 
+from polyglotdb.io.helper import text_to_lines
+from polyglotdb.io.parsers.base import BaseParser, DiscourseData
 from polyglotdb.structure import Hierarchy
-
-from ..helper import text_to_lines
-
-from .base import BaseParser, DiscourseData
 
 
 class TranscriptionTextParser(BaseParser):
-    '''
+    """
     Parser for transcribed text files.
 
     Parameters
@@ -19,17 +17,20 @@ class TranscriptionTextParser(BaseParser):
         Function to check whether to halt parsing
     call_back : callable, optional
         Function to output progress messages
-    '''
+    """
 
-    def __init__(self, annotation_tiers,
-                 stop_check=None, call_back=None):
-        super(TranscriptionTextParser, self).__init__(annotation_tiers,
-                                                      Hierarchy({'word': None}), make_transcription=False,
-                                                      make_label=True,
-                                                      stop_check=stop_check, call_back=call_back)
+    def __init__(self, annotation_tiers, stop_check=None, call_back=None):
+        super(TranscriptionTextParser, self).__init__(
+            annotation_tiers,
+            Hierarchy({"word": None}),
+            make_transcription=False,
+            make_label=True,
+            stop_check=stop_check,
+            call_back=call_back,
+        )
 
     def parse_discourse(self, path, types_only=False):
-        '''
+        """
         Parse a text file for later importing.
 
         Parameters
@@ -41,13 +42,13 @@ class TranscriptionTextParser(BaseParser):
         -------
         :class:`~polyglotdb.io.discoursedata.DiscourseData`
             Parsed data from the file
-        '''
+        """
 
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         if self.speaker_parser is not None:
             speaker = self.speaker_parser.parse_path(path)
-            name = speaker + '_' + name
+            name = speaker + "_" + name
         else:
             speaker = None
 
@@ -57,7 +58,7 @@ class TranscriptionTextParser(BaseParser):
 
         lines = text_to_lines(path)
         if self.call_back is not None:
-            self.call_back('Processing file...')
+            self.call_back("Processing file...")
             self.call_back(0, len(lines))
             cur = 0
 

@@ -12,21 +12,20 @@ def norm_count_dict(counts, onset=True):
     onset : boolean
         Defaults to true
         determines whether looking for onset or coda counts
-    
+
     Returns
     -------
     dict
         the updated dictionary
     """
     if onset:
-        notfound_factor = .05
-        empty_factor = .5
+        notfound_factor = 0.05
+        empty_factor = 0.5
     else:
-        notfound_factor = .025
-        empty_factor = .5
-    tot_count = sum(counts.values())
+        notfound_factor = 0.025
+        empty_factor = 0.5
     counts[None] = sum(counts.values()) * notfound_factor
-    counts[tuple()] = sum(counts.values()) * notfound_factor * empty_factor
+    counts[()] = sum(counts.values()) * notfound_factor * empty_factor
     counts = {k: math.log(v / sum(counts.values())) for k, v in counts.items()}
     return counts
 

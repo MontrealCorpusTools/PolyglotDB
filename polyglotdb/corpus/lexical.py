@@ -1,12 +1,13 @@
-from ..io.importer import lexicon_data_to_csvs, import_lexicon_csvs
-from ..io.enrichment.lexical import enrich_lexicon_from_csv, parse_file
-from .spoken import SpokenContext
+from polyglotdb.corpus.spoken import SpokenContext
+from polyglotdb.io.enrichment.lexical import enrich_lexicon_from_csv, parse_file
+from polyglotdb.io.importer import import_lexicon_csvs, lexicon_data_to_csvs
 
 
 class LexicalContext(SpokenContext):
     """
     Class that contains methods for dealing specifically with words
     """
+
     def enrich_lexicon(self, lexicon_data, type_data=None, case_sensitive=False):
         """
         adds properties to lexicon, adds properties to hierarchy
@@ -22,8 +23,10 @@ class LexicalContext(SpokenContext):
         """
         if type_data is None:
             type_data = {k: type(v) for k, v in next(iter(lexicon_data.values())).items()}
-        removed = [x for x in type_data.keys() if self.hierarchy.has_type_property(self.word_name, x)]
-        type_data = {k: v for k,v in type_data.items() if k not in removed}
+        removed = [
+            x for x in type_data.keys() if self.hierarchy.has_type_property(self.word_name, x)
+        ]
+        type_data = {k: v for k, v in type_data.items() if k not in removed}
         if not type_data:
             return
         lexicon_data_to_csvs(self, lexicon_data, case_sensitive=case_sensitive)
@@ -54,10 +57,9 @@ class LexicalContext(SpokenContext):
             CSV file to get property names from
         """
         data, type_data = parse_file(path, labels=[])
-        word = getattr(self, 'lexicon_' + self.word_name)
+        word = getattr(self, "lexicon_" + self.word_name)
         q = self.query_lexicon(word)
         property_names = [x for x in type_data.keys()]
         q.set_properties(**{x: None for x in property_names})
         self.hierarchy.remove_type_properties(self, self.word_name, property_names)
         self.encode_hierarchy()
-

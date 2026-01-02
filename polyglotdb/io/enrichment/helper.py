@@ -1,6 +1,7 @@
 import csv
 from collections import defaultdict
-from ...exceptions import ParseError
+
+from polyglotdb.exceptions import ParseError
 
 
 def sanitize_name(string):
@@ -18,8 +19,12 @@ def sanitize_name(string):
         Sanitized string
     """
     if "." in string:
-        raise ParseError("Column name, \"{}\" contains a period which is not permitted in CSVs used by PolyglotDB".format(string))
-    return string.strip().replace(' ', '_').lower()
+        raise ParseError(
+            'Column name, "{}" contains a period which is not permitted in CSVs used by PolyglotDB'.format(
+                string
+            )
+        )
+    return string.strip().replace(" ", "_").lower()
 
 
 def parse_string(value):
@@ -38,14 +43,14 @@ def parse_string(value):
     if value is None:
         return None
     value = value.strip()
-    if value.lower() == 'true':
+    if value.lower() == "true":
         return True
-    if value.lower() == 'false':
+    if value.lower() == "false":
         return False
-    if value.lower() in ['none', 'null', 'na']:
+    if value.lower() in ["none", "null", "na"]:
         return None
     try:
-        if '.' in value:
+        if "." in value:
             v = float(value)
         else:
             v = int(value)
@@ -72,10 +77,10 @@ def parse_file(path, labels=None, case_sensitive=True):
     tuple
         data and type_data for a csv file
     """
-    with open(path, 'r', encoding='utf-8-sig') as csvfile:
+    with open(path, "r", encoding="utf-8-sig") as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read())
-        if dialect.delimiter == '-':
-            dialect.delimiter = ','
+        if dialect.delimiter == "-":
+            dialect.delimiter = ","
         csvfile.seek(0)
         reader = csv.DictReader(csvfile, dialect=dialect)
         header = reader.fieldnames

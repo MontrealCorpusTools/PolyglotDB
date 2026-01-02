@@ -5,14 +5,14 @@ from decimal import Decimal
 
 from neo4j import GraphDatabase
 
-from ..query.annotations.attributes import AnnotationNode, PauseAnnotation
-from ..query.annotations import SplitQuery
-from ..query.lexicon import LexiconQuery, LexiconNode
-from ..query.speaker import SpeakerQuery, SpeakerNode
-from ..query.discourse import DiscourseQuery, DiscourseNode
-from ..config import CorpusConfig
-from ..exceptions import (CorpusConfigError, GraphQueryError)
-from ..structure import Hierarchy
+from polyglotdb.config import CorpusConfig
+from polyglotdb.exceptions import CorpusConfigError, GraphQueryError
+from polyglotdb.query.annotations import SplitQuery
+from polyglotdb.query.annotations.attributes import AnnotationNode, PauseAnnotation
+from polyglotdb.query.discourse import DiscourseNode, DiscourseQuery
+from polyglotdb.query.lexicon import LexiconNode, LexiconQuery
+from polyglotdb.query.speaker import SpeakerNode, SpeakerQuery
+from polyglotdb.structure import Hierarchy
 
 
 class BaseContext(object):
@@ -32,7 +32,7 @@ class BaseContext(object):
 
     def __init__(self, *args, **kwargs):
         if len(args) == 0:
-            raise (CorpusConfigError('Need to specify a corpus name or CorpusConfig.'))
+            raise (CorpusConfigError("Need to specify a corpus name or CorpusConfig."))
         if isinstance(args[0], CorpusConfig):
             self.config = args[0]
         else:
@@ -44,17 +44,17 @@ class BaseContext(object):
 
         self._has_sound_files = None
         self._has_all_sound_files = None
-        if getattr(sys, 'frozen', False):
-            self.config.reaper_path = os.path.join(sys.path[-1], 'reaper')
+        if getattr(sys, "frozen", False):
+            self.config.reaper_path = os.path.join(sys.path[-1], "reaper")
         else:
-            self.config.reaper_path = shutil.which('reaper')
+            self.config.reaper_path = shutil.which("reaper")
 
-        if sys.platform == 'win32':
-            praat_exe = 'praatcon.exe'
+        if sys.platform == "win32":
+            praat_exe = "praatcon.exe"
         else:
-            praat_exe = 'praat'
+            praat_exe = "praat"
 
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             self.config.praat_path = os.path.join(sys.path[-1], praat_exe)
         else:
             self.config.praat_path = shutil.which(praat_exe)
@@ -68,7 +68,7 @@ class BaseContext(object):
         bool
             True if the corpus Hierarchy has been saved to the database
         """
-        statement = '''MATCH (c:Corpus) where c.name = '{}' return c '''.format(self.corpus_name)
+        statement = """MATCH (c:Corpus) where c.name = '{}' return c """.format(self.corpus_name)
         res = list(self.execute_cypher(statement))
         return len(res) > 0
 
@@ -88,18 +88,18 @@ class BaseContext(object):
         :class:`~neo4j.BoltStatementResult`
             Result of Cypher query
         """
-        from neo4j.exceptions import ServiceUnavailable
+
         return_graph = False
-        if 'return_graph' in parameters:
-            return_graph = parameters.pop('return_graph')
+        if "return_graph" in parameters:
+            return_graph = parameters.pop("return_graph")
         for k, v in parameters.items():
             if isinstance(v, Decimal):
                 parameters[k] = float(v)
         try:
             with self.graph_driver.session() as session:
                 if self.config.debug:
-                    print('Statement:', statement)
-                    print('Parameters:',parameters)
+                    print("Statement:", statement)
+                    print("Parameters:", parameters)
                 results = session.run(statement, **parameters)
                 if return_graph:
                     results = results.graph()
@@ -107,7 +107,7 @@ class BaseContext(object):
                     results = results.data()
 
             return results
-        except Exception as e:
+        except Exception:
             raise
 
     @property
@@ -120,7 +120,7 @@ class BaseContext(object):
         str
             Corpus name made safe for Cypher
         """
-        return '`{}`'.format(self.corpus_name)
+        return "`{}`".format(self.corpus_name)
 
     @property
     def discourses(self):
@@ -132,9 +132,12 @@ class BaseContext(object):
         list
             Discourse names in the corpus
         """
-        res = self.execute_cypher('''MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse'''.format(
-            corpus_name=self.cypher_safe_name))
-        return [x['discourse'] for x in res]
+        res = self.execute_cypher(
+            """MATCH (d:Discourse:{corpus_name}) RETURN d.name as discourse""".format(
+                corpus_name=self.cypher_safe_name
+            )
+        )
+        return [x["discourse"] for x in res]
 
     @property
     def speakers(self):
@@ -146,9 +149,12 @@ class BaseContext(object):
         list
             Speaker names in the corpus
         """
-        res = self.execute_cypher('''MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker'''.format(
-            corpus_name=self.cypher_safe_name))
-        return [x['speaker'] for x in res]
+        res = self.execute_cypher(
+            """MATCH (s:Speaker:{corpus_name}) RETURN s.name as speaker""".format(
+                corpus_name=self.cypher_safe_name
+            )
+        )
+        return [x["speaker"] for x in res]
 
     def __enter__(self):
         if self.corpus_name:
@@ -169,14 +175,15 @@ class BaseContext(object):
         str
             Path to the cached hierarchy data on disk
         """
-        return os.path.join(self.config.base_dir, 'hierarchy')
+        return os.path.join(self.config.base_dir, "hierarchy")
 
     def cache_hierarchy(self):
         """
         Save corpus Hierarchy to the disk
         """
         import json
-        with open(self.hierarchy_path, 'w', encoding='utf8') as f:
+
+        with open(self.hierarchy_path, "w", encoding="utf8") as f:
             json.dump(self.hierarchy.to_json(), f)
 
     def load_hierarchy(self):
@@ -184,7 +191,8 @@ class BaseContext(object):
         Load Hierarchy object from the cached version
         """
         import json
-        with open(self.hierarchy_path, 'r', encoding='utf8') as f:
+
+        with open(self.hierarchy_path, "r", encoding="utf8") as f:
             self.hierarchy = Hierarchy(corpus_name=self.corpus_name)
             self.hierarchy.from_json(json.load(f))
 
@@ -200,23 +208,27 @@ class BaseContext(object):
             return False
 
     def __getattr__(self, key):
-        if key == 'speaker':
+        if key == "speaker":
             return SpeakerNode(corpus=self.corpus_name, hierarchy=self.hierarchy)
-        if key == 'discourse':
+        if key == "discourse":
             return DiscourseNode(corpus=self.corpus_name, hierarchy=self.hierarchy)
-        if key == 'pause':
+        if key == "pause":
             return PauseAnnotation(corpus=self.corpus_name, hierarchy=self.hierarchy)
-        if key + 's' in self.hierarchy.annotation_types:
-            key += 's'  # FIXME
+        if key + "s" in self.hierarchy.annotation_types:
+            key += "s"  # FIXME
         if key in self.hierarchy.annotation_types:
             return AnnotationNode(key, corpus=self.corpus_name, hierarchy=self.hierarchy)
-        if key.startswith('lexicon_'):
-            key = key.split('_')[1]
+        if key.startswith("lexicon_"):
+            key = key.split("_")[1]
             if key in self.hierarchy.annotation_types:
                 return LexiconNode(key, corpus=self.corpus_name, hierarchy=self.hierarchy)
-        raise (GraphQueryError(
-            'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(
-                sorted(self.hierarchy.annotation_types)))))
+        raise (
+            GraphQueryError(
+                "The graph does not have any annotations of type '{}'.  Possible types are: {}".format(
+                    key, ", ".join(sorted(self.hierarchy.annotation_types))
+                )
+            )
+        )
 
     def encode_type_subset(self, annotation_type, annotation_labels, subset_label):
         """
@@ -231,7 +243,7 @@ class BaseContext(object):
         subset_label : str
             the label for the subset
         """
-        ann = getattr(self, 'lexicon_' + annotation_type)
+        ann = getattr(self, "lexicon_" + annotation_type)
         q = self.query_lexicon(ann).filter(ann.label.in_(annotation_labels))
         q.create_subset(subset_label)
         self.encode_hierarchy()
@@ -248,7 +260,8 @@ class BaseContext(object):
             the label for the subset
         """
         from ..exceptions import SubsetError
-        ann = getattr(self, 'lexicon_' + annotation_type)
+
+        ann = getattr(self, "lexicon_" + annotation_type)
         try:
             q = self.query_lexicon(ann.filter_by_subset(subset_label))
             q.remove_subset(subset_label)
@@ -267,9 +280,9 @@ class BaseContext(object):
             word name
         """
         for at in self.hierarchy.annotation_types:
-            if at.startswith('word'):  # FIXME need a better way for storing word name
+            if at.startswith("word"):  # FIXME need a better way for storing word name
                 return at
-        return 'word'
+        return "word"
 
     @property
     def phone_name(self):
@@ -283,7 +296,7 @@ class BaseContext(object):
         """
         name = self.hierarchy.lowest
         if name is None:
-            name = 'phone'
+            name = "phone"
         return name
 
     def reset_graph(self, call_back=None, stop_check=None):
@@ -291,17 +304,18 @@ class BaseContext(object):
         Remove all nodes and relationships in the corpus.
         """
 
-        delete_statement = '''MATCH (n:{corpus}:{anno})-[:spoken_by]->(s:{corpus}:Speaker)
+        delete_statement = """MATCH (n:{corpus}:{anno})-[:spoken_by]->(s:{corpus}:Speaker)
         where s.name = $speaker
-        with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count'''
+        with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count"""
 
-        delete_type_statement = '''MATCH (n:{corpus}:{anno}_type)
-        with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count'''
+        delete_type_statement = """MATCH (n:{corpus}:{anno}_type)
+        with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count"""
 
         if call_back is not None:
-            call_back('Resetting database...')
+            call_back("Resetting database...")
             number = self.execute_cypher(
-                '''MATCH (n:{}) return count(*) as number '''.format(self.cypher_safe_name))['number']
+                """MATCH (n:{}) return count(*) as number """.format(self.cypher_safe_name)
+            )["number"]
             call_back(0, number)
         num_deleted = 0
         for a in self.hierarchy.annotation_types:
@@ -314,8 +328,10 @@ class BaseContext(object):
                 while deleted > 0:
                     if stop_check is not None and stop_check():
                         break
-                    deleted = self.execute_cypher(delete_statement.format(corpus=self.cypher_safe_name, anno=a),
-                                                  speaker=s)[0]['deleted_count']
+                    deleted = self.execute_cypher(
+                        delete_statement.format(corpus=self.cypher_safe_name, anno=a),
+                        speaker=s,
+                    )[0]["deleted_count"]
                     num_deleted += deleted
                     if call_back is not None:
                         call_back(num_deleted)
@@ -325,15 +341,23 @@ class BaseContext(object):
                 if stop_check is not None and stop_check():
                     break
                 deleted = self.execute_cypher(
-                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a))[0]['deleted_count']
+                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a)
+                )[0]["deleted_count"]
                 num_deleted += deleted
                 if call_back is not None:
                     call_back(num_deleted)
 
-        self.execute_cypher('''MATCH (n:{}:Speaker) DETACH DELETE n '''.format(self.cypher_safe_name))
-        self.execute_cypher('''MATCH (n:{}:Discourse) DETACH DELETE n '''.format(self.cypher_safe_name))
+        self.execute_cypher(
+            """MATCH (n:{}:Speaker) DETACH DELETE n """.format(self.cypher_safe_name)
+        )
+        self.execute_cypher(
+            """MATCH (n:{}:Discourse) DETACH DELETE n """.format(self.cypher_safe_name)
+        )
         self.reset_hierarchy()
-        self.execute_cypher('''MATCH (n:Corpus) where n.name = $corpus_name DELETE n ''', corpus_name=self.corpus_name)
+        self.execute_cypher(
+            """MATCH (n:Corpus) where n.name = $corpus_name DELETE n """,
+            corpus_name=self.corpus_name,
+        )
         self.hierarchy = Hierarchy(corpus_name=self.corpus_name)
         self.cache_hierarchy()
 
@@ -367,11 +391,18 @@ class BaseContext(object):
             SplitQuery object
 
         """
-        if annotation_node.node_type not in self.hierarchy.annotation_types \
-                and annotation_node.node_type != 'pause':  # FIXME make more general
-            raise (GraphQueryError(
-                'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(
-                    annotation_node.name, ', '.join(sorted(self.hierarchy.annotation_types)))))
+        if (
+            annotation_node.node_type not in self.hierarchy.annotation_types
+            and annotation_node.node_type != "pause"
+        ):  # FIXME make more general
+            raise (
+                GraphQueryError(
+                    "The graph does not have any annotations of type '{}'.  Possible types are: {}".format(
+                        annotation_node.name,
+                        ", ".join(sorted(self.hierarchy.annotation_types)),
+                    )
+                )
+            )
 
         return SplitQuery(self, annotation_node)
 
@@ -390,11 +421,18 @@ class BaseContext(object):
             LexiconQuery object
 
         """
-        if annotation_node.node_type not in self.hierarchy.annotation_types \
-                and annotation_node.node_type != 'pause':  # FIXME make more general
-            raise (GraphQueryError(
-                'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(
-                    annotation_node.node_type, ', '.join(sorted(self.hierarchy.annotation_types)))))
+        if (
+            annotation_node.node_type not in self.hierarchy.annotation_types
+            and annotation_node.node_type != "pause"
+        ):  # FIXME make more general
+            raise (
+                GraphQueryError(
+                    "The graph does not have any annotations of type '{}'.  Possible types are: {}".format(
+                        annotation_node.node_type,
+                        ", ".join(sorted(self.hierarchy.annotation_types)),
+                    )
+                )
+            )
         return LexiconQuery(self, annotation_node)
 
     def query_discourses(self):
@@ -454,58 +492,70 @@ class BaseContext(object):
             Name of the discourse to remove
         """
         if name not in self.discourses:
-            raise GraphQueryError('{} is not a discourse in this corpus.'.format(name))
+            raise GraphQueryError("{} is not a discourse in this corpus.".format(name))
         d = self.discourse_sound_file(name)
-        if 'consonant_file_path' in d and d['consonant_file_path'] is not None and os.path.exists(d['consonant_file_path']):
+        if (
+            "consonant_file_path" in d
+            and d["consonant_file_path"] is not None
+            and os.path.exists(d["consonant_file_path"])
+        ):
             directory = self.discourse_audio_directory(name)
             if self.config.debug:
-                print('Removing', directory)
+                print("Removing", directory)
             shutil.rmtree(directory, ignore_errors=True)
 
         # Remove orphaned type nodes
         for a in self.hierarchy.annotation_types:
             # Remove tokens in discourse
-            statement = '''MATCH (d:{corpus_name}:Discourse)<-[:spoken_in]-(n:{corpus_name}:{atype})
+            statement = """MATCH (d:{corpus_name}:Discourse)<-[:spoken_in]-(n:{corpus_name}:{atype})
             WHERE d.name = $discourse
-            DETACH DELETE n'''.format(corpus_name=self.cypher_safe_name, atype=a)
+            DETACH DELETE n""".format(
+                corpus_name=self.cypher_safe_name, atype=a
+            )
             if self.config.debug:
                 print(statement)
             result = self.execute_cypher(statement, discourse=name)
             if self.config.debug:
                 for r in result:
-                    print('RESULT', r)
+                    print("RESULT", r)
         # Remove discourse node
-        statement = '''MATCH (d:{corpus_name}:Discourse)
+        statement = """MATCH (d:{corpus_name}:Discourse)
         WHERE d.name = $discourse
-        DETACH DELETE d'''.format(corpus_name=self.cypher_safe_name)
+        DETACH DELETE d""".format(
+            corpus_name=self.cypher_safe_name
+        )
         if self.config.debug:
             print(statement)
         result = self.execute_cypher(statement, discourse=name)
         if self.config.debug:
             for r in result:
-                print('RESULT', r)
+                print("RESULT", r)
 
         for a in self.hierarchy.annotation_types:
-            statement = '''MATCH (t:{type}_type:{corpus_name})
+            statement = """MATCH (t:{type}_type:{corpus_name})
             WHERE NOT (t)<-[:is_a]-()
-            DETACH DELETE t'''.format(type=a, corpus_name=self.cypher_safe_name)
+            DETACH DELETE t""".format(
+                type=a, corpus_name=self.cypher_safe_name
+            )
             if self.config.debug:
                 print(statement)
             result = self.execute_cypher(statement)
             if self.config.debug:
                 for r in result:
-                    print('RESULT', r)
+                    print("RESULT", r)
 
         # Remove orphaned speaker nodes
-        statement = '''MATCH (s:Speaker:{corpus_name})
+        statement = """MATCH (s:Speaker:{corpus_name})
         WHERE NOT (s)<-[:spoken_by]-()
-        DETACH DELETE s'''.format(corpus_name=self.cypher_safe_name)
+        DETACH DELETE s""".format(
+            corpus_name=self.cypher_safe_name
+        )
         if self.config.debug:
             print(statement)
         result = self.execute_cypher(statement)
         if self.config.debug:
             for r in result:
-                print('RESULT', r)
+                print("RESULT", r)
 
     @property
     def phones(self):
@@ -517,10 +567,11 @@ class BaseContext(object):
         list
             All phone labels in the corpus
         """
-        statement = '''MATCH (p:{phone_name}_type:{corpus_name}) return p.label as label'''.format(
-            phone_name=self.phone_name, corpus_name=self.cypher_safe_name)
+        statement = """MATCH (p:{phone_name}_type:{corpus_name}) return p.label as label""".format(
+            phone_name=self.phone_name, corpus_name=self.cypher_safe_name
+        )
         results = self.execute_cypher(statement)
-        return [r['label'] for r in results]
+        return [r["label"] for r in results]
 
     @property
     def words(self):
@@ -532,10 +583,11 @@ class BaseContext(object):
         list
             All word labels in the corpus
         """
-        statement = '''MATCH (p:{word_name}_type:{corpus_name}) return p.label as label'''.format(
-            word_name=self.word_name, corpus_name=self.cypher_safe_name)
+        statement = """MATCH (p:{word_name}_type:{corpus_name}) return p.label as label""".format(
+            word_name=self.word_name, corpus_name=self.cypher_safe_name
+        )
         results = self.execute_cypher(statement)
-        return [r['label'] for r in results]
+        return [r["label"] for r in results]
 
     @property
     def syllables(self):
@@ -547,7 +599,8 @@ class BaseContext(object):
         list
             All syllable labels in the corpus
         """
-        statement = '''MATCH (s:syllable_type:{corpus_name}) return s.label as label'''.format(
-            corpus_name=self.cypher_safe_name)
+        statement = """MATCH (s:syllable_type:{corpus_name}) return s.label as label""".format(
+            corpus_name=self.cypher_safe_name
+        )
         results = self.execute_cypher(statement)
-        return [r['label'] for r in results]
+        return [r["label"] for r in results]

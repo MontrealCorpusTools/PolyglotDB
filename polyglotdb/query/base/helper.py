@@ -1,7 +1,7 @@
 import json
 import re
 
-non_letter_finder = re.compile('\W')
+non_letter_finder = re.compile(r"\W")
 
 
 def value_for_cypher(value):
@@ -11,7 +11,7 @@ def value_for_cypher(value):
     Parameters
     ----------
     value : str, list, or boolean
-       
+
     Returns
     -------
     v : str
@@ -35,13 +35,13 @@ def key_for_cypher(key):
     Parameters
     ----------
     key : letter or non-letter
-        
+
     Returns
     -------
     key : str
         key made into a string
     """
-    key = key.replace("`",'')
+    key = key.replace("`", "")
     if non_letter_finder.search(key) is not None:
         return "`{}`".format(key)
     return key

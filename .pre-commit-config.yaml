@@ -1,0 +1,48 @@
+repos:
+  - repo: local
+    hooks:
+      - id: profile-check
+        name: no profiling
+        entry: '@profile'
+        language: pygrep
+        types: [ python ]
+  - repo: https://github.com/psf/black
+    rev: 23.9.1
+    hooks:
+      - id: black
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        entry: pflake8
+        additional_dependencies:
+          - pyproject-flake8
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
+    hooks:
+      - id: isort
+        additional_dependencies: [toml]
+  - repo: https://github.com/asottile/setup-cfg-fmt
+    rev: v2.2.0
+    hooks:
+      - id: setup-cfg-fmt
+        args:
+          - --min-py3-version
+          - "3.8"
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-ast
+      - id: check-builtin-literals
+      - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+      - id: debug-statements
+      - id: trailing-whitespace
+        exclude: .txt$
+      - id: end-of-file-fixer
+        exclude: .txt$
+      - id: check-added-large-files
+        args: ['--maxkb=2000']
+      - id: mixed-line-ending

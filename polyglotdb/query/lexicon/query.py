@@ -1,4 +1,4 @@
-from ..base import BaseQuery
+from polyglotdb.query.base import BaseQuery
 
 
 class LexiconQuery(BaseQuery):
@@ -19,12 +19,16 @@ class LexiconQuery(BaseQuery):
             Name of the subset
         """
         labels_to_add = []
-        if self.to_find.node_type not in self.corpus.hierarchy.subset_types or \
-                label not in self.corpus.hierarchy.subset_types[self.to_find.node_type]:
+        if (
+            self.to_find.node_type not in self.corpus.hierarchy.subset_types
+            or label not in self.corpus.hierarchy.subset_types[self.to_find.node_type]
+        ):
             labels_to_add.append(label)
         super(LexiconQuery, self).create_subset(label)
         if labels_to_add:
-            self.corpus.hierarchy.add_type_subsets(self.corpus, self.to_find.node_type, labels_to_add)
+            self.corpus.hierarchy.add_type_subsets(
+                self.corpus, self.to_find.node_type, labels_to_add
+            )
         self.corpus.encode_hierarchy()
 
     def remove_subset(self, label):
@@ -61,6 +65,10 @@ class LexiconQuery(BaseQuery):
                     props_to_add.append((k, type(kwargs[k])))
         super(LexiconQuery, self).set_properties(**kwargs)
         if props_to_add:
-            self.corpus.hierarchy.add_type_properties(self.corpus, self.to_find.node_type, props_to_add)
+            self.corpus.hierarchy.add_type_properties(
+                self.corpus, self.to_find.node_type, props_to_add
+            )
         if props_to_remove:
-            self.corpus.hierarchy.remove_type_properties(self.corpus, self.to_find.node_type, props_to_remove)
+            self.corpus.hierarchy.remove_type_properties(
+                self.corpus, self.to_find.node_type, props_to_remove
+            )

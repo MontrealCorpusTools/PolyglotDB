@@ -27,7 +27,7 @@ Workflow
 
 **This tutorial assumes you have already run Tutorials 1 and 2**, which import and enrich the corpus with syllable, speaker, and utterance information.
 
-Tutorial 5 can be followed in two ways, like other tutorials (see :ref:`here<tutorial_1_workflow>`): 
+Tutorial 5 can be followed in two ways, like other tutorials (see :ref:`here<tutorial_1_workflow>`):
 
 * Pasting in commands one by one into the Python interpreter
 * Running the entire script at once (``python tutorial_5.py``)
@@ -131,19 +131,19 @@ The CSV file generated will then be ready to open in other programs or in R for 
 
 Next steps
 ===============
-At this point, the corpus is ready for pitch analysis using R. We have provided an `rmd script`_ showcasing a possible approach, compiled 
-`here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_5_pitch.html>`_ 
+At this point, the corpus is ready for pitch analysis using R. We have provided an `rmd script`_ showcasing a possible approach, compiled
+`here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_5_pitch.html>`_
 (`source <https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_5_pitch.html>`_)
-These results were found using the full LibriSpeech-aligned dataset, 
+These results were found using the full LibriSpeech-aligned dataset,
 which contains many more speakers than the subset we have been using in tutorials so far.
 
 
 
 .. We have also provided results for running this script on the "LibriSpeech-aligned" (the full dataset) in a `follow-up analysis`_ html. These results contains many more speakers than the subset we have been using in tutorials so far to provide sufficient data for coherent analysis.
 
-.. At this point, the corpus is ready for formant analysis using R. 
-.. We have provided an `rmd script`_ showcasing a possible approach, compiled  
-.. `here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_4_formants.html>`_ (`source <https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html>`_). We have also provided results for running this script in a  html. 
+.. At this point, the corpus is ready for formant analysis using R.
+.. We have provided an `rmd script`_ showcasing a possible approach, compiled
+.. `here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_4_formants.html>`_ (`source <https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html>`_). We have also provided results for running this script in a  html.
 .. These results were found using the full LibriSpeech-aligned dataset, which contains many more speakers than the subset we have been using in tutorials so far.
 
 

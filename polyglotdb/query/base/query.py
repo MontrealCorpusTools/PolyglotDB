@@ -1,27 +1,26 @@
-from .results import BaseQueryResults
-
-from .func import Count
-from ..base.helper import key_for_cypher, value_for_cypher
+from polyglotdb.query.base.func import Count
+from polyglotdb.query.base.helper import key_for_cypher, value_for_cypher
+from polyglotdb.query.base.results import BaseQueryResults
 
 
 class BaseQuery(object):
-    query_template = '''{match}
+    query_template = """{match}
     {where}
     {optional_match}
     {with}
-    {return}'''
+    {return}"""
 
-    delete_template = '''DETACH DELETE {alias}'''
+    delete_template = """DETACH DELETE {alias}"""
 
-    aggregate_template = '''RETURN {aggregates}{order_by}'''
+    aggregate_template = """RETURN {aggregates}{order_by}"""
 
-    distinct_template = '''RETURN {columns}{order_by}{offset}{limit}'''
+    distinct_template = """RETURN {columns}{order_by}{offset}{limit}"""
 
-    set_label_template = '''{alias} {value}'''
+    set_label_template = """{alias} {value}"""
 
-    remove_label_template = '''{alias}{value}'''
+    remove_label_template = """{alias}{value}"""
 
-    set_property_template = '''{alias}.{attribute} = {value}'''
+    set_property_template = """{alias}.{attribute} = {value}"""
 
     def __init__(self, corpus, to_find):
         self.corpus = corpus
@@ -52,6 +51,7 @@ class BaseQuery(object):
 
     def required_nodes(self):
         from polyglotdb.query.annotations.attributes.hierarchical import HierarchicalAnnotation
+
         ns = {self.to_find}
         tf_type = type(self.to_find)
         for c in self._criterion:
@@ -59,7 +59,9 @@ class BaseQuery(object):
                 if isinstance(n, HierarchicalAnnotation):
                     n.reset_anchor_node(self.to_find)
             ns.update(x for x in c.nodes if type(x) is not tf_type)
-        for c in self._columns + self._hidden_columns + self._aggregate + self._preload + self._cache:
+        for c in (
+            self._columns + self._hidden_columns + self._aggregate + self._preload + self._cache
+        ):
             for n in c.nodes:
                 if isinstance(n, HierarchicalAnnotation):
                     n.reset_anchor_node(self.to_find)
@@ -98,10 +100,15 @@ class BaseQuery(object):
         Apply one or more filters to a query.
         """
         from .elements import EqualClauseElement
+
         for a in args:
             for c in self._criterion:
-                if isinstance(c, EqualClauseElement) and isinstance(a, EqualClauseElement) and \
-                        c.attribute.node == a.attribute.node and c.attribute.label == a.attribute.label:
+                if (
+                    isinstance(c, EqualClauseElement)
+                    and isinstance(a, EqualClauseElement)
+                    and c.attribute.node == a.attribute.node
+                    and c.attribute.label == a.attribute.label
+                ):
                     c.value = a.value
                     break
             else:
@@ -185,25 +192,29 @@ class BaseQuery(object):
         return self
 
     def limit(self, limit):
-        """ sets object limit to parameter limit """
+        """sets object limit to parameter limit"""
         self._limit = limit
         return self
 
     def to_json(self):
-        data = {'corpus_name': self.corpus.corpus_name,
-                'filters': [x.for_json() for x in self._criterion],
-                'columns': [x.for_json() for x in self._columns]}
+        data = {
+            "corpus_name": self.corpus.corpus_name,
+            "filters": [x.for_json() for x in self._criterion],
+            "columns": [x.for_json() for x in self._columns],
+        }
         return data
 
     def cypher(self):
         """
         Generates a Cypher statement based on the query.
         """
-        kwargs = {'match': '',
-                  'optional_match': '',
-                  'where': '',
-                  'with': '',
-                  'return': ''}
+        kwargs = {
+            "match": "",
+            "optional_match": "",
+            "where": "",
+            "with": "",
+            "return": "",
+        }
 
         # generate initial match strings
 
@@ -216,7 +227,7 @@ class BaseQuery(object):
             match_strings.add(node.for_match())
             withs.update(node.withs)
 
-        kwargs['match'] = 'MATCH ' + ',\n'.join(match_strings)
+        kwargs["match"] = "MATCH " + ",\n".join(match_strings)
 
         # generate main filters
 
@@ -226,7 +237,7 @@ class BaseQuery(object):
                 continue
             properties.append(c.for_cypher())
         if properties:
-            kwargs['where'] += 'WHERE ' + '\nAND '.join(properties)
+            kwargs["where"] += "WHERE " + "\nAND ".join(properties)
 
         optional_nodes = self.optional_nodes()
         optional_match_strings = []
@@ -236,14 +247,14 @@ class BaseQuery(object):
             optional_match_strings.append(node.for_match())
             withs.update(node.withs)
         if optional_match_strings:
-            s = ''
+            s = ""
             for i, o in enumerate(optional_match_strings):
-                s += 'OPTIONAL MATCH ' + o + '\n'
-            kwargs['optional_match'] = s
+                s += "OPTIONAL MATCH " + o + "\n"
+            kwargs["optional_match"] = s
 
         # generate subqueries
 
-        with_statements = ['WITH ' + ', '.join(withs)]
+        with_statements = ["WITH " + ", ".join(withs)]
 
         for node in nodes:
             if not node.has_subquery:
@@ -260,9 +271,9 @@ class BaseQuery(object):
             with_statements.append(statement)
 
             withs.update(node.withs)
-        kwargs['with'] = '\n'.join(with_statements)
+        kwargs["with"] = "\n".join(with_statements)
 
-        kwargs['return'] = self.generate_return()
+        kwargs["return"] = self.generate_return()
         cypher = self.query_template.format(**kwargs)
 
         return cypher
@@ -286,7 +297,7 @@ class BaseQuery(object):
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
 
     def set_properties(self, **kwargs):
-        self._set_properties = {k: v for k,v in kwargs.items()}
+        self._set_properties = {k: v for k, v in kwargs.items()}
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
         self._set_properties = {}
 
@@ -300,9 +311,10 @@ class BaseQuery(object):
         return r[0]
 
     def cypher_params(self):
-        from ..base.complex import ComplexClause
-        from ..base.elements import SubsetClauseElement, NotSubsetClauseElement
         from ..base.attributes import NodeAttribute
+        from ..base.complex import ComplexClause
+        from ..base.elements import NotSubsetClauseElement, SubsetClauseElement
+
         params = {}
         for c in self._criterion:
             if isinstance(c, ComplexClause):
@@ -312,7 +324,7 @@ class BaseQuery(object):
             else:
                 try:
                     if not isinstance(c.value, NodeAttribute):
-                        params[c.cypher_value_string()[1:-1].replace('`', '')] = c.value
+                        params[c.cypher_value_string()[1:-1].replace("`", "")] = c.value
                 except AttributeError:
                     pass
         return params
@@ -349,58 +361,61 @@ class BaseQuery(object):
 
     def _generate_delete_return(self):
         kwargs = {}
-        kwargs['alias'] = self.to_find.alias
+        kwargs["alias"] = self.to_find.alias
         return_statement = self.delete_template.format(**kwargs)
         return return_statement
 
     def _generate_cache_return(self):
         properties = []
         for c in self._cache:
-            kwargs = {'alias': c.node.cache_alias,
-                      'attribute': c.output_alias,
-                      'value': c.for_cypher()
-                      }
-            if c.label == 'position':
-                kwargs['alias'] = self.to_find.alias
+            kwargs = {
+                "alias": c.node.cache_alias,
+                "attribute": c.output_alias,
+                "value": c.for_cypher(),
+            }
+            if c.label == "position":
+                kwargs["alias"] = self.to_find.alias
             set_string = self.set_property_template.format(**kwargs)
             properties.append(set_string)
-        return 'SET {}'.format(', '.join(properties))
+        return "SET {}".format(", ".join(properties))
 
     def _generate_remove_labels_return(self):
         remove_label_strings = []
         kwargs = {}
-        kwargs['alias'] = self.to_find.alias
-        kwargs['value'] = ':' + ':'.join(map(key_for_cypher, self._remove_labels))
+        kwargs["alias"] = self.to_find.alias
+        kwargs["value"] = ":" + ":".join(map(key_for_cypher, self._remove_labels))
         remove_label_strings.append(self.remove_label_template.format(**kwargs))
-        return_statement = ''
+        return_statement = ""
         if remove_label_strings:
             if return_statement:
-                return_statement += '\nWITH {alias}\n'.format(alias=self.to_find.alias)
-            return_statement += '\nREMOVE ' + ', '.join(remove_label_strings)
+                return_statement += "\nWITH {alias}\n".format(alias=self.to_find.alias)
+            return_statement += "\nREMOVE " + ", ".join(remove_label_strings)
         return return_statement
 
     def _generate_set_properties_return(self):
         set_strings = []
         for k, v in self._set_properties.items():
             if v is None:
-                v = 'NULL'
+                v = "NULL"
             else:
                 v = value_for_cypher(v)
             s = self.set_property_template.format(alias=self.to_find.alias, attribute=k, value=v)
             set_strings.append(s)
-        return 'SET ' + ', '.join(set_strings)
+        return "SET " + ", ".join(set_strings)
 
     def _generate_set_labels_return(self):
         set_label_strings = []
         kwargs = {}
-        kwargs['alias'] = self.to_find.alias
-        kwargs['value'] = ':' + ':'.join(map(key_for_cypher, self._set_labels))
+        kwargs["alias"] = self.to_find.alias
+        kwargs["value"] = ":" + ":".join(map(key_for_cypher, self._set_labels))
         set_label_strings.append(self.set_label_template.format(**kwargs))
-        return 'SET ' + ', '.join(set_label_strings)
+        return "SET " + ", ".join(set_label_strings)
 
     def _generate_aggregate_return(self):
-        kwargs = {'order_by': self._generate_order_by(),
-                  'limit': self._generate_limit()}
+        kwargs = {
+            "order_by": self._generate_order_by(),
+            "limit": self._generate_limit(),
+        }
         properties = []
         for g in self._group_by:
             properties.append(g.aliased_for_output())
@@ -411,13 +426,15 @@ class BaseQuery(object):
             self._order_by.append((self._group_by[0], False))
         for a in self._aggregate:
             properties.append(a.aliased_for_output())
-        kwargs['aggregates'] = ', '.join(properties)
+        kwargs["aggregates"] = ", ".join(properties)
         return self.aggregate_template.format(**kwargs)
 
     def _generate_distinct_return(self):
-        kwargs = {'order_by': self._generate_order_by(),
-                  'limit': self._generate_limit(),
-                  'offset': self._generate_offset()}
+        kwargs = {
+            "order_by": self._generate_order_by(),
+            "limit": self._generate_limit(),
+            "offset": self._generate_offset(),
+        }
         properties = []
         for c in self._columns + self._hidden_columns:
             properties.append(c.aliased_for_output())
@@ -425,18 +442,18 @@ class BaseQuery(object):
             properties = self.to_find.withs
             for a in self._preload:
                 properties.extend(a.withs)
-        kwargs['columns'] = ', '.join(properties)
+        kwargs["columns"] = ", ".join(properties)
         return self.distinct_template.format(**kwargs)
 
     def _generate_limit(self):
         if self._limit is not None:
-            return '\nLIMIT {}'.format(self._limit)
-        return ''
+            return "\nLIMIT {}".format(self._limit)
+        return ""
 
     def _generate_offset(self):
         if self._offset is not None:
-            return '\nSKIP {}'.format(self._offset)
-        return ''
+            return "\nSKIP {}".format(self._offset)
+        return ""
 
     def _generate_order_by(self):
         properties = []
@@ -457,9 +474,9 @@ class BaseQuery(object):
                     element = c[0].for_cypher()
                     # query.columns(c[0])
             if c[1]:
-                element += ' DESC'
+                element += " DESC"
             properties.append(element)
 
         if properties:
-            return '\nORDER BY ' + ', '.join(properties)
-        return ''
+            return "\nORDER BY " + ", ".join(properties)
+        return ""

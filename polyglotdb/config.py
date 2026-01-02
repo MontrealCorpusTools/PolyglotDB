@@ -1,17 +1,17 @@
-import os
-import logging
 import configparser
+import logging
+import os
 
-CONFIG_DIR = os.environ.get('PGDB_HOME', os.path.expanduser('~/.pgdb'))
+CONFIG_DIR = os.environ.get("PGDB_HOME", os.path.expanduser("~/.pgdb"))
 
-BASE_DIR = os.path.join(CONFIG_DIR, 'data')
+BASE_DIR = os.path.join(CONFIG_DIR, "data")
 
-CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.ini')
+CONFIG_PATH = os.path.join(CONFIG_DIR, "config.ini")
 
 CONFIG = configparser.ConfigParser()
 if os.path.exists(CONFIG_PATH):
     CONFIG.read(CONFIG_PATH)
-    BASE_DIR = os.path.expanduser(os.path.join(CONFIG['Data']['directory'], 'data'))
+    BASE_DIR = os.path.expanduser(os.path.join(CONFIG["Data"]["directory"], "data"))
 
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
@@ -27,18 +27,18 @@ def setup_logger(logger_name, log_file, level=logging.INFO):
     level : int
         Minimum level to log
     """
-    l = logging.getLogger(logger_name)
-    formatter = logging.Formatter('%(asctime)s : %(message)s')
-    fileHandler = logging.FileHandler(log_file, mode='a')
+    logger = logging.getLogger(logger_name)
+    formatter = logging.Formatter("%(asctime)s : %(message)s")
+    fileHandler = logging.FileHandler(log_file, mode="a")
     fileHandler.setFormatter(formatter)
     streamHandler = logging.StreamHandler()
     streamHandler.setLevel(logging.ERROR)
     streamHandler.setFormatter(formatter)
 
-    l.setLevel(level)
-    l.addHandler(fileHandler)
-    l.addHandler(streamHandler)
-    l.info('---------INIT-----------')
+    logger.setLevel(level)
+    logger.addHandler(fileHandler)
+    logger.addHandler(streamHandler)
+    logger.info("---------INIT-----------")
 
 
 class CorpusConfig(object):
@@ -78,8 +78,8 @@ class CorpusConfig(object):
         self.acoustic_http_port = 8086
         self.graph_user = None
         self.graph_password = None
-        self.host = 'localhost'
-        self.query_behavior = 'speaker'
+        self.host = "localhost"
+        self.query_behavior = "speaker"
         self.graph_http_port = 7474
         self.graph_bolt_port = 7687
         self.debug = False
@@ -91,17 +91,17 @@ class CorpusConfig(object):
 
         self.log_level = logging.DEBUG
 
-        self.log_dir = os.path.join(self.base_dir, 'logs')
+        self.log_dir = os.path.join(self.base_dir, "logs")
         os.makedirs(self.log_dir, exist_ok=True)
 
-        self.temp_dir = os.path.join(self.base_dir, 'temp')
+        self.temp_dir = os.path.join(self.base_dir, "temp")
         os.makedirs(self.temp_dir, exist_ok=True)
-        self.data_dir = os.path.join(self.base_dir, 'data')
+        self.data_dir = os.path.join(self.base_dir, "data")
         os.makedirs(self.data_dir, exist_ok=True)
-        self.audio_dir = os.path.join(self.data_dir, 'audio')
+        self.audio_dir = os.path.join(self.data_dir, "audio")
         os.makedirs(self.audio_dir, exist_ok=True)
 
-        self.engine = 'sqlite'
+        self.engine = "sqlite"
         self.db_path = os.path.join(self.data_dir, self.corpus_name)
 
         self.time_sampling = 0.01
@@ -136,13 +136,15 @@ class CorpusConfig(object):
         dict
             Connection parameters
         """
-        kwargs = {'host': self.host,
-                  'port': self.acoustic_http_port,
-                  'database': self.corpus_name}
+        kwargs = {
+            "host": self.host,
+            "port": self.acoustic_http_port,
+            "database": self.corpus_name,
+        }
         if self.acoustic_user is not None:
-            kwargs['username'] = self.acoustic_user
+            kwargs["username"] = self.acoustic_user
         if self.acoustic_password is not None:
-            kwargs['password'] = self.acoustic_password
+            kwargs["password"] = self.acoustic_password
         return kwargs
 
     @property
@@ -156,4 +158,3 @@ class CorpusConfig(object):
             Connection string
         """
         return "bolt://{}:{}".format(self.host, self.graph_bolt_port)
-

@@ -8,7 +8,7 @@ Tutorials
 ********
 ========
 
-These tutorials walk you through the basic workflow of using PolyglotDB, from setting up a corpus to extracting acoustic measurements. 
+These tutorials walk you through the basic workflow of using PolyglotDB, from setting up a corpus to extracting acoustic measurements.
 
 **Tutorials 1–3** form a complete analysis and should be done in order. They show you how to import a small speech corpus, enrich it with information like syllables and utterances, and extract structured results.
 
@@ -16,7 +16,7 @@ These tutorials walk you through the basic workflow of using PolyglotDB, from se
 
 - **Note**: each of Tutorials 4-6  assumes that you have first run Tutorials 1-2 (which import and enrich the corpus).
 
-Before doing any tutorial you need to download one or both tutorial corpora. 
+Before doing any tutorial you need to download one or both tutorial corpora.
 
 For all tutorials, you can compare your results with the `expected output`_.
 
@@ -35,5 +35,3 @@ If at any point there’s some error or interruption in import or other stages o
    tutorial_formants.rst
    tutorial_pitch.rst
    tutorial_custom_script.rst
-
-

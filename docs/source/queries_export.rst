@@ -29,7 +29,7 @@ Export for token CSVs
 ---------------------
 
 If you wish to add properties to a set of tokens by means of a CSV, this can be achieved by using the token import tool explained in :ref:`enrich_tokens`.
-In order do this you will need a CSV that contains the ID of each token that you wish to evaluate. 
+In order do this you will need a CSV that contains the ID of each token that you wish to evaluate.
 The following code shows how to export all phones with their ID, begin, end and sound file, which could be useful for a phonetic analysis in an external tool.
 
 .. code-block:: python

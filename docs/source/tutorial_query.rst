@@ -26,7 +26,7 @@ Workflow
 ========
 
 
-This tutorial assumes you have already done Tutorials 1 and 2. Tutorial 3 can be followed in two ways, like Tutorials 1-2 (see :ref:`here<tutorial_1_workflow>`): 
+This tutorial assumes you have already done Tutorials 1 and 2. Tutorial 3 can be followed in two ways, like Tutorials 1-2 (see :ref:`here<tutorial_1_workflow>`):
 
 * Pasting in commands one by one into the Python interpreter
 * Running the entire script at once (``python tutorial_3.py``)
@@ -119,7 +119,7 @@ To test out the query, we can ``limit`` the results (for readability) and print 
                       )
 
         q = q.limit(10)
-        
+
         # Optional: Use order_by to enforce ordering on the output for easier comparison with the sample output.
         q = q.order_by(c.syllable.label)
         results = q.all()
@@ -154,7 +154,7 @@ For completeness, the full code for the query and export is given below.
                       c.syllable.speaker.name.column_name('speaker'),
                       c.syllable.discourse.name.column_name('file'),
                       )
-                      
+
         q = q.order_by(c.syllable.label)
         q.to_csv(export_path)
 
@@ -168,4 +168,3 @@ Tutorials 4-6 show examples of acoustic analyses that can be performed on enrich
 
 
 Tutorials 1-3 are identical to :ref:`Case Study 1<case_study_duration>`.  See "Step 4" there for R code to visualize and analyze the exported results from Tutorial 3 (in ``tutorial_3_subset_output.csv``).
-

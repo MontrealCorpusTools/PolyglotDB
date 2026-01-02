@@ -13,7 +13,7 @@ Version 1.3.1
 
 * Refined acoustic track related functionalities.
 * Upgraded denpencies: praatio to version 6.x, conch to version 0.4.0
-* Added import track from csv functionality. 
+* Added import track from csv functionality.
 
 Version 1.3.0
 =============

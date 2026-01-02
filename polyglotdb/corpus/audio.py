@@ -1,21 +1,30 @@
 import os
 import re
-import librosa
 import subprocess
 from datetime import datetime
 from decimal import Decimal
 
+import librosa
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
 
-from ..acoustics import analyze_pitch, analyze_formant_tracks, analyze_formant_points, analyze_intensity, \
-    analyze_script, analyze_track_script, analyze_utterance_pitch, update_utterance_pitch_track, analyze_vot
+from polyglotdb.acoustics import (
+    analyze_formant_points,
+    analyze_formant_tracks,
+    analyze_intensity,
+    analyze_pitch,
+    analyze_script,
+    analyze_track_script,
+    analyze_utterance_pitch,
+    analyze_vot,
+    update_utterance_pitch_track,
+)
+from polyglotdb.acoustics.classes import TimePoint, Track
+from polyglotdb.acoustics.formants.helper import save_formant_point_data
+from polyglotdb.acoustics.utils import generate_spectrogram, load_waveform
+from polyglotdb.corpus.syllabic import SyllabicContext
+from polyglotdb.io.importer.from_csv import import_track_csv, import_track_csvs
 
-from ..acoustics.formants.helper import save_formant_point_data
-from ..acoustics.classes import Track, TimePoint
-from .syllabic import SyllabicContext
-from ..acoustics.utils import load_waveform, generate_spectrogram
-from ..io.importer.from_csv import import_track_csv, import_track_csvs
 
 def sanitize_value(value, type):
     """
@@ -68,21 +77,21 @@ def generate_filter_string(discourse, begin, end, channel, num_points, kwargs):
     str
         InfluxDB query language WHERE clause to specify a track
     """
-    extra_filters = ['''"{}" = '{}' '''.format(k, v) for k, v in kwargs.items()]
-    filter_string = '''WHERE "discourse" = '{}'
+    extra_filters = [""""{}" = '{}' """.format(k, v) for k, v in kwargs.items()]
+    filter_string = """WHERE "discourse" = '{}'
                             AND "time" >= {}
                             AND "time" <= {}
                             AND "channel" = '{}'
-                            '''
+                            """
     if extra_filters:
-        filter_string += '\nAND {}'.format('\nAND '.join(extra_filters))
+        filter_string += "\nAND {}".format("\nAND ".join(extra_filters))
     if num_points:
         duration = end - begin
         time_step = duration / (num_points - 1)
         begin -= time_step / 2
         end += time_step / 2
         time_step *= 1000
-        filter_string += '\ngroup by time({}ms) fill(null)'.format(int(time_step))
+        filter_string += "\ngroup by time({}ms) fill(null)".format(int(time_step))
     discourse = discourse.replace("'", r"\'")
     filter_string = filter_string.format(discourse, s_to_nano(begin), s_to_nano(end), channel)
     return filter_string
@@ -103,8 +112,8 @@ def s_to_nano(seconds):
         Nanoseconds
     """
     if not isinstance(seconds, Decimal):
-        seconds = Decimal(seconds).quantize(Decimal('0.001'))
-    return int(seconds * Decimal('1e9'))
+        seconds = Decimal(seconds).quantize(Decimal("0.001"))
+    return int(seconds * Decimal("1e9"))
 
 
 def s_to_ms(seconds):
@@ -122,8 +131,8 @@ def s_to_ms(seconds):
         Milliseconds
     """
     if not isinstance(seconds, Decimal):
-        seconds = Decimal(seconds).quantize(Decimal('0.001'))
-    return int(seconds * Decimal('1e3'))
+        seconds = Decimal(seconds).quantize(Decimal("0.001"))
+    return int(seconds * Decimal("1e3"))
 
 
 def to_seconds(time_string):
@@ -143,19 +152,19 @@ def to_seconds(time_string):
     """Converts a string representing a date and time to a
     decimal representing number of seconds into the day"""
     try:
-        d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%S.%fZ')
+        d = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S.%fZ")
         s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
-    except:
+    except Exception:
         try:
-            d = datetime.strptime(time_string, '%Y-%m-%dT%H:%M:%SZ')
+            d = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%SZ")
             s = 60 * 60 * d.hour + 60 * d.minute + d.second + d.microsecond / 1e6
-        except:
-            m = re.search(r'T(\d{2}):(\d{2}):(\d+)\.(\d+)?', time_string)
+        except Exception:
+            m = re.search(r"T(\d{2}):(\d{2}):(\d+)\.(\d+)?", time_string)
             p = m.groups()
 
             s = 60 * 60 * int(p[0]) + 60 * int(p[1]) + int(p[2]) + int(p[3][:6]) / 1e6
 
-    s = Decimal(s).quantize(Decimal('0.001'))
+    s = Decimal(s).quantize(Decimal("0.001"))
     return s
 
 
@@ -185,18 +194,18 @@ class AudioContext(SyllabicContext):
             Sampling rate of the file
         """
         sound_file = self.discourse_sound_file(discourse)
-        if file_type == 'consonant':
+        if file_type == "consonant":
             path = os.path.expanduser(sound_file.consonant_file_path)
-        elif file_type == 'vowel':
+        elif file_type == "vowel":
             path = os.path.expanduser(sound_file.vowel_file_path)
-        elif file_type == 'low_freq':
+        elif file_type == "low_freq":
             path = os.path.expanduser(sound_file.low_freq_file_path)
         else:
             path = os.path.expanduser(sound_file.file_path)
         signal, sr = librosa.load(path, sr=None)
         return signal, sr
 
-    def load_waveform(self, discourse, file_type='consonant', begin=None, end=None):
+    def load_waveform(self, discourse, file_type="consonant", begin=None, end=None):
         """
         Loads a segment of a larger audio file.  If ``begin`` is unspecified, the segment will start at the beginning of
         the audio file, and if ``end`` is unspecified, the segment will end at the end of the audio file.
@@ -220,17 +229,17 @@ class AudioContext(SyllabicContext):
             Sampling rate of the file
         """
         sf = self.discourse_sound_file(discourse)
-        if file_type == 'consonant':
-            file_path = sf['consonant_file_path']
-        elif file_type == 'vowel':
-            file_path = sf['vowel_file_path']
-        elif file_type == 'low_freq':
-            file_path = sf['low_freq_file_path']
+        if file_type == "consonant":
+            file_path = sf["consonant_file_path"]
+        elif file_type == "vowel":
+            file_path = sf["vowel_file_path"]
+        elif file_type == "low_freq":
+            file_path = sf["low_freq_file_path"]
         else:
-            file_path = sf['file_path']
+            file_path = sf["file_path"]
         return load_waveform(file_path, begin, end)
 
-    def generate_spectrogram(self, discourse, file_type='consonant', begin=None, end=None):
+    def generate_spectrogram(self, discourse, file_type="consonant", begin=None, end=None):
         """
         Generate a spectrogram from an audio file. If ``begin`` is unspecified, the segment will start at the beginning of
         the audio file, and if ``end`` is unspecified, the segment will end at the end of the audio file.
@@ -258,9 +267,17 @@ class AudioContext(SyllabicContext):
         signal, sr = self.load_waveform(discourse, file_type, begin, end)
         return generate_spectrogram(signal, sr)
 
-    def analyze_pitch(self, source='praat', algorithm='base',
-                      absolute_min_pitch=50, absolute_max_pitch=500, adjusted_octaves=1,
-                      stop_check=None, call_back=None, multiprocessing=True):
+    def analyze_pitch(
+        self,
+        source="praat",
+        algorithm="base",
+        absolute_min_pitch=50,
+        absolute_max_pitch=500,
+        adjusted_octaves=1,
+        stop_check=None,
+        call_back=None,
+        multiprocessing=True,
+    ):
         """
         Analyze pitch tracks and save them to the database.
 
@@ -285,10 +302,19 @@ class AudioContext(SyllabicContext):
         multiprocessing : bool
             Flag whether to use multiprocessing or threading
         """
-        analyze_pitch(self, source, algorithm, stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing,
-                      absolute_min_pitch=absolute_min_pitch, absolute_max_pitch=absolute_max_pitch, adjusted_octaves=adjusted_octaves)
+        analyze_pitch(
+            self,
+            source,
+            algorithm,
+            stop_check=stop_check,
+            call_back=call_back,
+            multiprocessing=multiprocessing,
+            absolute_min_pitch=absolute_min_pitch,
+            absolute_max_pitch=absolute_max_pitch,
+            adjusted_octaves=adjusted_octaves,
+        )
 
-    def analyze_utterance_pitch(self, utterance, source='praat', **kwargs):
+    def analyze_utterance_pitch(self, utterance, source="praat", **kwargs):
         """
         Analyze a single utterance's pitch track.
 
@@ -330,16 +356,19 @@ class AudioContext(SyllabicContext):
         """
         return update_utterance_pitch_track(self, utterance, new_track)
 
-    def analyze_vot(self, classifier,
-                    stop_label="stops",
-                    stop_check=None,
-                    call_back=None,
-                    multiprocessing=False,
-                    overwrite_edited=False,
-                    vot_min=5,
-                    vot_max=100,
-                    window_min=-30,
-                    window_max=30):
+    def analyze_vot(
+        self,
+        classifier,
+        stop_label="stops",
+        stop_check=None,
+        call_back=None,
+        multiprocessing=False,
+        overwrite_edited=False,
+        vot_min=5,
+        vot_max=100,
+        window_min=-30,
+        window_max=30,
+    ):
         """
         Compute VOTs for stops and save them to the database.
 
@@ -368,14 +397,23 @@ class AudioContext(SyllabicContext):
         multiprocessing : bool
             Flag to use multiprocessing, otherwise will use threading
         """
-        analyze_vot(self, classifier, stop_label=stop_label, stop_check=stop_check,
-                    call_back=call_back, multiprocessing=multiprocessing,
-                    overwrite_edited=overwrite_edited,
-                    vot_min=vot_min, vot_max=vot_max, window_min=window_min,
-                    window_max=window_max)
+        analyze_vot(
+            self,
+            classifier,
+            stop_label=stop_label,
+            stop_check=stop_check,
+            call_back=call_back,
+            multiprocessing=multiprocessing,
+            overwrite_edited=overwrite_edited,
+            vot_min=vot_min,
+            vot_max=vot_max,
+            window_min=window_min,
+            window_max=window_max,
+        )
 
-    def analyze_formant_points(self, stop_check=None, call_back=None, multiprocessing=True,
-                               vowel_label=None):
+    def analyze_formant_points(
+        self, stop_check=None, call_back=None, multiprocessing=True, vowel_label=None
+    ):
         """
         Compute formant tracks and save them to the database
 
@@ -392,12 +430,23 @@ class AudioContext(SyllabicContext):
         vowel_label : str, optional
             Optional subset of phones to compute tracks over.  If None, then tracks over utterances are computed.
         """
-        data = analyze_formant_points(self,  stop_check=stop_check, call_back=call_back,
-                               multiprocessing=multiprocessing, vowel_label=vowel_label)
+        data = analyze_formant_points(
+            self,
+            stop_check=stop_check,
+            call_back=call_back,
+            multiprocessing=multiprocessing,
+            vowel_label=vowel_label,
+        )
         save_formant_point_data(self, data)
 
-    def analyze_formant_tracks(self, source='praat', stop_check=None, call_back=None, multiprocessing=True,
-                               vowel_label=None):
+    def analyze_formant_tracks(
+        self,
+        source="praat",
+        stop_check=None,
+        call_back=None,
+        multiprocessing=True,
+        vowel_label=None,
+    ):
         """
         Compute formant tracks and save them to the database
 
@@ -416,10 +465,18 @@ class AudioContext(SyllabicContext):
         vowel_label : str, optional
             Optional subset of phones to compute tracks over.  If None, then tracks over utterances are computed.
         """
-        analyze_formant_tracks(self, source=source, stop_check=stop_check, call_back=call_back,
-                               multiprocessing=multiprocessing, vowel_label=vowel_label)
+        analyze_formant_tracks(
+            self,
+            source=source,
+            stop_check=stop_check,
+            call_back=call_back,
+            multiprocessing=multiprocessing,
+            vowel_label=vowel_label,
+        )
 
-    def analyze_intensity(self, source='praat', stop_check=None, call_back=None, multiprocessing=True):
+    def analyze_intensity(
+        self, source="praat", stop_check=None, call_back=None, multiprocessing=True
+    ):
         """
         Compute intensity tracks and save them to the database
 
@@ -438,8 +495,19 @@ class AudioContext(SyllabicContext):
         """
         analyze_intensity(self, source, stop_check, call_back, multiprocessing=multiprocessing)
 
-    def analyze_script(self, subset=None, annotation_type=None, script_path=None, duration_threshold=0.01, padding=0, arguments=None, stop_check=None,
-                       call_back=None, multiprocessing=True, file_type='consonant'):
+    def analyze_script(
+        self,
+        subset=None,
+        annotation_type=None,
+        script_path=None,
+        duration_threshold=0.01,
+        padding=0,
+        arguments=None,
+        stop_check=None,
+        call_back=None,
+        multiprocessing=True,
+        file_type="consonant",
+    ):
         """
         Use a Praat script to analyze annotation types in the corpus.  The Praat script must return properties per phone (i.e.,
         point measures, not a track), and these properties will be saved to the Neo4j database.
@@ -472,11 +540,34 @@ class AudioContext(SyllabicContext):
         list
             List of the names of newly added properties to the Neo4j database
         """
-        return analyze_script(self, subset=subset, annotation_type=annotation_type, script_path=script_path, duration_threshold=duration_threshold,
-                              padding=padding, arguments=arguments, stop_check=stop_check, call_back=call_back, multiprocessing=multiprocessing)
+        return analyze_script(
+            self,
+            subset=subset,
+            annotation_type=annotation_type,
+            script_path=script_path,
+            duration_threshold=duration_threshold,
+            padding=padding,
+            arguments=arguments,
+            stop_check=stop_check,
+            call_back=call_back,
+            multiprocessing=multiprocessing,
+        )
 
-    def analyze_track_script(self, acoustic_name,properties, script_path=None, subset=None, annotation_type='phone',
-                                  duration_threshold=0.01, padding=0, arguments=None, call_back=None, file_type='consonant', stop_check=None, multiprocessing=True):
+    def analyze_track_script(
+        self,
+        acoustic_name,
+        properties,
+        script_path=None,
+        subset=None,
+        annotation_type="phone",
+        duration_threshold=0.01,
+        padding=0,
+        arguments=None,
+        call_back=None,
+        file_type="consonant",
+        stop_check=None,
+        multiprocessing=True,
+    ):
         """
         Use a Praat script to analyze phones in the corpus.  The Praat script must return a track, and these tracks will
         be saved to the InfluxDB database.
@@ -508,18 +599,33 @@ class AudioContext(SyllabicContext):
         file_type : str
             Sampling rate type to use, one of ``consonant``, ``vowel``, or ``low_freq``
         """
-        return analyze_track_script(self, acoustic_name=acoustic_name, properties=properties, script_path=script_path, subset=subset, annotation_type=annotation_type,
-                                  duration_threshold=duration_threshold, padding=padding, arguments=arguments, call_back=call_back, file_type=file_type, stop_check=stop_check, multiprocessing=multiprocessing)
-    
+        return analyze_track_script(
+            self,
+            acoustic_name=acoustic_name,
+            properties=properties,
+            script_path=script_path,
+            subset=subset,
+            annotation_type=annotation_type,
+            duration_threshold=duration_threshold,
+            padding=padding,
+            arguments=arguments,
+            call_back=call_back,
+            file_type=file_type,
+            stop_check=stop_check,
+            multiprocessing=multiprocessing,
+        )
+
     def reset_formant_points(self):
         """
         Reset formant point measures encoded in the corpus
         """
         encoded_props = []
-        for prop in ['F1', 'F2', 'F3', 'B1', 'B2', 'B3', 'A1', 'A2', 'A3']:
-            if self.hierarchy.has_token_property('phone', prop):
+        for prop in ["F1", "F2", "F3", "B1", "B2", "B3", "A1", "A2", "A3"]:
+            if self.hierarchy.has_token_property("phone", prop):
                 encoded_props.append(prop)
-        q = self.query_graph(getattr(self, self.phone_name)).set_properties(**{x: None for x in encoded_props})
+        self.query_graph(getattr(self, self.phone_name)).set_properties(
+            **{x: None for x in encoded_props}
+        )
 
     def genders(self):
         """
@@ -531,12 +637,15 @@ class AudioContext(SyllabicContext):
             List of gender values
         """
         res = self.execute_cypher(
-            '''MATCH (s:Speaker:{corpus_name}) RETURN s.gender as gender'''.format(corpus_name=self.cypher_safe_name))
+            """MATCH (s:Speaker:{corpus_name}) RETURN s.gender as gender""".format(
+                corpus_name=self.cypher_safe_name
+            )
+        )
         genders = set()
         for s in res:
-            g = s['gender']
+            g = s["gender"]
             if g is None:
-                g = ''
+                g = ""
             genders.add(g)
         return sorted(genders)
 
@@ -558,19 +667,24 @@ class AudioContext(SyllabicContext):
         acoustic_type : str
             Name of the acoustic measurement to reset
         """
-        self.acoustic_client().query('''DROP MEASUREMENT "{}";'''.format(acoustic_type))
+        self.acoustic_client().query("""DROP MEASUREMENT "{}";""".format(acoustic_type))
         if acoustic_type in self.hierarchy.acoustics:
-            self.hierarchy.acoustic_properties = {k: v for k, v in self.hierarchy.acoustic_properties.items() if
-                                                  k != acoustic_type}
+            self.hierarchy.acoustic_properties = {
+                k: v for k, v in self.hierarchy.acoustic_properties.items() if k != acoustic_type
+            }
             self.encode_hierarchy()
 
     def reset_vot(self):
         """
         Reset all VOT measurements in the corpus
         """
-        self.execute_cypher('''MATCH (v:vot:{corpus_name}) DETACH DELETE v'''.format(corpus_name=self.cypher_safe_name))
-        if 'phone' in self.hierarchy.subannotations:
-            if 'vot' in self.hierarchy.subannotations["phone"]:
+        self.execute_cypher(
+            """MATCH (v:vot:{corpus_name}) DETACH DELETE v""".format(
+                corpus_name=self.cypher_safe_name
+            )
+        )
+        if "phone" in self.hierarchy.subannotations:
+            if "vot" in self.hierarchy.subannotations["phone"]:
                 self.hierarchy.subannotation_properties.pop("vot")
                 self.hierarchy.subannotations["phone"].remove("vot")
                 self.encode_hierarchy()
@@ -610,17 +724,20 @@ class AudioContext(SyllabicContext):
         dict
             Information for the audio file path
         """
-        statement = '''MATCH (d:Discourse:{corpus_name}) WHERE d.name = $discourse_name return d'''.format(
-            corpus_name=self.cypher_safe_name)
+        statement = (
+            """MATCH (d:Discourse:{corpus_name}) WHERE d.name = $discourse_name return d""".format(
+                corpus_name=self.cypher_safe_name
+            )
+        )
         results = self.execute_cypher(statement, discourse_name=discourse)
         for r in results:
-            d = r['d']
+            d = r["d"]
             break
         else:
-            raise Exception('Could not find discourse {}'.format(discourse))
+            raise Exception("Could not find discourse {}".format(discourse))
         return d
 
-    def utterance_sound_file(self, utterance_id, file_type='consonant'):
+    def utterance_sound_file(self, utterance_id, file_type="consonant"):
         """
         Generate an audio file just for a single utterance in an audio file.
 
@@ -636,18 +753,35 @@ class AudioContext(SyllabicContext):
         str
             Path to the generated sound file
         """
-        q = self.query_graph(self.utterance).filter(self.utterance.id == utterance_id).columns(
-            self.utterance.begin.column_name('begin'),
-            self.utterance.end.column_name('end'),
-            self.utterance.discourse.name.column_name('discourse'))
+        q = (
+            self.query_graph(self.utterance)
+            .filter(self.utterance.id == utterance_id)
+            .columns(
+                self.utterance.begin.column_name("begin"),
+                self.utterance.end.column_name("end"),
+                self.utterance.discourse.name.column_name("discourse"),
+            )
+        )
         utterance_info = q.all()[0]
-        path = os.path.join(self.discourse_audio_directory(utterance_info['discourse']),
-                            '{}_{}.wav'.format(utterance_id, file_type))
+        path = os.path.join(
+            self.discourse_audio_directory(utterance_info["discourse"]),
+            "{}_{}.wav".format(utterance_id, file_type),
+        )
         if os.path.exists(path):
             return path
-        fname = self.discourse_sound_file(utterance_info['discourse'])["{}_file_path".format(file_type)]
-        subprocess.call(['sox', fname, path, 'trim', str(utterance_info['begin']),
-                         str(utterance_info['end'] - utterance_info['begin'])])
+        fname = self.discourse_sound_file(utterance_info["discourse"])[
+            "{}_file_path".format(file_type)
+        ]
+        subprocess.call(
+            [
+                "sox",
+                fname,
+                path,
+                "trim",
+                str(utterance_info["begin"]),
+                str(utterance_info["end"] - utterance_info["begin"]),
+            ]
+        )
         return path
 
     def has_all_sound_files(self):
@@ -689,7 +823,7 @@ class AudioContext(SyllabicContext):
             self._has_sound_files = False
             for d in self.discourses:
                 sf = self.discourse_sound_file(d)
-                if sf['file_path'] is not None:
+                if sf["file_path"] is not None:
                     self._has_sound_files = True
                     break
         return self._has_sound_files
@@ -712,7 +846,7 @@ class AudioContext(SyllabicContext):
         try:
             result = client.query(query)
         except InfluxDBClientError:
-            print('There was an issue with the following query:')
+            print("There was an issue with the following query:")
             print(query)
             raise
         return result
@@ -739,29 +873,42 @@ class AudioContext(SyllabicContext):
         """
         properties = [x[0] for x in self.hierarchy.acoustic_properties[acoustic_name]]
         property_names = ["{}".format(x) for x in properties]
-        columns = '"time", {}'.format(', '.join(property_names))
-        speaker = speaker.replace("'", r"\'") # Escape apostrophes
-        discourse = discourse.replace("'", r"\'") # Escape apostrophes
+        columns = '"time", {}'.format(", ".join(property_names))
+        speaker = speaker.replace("'", r"\'")  # Escape apostrophes
+        discourse = discourse.replace("'", r"\'")  # Escape apostrophes
         if utterance_id is not None:
-            query = '''select {} from "{}"
+            query = """select {} from "{}"
                             WHERE "utterance_id" = '{}'
                             AND "discourse" = '{}'
-                            AND "speaker" = '{}';'''.format(columns, acoustic_name, utterance_id, discourse, speaker)
+                            AND "speaker" = '{}';""".format(
+                columns, acoustic_name, utterance_id, discourse, speaker
+            )
         else:
-            query = '''select {} from "{}"
+            query = """select {} from "{}"
                             WHERE "discourse" = '{}'
-                            AND "speaker" = '{}';'''.format(columns, acoustic_name, discourse, speaker)
+                            AND "speaker" = '{}';""".format(
+                columns, acoustic_name, discourse, speaker
+            )
         result = self.execute_influxdb(query)
         track = Track()
         for r in result.get_points(acoustic_name):
-            s = to_seconds(r['time'])
+            s = to_seconds(r["time"])
             p = TimePoint(s)
             for name in properties:
                 p.add_value(name, r[name])
             track.add(p)
         return track
 
-    def get_acoustic_measure(self, acoustic_name, discourse, begin, end, channel=0, relative_time=False, **kwargs):
+    def get_acoustic_measure(
+        self,
+        acoustic_name,
+        discourse,
+        begin,
+        end,
+        channel=0,
+        relative_time=False,
+        **kwargs,
+    ):
         """
         Get acoustic for a given discourse and time range
 
@@ -787,23 +934,25 @@ class AudioContext(SyllabicContext):
         :class:`polyglotdb.acoustics.classes.Track`
             Track object
         """
-        begin = Decimal(begin).quantize(Decimal('0.001'))
-        end = Decimal(end).quantize(Decimal('0.001'))
-        num_points = kwargs.pop('num_points', 0)
+        begin = Decimal(begin).quantize(Decimal("0.001"))
+        end = Decimal(end).quantize(Decimal("0.001"))
+        num_points = kwargs.pop("num_points", 0)
         filter_string = generate_filter_string(discourse, begin, end, channel, num_points, kwargs)
 
         properties = [x[0] for x in self.hierarchy.acoustic_properties[acoustic_name]]
         property_names = ["{}".format(x) for x in properties]
         if num_points:
-            columns = ', '.join(['mean({})'.format(x) for x in property_names])
+            columns = ", ".join(["mean({})".format(x) for x in property_names])
         else:
-            columns = '"time", {}'.format(', '.join(property_names))
-        query = '''select {} from "{}"
-                        {};'''.format(columns, acoustic_name, filter_string)
+            columns = '"time", {}'.format(", ".join(property_names))
+        query = """select {} from "{}"
+                        {};""".format(
+            columns, acoustic_name, filter_string
+        )
         result = self.execute_influxdb(query)
         track = Track()
         for r in result.get_points(acoustic_name):
-            s = to_seconds(r['time'])
+            s = to_seconds(r["time"])
             if relative_time:
                 s = (s - begin) / (end - begin)
             p = TimePoint(s)
@@ -819,33 +968,50 @@ class AudioContext(SyllabicContext):
         for seg, track in tracks.items():
             if not len(track.keys()):
                 continue
-            file_path, begin, end, channel, utterance_id = seg.file_path, seg.begin, seg.end, seg.channel, seg[
-                'utterance_id']
+            file_path, _, _, channel, utterance_id = (
+                seg.file_path,
+                seg.begin,
+                seg.end,
+                seg.channel,
+                seg["utterance_id"],
+            )
             res = self.execute_cypher(
-                'MATCH (d:Discourse:{corpus_name}) where d.low_freq_file_path = $file_path OR '
-                'd.vowel_file_path = $file_path OR '
-                'd.consonant_file_path = $file_path '
-                'RETURN d.name as name'.format(
-                    corpus_name=self.cypher_safe_name), file_path=file_path)
+                "MATCH (d:Discourse:{corpus_name}) where d.low_freq_file_path = $file_path OR "
+                "d.vowel_file_path = $file_path OR "
+                "d.consonant_file_path = $file_path "
+                "RETURN d.name as name".format(corpus_name=self.cypher_safe_name),
+                file_path=file_path,
+            )
             for r in res:
-                discourse = r['name']
+                discourse = r["name"]
             phone_type = getattr(self, self.phone_name)
             min_time = min(track.keys())
             max_time = max(track.keys())
             q = self.query_graph(phone_type).filter(phone_type.discourse.name == discourse)
             q = q.filter(phone_type.utterance.id == utterance_id)
             q = q.filter(phone_type.end >= min_time).filter(phone_type.begin <= max_time)
-            columns = [phone_type.label.column_name('label'),
-                        phone_type.begin.column_name('begin'), 
-                        phone_type.end.column_name('end'),
-                        phone_type.word.label.column_name('word_label')]
-            if 'syllable' in self.annotation_types:
-                columns.append(phone_type.syllable.label.column_name('syllable_label'))
+            columns = [
+                phone_type.label.column_name("label"),
+                phone_type.begin.column_name("begin"),
+                phone_type.end.column_name("end"),
+                phone_type.word.label.column_name("word_label"),
+            ]
+            if "syllable" in self.annotation_types:
+                columns.append(phone_type.syllable.label.column_name("syllable_label"))
                 q = q.columns(*columns).order_by(phone_type.begin)
-                phones = [(x['label'], x['begin'], x['end'], x['word_label'], x['syllable_label']) for x in q.all()]
+                phones = [
+                    (
+                        x["label"],
+                        x["begin"],
+                        x["end"],
+                        x["word_label"],
+                        x["syllable_label"],
+                    )
+                    for x in q.all()
+                ]
             else:
                 q = q.columns(*columns).order_by(phone_type.begin)
-                phones = [(x['label'], x['begin'], x['end'], x['word_label']) for x in q.all()]
+                phones = [(x["label"], x["begin"], x["end"], x["word_label"]) for x in q.all()]
             for time_point, value in track.items():
                 fields = {}
                 for name, type in measures:
@@ -861,7 +1027,7 @@ class AudioContext(SyllabicContext):
                     if p[1] > time_point:
                         break
                     label = p[0]
-                    if 'syllable' in self.annotation_types:
+                    if "syllable" in self.annotation_types:
                         syllable_label = p[4]
                     word_label = p[3]
                     if i == len(phones) - 1:
@@ -870,19 +1036,24 @@ class AudioContext(SyllabicContext):
                     label = None
                 if label is None:
                     continue
-                t_dict = {'speaker': speaker, 'discourse': discourse, 'channel': channel}
-                fields['phone'] = label
-                fields['word'] = word_label
-                fields['utterance_id'] = utterance_id
-                if 'syllable' in self.annotation_types:
-                    fields['syllable'] = syllable_label
-                d = {'measurement': acoustic_name,
-                        'tags': t_dict,
-                        'time': s_to_ms(time_point),
-                        'fields': fields
-                        }
+                t_dict = {
+                    "speaker": speaker,
+                    "discourse": discourse,
+                    "channel": channel,
+                }
+                fields["phone"] = label
+                fields["word"] = word_label
+                fields["utterance_id"] = utterance_id
+                if "syllable" in self.annotation_types:
+                    fields["syllable"] = syllable_label
+                d = {
+                    "measurement": acoustic_name,
+                    "tags": t_dict,
+                    "time": s_to_ms(time_point),
+                    "fields": fields,
+                }
                 data.append(d)
-        self.acoustic_client().write_points(data, batch_size=1000, time_precision='ms')
+        self.acoustic_client().write_points(data, batch_size=1000, time_precision="ms")
 
     def _save_measurement(self, sound_file, track, acoustic_name, **kwargs):
         if not len(track.keys()):
@@ -892,33 +1063,35 @@ class AudioContext(SyllabicContext):
         if sound_file is None:
             return
         measures = self.hierarchy.acoustic_properties[acoustic_name]
-        if kwargs.get('channel', None) is None:
-            kwargs['channel'] = 0
+        if kwargs.get("channel", None) is None:
+            kwargs["channel"] = 0
         data = []
         tag_dict = {}
         if isinstance(sound_file, str):
-            kwargs['discourse'] = sound_file
+            kwargs["discourse"] = sound_file
         else:
-            kwargs['discourse'] = sound_file['name']
-        utterance_id = kwargs.pop('utterance_id', None)
+            kwargs["discourse"] = sound_file["name"]
+        utterance_id = kwargs.pop("utterance_id", None)
         tag_dict.update(kwargs)
         phone_type = getattr(self, self.phone_name)
         min_time = min(track.keys())
         max_time = max(track.keys())
-        q = self.query_graph(phone_type).filter(phone_type.discourse.name == kwargs['discourse'])
+        q = self.query_graph(phone_type).filter(phone_type.discourse.name == kwargs["discourse"])
         q = q.filter(phone_type.end >= min_time).filter(phone_type.begin <= max_time)
-        columns = [phone_type.label.column_name('label'),
-                    phone_type.begin.column_name('begin'), 
-                    phone_type.end.column_name('end'),
-                    phone_type.word.label.column_name('word_label'),
-                    phone_type.speaker.name.column_name('speaker')]
-        column_labels = ['label', 'begin', 'end', 'word_label', 'speaker']
+        columns = [
+            phone_type.label.column_name("label"),
+            phone_type.begin.column_name("begin"),
+            phone_type.end.column_name("end"),
+            phone_type.word.label.column_name("word_label"),
+            phone_type.speaker.name.column_name("speaker"),
+        ]
+        column_labels = ["label", "begin", "end", "word_label", "speaker"]
         if "utterance" in self.annotation_types:
-            columns.append(phone_type.syllable.label.column_name('utterance_id'))
-            column_labels.append('utterance_id')
-        if 'syllable' in self.annotation_types:
-            columns.append(phone_type.syllable.label.column_name('syllable_label'))
-            column_labels.append('syllable_label')
+            columns.append(phone_type.syllable.label.column_name("utterance_id"))
+            column_labels.append("utterance_id")
+        if "syllable" in self.annotation_types:
+            columns.append(phone_type.syllable.label.column_name("syllable_label"))
+            column_labels.append("syllable_label")
         q = q.columns(*columns).order_by(phone_type.begin)
         phones = [{y: x[y] for y in column_labels} for x in q.all()]
         for time_point, value in track.items():
@@ -934,32 +1107,33 @@ class AudioContext(SyllabicContext):
             word_label = None
             syllable_label = None
             for i, p in enumerate(phones):
-                if p['begin'] > time_point:
+                if p["begin"] > time_point:
                     break
-                label = p['label']
-                speaker = p['speaker']
-                if 'syllable' in self.annotation_types:
-                    syllable_label = p['syllable_label']
-                word_label = p['word_label']
+                label = p["label"]
+                speaker = p["speaker"]
+                if "syllable" in self.annotation_types:
+                    syllable_label = p["syllable_label"]
+                word_label = p["word_label"]
                 if utterance_id is None:
-                    utterance_id = p.get('utterance_id', None)
+                    utterance_id = p.get("utterance_id", None)
                 if i == len(phones) - 1:
                     break
             if speaker is None:
                 continue
-            t_dict = {'speaker': speaker}
+            t_dict = {"speaker": speaker}
             t_dict.update(tag_dict)
             if utterance_id is not None:
-                fields['utterance_id'] = utterance_id
-            fields['phone'] = label
-            fields['word'] = word_label
-            if 'syllable' in self.annotation_types:
-                fields['syllable'] = syllable_label
-            d = {'measurement': acoustic_name,
-                 'tags': t_dict,
-                 'time': s_to_nano(time_point),
-                 'fields': fields
-                 }
+                fields["utterance_id"] = utterance_id
+            fields["phone"] = label
+            fields["word"] = word_label
+            if "syllable" in self.annotation_types:
+                fields["syllable"] = syllable_label
+            d = {
+                "measurement": acoustic_name,
+                "tags": t_dict,
+                "time": s_to_nano(time_point),
+                "fields": fields,
+            }
             data.append(d)
         self.acoustic_client().write_points(data, batch_size=1000)
 
@@ -1013,13 +1187,17 @@ class AudioContext(SyllabicContext):
         if acoustic_name not in self.hierarchy.acoustics:
             return False
         discourse = discourse.replace("'", r"\'")
-        query = '''select * from "{}" WHERE "discourse" = '{}' LIMIT 1;'''.format(acoustic_name, discourse)
+        query = """select * from "{}" WHERE "discourse" = '{}' LIMIT 1;""".format(
+            acoustic_name, discourse
+        )
         result = self.execute_influxdb(query)
         if len(result) == 0:
             return False
         return True
 
-    def encode_acoustic_statistic(self, acoustic_name, statistic, by_annotation=None, by_speaker=True):
+    def encode_acoustic_statistic(
+        self, acoustic_name, statistic, by_annotation=None, by_speaker=True
+    ):
         """
         Computes and saves as type properties summary statistics on a by speaker or by phone basis (or both) for a
         given acoustic measure.
@@ -1039,42 +1217,55 @@ class AudioContext(SyllabicContext):
 
         """
         if not by_speaker and not by_annotation:
-            raise (Exception('Please specify either by_annotation, by_speaker or both.'))
-        
+            raise (Exception("Please specify either by_annotation, by_speaker or both."))
+
         valid_annotation_types = [atype for atype in self.annotation_types if atype != "utterance"]
 
         if by_annotation and by_annotation not in valid_annotation_types:
-            raise Exception('Annotation type must be one of: {}.'.format(', '.join(valid_annotation_types)))
+            raise Exception(
+                "Annotation type must be one of: {}.".format(", ".join(valid_annotation_types))
+            )
 
         if acoustic_name not in self.hierarchy.acoustics:
-            raise (ValueError('Acoustic measure must be one of: {}.'.format(', '.join(self.hierarchy.acoustics))))
-        available_statistics = ['mean', 'median', 'stddev', 'sum', 'mode', 'count']
+            raise (
+                ValueError(
+                    "Acoustic measure must be one of: {}.".format(
+                        ", ".join(self.hierarchy.acoustics)
+                    )
+                )
+            )
+        available_statistics = ["mean", "median", "stddev", "sum", "mode", "count"]
         if statistic not in available_statistics:
-            raise ValueError('Statistic name should be one of: {}.'.format(', '.join(available_statistics)))
+            raise ValueError(
+                "Statistic name should be one of: {}.".format(", ".join(available_statistics))
+            )
 
         acoustic_name = acoustic_name.lower()
         template = statistic + '("{0}") as "{0}"'
-        statistic_template = 'n.{statistic}_{measure} = d.{measure}'
-        measures = {x[0]: template.format(x[0]) for x in self.hierarchy.acoustic_properties[acoustic_name] if
-                    x[1] in [int, float]}
+        statistic_template = "n.{statistic}_{measure} = d.{measure}"
+        measures = {
+            x[0]: template.format(x[0])
+            for x in self.hierarchy.acoustic_properties[acoustic_name]
+            if x[1] in [int, float]
+        }
         if by_speaker and by_annotation:
             results = []
             annotation_map = {
                 "phone": {
                     "attr": self.phones,
                     "field": "phone",
-                    "neo4j_label": "phone_type"
+                    "neo4j_label": "phone_type",
                 },
                 "word": {
                     "attr": self.words,
                     "field": "word",
-                    "neo4j_label": "word_type"
+                    "neo4j_label": "word_type",
                 },
                 "syllable": {
                     "attr": self.syllables,
                     "field": "syllable",
-                    "neo4j_label": "syllable_type"
-                }
+                    "neo4j_label": "syllable_type",
+                },
             }
 
             annotation_data = annotation_map[by_annotation]
@@ -1083,15 +1274,18 @@ class AudioContext(SyllabicContext):
             neo4j_label = annotation_data["neo4j_label"]
 
             for item in items:
-                query = '''select {} from "{}"
-                        where "{}" = '{}' group by "speaker";'''.format(
-                    ', '.join(measures), acoustic_name, db_field, item.replace("'", r"\'")
+                query = """select {} from "{}"
+                        where "{}" = '{}' group by "speaker";""".format(
+                    ", ".join(measures),
+                    acoustic_name,
+                    db_field,
+                    item.replace("'", r"\'"),
                 )
                 influx_result = self.execute_influxdb(query)
 
                 for k, v in influx_result.items():
                     v_dict = list(v)[0]
-                    result = {'speaker': k[1]['speaker'], db_field: item}
+                    result = {"speaker": k[1]["speaker"], db_field: item}
                     for measure in measures.keys():
                         result[measure] = v_dict[measure]
                     results.append(result)
@@ -1101,18 +1295,18 @@ class AudioContext(SyllabicContext):
                 for measure in measures.keys()
             ]
 
-            statement = '''WITH $data as data
+            statement = """WITH $data as data
                         UNWIND data as d
                         MATCH (s:Speaker:{corpus_name}), (p:{neo4j_label}:{corpus_name})
                         WHERE p.label = d.{db_field} AND s.name = d.speaker
                         WITH p, s, d
                         MERGE (s)<-[n:spoken_by]-(p)
                         WITH n, d
-                        SET {set_statements}'''.format(
+                        SET {set_statements}""".format(
                 corpus_name=self.cypher_safe_name,
                 neo4j_label=neo4j_label,
                 db_field=db_field,
-                set_statements=', '.join(set_statements)
+                set_statements=", ".join(set_statements),
             )
 
         elif by_annotation:
@@ -1120,18 +1314,18 @@ class AudioContext(SyllabicContext):
                 "phone": {
                     "list_attr": self.phones,
                     "db_field": "phone",
-                    "neo4j_label": "phone_type"
+                    "neo4j_label": "phone_type",
                 },
                 "word": {
                     "list_attr": self.words,
                     "db_field": "word",
-                    "neo4j_label": "word_type"
+                    "neo4j_label": "word_type",
                 },
                 "syllable": {
                     "list_attr": self.syllables,
                     "db_field": "syllable",
-                    "neo4j_label": "syllable_type"
-                }
+                    "neo4j_label": "syllable_type",
+                },
             }
 
             annotation_data = annotation_map[by_annotation]
@@ -1141,8 +1335,13 @@ class AudioContext(SyllabicContext):
 
             results = []
             for item in items:
-                query = '''select {} from "{}"
-                        where "{}" = '{}';'''.format(', '.join(measures.values()), acoustic_name, db_field, item.replace("'", r"\'"))
+                query = """select {} from "{}"
+                        where "{}" = '{}';""".format(
+                    ", ".join(measures.values()),
+                    acoustic_name,
+                    db_field,
+                    item.replace("'", r"\'"),
+                )
 
                 influx_result = self.execute_influxdb(query)
 
@@ -1158,45 +1357,58 @@ class AudioContext(SyllabicContext):
                 for measure in measures.keys()
             ]
 
-            statement = '''WITH $data as data
+            statement = """WITH $data as data
                         UNWIND data as d
                         MATCH (n:{neo4j_label}:{corpus_name})
                         WHERE n.label = d.{db_field}
-                        SET {set_statements}'''.format(
+                        SET {set_statements}""".format(
                 corpus_name=self.cypher_safe_name,
                 neo4j_label=neo4j_label,
                 db_field=db_field,
-                set_statements=', '.join(set_statements)
+                set_statements=", ".join(set_statements),
             )
-            self.hierarchy.add_type_properties(self, by_annotation, [('{}_{}'.format(statistic, x), float) for x in measures.keys()])
+            self.hierarchy.add_type_properties(
+                self,
+                by_annotation,
+                [("{}_{}".format(statistic, x), float) for x in measures.keys()],
+            )
 
         elif by_speaker:
-            query = '''select {} from "{}" group by "speaker";'''.format(', '.join(measures), acoustic_name)
+            query = """select {} from "{}" group by "speaker";""".format(
+                ", ".join(measures), acoustic_name
+            )
             influx_result = self.execute_influxdb(query)
             results = []
 
             for k, v in influx_result.items():
                 v_dict = list(v)[0]
-                result = {'speaker': k[1]['speaker']}
+                result = {"speaker": k[1]["speaker"]}
                 for measure in measures.keys():
                     result[measure] = v_dict[measure]
                 results.append(result)
 
             set_statements = []
             for measure in measures.keys():
-                set_statements.append(statistic_template.format(statistic=statistic, measure=measure))
-            statement = '''WITH $data as data
+                set_statements.append(
+                    statistic_template.format(statistic=statistic, measure=measure)
+                )
+            statement = """WITH $data as data
                             UNWIND data as d
                             MATCH (n:Speaker:{corpus_name})
                             WHERE n.name = d.speaker
-                            SET {set_statements}'''.format(corpus_name=self.cypher_safe_name,
-                                                           set_statements=', '.join(set_statements))
-            self.hierarchy.add_speaker_properties(self,
-                                                  [('{}_{}'.format(statistic, x), float) for x in measures.keys()])
+                            SET {set_statements}""".format(
+                corpus_name=self.cypher_safe_name,
+                set_statements=", ".join(set_statements),
+            )
+            self.hierarchy.add_speaker_properties(
+                self, [("{}_{}".format(statistic, x), float) for x in measures.keys()]
+            )
         self.execute_cypher(statement, data=results)
         self.encode_hierarchy()
 
-    def get_acoustic_statistic(self, acoustic_name, statistic, by_annotation=None, by_speaker=True):
+    def get_acoustic_statistic(
+        self, acoustic_name, statistic, by_annotation=None, by_speaker=True
+    ):
         """
         Computes summary statistics on a by speaker or by phone basis (or both) for a given acoustic measure.
 
@@ -1220,55 +1432,73 @@ class AudioContext(SyllabicContext):
 
         """
         if acoustic_name not in self.hierarchy.acoustics:
-            raise (ValueError('Acoustic measure must be one of: {}.'.format(', '.join(self.hierarchy.acoustics))))
+            raise (
+                ValueError(
+                    "Acoustic measure must be one of: {}.".format(
+                        ", ".join(self.hierarchy.acoustics)
+                    )
+                )
+            )
         if not by_speaker and not by_annotation:
-            raise (Exception('Please specify either by_annotation, by_speaker or both.'))
-        available_statistics = ['mean', 'median', 'stddev', 'sum', 'mode', 'count']
+            raise (Exception("Please specify either by_annotation, by_speaker or both."))
+        available_statistics = ["mean", "median", "stddev", "sum", "mode", "count"]
         if statistic not in available_statistics:
-            raise ValueError('Statistic name should be one of: {}.'.format(', '.join(available_statistics)))
+            raise ValueError(
+                "Statistic name should be one of: {}.".format(", ".join(available_statistics))
+            )
 
         valid_annotation_types = [atype for atype in self.annotation_types if atype != "utterance"]
 
         if by_annotation and by_annotation not in valid_annotation_types:
-            raise Exception('Annotation type must be one of: {}.'.format(', '.join(valid_annotation_types)))
+            raise Exception(
+                "Annotation type must be one of: {}.".format(", ".join(valid_annotation_types))
+            )
 
         annotation_map = {
             "phone": "phone_type",
             "word": "word_type",
-            "syllable": "syllable_type"
+            "syllable": "syllable_type",
         }
 
-        prop_template = 'n.{0} as {0}'
-        measures = ['{}_{}'.format(statistic, x[0]) for x in self.hierarchy.acoustic_properties[acoustic_name] if x[1] in [int, float]]
+        prop_template = "n.{0} as {0}"
+        measures = [
+            "{}_{}".format(statistic, x[0])
+            for x in self.hierarchy.acoustic_properties[acoustic_name]
+            if x[1] in [int, float]
+        ]
         returns = [prop_template.format(x) for x in measures]
 
         results = {}
 
         if by_annotation and by_speaker:
-
             annotation_label = annotation_map[by_annotation]
-            statement = '''MATCH (p:{annotation_label}:{corpus_name})-[n:spoken_by]->(s:Speaker:{corpus_name}) 
+            statement = """MATCH (p:{annotation_label}:{corpus_name})-[n:spoken_by]->(s:Speaker:{corpus_name})
                 WHERE ALL(prop IN {return_list} WHERE n[prop] is not null)
                 RETURN COUNT(p) > 0 AS has_data
-                LIMIT 1'''.format(
-                    annotation_label=annotation_label, 
-                    corpus_name=self.cypher_safe_name, 
-                    return_list='[' + ', '.join("'{}'".format(r) for r in measures) + ']'
-                )
+                LIMIT 1""".format(
+                annotation_label=annotation_label,
+                corpus_name=self.cypher_safe_name,
+                return_list="[" + ", ".join("'{}'".format(r) for r in measures) + "]",
+            )
 
             results = self.execute_cypher(statement)
 
-            has_data = results[0]['has_data'] if results else False
+            has_data = results[0]["has_data"] if results else False
 
             if not has_data:
                 self.encode_acoustic_statistic(acoustic_name, statistic, by_annotation, by_speaker)
 
-            statement = '''MATCH (p:{annotation_label}:{corpus_name})-[n:spoken_by]->(s:Speaker:{corpus_name})
-                        RETURN p.label AS annotation, s.name AS speaker, {return_list}'''.format(
-                annotation_label=annotation_label, corpus_name=self.cypher_safe_name, return_list=', '.join(returns))
-            
+            statement = """MATCH (p:{annotation_label}:{corpus_name})-[n:spoken_by]->(s:Speaker:{corpus_name})
+                        RETURN p.label AS annotation, s.name AS speaker, {return_list}""".format(
+                annotation_label=annotation_label,
+                corpus_name=self.cypher_safe_name,
+                return_list=", ".join(returns),
+            )
+
             results = self.execute_cypher(statement)
-            results = {(x['speaker'], x['annotation']): [(n,x[n]) for n in measures] for x in results}
+            results = {
+                (x["speaker"], x["annotation"]): [(n, x[n]) for n in measures] for x in results
+            }
 
         elif by_annotation:
             annotation_label = annotation_map[by_annotation]
@@ -1276,22 +1506,26 @@ class AudioContext(SyllabicContext):
             if not self.hierarchy.has_type_property(by_annotation, measures[0]):
                 self.encode_acoustic_statistic(acoustic_name, statistic, by_annotation, by_speaker)
 
-            statement = '''MATCH (n:{annotation_label}:{corpus_name})
-                        RETURN n.label AS annotation, {return_list}'''.format(
-                annotation_label=annotation_label, corpus_name=self.cypher_safe_name, return_list=', '.join(returns))
-            
+            statement = """MATCH (n:{annotation_label}:{corpus_name})
+                        RETURN n.label AS annotation, {return_list}""".format(
+                annotation_label=annotation_label,
+                corpus_name=self.cypher_safe_name,
+                return_list=", ".join(returns),
+            )
+
             results = self.execute_cypher(statement)
-            results = {x['annotation']: [(n,x[n]) for n in measures] for x in results}
+            results = {x["annotation"]: [(n, x[n]) for n in measures] for x in results}
 
         elif by_speaker:
             if not self.hierarchy.has_speaker_property(measures[0]):
                 self.encode_acoustic_statistic(acoustic_name, statistic, by_annotation, by_speaker)
 
-            statement = '''MATCH (n:Speaker:{corpus_name})
-                        RETURN n.name AS speaker, {return_list}'''.format(
-                corpus_name=self.cypher_safe_name, return_list=', '.join(returns))     
+            statement = """MATCH (n:Speaker:{corpus_name})
+                        RETURN n.name AS speaker, {return_list}""".format(
+                corpus_name=self.cypher_safe_name, return_list=", ".join(returns)
+            )
             results = self.execute_cypher(statement)
-            results = {x['speaker']: [(n,x[n]) for n in measures] for x in results}
+            results = {x["speaker"]: [(n, x[n]) for n in measures] for x in results}
         return results
 
     def reset_relativized_acoustic_measure(self, acoustic_name):
@@ -1304,18 +1538,36 @@ class AudioContext(SyllabicContext):
             Name of the acoustic type
         """
         if acoustic_name not in self.hierarchy.acoustics:
-            raise (ValueError('Acoustic measure must be one of: {}.'.format(', '.join(self.hierarchy.acoustics))))
-        measures = ', '.join(
-            ['"{}"'.format(x[0]) for x in self.hierarchy.acoustic_properties[acoustic_name] if x[1] in [int, float]
-             and not x[0].endswith('relativized')])
-        to_remove = [x[0] for x in self.hierarchy.acoustic_properties[acoustic_name] if x[0].endswith('relativized')]
+            raise (
+                ValueError(
+                    "Acoustic measure must be one of: {}.".format(
+                        ", ".join(self.hierarchy.acoustics)
+                    )
+                )
+            )
+        measures = ", ".join(
+            [
+                '"{}"'.format(x[0])
+                for x in self.hierarchy.acoustic_properties[acoustic_name]
+                if x[1] in [int, float] and not x[0].endswith("relativized")
+            ]
+        )
+        to_remove = [
+            x[0]
+            for x in self.hierarchy.acoustic_properties[acoustic_name]
+            if x[0].endswith("relativized")
+        ]
         client = self.acoustic_client()
         if "syllable" in self.annotation_types:
-            query = """SELECT "phone", "syllable", "word", {measures}, "utterance_id" 
-        INTO "{name}_copy" FROM "{name}" GROUP BY *;""".format(name=acoustic_name, measures=measures)
+            query = """SELECT "phone", "syllable", "word", {measures}, "utterance_id"
+        INTO "{name}_copy" FROM "{name}" GROUP BY *;""".format(
+                name=acoustic_name, measures=measures
+            )
         else:
-            query = """SELECT "phone", "word", {measures}, "utterance_id" 
-            INTO "{name}_copy" FROM "{name}" GROUP BY *;""".format(name=acoustic_name, measures=measures)
+            query = """SELECT "phone", "word", {measures}, "utterance_id"
+            INTO "{name}_copy" FROM "{name}" GROUP BY *;""".format(
+                name=acoustic_name, measures=measures
+            )
         client.query(query)
         client.query('DROP MEASUREMENT "{}"'.format(acoustic_name))
         client.query('SELECT * INTO "{0}" FROM "{0}_copy" GROUP BY *'.format(acoustic_name))
@@ -1338,22 +1590,30 @@ class AudioContext(SyllabicContext):
             Flag for relativizing by annotation
         """
         if acoustic_name not in self.hierarchy.acoustics:
-            raise ValueError(f'Acoustic measure must be one of: {", ".join(self.hierarchy.acoustics)}.')
+            raise ValueError(
+                f'Acoustic measure must be one of: {", ".join(self.hierarchy.acoustics)}.'
+            )
 
         if not by_speaker and not by_annotation:
-            raise Exception('Relativization must be by annotation, speaker, or both.')
+            raise Exception("Relativization must be by annotation, speaker, or both.")
 
         valid_annotation_types = [atype for atype in self.annotation_types if atype != "utterance"]
         if by_annotation and by_annotation not in valid_annotation_types:
-            raise Exception(f'Annotation type must be one of: {", ".join(valid_annotation_types)}.')
+            raise Exception(
+                f'Annotation type must be one of: {", ".join(valid_annotation_types)}.'
+            )
 
         client = self.acoustic_client()
 
         template = 'mean("{0}") as mean_{0}, stddev("{0}") as sd_{0}'
-        props = [x for x in self.hierarchy.acoustic_properties[acoustic_name] if x[1] in [int, float] and not x[0].endswith('relativized')]
+        props = [
+            x
+            for x in self.hierarchy.acoustic_properties[acoustic_name]
+            if x[1] in [int, float] and not x[0].endswith("relativized")
+        ]
         statistics = {x[0]: template.format(x[0]) for x in props}
-        aliases = {x[0]: ('mean_{}'.format(x[0]), 'sd_{}'.format(x[0])) for x in props}
-        
+        aliases = {x[0]: ("mean_{}".format(x[0]), "sd_{}".format(x[0])) for x in props}
+
         summary_data = {}
 
         if by_annotation:
@@ -1361,28 +1621,29 @@ class AudioContext(SyllabicContext):
         else:
             db_field = "phone"
         if by_annotation:
-        
-            for item in getattr(self, by_annotation + 's', []):
+            for item in getattr(self, by_annotation + "s", []):
                 if by_speaker:
-                    query = '''select {} from "{}" 
-                                where "{}" = '{}' group by "speaker";'''.format(
-                        ', '.join(statistics.values()), 
-                        acoustic_name, 
-                        db_field, 
-                        item.replace("'", r"\'")
+                    query = """select {} from "{}"
+                                where "{}" = '{}' group by "speaker";""".format(
+                        ", ".join(statistics.values()),
+                        acoustic_name,
+                        db_field,
+                        item.replace("'", r"\'"),
                     )
                     result = client.query(query)
                     for k, v in result.items():
                         v = list(v)
                         for measure, (mean_name, sd_name) in aliases.items():
-                            summary_data[(k[1]['speaker'], item, measure)] = v[0].get(mean_name), v[0].get(sd_name)
+                            summary_data[(k[1]["speaker"], item, measure)] = v[0].get(
+                                mean_name
+                            ), v[0].get(sd_name)
                 else:
-                    query = '''select {} from "{}" 
-                                where "{}" = '{}';'''.format(
-                        ', '.join(statistics.values()), 
-                        acoustic_name, 
-                        db_field, 
-                        item.replace("'", r"\'")
+                    query = """select {} from "{}"
+                                where "{}" = '{}';""".format(
+                        ", ".join(statistics.values()),
+                        acoustic_name,
+                        db_field,
+                        item.replace("'", r"\'"),
                     )
                     result = client.query(query)
                     for k, v in result.items():
@@ -1390,65 +1651,69 @@ class AudioContext(SyllabicContext):
                         for measure, (mean_name, sd_name) in aliases.items():
                             summary_data[(item, measure)] = v[0].get(mean_name), v[0].get(sd_name)
         else:
-            query = '''select {} from "{}" 
-                        where "{}" != '' group by "speaker";'''.format(
-                ', '.join(statistics.values()), 
-                acoustic_name, 
-                db_field
+            query = """select {} from "{}"
+                        where "{}" != '' group by "speaker";""".format(
+                ", ".join(statistics.values()), acoustic_name, db_field
             )
             result = client.query(query)
             for k, v in result.items():
                 v = list(v)
                 for measure, (mean_name, sd_name) in aliases.items():
-                    summary_data[(k[1]['speaker'], measure)] = v[0].get(mean_name), v[0].get(sd_name)
+                    summary_data[(k[1]["speaker"], measure)] = v[0].get(mean_name), v[0].get(
+                        sd_name
+                    )
 
         for s in self.speakers:
             safe_speaker = s.replace("'", r"\'")
-            all_query = '''select * from "{}" 
-                            where '{}' != '' and "speaker" = '{}';'''.format(
-                acoustic_name, 
-                db_field, 
-                safe_speaker
+            all_query = """select * from "{}"
+                            where '{}' != '' and "speaker" = '{}';""".format(
+                acoustic_name, db_field, safe_speaker
             )
             all_results = client.query(all_query)
             data = []
             for _, records in all_results.items():
                 for t_dict in records:
                     annotation_value = t_dict.pop(db_field)
-                    time_point = t_dict.pop('time')
-                    t_dict.pop('utterance_id', '')
-                    t_dict.pop('syllable', '')
-                    t_dict.pop('word', '')
-                    t_dict.pop('phone','')
+                    time_point = t_dict.pop("time")
+                    t_dict.pop("utterance_id", "")
+                    t_dict.pop("syllable", "")
+                    t_dict.pop("word", "")
+                    t_dict.pop("phone", "")
                     fields = {}
 
                     for measure, (mean_name, sd_name) in aliases.items():
                         if by_speaker and by_annotation:
-                            mean_value, sd_value = summary_data[(t_dict['speaker'], annotation_value, measure)]
+                            mean_value, sd_value = summary_data[
+                                (t_dict["speaker"], annotation_value, measure)
+                            ]
                         elif by_annotation and not by_speaker:
                             mean_value, sd_value = summary_data[(annotation_value, measure)]
                         elif by_speaker:
-                            mean_value, sd_value = summary_data[(t_dict['speaker'], measure)]
+                            mean_value, sd_value = summary_data[(t_dict["speaker"], measure)]
                         if sd_value is None:
                             continue
                         value = t_dict.pop(measure)
                         if value is None:
                             continue
-                        new_value = t_dict.pop('{}_relativized'.format(measure), None)
-                        new_value= (value - mean_value) / sd_value
-                        fields['{}_relativized'.format(measure)] = new_value
+                        new_value = t_dict.pop("{}_relativized".format(measure), None)
+                        new_value = (value - mean_value) / sd_value
+                        fields["{}_relativized".format(measure)] = new_value
                     if not fields:
                         continue
                     time_point = s_to_ms(to_seconds(time_point))
-                    data.append({
-                        'measurement': acoustic_name,
-                        'tags': t_dict,
-                        'time': time_point,
-                        'fields': fields
-                    })
+                    data.append(
+                        {
+                            "measurement": acoustic_name,
+                            "tags": t_dict,
+                            "time": time_point,
+                            "fields": fields,
+                        }
+                    )
 
-            client.write_points(data, batch_size=1000, time_precision='ms')
-        self.hierarchy.add_acoustic_properties(self, acoustic_name, [(x[0] +'_relativized', float) for x in props])
+            client.write_points(data, batch_size=1000, time_precision="ms")
+        self.hierarchy.add_acoustic_properties(
+            self, acoustic_name, [(x[0] + "_relativized", float) for x in props]
+        )
         self.encode_hierarchy()
 
     def reassess_utterances(self, acoustic_name):
@@ -1463,54 +1728,68 @@ class AudioContext(SyllabicContext):
 
         """
         if acoustic_name not in self.hierarchy.acoustics:
-            raise (ValueError('Acoustic measure must be one of: {}.'.format(', '.join(self.hierarchy.acoustics))))
+            raise (
+                ValueError(
+                    "Acoustic measure must be one of: {}.".format(
+                        ", ".join(self.hierarchy.acoustics)
+                    )
+                )
+            )
         client = self.acoustic_client()
         q = self.query_discourses()
-        q = q.columns(self.discourse.name.column_name('name'),
-                      self.discourse.speakers.name.column_name('speakers'))
+        q = q.columns(
+            self.discourse.name.column_name("name"),
+            self.discourse.speakers.name.column_name("speakers"),
+        )
         discourses = q.all()
         props = [x[0] for x in self.hierarchy.acoustic_properties[acoustic_name]]
         for d in discourses:
-            discourse_name = d['name']
+            discourse_name = d["name"]
             data = []
-            for s in d['speakers']:
+            for s in d["speakers"]:
                 q = self.query_graph(self.utterance)
-                q = q.filter(self.utterance.discourse.name == discourse_name, self.utterance.speaker.name == s)
+                q = q.filter(
+                    self.utterance.discourse.name == discourse_name,
+                    self.utterance.speaker.name == s,
+                )
                 q = q.order_by(self.utterance.begin)
-                q = q.columns(self.utterance.id.column_name('utterance_id'),
-                              self.utterance.begin.column_name('begin'),
-                              self.utterance.end.column_name('end'))
+                q = q.columns(
+                    self.utterance.id.column_name("utterance_id"),
+                    self.utterance.begin.column_name("begin"),
+                    self.utterance.end.column_name("end"),
+                )
                 utterances = q.all()
                 s = s.replace("'", r"\'")
                 discourse_name = discourse_name.replace("'", r"\'")
-                all_query = '''select * from "{}"
-                                where "phone" != '' and 
-                                "discourse" = '{}' and 
-                                "speaker" = '{}';'''.format(acoustic_name, discourse_name, s)
+                all_query = f"""select * from "{acoustic_name}"
+                                where "phone" != '' and
+                                "discourse" = '{discourse_name}' and
+                                "speaker" = '{s}';"""
                 all_results = client.query(all_query)
                 cur_index = 0
                 for _, r in all_results.items():
                     for t_dict in r:
-                        phone = t_dict.pop('phone')
-                        utterance_id = t_dict.pop('utterance_id', '')
-                        t_dict.pop('syllable','')
-                        t_dict.pop('word','')
+                        _ = t_dict.pop("phone")
+                        _ = t_dict.pop("utterance_id", "")
+                        t_dict.pop("syllable", "")
+                        t_dict.pop("word", "")
                         for m in props:
-                            value = t_dict.pop(m, None)
+                            _ = t_dict.pop(m, None)
 
-                        time_point = to_seconds(t_dict.pop('time'))
+                        time_point = to_seconds(t_dict.pop("time"))
                         for i in range(cur_index, len(utterances)):
-                            if utterances[i]['begin'] <= time_point <= utterances[i]['end']:
+                            if utterances[i]["begin"] <= time_point <= utterances[i]["end"]:
                                 cur_index = i
                                 break
                         time_point = s_to_ms(time_point)
-                        d = {'measurement': acoustic_name,
-                             'tags': t_dict,
-                             "time": time_point,
-                             "fields": {'utterance_id': utterances[cur_index]['utterance_id']}
-                             }
+                        d = {
+                            "measurement": acoustic_name,
+                            "tags": t_dict,
+                            "time": time_point,
+                            "fields": {"utterance_id": utterances[cur_index]["utterance_id"]},
+                        }
                         data.append(d)
-            client.write_points(data, batch_size=1000, time_precision='ms')
+            client.write_points(data, batch_size=1000, time_precision="ms")
 
     def save_track_from_csv(self, acoustic_name, path, properties):
         """
@@ -1524,11 +1803,11 @@ class AudioContext(SyllabicContext):
         path : str
             Path to the CSV file containing the measurement data.
         properties : list
-            list of properties to read from the csv 
+            list of properties to read from the csv
         discourse : str
             Name of the discourse to store the track.
         time_column : str
-            Name of the column in the CSV that contains time. 
+            Name of the column in the CSV that contains time.
         """
         import_track_csv(self, acoustic_name=acoustic_name, path=path, properties=properties)
 
@@ -1545,10 +1824,10 @@ class AudioContext(SyllabicContext):
         path : str
             Path to the CSV file containing the measurement data.
         properties : list
-            list of properties to read from the csv 
+            list of properties to read from the csv
         discourse : str
             Name of the discourse to store the track.
         time_column : str
-            Name of the column in the CSV that contains time. 
+            Name of the column in the CSV that contains time.
         """
         import_track_csvs(self, acoustic_name, directory_path, properties)

@@ -82,5 +82,3 @@ Conch function generators
 -------------------------
 
 .. autofunction:: polyglotdb.acoustics.other.generate_praat_script_function
-
-

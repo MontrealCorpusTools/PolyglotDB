@@ -32,7 +32,7 @@ Workflow
 
 **This tutorial assumes you have already run Tutorials 1 and 2**, which import and enrich the corpus with syllable, speaker, and utterance information.
 
-Tutorial 4 can be followed in two ways, like other tutorials (see :ref:`here<tutorial_1_workflow>`): 
+Tutorial 4 can be followed in two ways, like other tutorials (see :ref:`here<tutorial_1_workflow>`):
 
 * Pasting in commands one by one into the Python interpreter
 * Running the entire script at once (``python tutorial_4.py``)
@@ -54,8 +54,8 @@ to be runnable.  (You also need to make sure the directory where you will save t
 .. code-block:: python
 
     from polyglotdb import CorpusContext
-    import re 
-    
+    import re
+
     # corpus_root = './data/LibriSpeech-aligned/'
     # corpus_name = 'tutorial'
     # export_path = './results/tutorial_4_formants.csv')
@@ -144,7 +144,7 @@ We can now query the results using a similar set of commands as in the previous 
                   c.phone.F1.column_name('F1'), # the columns enriched by praat
                   c.phone.F2.column_name('F2'),
                   c.phone.F3.column_name('F3'))
-                  
+
     # Optional: Use order_by to enforce ordering on the output for easier comparison with the sample output.
     q = q.order_by(c.phone.label)
     results = q.all()
@@ -156,9 +156,9 @@ The CSV file generated will then be ready to open in other programs or in R for 
 
 Next steps
 ==========
-At this point, the corpus is ready for formant analysis using R. 
-We have provided an `rmd script`_ showcasing a possible approach, compiled  
-`here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_4_formants.html>`_ (`source <https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html>`_). We have also provided results for running this script in a  html. 
+At this point, the corpus is ready for formant analysis using R.
+We have provided an `rmd script`_ showcasing a possible approach, compiled
+`here <https://html-preview.github.io/?url=https://github.com/MontrealCorpusTools/PolyglotDB/blob/main/examples/tutorial/results/tutorial_4_formants.html>`_ (`source <https://github.com/MontrealCorpusTools/PolyglotDB/tree/master/examples/tutorial/results/tutorial_4_formants.html>`_). We have also provided results for running this script in a  html.
 These results were found using the full LibriSpeech-aligned dataset, which contains many more speakers than the subset we have been using in tutorials so far.
 
 .. See :ref:`tutorial_pitch` for another practical example of interesting linguistic analysis that can be peformed on enriched corpora using python and R.

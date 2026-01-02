@@ -4,3 +4,71 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 version_file = "polyglotdb/_version.py"
+
+[tool.black]
+line-length = 99
+
+[tool.isort]
+line_length = 99
+profile = "black"
+
+[tool.flake8]
+max-line-length = 99
+extend-ignore = ["D203", "E203", "E251", "E266", "E302", "E305", "E401", "E402", "E501", "F401", "F403", "W503"]
+exclude = [".git", "__pycache__", "dist"]
+
+
+[tool.check-manifest]
+ignore = [
+    ".deepsource.toml",
+    ".readthedocs.yaml",
+]
+
+[tool.interrogate]
+ignore-init-method = true
+ignore-init-module = false
+ignore-magic = false
+ignore-semiprivate = false
+ignore-private = false
+ignore-module = false
+ignore-property-decorators = false
+fail-under = 95
+exclude = [
+    "tests",
+    "build",
+    "dist",
+    "setup.py",
+    "docs"
+]
+verbose = 100
+omit-covered-files = false
+quiet = false
+generate-badge = "docs/source/_static"
+badge-format = "svg"
+whitelist-regex = []
+ignore-regex = []
+color = true
+
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "pass",
+    "if sys.platform",
+    "except ImportError:",
+    "except KeyboardInterrupt:",
+    "except Exception as e:",
+    "except Exception:",
+    "if call_back",
+    "if is_set",
+    "if TYPE_CHECKING:",
+    "class ExitHooks(object):",
+    "def main() -> None:",
+    "if os.path.exists",
+    "@abstractmethod",
+]
+fail_under = 50

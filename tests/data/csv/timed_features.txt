@@ -11,4 +11,3 @@ g	velar	stop	voiced	NA	NA	NA
 z	alveolar	fricative	voiced	NA	NA	NA
 ay	NA	NA	NA	lowhigh	front	unrounded
 eh	NA	NA	NA	mid	front	unrounded
-

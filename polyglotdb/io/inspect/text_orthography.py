@@ -1,8 +1,7 @@
 import os
 
-from ..types.parsing import TextOrthographyTier
-
-from ..parsers import OrthographyTextParser
+from polyglotdb.io.parsers import OrthographyTextParser
+from polyglotdb.io.types.parsing import TextOrthographyTier
 
 
 def inspect_orthography(path):
@@ -23,14 +22,13 @@ def inspect_orthography(path):
     :class:`~polyglotdb.io.parsers.text_orthography.OrthographyTextParser`
         Autodetected parser for the text file
     """
-    a = TextOrthographyTier('word', 'word')
+    a = TextOrthographyTier("word", "word")
     if os.path.isdir(path):
         for root, subdirs, files in os.walk(path):
             for filename in files:
-                if not filename.lower().endswith('.txt'):
+                if not filename.lower().endswith(".txt"):
                     continue
-                with open(os.path.join(root, filename),
-                          encoding='utf-8-sig', mode='r') as f:
+                with open(os.path.join(root, filename), encoding="utf-8-sig", mode="r") as f:
                     index = 0
                     for line in f.readlines():
                         trial = line.strip().split()
@@ -39,7 +37,7 @@ def inspect_orthography(path):
                         index += len(trial)
     else:
         index = 0
-        with open(path, encoding='utf-8-sig', mode='r') as f:
+        with open(path, encoding="utf-8-sig", mode="r") as f:
             for line in f.readlines():
                 trial = line.strip().split()
 

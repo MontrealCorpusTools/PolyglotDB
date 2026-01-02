@@ -1,7 +1,9 @@
-import librosa
 from functools import partial
+
+import librosa
 import numpy as np
 from librosa.core.spectrum import stft
+from scipy.signal import lfilter
 
 PADDING = 0.1
 
@@ -32,7 +34,7 @@ def load_waveform(file_path, begin=None, end=None):
     if end is not None:
         duration = end - begin
     signal, sr = librosa.load(file_path, sr=None, offset=begin, duration=duration)
-    signal = lfilter([1., -0.95], 1, signal, axis=0)
+    signal = lfilter([1.0, -0.95], 1, signal, axis=0)
     return signal, sr
 
 
@@ -58,8 +60,8 @@ def generate_spectrogram(signal, sr, log_color_scale=True):
     float
         Frequency step between bins
     """
-    from scipy.signal import lfilter
-    from scipy.signal import gaussian
+    from scipy.signal import gaussian, lfilter
+
     n_fft = 256
     # if len(self._signal) / self._sr > 30:
     window_length = 0.005
@@ -77,9 +79,9 @@ def generate_spectrogram(signal, sr, log_color_scale=True):
     #    step = step_samp / self._sr
     # self._n_fft = 512
     # window = partial(gaussian, std = 250/12)
-    window = 'gaussian'
+    window = "gaussian"
     # win_len = None
-    if window == 'gaussian':
+    if window == "gaussian":
         window = partial(gaussian, std=0.45 * win_len / 2)
     data = stft(signal, n_fft, step_samp, center=True, win_length=win_len, window=window)
     data = np.abs(data)
@@ -102,4 +104,4 @@ def make_path_safe(path):
     str
         Cypher-safe path
     """
-    return path.replace('\\', '/').replace(' ', '%20')
+    return path.replace("\\", "/").replace(" ", "%20")

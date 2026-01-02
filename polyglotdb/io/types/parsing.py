@@ -1,11 +1,21 @@
-from .form import (PointAnnotation, PointAnnotationType, IntervalAnnotation,
-                   IntervalAnnotationType)
-
-from .content import (OrthographyAnnotation, OrthographyAnnotationType,
-                      TranscriptionAnnotation, TranscriptionAnnotationType,
-                      NumericAnnotation, NumericAnnotationType,
-                      GroupingAnnotation, GroupingAnnotationType,
-                      MorphemeAnnotation, MorphemeAnnotationType)
+from polyglotdb.io.types.content import (
+    GroupingAnnotation,
+    GroupingAnnotationType,
+    MorphemeAnnotation,
+    MorphemeAnnotationType,
+    NumericAnnotation,
+    NumericAnnotationType,
+    OrthographyAnnotation,
+    OrthographyAnnotationType,
+    TranscriptionAnnotation,
+    TranscriptionAnnotationType,
+)
+from polyglotdb.io.types.form import (
+    IntervalAnnotation,
+    IntervalAnnotationType,
+    PointAnnotation,
+    PointAnnotationType,
+)
 
 
 class Tobi(OrthographyAnnotation, PointAnnotation):
@@ -67,7 +77,7 @@ class GroupingTier(GroupingAnnotationType, IntervalAnnotationType):
     def add(self, annotations, save=True):
         for a in annotations:
             if len(a) > 2:
-                label = a.pop(0)
+                _ = a.pop(0)
             if save or len(self._list) < 10:
                 # If save is False, only the first 10 annotations are saved
                 annotation = self.annotation_class(*a)

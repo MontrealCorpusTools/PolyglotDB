@@ -134,4 +134,3 @@ with the particular database specified and the database only needs to be availab
 
 You can see an example of connecting to local ISCAN server used in the scripts for the `SPADE analysis repository`_,
 for instance the `basic_queries.py`_ script.
-

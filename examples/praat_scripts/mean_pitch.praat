@@ -1,6 +1,6 @@
 form Variables
     sentence filename
-    # add more arguments here 
+    # add more arguments here
 endform
 
 # Read the sound file

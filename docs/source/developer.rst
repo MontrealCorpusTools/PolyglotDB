@@ -32,15 +32,15 @@ Annotations are represented in a directed acyclic graph, where nodes
 are points in time in an audio file or points in a text file.  Directed
 edges are labelled with annotations, and multiple levels of annotations
 can be included or excluded as desired.  They put forth a relational
-formalism for annotation graphs, and later work implements the formalism in SQL. Similarly, the `LaBB-CAT`_ and `EMU-SDMS`_ 
+formalism for annotation graphs, and later work implements the formalism in SQL. Similarly, the `LaBB-CAT`_ and `EMU-SDMS`_
 speech database management systems
 use the annotation graph formalism, but implemented in SQL databases.
 
 PolyglotDB uses a different approach to the annotation graph formalism, using *NoSQL* databases. One
 type of NoSQL database is the graph database, where nodes and relationships
 are primitives rather than relational tables. Graph databases map onto
-annotation graphs in a much cleaner fashion than relational databases, allowing the database to closely match the structure of 
-speech corpora. 
+annotation graphs in a much cleaner fashion than relational databases, allowing the database to closely match the structure of
+speech corpora.
 The graph database used in PolyglotDB is `Neo4j`_.
 
 PolyglotDB also uses a NoSQL time-series database called `InfluxDB`_.
@@ -74,8 +74,8 @@ Please see the `InterSpeech proceedings paper`_ for more information on the high
    The main feature benefits of ISCAN are multiple Polyglot databases (separating out different corpora and allowing any
    of them to be started or shutdown), graphical interfaces for inspecting data, and a user authentication system with different levels
    of permission for remote access through a web application. ISCAN is not actively maintained as of 2025 and may require additional effort
-   to configure and use. It is not the recommended or default option for most users. The primary and   
-   supported way to interact with PolyglotDB remains through its Python API.   
+   to configure and use. It is not the recommended or default option for most users. The primary and
+   supported way to interact with PolyglotDB remains through its Python API.
 
 
 Contents
