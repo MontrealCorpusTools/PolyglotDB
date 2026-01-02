@@ -1,7 +1,7 @@
-from ..annotations.attributes.base import AnnotationNode
-from ..discourse.attributes import DiscourseNode
-from ..speaker.attributes import SpeakerNode
-from ..base.func import Min, Max, Count
+from polyglotdb.query.annotations.attributes.base import AnnotationNode
+from polyglotdb.query.base.func import Count, Max, Min
+from polyglotdb.query.discourse.attributes import DiscourseNode
+from polyglotdb.query.speaker.attributes import SpeakerNode
 
 
 class MetaDataQuery(object):
@@ -15,11 +15,12 @@ class MetaDataQuery(object):
     to_find : :class:`~polyglotdb.query.base.Node`
         Name of the annotation type to search for
     """
-    query_template = '''{match}
+
+    query_template = """{match}
     {where}
     {optional_match}
     {with}
-    {return}'''
+    {return}"""
 
     def __init__(self, corpus, to_find):
         self.corpus = corpus
@@ -38,8 +39,12 @@ class MetaDataQuery(object):
         hierarchy = self.corpus.hierarchy
         factors = []
         if isinstance(self.to_find, AnnotationNode):
-            factors.extend(x[0] for x in hierarchy.token_properties[self.to_find.node_type] if x[1] == str)
-            factors.extend(x[0] for x in hierarchy.type_properties[self.to_find.node_type] if x[1] == str)
+            factors.extend(
+                x[0] for x in hierarchy.token_properties[self.to_find.node_type] if x[1] == str
+            )
+            factors.extend(
+                x[0] for x in hierarchy.type_properties[self.to_find.node_type] if x[1] == str
+            )
         elif isinstance(self.to_find, DiscourseNode):
             factors.extend(x[0] for x in hierarchy.discourse_properties if x[1] == str)
         elif isinstance(self.to_find, SpeakerNode):
@@ -58,12 +63,20 @@ class MetaDataQuery(object):
         hierarchy = self.corpus.hierarchy
         numerics = []
         if isinstance(self.to_find, AnnotationNode):
-            numerics.extend(x[0] for x in hierarchy.token_properties[self.to_find.node_type] if x[1] in (float, int))
-            numerics.extend(x[0] for x in hierarchy.type_properties[self.to_find.node_type] if x[1] in (float,int))
+            numerics.extend(
+                x[0]
+                for x in hierarchy.token_properties[self.to_find.node_type]
+                if x[1] in (float, int)
+            )
+            numerics.extend(
+                x[0]
+                for x in hierarchy.type_properties[self.to_find.node_type]
+                if x[1] in (float, int)
+            )
         elif isinstance(self.to_find, DiscourseNode):
-            numerics.extend(x[0] for x in hierarchy.discourse_properties if x[1] in (float,int))
+            numerics.extend(x[0] for x in hierarchy.discourse_properties if x[1] in (float, int))
         elif isinstance(self.to_find, SpeakerNode):
-            numerics.extend(x[0] for x in hierarchy.speaker_properties if x[1] in (float,int))
+            numerics.extend(x[0] for x in hierarchy.speaker_properties if x[1] in (float, int))
         return numerics
 
     def grouping_factors(self):
@@ -79,16 +92,28 @@ class MetaDataQuery(object):
         grouping = []
         for f in self.factors():
             if isinstance(self.to_find, AnnotationNode):
-                q = self.corpus.query_graph(self.to_find).group_by(f.column_name('label')).aggregate(Count())
-                if any(x['count_all'] > 1 for x in q):
+                q = (
+                    self.corpus.query_graph(self.to_find)
+                    .group_by(f.column_name("label"))
+                    .aggregate(Count())
+                )
+                if any(x["count_all"] > 1 for x in q):
                     grouping.append(f)
             elif isinstance(self.to_find, DiscourseNode):
-                q = self.corpus.query_discourses().group_by(getattr(self.to_find, f).column_name('label')).aggregate(Count())
-                if any(x['count_all'] > 1 for x in q):
+                q = (
+                    self.corpus.query_discourses()
+                    .group_by(getattr(self.to_find, f).column_name("label"))
+                    .aggregate(Count())
+                )
+                if any(x["count_all"] > 1 for x in q):
                     grouping.append(f)
             elif isinstance(self.to_find, SpeakerNode):
-                q = self.corpus.query_speakers().group_by(getattr(self.to_find, f).column_name('label')).aggregate(Count())
-                if any(x['count_all'] > 1 for x in q):
+                q = (
+                    self.corpus.query_speakers()
+                    .group_by(getattr(self.to_find, f).column_name("label"))
+                    .aggregate(Count())
+                )
+                if any(x["count_all"] > 1 for x in q):
                     grouping.append(f)
         return grouping
 
@@ -107,14 +132,26 @@ class MetaDataQuery(object):
             All the levels of the attribute
         """
         if attribute.label in self.numerics():
-            raise Exception('Levels is only valid for factors.')
+            raise Exception("Levels is only valid for factors.")
         if isinstance(self.to_find, AnnotationNode):
-            q = self.corpus.query_graph(self.to_find).group_by(attribute.column_name('label')).aggregate(Count())
+            q = (
+                self.corpus.query_graph(self.to_find)
+                .group_by(attribute.column_name("label"))
+                .aggregate(Count())
+            )
         elif isinstance(self.to_find, DiscourseNode):
-            q = self.corpus.query_discourses().group_by(attribute.column_name('label')).aggregate(Count())
+            q = (
+                self.corpus.query_discourses()
+                .group_by(attribute.column_name("label"))
+                .aggregate(Count())
+            )
         elif isinstance(self.to_find, SpeakerNode):
-            q = self.corpus.query_speakers().group_by(attribute.column_name('label')).aggregate(Count())
-        return [x['label'] for x in q]
+            q = (
+                self.corpus.query_speakers()
+                .group_by(attribute.column_name("label"))
+                .aggregate(Count())
+            )
+        return [x["label"] for x in q]
 
     def range(self, attribute):
         """
@@ -133,11 +170,17 @@ class MetaDataQuery(object):
             Maximum
         """
         if attribute.label in self.factors():
-            raise Exception('Range function is only valid for numerics.')
+            raise Exception("Range function is only valid for numerics.")
         if isinstance(self.to_find, AnnotationNode):
-            q = self.corpus.query_graph(self.to_find).aggregate(Min(attribute).column_name('min'), Max(attribute).column_name('max'))
+            q = self.corpus.query_graph(self.to_find).aggregate(
+                Min(attribute).column_name("min"), Max(attribute).column_name("max")
+            )
         if isinstance(self.to_find, DiscourseNode):
-            q = self.corpus.query_discourses().aggregate(Min(attribute).column_name('min'), Max(attribute).column_name('max'))
+            q = self.corpus.query_discourses().aggregate(
+                Min(attribute).column_name("min"), Max(attribute).column_name("max")
+            )
         if isinstance(self.to_find, SpeakerNode):
-            q = self.corpus.query_speakers().aggregate(Min(attribute).column_name('min'), Max(attribute).column_name('max'))
-        return q['min'], q['max']
+            q = self.corpus.query_speakers().aggregate(
+                Min(attribute).column_name("min"), Max(attribute).column_name("max")
+            )
+        return q["min"], q["max"]

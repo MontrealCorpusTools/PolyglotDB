@@ -1,8 +1,6 @@
+from polyglotdb.io.parsers.partitur import PartiturParser
+from polyglotdb.io.types.parsing import OrthographyTier
 from polyglotdb.structure import Hierarchy
-
-from ..types.parsing import *
-
-from ..parsers.partitur import PartiturParser
 
 
 def inspect_partitur(path):
@@ -20,15 +18,17 @@ def inspect_partitur(path):
     :class:`~polyglotdb.io.parsers.paritur.PartiturParser`
         Autodetected parser for BAS Partitur
     """
-    annotation_types = [OrthographyTier('word', 'word'),
-                        OrthographyTier('transcription', 'word'),
-                        OrthographyTier('phones', 'phone')]
+    annotation_types = [
+        OrthographyTier("word", "word"),
+        OrthographyTier("transcription", "word"),
+        OrthographyTier("phones", "phone"),
+    ]
 
     annotation_types[0].label = True
     annotation_types[1].label = False
     annotation_types[1].type_property = True
     annotation_types[2].label = True
 
-    hierarchy = Hierarchy({'phone': 'word', 'word': None})
+    hierarchy = Hierarchy({"phone": "word", "word": None})
 
     return PartiturParser(annotation_types, hierarchy)

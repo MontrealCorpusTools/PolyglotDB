@@ -1,22 +1,22 @@
-from .helper import key_for_cypher
-
-from ...exceptions import NodeAttributeError
+from polyglotdb.exceptions import NodeAttributeError
+from polyglotdb.query.base.helper import key_for_cypher
 
 
 class ClauseElement(object):
     """
     Base class for filter elements that will be translated to Cypher.
     """
-    sign = ''
+
+    sign = ""
     template = "{} {} {}"
 
     def __init__(self, attribute, value):
         self.attribute = attribute
         self.value = value
-        self.value_alias_prefix = ''
+        self.value_alias_prefix = ""
 
     def __repr__(self):
-        return '<ClauseElement \'{}\'>'.format(self.for_cypher())
+        return "<ClauseElement '{}'>".format(self.for_cypher())
 
     def __hash__(self):
         return hash((self.attribute, self.sign, self.value))
@@ -34,7 +34,10 @@ class ClauseElement(object):
         """
         Create a Cypher parameter for the value of the clause.
         """
-        return '$`%s%s`' % (self.value_alias_prefix.replace('`', ''), self.attribute.alias.replace('`', ''))
+        return "$`%s%s`" % (
+            self.value_alias_prefix.replace("`", ""),
+            self.attribute.alias.replace("`", ""),
+        )
 
     def for_cypher(self):
         """
@@ -44,9 +47,7 @@ class ClauseElement(object):
             value = self.value.for_filter()
         except AttributeError:
             value = self.cypher_value_string()
-        return self.template.format(self.attribute.for_filter(),
-                                    self.sign,
-                                    value)
+        return self.template.format(self.attribute.for_filter(), self.sign, value)
 
     def for_type_cypher(self):
         """
@@ -56,9 +57,7 @@ class ClauseElement(object):
             value = self.value.for_type_filter()
         except AttributeError:
             value = self.cypher_value_string()
-        return self.template.format(self.attribute.for_type_filter(),
-                                    self.sign,
-                                    value)
+        return self.template.format(self.attribute.for_type_filter(), self.sign, value)
 
     @property
     def nodes(self):
@@ -76,14 +75,14 @@ class ClauseElement(object):
         Get all attributes involved in the clause.
         """
         attributes = [self.attribute]
-        if hasattr(self.value, 'node'):
+        if hasattr(self.value, "node"):
             attributes.append(self.value)
         return attributes
 
     def involves(self, annotation):
-        to_match = 'alias'
+        to_match = "alias"
         if annotation.has_subquery:
-            to_match = 'collection_alias'
+            to_match = "collection_alias"
         try:
             if getattr(self.attribute.node, to_match, None) == getattr(annotation, to_match):
                 return True
@@ -103,8 +102,9 @@ class ClauseElement(object):
                 return True
         return False
 
+
 class NullClauseElement(ClauseElement):
-    template = '{} is null'
+    template = "{} is null"
 
     def for_cypher(self):
         """
@@ -118,62 +118,70 @@ class NullClauseElement(ClauseElement):
 
 
 class NotNullClauseElement(NullClauseElement):
-    template = '{} is not null'
+    template = "{} is not null"
 
 
 class EqualClauseElement(ClauseElement):
     """
     Clause for asserting equality in a filter.
     """
-    sign = '='
+
+    sign = "="
 
 
 class GtClauseElement(ClauseElement):
     """
     Clause for asserting greater than in a filter.
     """
-    sign = '>'
+
+    sign = ">"
 
 
 class GteClauseElement(ClauseElement):
     """
     Clause for asserting greater than or equal in a filter.
     """
-    sign = '>='
+
+    sign = ">="
 
 
 class LtClauseElement(ClauseElement):
     """
     Clause for asserting less than in a filter.
     """
-    sign = '<'
+
+    sign = "<"
 
 
 class LteClauseElement(ClauseElement):
     """
     Clause for asserting less than or equal in a filter.
     """
-    sign = '<='
+
+    sign = "<="
 
 
 class NotEqualClauseElement(ClauseElement):
     """
     Clause for asserting not equal in a filter.
     """
-    sign = '<>'
+
+    sign = "<>"
 
 
 class InClauseElement(ClauseElement):
     """
     Clause for asserting membership in a filter.
     """
-    sign = 'IN'
+
+    sign = "IN"
 
 
 class NotInClauseElement(InClauseElement):
     """
     Clause for asserting membership in a filter.
     """
+
     template = "NOT {} {} {}"
 
 
@@ -181,7 +189,8 @@ class RegexClauseElement(ClauseElement):
     """
     Clause for filtering based on regular expressions.
     """
-    sign = '=~'
+
+    sign = "=~"
 
 
 class SubsetClauseElement(ClauseElement):
@@ -193,8 +202,7 @@ class SubsetClauseElement(ClauseElement):
         """
         value = key_for_cypher(self.value)
         key = self.attribute.node.alias
-        return self.template.format(key,
-                                    value)
+        return self.template.format(key, value)
 
     @property
     def nodes(self):

@@ -1,13 +1,10 @@
 import time
 
 from conch import analyze_segments
-
 from conch.analysis.praat import PraatAnalysisFunction
 
-from .segments import generate_segments, generate_utterance_segments
-
-from .io import point_measures_to_csv, point_measures_from_csv
-from .utils import PADDING
+from polyglotdb.acoustics.io import point_measures_from_csv, point_measures_to_csv
+from polyglotdb.acoustics.segments import generate_segments
 
 
 def generate_praat_script_function(praat_path, script_path, arguments=None):
@@ -33,16 +30,19 @@ def generate_praat_script_function(praat_path, script_path, arguments=None):
     return praat_function
 
 
-def analyze_script(corpus_context,
-                   annotation_type='phone',
-                   subset=None,
-                   script_path=None,
-                   duration_threshold=0.01,
-                   padding=0,
-                   arguments=None,
-                   call_back=None,
-                   file_type='consonant',
-                   stop_check=None, multiprocessing=True):
+def analyze_script(
+    corpus_context,
+    annotation_type="phone",
+    subset=None,
+    script_path=None,
+    duration_threshold=0.01,
+    padding=0,
+    arguments=None,
+    call_back=None,
+    file_type="consonant",
+    stop_check=None,
+    multiprocessing=True,
+):
     """
     Perform acoustic analysis of phones using an input praat script.
 
@@ -77,72 +77,92 @@ def analyze_script(corpus_context,
     multiprocessing : bool
         Flag to use multiprocessing, otherwise will use threading
     """
-    if file_type not in ['consonant', 'vowel', 'low_freq']:
-        raise ValueError('File type must be one of: consonant, vowel, or low_freq')
-    
-    if not annotation_type in corpus_context.hierarchy.annotation_types:
-        raise ValueError('Annotation type does not exists')
-    
-    if script_path is None: 
-        raise ValueError('Please specify script path')
-    
+    if file_type not in ["consonant", "vowel", "low_freq"]:
+        raise ValueError("File type must be one of: consonant, vowel, or low_freq")
+
+    if annotation_type not in corpus_context.hierarchy.annotation_types:
+        raise ValueError("Annotation type does not exists")
+
+    if script_path is None:
+        raise ValueError("Please specify script path")
+
     if call_back is not None:
-        call_back('Analyzing {}...'.format(annotation_type))
+        call_back("Analyzing {}...".format(annotation_type))
     time_section = time.time()
-    segment_mapping = generate_segments(corpus_context, annotation_type, subset, file_type=file_type,
-                                        padding=padding, duration_threshold=duration_threshold)
+    segment_mapping = generate_segments(
+        corpus_context,
+        annotation_type,
+        subset,
+        file_type=file_type,
+        padding=padding,
+        duration_threshold=duration_threshold,
+    )
     if call_back is not None:
         call_back("generate segments took: " + str(time.time() - time_section))
     praat_path = corpus_context.config.praat_path
     script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
     time_section = time.time()
-    output = analyze_segments(segment_mapping.segments, script_function, stop_check=stop_check,
-                              multiprocessing=multiprocessing)
+    output = analyze_segments(
+        segment_mapping.segments,
+        script_function,
+        stop_check=stop_check,
+        multiprocessing=multiprocessing,
+    )
     if call_back is not None:
         call_back("time analyzing segments: " + str(time.time() - time_section))
     header = sorted(list(output.values())[0].keys())
     header_info = {h: float for h in header}
     point_measures_to_csv(corpus_context, output, header)
     point_measures_from_csv(corpus_context, header_info, annotation_type=annotation_type)
-    return [x for x in header if x != 'id']
+    return [x for x in header if x != "id"]
 
 
-def analyze_track_script(corpus_context,
-                         acoustic_name,
-                         properties,
-                         script_path=None,
-                         subset=None,
-                         annotation_type='phone',
-                         duration_threshold=0.01,
-                         padding=0,
-                         arguments=None,
-                         call_back=None,
-                         file_type='consonant',
-                         stop_check=None, multiprocessing=True):
-    
-    if file_type not in ['consonant', 'vowel', 'low_freq']:
-        raise ValueError('File type must be one of: consonant, vowel, or low_freq')
+def analyze_track_script(
+    corpus_context,
+    acoustic_name,
+    properties,
+    script_path=None,
+    subset=None,
+    annotation_type="phone",
+    duration_threshold=0.01,
+    padding=0,
+    arguments=None,
+    call_back=None,
+    file_type="consonant",
+    stop_check=None,
+    multiprocessing=True,
+):
+    if file_type not in ["consonant", "vowel", "low_freq"]:
+        raise ValueError("File type must be one of: consonant, vowel, or low_freq")
 
-    if not annotation_type in corpus_context.hierarchy.annotation_types:
-        raise ValueError('Annotation type does not exists')
-    
-    if script_path is None: 
-        raise ValueError('Please specify script path')
-    
+    if annotation_type not in corpus_context.hierarchy.annotation_types:
+        raise ValueError("Annotation type does not exists")
+
+    if script_path is None:
+        raise ValueError("Please specify script path")
+
     if acoustic_name not in corpus_context.hierarchy.acoustics:
         corpus_context.hierarchy.add_acoustic_properties(corpus_context, acoustic_name, properties)
         corpus_context.encode_hierarchy()
-    else: 
-        raise ValueError('Acoustic measure already exists')
+    else:
+        raise ValueError("Acoustic measure already exists")
 
     if call_back is not None:
-        call_back('Analyzing track...')
+        call_back("Analyzing track...")
 
-    segment_mapping = generate_segments(corpus_context, annotation_type, subset, file_type=file_type,
-                                        padding=padding, duration_threshold=duration_threshold) 
-    segment_mapping = segment_mapping.grouped_mapping('speaker')
+    segment_mapping = generate_segments(
+        corpus_context,
+        annotation_type,
+        subset,
+        file_type=file_type,
+        padding=padding,
+        duration_threshold=duration_threshold,
+    )
+    segment_mapping = segment_mapping.grouped_mapping("speaker")
     praat_path = corpus_context.config.praat_path
     script_function = generate_praat_script_function(praat_path, script_path, arguments=arguments)
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):
-        output = analyze_segments(v, script_function, stop_check=stop_check, multiprocessing=multiprocessing)
+        output = analyze_segments(
+            v, script_function, stop_check=stop_check, multiprocessing=multiprocessing
+        )
         corpus_context.save_acoustic_tracks(acoustic_name, output, speaker)

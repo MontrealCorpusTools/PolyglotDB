@@ -86,7 +86,7 @@ for ncoefficients from minformants*2 to maxformants*2
         bw$ = fixed$(log10(bw), 4)
 
         if formant == undefined
-            amp$ = "'undefined'"      
+            amp$ = "'undefined'"
         else
             # LIMIT THE DISTANCE AWAY FROM THE CENTER TO LOOK FOR A MAXIMUM (EVEN IF THE BANDWIDTH IS LARGE)
             halfwindow_up_for_a = min(bw, max_fb_for_a)/2

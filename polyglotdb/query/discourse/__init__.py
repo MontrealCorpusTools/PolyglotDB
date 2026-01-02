@@ -1,2 +1,2 @@
-from .query import DiscourseQuery
 from .attributes import DiscourseNode
+from .query import DiscourseQuery

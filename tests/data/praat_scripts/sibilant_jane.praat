@@ -53,6 +53,3 @@ slope$ = fixed$(slope, 4)
 spread$ = fixed$(spread, 4)
 output$ = "peak slope cog spread" + newline$ + peak$ + " " + slope$ + " "+ cog$+ " " + spread$
 echo 'output$'
-
-
-

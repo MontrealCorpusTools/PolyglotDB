@@ -1,18 +1,18 @@
-import string
 import re
+import string
+
+from polyglotdb.io.types.base import BaseAnnotation, BaseAnnotationType
 
 NUMBER_CHARACTERS = set(string.digits)
 
-parse_numbers = re.compile('\d+|\S')
-
-from .base import BaseAnnotationType, BaseAnnotation
+parse_numbers = re.compile(r"\d+|\S")
 
 
 class GroupingAnnotation(BaseAnnotation):
     @property
     def value(self):
         """Returns empty string"""
-        return ''
+        return ""
 
 
 class GroupingAnnotationType(BaseAnnotationType):
@@ -128,12 +128,14 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         string : str
             the information
         """
-        string = ('{}:\n'.format(self.name) +
-                  '    Ignored characters: {}\n'.format(', '.join(self.ignored_characters)) +
-                  '    Digraphs: {}\n'.format(', '.join(self.digraphs)) +
-                  '    Transcription delimiter: {}\n'.format(self.trans_delimiter) +
-                  '    Morpheme delimiters: {}\n'.format(', '.join(self.morph_delimiters)) +
-                  '    Number behavior: {}\n'.format(self.number_behavior))
+        string = (
+            "{}:\n".format(self.name)
+            + "    Ignored characters: {}\n".format(", ".join(self.ignored_characters))
+            + "    Digraphs: {}\n".format(", ".join(self.digraphs))
+            + "    Transcription delimiter: {}\n".format(self.trans_delimiter)
+            + "    Morpheme delimiters: {}\n".format(", ".join(self.morph_delimiters))
+            + "    Number behavior: {}\n".format(self.number_behavior)
+        )
         return string
 
     @property
@@ -149,8 +151,8 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         if len(self.digraphs) == 0:
             return None
         digraph_list = sorted(self.digraphs, key=lambda x: len(x), reverse=True)
-        pattern = '|'.join(re.escape(d) for d in digraph_list)
-        pattern += '|\d+|\S'
+        pattern = "|".join(re.escape(d) for d in digraph_list)
+        pattern += r"|\d+|\S"
         return re.compile(pattern)
 
     def add(self, annotations, save=True):
@@ -172,11 +174,11 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
                 # If save is False, only the first 10 annotations are saved
                 trans, morph = self._parse_transcription(label)
                 trans, prosody = self._parse_numbers(trans)
-                kwargs = {'morpheme_breaks': morph}
-                if self.number_behavior == 'stress':
-                    kwargs['stress'] = prosody
-                elif self.number_behavior == 'tone':
-                    kwargs['tone'] = prosody
+                kwargs = {"morpheme_breaks": morph}
+                if self.number_behavior == "stress":
+                    kwargs["stress"] = prosody
+                elif self.number_behavior == "tone":
+                    kwargs["tone"] = prosody
                 a.insert(0, trans)
                 annotation = self.annotation_class(*a, **kwargs)
                 self._list.append(annotation)
@@ -213,14 +215,14 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         else:
             ignored = self.ignored_characters
             if ignored is not None:
-                string = ''.join(x for x in string if x not in ignored)
+                string = "".join(x for x in string if x not in ignored)
             if self.trans_delimiter is not None:
                 string = string.split(self.trans_delimiter)
             elif self.digraph_pattern is not None:
                 string = self.digraph_pattern.findall(string)
             else:
                 string = parse_numbers.findall(string)
-            transcription = [seg for seg in string if seg != '']
+            transcription = [seg for seg in string if seg != ""]
         return transcription, morph_boundaries
 
     def _parse_numbers(self, transcription):
@@ -229,12 +231,12 @@ class TranscriptionAnnotationType(MorphemeAnnotationType):
         prosody = {}
         parsed_transcription = []
         for i, seg in enumerate(transcription):
-            num = ''.join(x for x in seg if x in NUMBER_CHARACTERS)
-            seg = ''.join(x for x in seg if x not in NUMBER_CHARACTERS)
-            if num == '':
+            num = "".join(x for x in seg if x in NUMBER_CHARACTERS)
+            seg = "".join(x for x in seg if x not in NUMBER_CHARACTERS)
+            if num == "":
                 num = None
 
-            if seg != '':
+            if seg != "":
                 parsed_transcription.append(seg)
             if num is not None:
                 prosody[len(parsed_transcription) - 1] = num

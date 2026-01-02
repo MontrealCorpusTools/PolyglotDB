@@ -6,10 +6,11 @@ class BaseRecord(object):
     def __getitem__(self, key):
         if key in self.columns:
             return self.values[self.columns.index(key)]
-        raise KeyError('{} not in columns {}'.format(key, self.columns))
+        raise KeyError("{} not in columns {}".format(key, self.columns))
 
     def __str__(self):
-        return ', '.join('{}: {}'.format(k, v) for k, v in zip(self.columns, self.values))
+        return ", ".join("{}: {}".format(k, v) for k, v in zip(self.columns, self.values))
+
 
 class BaseQueryResults(object):
     def __init__(self, query):
@@ -25,9 +26,8 @@ class BaseQueryResults(object):
             self._preload = None
             self._to_find = None
             self._to_find_type = None
-            self._columns = [x.output_alias.replace('`', '') for x in query._columns]
+            self._columns = [x.output_alias.replace("`", "") for x in query._columns]
         else:
-
             self.cache = self.corpus.execute_cypher(query.cypher(), **query.cypher_params())
             self.models = True
             self._preload = query._preload
@@ -40,11 +40,11 @@ class BaseQueryResults(object):
         return self._columns
 
     def __str__(self):
-        return '\n'.join(str(x) for x in self)
+        return "\n".join(str(x) for x in self)
 
     def __getitem__(self, key):
         if key < 0:
-            raise (IndexError('Results do not support negative indexing.'))
+            raise (IndexError("Results do not support negative indexing."))
         cur_cache_len = len(self.cache)
         if key < cur_cache_len:
             return self._sanitize_record(self.cache[key])
@@ -82,17 +82,17 @@ class BaseQueryResults(object):
         next_ind = number + self.current_ind
         if next_ind > len(self.cache):
             self._cache_cursor(up_to=next_ind)
-        to_return = self.cache[self.current_ind:next_ind]
+        to_return = self.cache[self.current_ind : next_ind]
         self.current_ind = next_ind
         return to_return
 
     def previous(self, number):
         if number > self.current_ind:
-            to_return = self.cache[0:self.current_ind]
+            to_return = self.cache[0 : self.current_ind]
             self.current_ind = 0
         else:
             next_ind = self.current_ind - number
-            to_return = self.cache[next_ind:self.current_ind]
+            to_return = self.cache[next_ind : self.current_ind]
             self.current_ind = next_ind
         return to_return
 
@@ -105,8 +105,9 @@ class BaseQueryResults(object):
         for line in self:
             yield {k: line[k] for k in header}
 
-    def to_csv(self, path, mode='w'):
+    def to_csv(self, path, mode="w"):
         from ...io import save_results
+
         save_results(self.rows_for_csv(), path, header=self.columns, mode=mode)
 
     def to_json(self):

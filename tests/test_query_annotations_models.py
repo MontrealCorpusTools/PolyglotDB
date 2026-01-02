@@ -1,96 +1,97 @@
 from polyglotdb import CorpusContext
-
 from polyglotdb.query.annotations.models import LinguisticAnnotation, SubAnnotation
 
 
 def test_models(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         q = c.query_graph(c.phone).order_by(c.phone.begin)
-        q = q.columns(c.phone.id.column_name('id'))
+        q = q.columns(c.phone.id.column_name("id"))
 
         results = q.all()
-        id = results[0]['id']
+        id = results[0]["id"]
 
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.label == '<SIL>')
+        assert model.label == "<SIL>"
 
-        assert (model.following.label == 'dh')
+        assert model.following.label == "dh"
 
-        assert (model.following.following.label == 'ih')
-        assert (model.previous is None)
+        assert model.following.following.label == "ih"
+        assert model.previous is None
 
 
 def test_type_properties(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         c.reset_pauses()
         q = c.query_graph(c.word).order_by(c.word.begin)
-        q = q.columns(c.word.id.column_name('id'))
+        q = q.columns(c.word.id.column_name("id"))
 
         results = q.all()
-        id = results[1]['id']
+        id = results[1]["id"]
 
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.label == 'this')
-        assert (model.transcription == 'dh.ih.s')
+        assert model.label == "this"
+        assert model.transcription == "dh.ih.s"
 
 
 def test_hierarchical(acoustic_config):
     with CorpusContext(acoustic_config) as c:
         q = c.query_graph(c.word).order_by(c.word.begin)
-        q = q.columns(c.word.id.column_name('id'))
+        q = q.columns(c.word.id.column_name("id"))
 
         results = q.all()
-        id = results[1]['id']
+        id = results[1]["id"]
 
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.label == 'this')
-        assert ([x.label for x in model.phone] == ['dh', 'ih', 's'])
+        assert model.label == "this"
+        assert [x.label for x in model.phone] == ["dh", "ih", "s"]
 
         q = c.query_graph(c.phone).order_by(c.phone.begin)
-        q = q.columns(c.phone.id.column_name('id'))
+        q = q.columns(c.phone.id.column_name("id"))
 
         results = q.all()
-        id = results[1]['id']
+        id = results[1]["id"]
 
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.label == 'dh')
-        assert (model.word.label == 'this')
+        assert model.label == "dh"
+        assert model.word.label == "this"
 
 
 def test_subannotations(subannotation_config):
     with CorpusContext(subannotation_config) as c:
-        q = c.query_graph(c.phone).columns(c.phone.voicing_during_closure.id.column_name('voicing_ids'))
+        q = c.query_graph(c.phone).columns(
+            c.phone.voicing_during_closure.id.column_name("voicing_ids")
+        )
         print(q.cypher())
         res = q.all()
         for x in res:
-            if len(x['voicing_ids']) > 0:
-                id = x['voicing_ids'][0]
+            if len(x["voicing_ids"]) > 0:
+                id = x["voicing_ids"][0]
                 break
         model = SubAnnotation(c)
         model.load(id)
-        assert (model._type == 'voicing_during_closure')
-        assert (round(model.duration, 2) == 0.03)
+        assert model._type == "voicing_during_closure"
+        assert round(model.duration, 2) == 0.03
 
 
 def test_add_subannotation(subannotation_config):
     with CorpusContext(subannotation_config) as c:
         q = c.query_graph(c.phone).order_by(c.phone.id)
-        q = q.columns(c.phone.id.column_name('id'))
+        q = q.columns(c.phone.id.column_name("id"))
         res = q.all()
-        id = res[0]['id']
+        id = res[0]["id"]
         model = LinguisticAnnotation(c)
         model.load(id)
-        assert (model.voicing_during_closure == [])
+        assert model.voicing_during_closure == []
 
-        model.add_subannotation('voicing_during_closure', begin=100, end=101)
+        model.add_subannotation("voicing_during_closure", begin=100, end=101)
         model.save()
         print(model._subannotations)
         print(model.voicing_during_closure)
-        assert (model.voicing_during_closure[0].begin == 100)
+        assert model.voicing_during_closure[0].begin == 100
         id = model.voicing_during_closure[0].id
 
         submodel = SubAnnotation(c)
@@ -102,11 +103,11 @@ def test_add_subannotation(subannotation_config):
 
         q = c.query_graph(c.phone).order_by(c.phone.id)
         res = q.all()
-        id = res[0]['id']
+        id = res[0]["id"]
         model = LinguisticAnnotation(c)
         model.load(id)
 
-        assert (model.voicing_during_closure[0].begin == 99)
+        assert model.voicing_during_closure[0].begin == 99
 
 
 def test_preload(acoustic_config):
@@ -117,8 +118,8 @@ def test_preload(acoustic_config):
         results = q.all()
 
         for r in results:
-            assert ('word' in r._supers)
-            assert (r._supers['word'] is not None)
+            assert "word" in r._supers
+            assert r._supers["word"] is not None
 
         q = c.query_graph(c.word)
         q = q.order_by(c.word.begin).preload(c.word.phone)
@@ -126,8 +127,8 @@ def test_preload(acoustic_config):
         results = q.all()
 
         for r in results:
-            assert ('phone' in r._subs)
-            assert (r._subs['phone'] is not None)
+            assert "phone" in r._subs
+            assert r._subs["phone"] is not None
 
 
 def test_preload_previous(acoustic_config):
@@ -154,8 +155,8 @@ def test_preload_following_higher(acoustic_config):
         print(q.cypher())
         results = q.all()
         print(results[0]._supers)
-        assert results[0]._supers['word']._following is not None
-        assert results[0]._supers['word']._previous is None
+        assert results[0]._supers["word"]._following is not None
+        assert results[0]._supers["word"]._previous is None
         assert results[0]._previous is None
         assert results[0]._following is None
 
@@ -163,11 +164,11 @@ def test_preload_following_higher(acoustic_config):
         print(q.cypher())
         results = q.all()
         print(results[0]._supers)
-        assert results[0]._supers['word']._following is not None
-        assert results[0]._supers['word']._previous is None
+        assert results[0]._supers["word"]._following is not None
+        assert results[0]._supers["word"]._previous is None
         assert results[0]._previous is None
         assert results[0]._following is not None
-        assert results[0]._following.id != results[0]._supers['word']._following.id
+        assert results[0]._following.id != results[0]._supers["word"]._following.id
 
 
 def test_preload_previous_higher(acoustic_config):
@@ -176,8 +177,8 @@ def test_preload_previous_higher(acoustic_config):
         print(q.cypher())
         results = q.all()
         print(results[0]._supers)
-        assert results[0]._supers['word']._following is None
-        assert results[0]._supers['word']._previous is not None
+        assert results[0]._supers["word"]._following is None
+        assert results[0]._supers["word"]._previous is not None
         assert results[0]._previous is None
         assert results[0]._following is None
 
@@ -185,11 +186,11 @@ def test_preload_previous_higher(acoustic_config):
         print(q.cypher())
         results = q.all()
         print(results[0]._supers)
-        assert results[0]._supers['word']._following is None
-        assert results[0]._supers['word']._previous is not None
+        assert results[0]._supers["word"]._following is None
+        assert results[0]._supers["word"]._previous is not None
         assert results[0]._previous is not None
         assert results[0]._following is None
-        assert results[0]._previous.id != results[0]._supers['word']._previous.id
+        assert results[0]._previous.id != results[0]._supers["word"]._previous.id
 
 
 def test_preload_sub(subannotation_config):
@@ -200,29 +201,35 @@ def test_preload_sub(subannotation_config):
         results = q.all()
 
         for r in results:
-
-            if (r.label == 'g' and r.begin == 2.2) or r.begin == 0:
-                assert ('voicing_during_closure' in r._subannotations)
-                assert (r._subannotations['voicing_during_closure'] is not None)
+            if (r.label == "g" and r.begin == 2.2) or r.begin == 0:
+                assert "voicing_during_closure" in r._subannotations
+                assert r._subannotations["voicing_during_closure"] is not None
             else:
-                assert ('voicing_during_closure' not in r._subannotations)
+                assert "voicing_during_closure" not in r._subannotations
 
         q = c.query_graph(c.word)
-        q = q.order_by(c.word.begin).preload(
-            c.word.phone)
+        q = q.order_by(c.word.begin).preload(c.word.phone)
         print(q.cypher())
         results = q.all()
         print(len(results))
         for r in results:
-            assert ('phone' in r._subs)
-            assert (r._subs['phone'] is not None)
-            for e in r._subs['phone']:
-                if e.label == 'k' and e.begin == 0:
-                    assert ('burst' in e._subannotations)
-                    assert (e._subannotations['burst'][0].begin == 0)
+            assert "phone" in r._subs
+            assert r._subs["phone"] is not None
+            for e in r._subs["phone"]:
+                if e.label == "k" and e.begin == 0:
+                    assert "burst" in e._subannotations
+                    assert e._subannotations["burst"][0].begin == 0
 
-        assert (any('voicing_during_closure' in e._subannotations for r in results for e in r._subs['phone']))
-        assert (any(e._subannotations['voicing_during_closure'] is not None for r in results for e in r._subs['phone']))
+        assert any(
+            "voicing_during_closure" in e._subannotations
+            for r in results
+            for e in r._subs["phone"]
+        )
+        assert any(
+            e._subannotations["voicing_during_closure"] is not None
+            for r in results
+            for e in r._subs["phone"]
+        )
 
 
 def test_delete(subannotation_config):
@@ -233,7 +240,7 @@ def test_delete(subannotation_config):
         model = LinguisticAnnotation(c)
         model.load(id)
 
-        assert (model.voicing_during_closure[0].begin == 99)
+        assert model.voicing_during_closure[0].begin == 99
 
         model.delete_subannotation(model.voicing_during_closure[0])
 
@@ -243,4 +250,4 @@ def test_delete(subannotation_config):
         model = LinguisticAnnotation(c)
         model.load(id)
 
-        assert (model.voicing_during_closure == [])
+        assert model.voicing_during_closure == []

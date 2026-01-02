@@ -5,8 +5,6 @@ import pytest
 
 from polyglotdb import CorpusContext
 
-
-
 # def test_query(acoustic_utt_config, praat_path):
 #     with CorpusContext(acoustic_utt_config) as g:
 #         g.config.praat_path = praat_path
@@ -19,9 +17,6 @@ from polyglotdb import CorpusContext
 
 def test_wav_info(acoustic_utt_config):
     with CorpusContext(acoustic_utt_config) as g:
-        sf = g.discourse_sound_file('acoustic_corpus')
-        assert (sf['sampling_rate'] == 16000)
-        assert (sf['num_channels'] == 1)
-
-
-
+        sf = g.discourse_sound_file("acoustic_corpus")
+        assert sf["sampling_rate"] == 16000
+        assert sf["num_channels"] == 1

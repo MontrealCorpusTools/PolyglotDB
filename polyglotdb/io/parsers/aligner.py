@@ -1,17 +1,11 @@
-
 import os
 
-
-from .textgrid import TextgridParser
-from ..types.parsing import OrthographyTier
-
 from polyglotdb.exceptions import TextGridError
-from ..helper import get_n_channels
-from polyglotdb.io.helper import find_wav_path
-
+from polyglotdb.io.helper import find_wav_path, get_n_channels
 from polyglotdb.io.parsers.base import DiscourseData
-
 from polyglotdb.io.parsers.speaker import DirectorySpeakerParser
+from polyglotdb.io.parsers.textgrid import TextgridParser
+from polyglotdb.io.types.parsing import OrthographyTier
 
 
 class AlignerParser(TextgridParser):
@@ -42,43 +36,61 @@ class AlignerParser(TextgridParser):
     speaker_first : bool
         Whether speaker names precede tier types in the TextGrid when multiple speakers are present
     """
-    word_label = 'word'
-    phone_label = 'phone'
-    name = 'aligner'
+
+    word_label = "word"
+    phone_label = "phone"
+    name = "aligner"
     speaker_first = True
 
-    def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
-                 stop_check=None, call_back=None):
-        super(AlignerParser, self).__init__(annotation_tiers, hierarchy, make_transcription,
-                                            False, stop_check, call_back)
+    def __init__(
+        self,
+        annotation_tiers,
+        hierarchy,
+        make_transcription=True,
+        stop_check=None,
+        call_back=None,
+    ):
+        super(AlignerParser, self).__init__(
+            annotation_tiers,
+            hierarchy,
+            make_transcription,
+            False,
+            stop_check,
+            call_back,
+        )
         self.speaker_parser = DirectorySpeakerParser()
 
     def _is_valid(self, tg):
         found_word = False
         found_phone = False
-        invalid = True
         multiple_speakers = False
         for i, tier_name in enumerate(tg.tierNames):
-            if ' - ' in tier_name:
+            if " - " in tier_name:
                 multiple_speakers = True
                 break
         if multiple_speakers:
             if self.speaker_first:
-                speakers = {tier_name.split(' - ')[0].strip().replace('/', '_').replace('\\', '_') for tier_name in tg.tierNames if
-                            ' - ' in tier_name}
+                speakers = {
+                    tier_name.split(" - ")[0].strip().replace("/", "_").replace("\\", "_")
+                    for tier_name in tg.tierNames
+                    if " - " in tier_name
+                }
             else:
-                speakers = {tier_name.split(' - ')[1].strip().replace('/', '_').replace('\\', '_') for tier_name in tg.tierNames if
-                            ' - ' in tier_name}
+                speakers = {
+                    tier_name.split(" - ")[1].strip().replace("/", "_").replace("\\", "_")
+                    for tier_name in tg.tierNames
+                    if " - " in tier_name
+                }
             found_words = {x: False for x in speakers}
             found_phones = {x: False for x in speakers}
             for i, tier_name in enumerate(tg.tierNames):
-                if ' - ' not in tier_name:
+                if " - " not in tier_name:
                     continue
                 if self.speaker_first:
-                    speaker, name = tier_name.split(' - ')
+                    speaker, name = tier_name.split(" - ")
                 else:
-                    name, speaker = tier_name.split(' - ')
-                speaker = speaker.strip().replace('/', '_').replace('\\', '_')
+                    name, speaker = tier_name.split(" - ")
+                speaker = speaker.strip().replace("/", "_").replace("\\", "_")
                 name = name.strip()
                 if name.lower().startswith(self.word_label):
                     found_words[speaker] = True
@@ -115,7 +127,11 @@ class AlignerParser(TextgridParser):
         multiple_speakers, is_valid = self._is_valid(tg)
 
         if not is_valid:
-            raise (TextGridError('This file ({}) cannot be parsed by the {} parser.'.format(path, self.name)))
+            raise (
+                TextGridError(
+                    "This file ({}) cannot be parsed by the {} parser.".format(path, self.name)
+                )
+            )
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         # Format 1
@@ -133,9 +149,13 @@ class AlignerParser(TextgridParser):
             for i, tier_name in enumerate(tg.tierNames):
                 ti = tg.getTier(tier_name)
                 if tier_name.lower().startswith(self.word_label):
-                    self.annotation_tiers[0].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entries))
+                    self.annotation_tiers[0].add(
+                        ((text.strip(), begin, end) for (begin, end, text) in ti.entries)
+                    )
                 elif tier_name.lower().startswith(self.phone_label):
-                    self.annotation_tiers[1].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entries))
+                    self.annotation_tiers[1].add(
+                        ((text.strip(), begin, end) for (begin, end, text) in ti.entries)
+                    )
             pg_annotations = self._parse_annotations(types_only)
 
             data = DiscourseData(name, pg_annotations, self.hierarchy)
@@ -155,7 +175,7 @@ class AlignerParser(TextgridParser):
                     n_tiers = 0
                     for i, tier_name in enumerate(tg.tierNames):
                         try:
-                            speaker, type = tier_name.split(' - ')
+                            speaker, type = tier_name.split(" - ")
                         except ValueError:
                             continue
                         n_tiers += 1
@@ -164,10 +184,10 @@ class AlignerParser(TextgridParser):
                     for i, tier_name in enumerate(tg.tierNames):
                         try:
                             if self.speaker_first:
-                                speaker, type = tier_name.split(' - ')
+                                speaker, type = tier_name.split(" - ")
                             else:
-                                type, speaker = tier_name.split(' - ')
-                            speaker = speaker.strip().replace('/', '_').replace('\\', '_')
+                                type, speaker = tier_name.split(" - ")
+                            speaker = speaker.strip().replace("/", "_").replace("\\", "_")
                         except ValueError:
                             continue
                         if speaker in speaker_channel_mapping:
@@ -185,21 +205,21 @@ class AlignerParser(TextgridParser):
                 ti = tg.getTier(tier_name)
                 try:
                     if self.speaker_first:
-                        speaker, type = tier_name.split(' - ')
+                        speaker, type = tier_name.split(" - ")
                     else:
-                        type, speaker = tier_name.split(' - ')
-                    speaker = speaker.strip().replace('/', '_').replace('\\', '_')
+                        type, speaker = tier_name.split(" - ")
+                    speaker = speaker.strip().replace("/", "_").replace("\\", "_")
                 except ValueError:
                     continue
                 if type.lower().startswith(self.word_label):
-                    type = 'word'
+                    type = "word"
                 elif type.lower().startswith(self.phone_label):
-                    type = 'phone'
-                if len(ti.entries) == 1 and ti.entries[0][2].strip() == '':
+                    type = "phone"
+                if len(ti.entries) == 1 and ti.entries[0][2].strip() == "":
                     continue
                 at = OrthographyTier(type, type)
                 at.speaker = speaker
-                at.add(( (text.strip(), begin, end) for (begin, end, text) in ti.entries))
+                at.add(((text.strip(), begin, end) for (begin, end, text) in ti.entries))
                 self.annotation_tiers.append(at)
             pg_annotations = self._parse_annotations(types_only)
             data = DiscourseData(name, pg_annotations, self.hierarchy)

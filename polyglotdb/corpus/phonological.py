@@ -1,13 +1,15 @@
 import re
-from ..io.importer import feature_data_to_csvs, import_feature_csvs
-from .lexical import LexicalContext
-from ..io.enrichment.features import enrich_features_from_csv, parse_file
+
+from polyglotdb.corpus.lexical import LexicalContext
+from polyglotdb.io.enrichment.features import enrich_features_from_csv, parse_file
+from polyglotdb.io.importer import feature_data_to_csvs, import_feature_csvs
 
 
 class PhonologicalContext(LexicalContext):
     """
     Class that contains methods for dealing specifically with phones
     """
+
     def enrich_inventory_from_csv(self, path):
         """
         Enriches corpus from a csv file
@@ -45,7 +47,7 @@ class PhonologicalContext(LexicalContext):
         label : str
             the label for the class
         """
-        self.encode_type_subset('phone', phones, label)
+        self.encode_type_subset("phone", phones, label)
 
     def reset_class(self, label):
         """
@@ -56,7 +58,7 @@ class PhonologicalContext(LexicalContext):
         label : str
             Subset name to remove
         """
-        self.reset_type_subset('phone', label)
+        self.reset_type_subset("phone", label)
 
     def encode_features(self, feature_dict):
         """
@@ -67,7 +69,7 @@ class PhonologicalContext(LexicalContext):
         feature_dict : dict
             features to encode
         """
-        phone = getattr(self, 'lexicon_' + self.phone_name)
+        phone = getattr(self, "lexicon_" + self.phone_name)
         for k, v in feature_dict.items():
             q = self.query_lexicon(phone).filter(phone.label == k)
             q.set_properties(**v)
@@ -75,14 +77,14 @@ class PhonologicalContext(LexicalContext):
 
     def reset_features(self, feature_names):
         """
-        resets features 
+        resets features
 
         Parameters
         ----------
         feature_names : list
             list of names of features to remove
         """
-        phone = getattr(self, 'lexicon_' + self.phone_name)
+        phone = getattr(self, "lexicon_" + self.phone_name)
         q = self.query_lexicon(phone)
         q.set_properties(**{x: None for x in feature_names})
         self.hierarchy.remove_type_properties(self, self.phone_name, feature_names)
@@ -109,7 +111,7 @@ class PhonologicalContext(LexicalContext):
         self.hierarchy.add_type_properties(self, self.phone_name, type_data.items())
         self.encode_hierarchy()
 
-    def remove_pattern(self, pattern='[0-2]'):
+    def remove_pattern(self, pattern="[0-2]"):
         """
         removes a stress or tone pattern from all phones
 
@@ -121,8 +123,8 @@ class PhonologicalContext(LexicalContext):
 
         """
         phone = getattr(self, self.phone_name)
-        if pattern == '':
-            pattern = '[0-2]'
+        if pattern == "":
+            pattern = "[0-2]"
         q = self.query_graph(phone)
         results = q.all()
         oldphones = []
@@ -130,44 +132,50 @@ class PhonologicalContext(LexicalContext):
         newphones = []
         toAdd = {}
         for item in results:
-            phone = item['label']
+            phone = item["label"]
             if re.search(pattern, phone) is not None:
                 newphone = re.sub(pattern, "", phone)
                 length = len(phone) - len(newphone)
                 oldphones.append(phone)
                 newphones.append(newphone)
-                toAdd.update({'label': newphone})
-        statement = '''MATCH (n:{phone_name}{type}:{corpus_name}) WHERE n.label in $oldphones 
-        SET n.oldlabel = n.label 
-        SET n.label=substring(n.label,0,size(n.label)-{length})'''
-        norm_statement = statement.format(phone_name=self.phone_name, type='',
-                                          corpus_name=self.cypher_safe_name, length=length)
-        type_statement = statement.format(phone_name=self.phone_name, type='_type',
-                                          corpus_name=self.cypher_safe_name, length=length)
+                toAdd.update({"label": newphone})
+        statement = """MATCH (n:{phone_name}{type}:{corpus_name}) WHERE n.label in $oldphones
+        SET n.oldlabel = n.label
+        SET n.label=substring(n.label,0,size(n.label)-{length})"""
+        norm_statement = statement.format(
+            phone_name=self.phone_name,
+            type="",
+            corpus_name=self.cypher_safe_name,
+            length=length,
+        )
+        type_statement = statement.format(
+            phone_name=self.phone_name,
+            type="_type",
+            corpus_name=self.cypher_safe_name,
+            length=length,
+        )
         self.execute_cypher(norm_statement, oldphones=oldphones)
         self.execute_cypher(type_statement, oldphones=oldphones)
         self.encode_syllabic_segments(newphones)
-        self.encode_syllables('maxonset')
+        self.encode_syllables("maxonset")
 
     def reset_to_old_label(self):
         """
         Reset phones back to their old labels which include stress and tone
         """
         phones = []
-        phone = getattr(self, self.phone_name)
-        getphone = '''MATCH (n:{phone_name}_type:{corpus_name})
+        getphone = f"""MATCH (n:{self.phone_name}_type:{self.cypher_safe_name})
         WHERE n.oldlabel IS NOT NULL
-        RETURN n.oldlabel'''.format(phone_name=self.phone_name,
-                                    corpus_name=self.cypher_safe_name)
+        RETURN n.oldlabel"""
         results = self.execute_cypher(getphone)
         for item in results:
-            phones.append(item['n.oldlabel'])
+            phones.append(item["n.oldlabel"])
 
-        statement = '''MATCH (n:{phone_name}{type}:{corpus_name}) 
-        WHERE n.oldlabel IS NOT NULL SET n.label = n.oldlabel'''
-        norm_statement = statement.format(phone_name=self.phone_name, type="", corpus_name=self.cypher_safe_name)
-        type_statement = statement.format(phone_name=self.phone_name, type="_type", corpus_name=self.cypher_safe_name)
+        statement = f"""MATCH (n:{self.phone_name}{{type}}:{self.cypher_safe_name})
+        WHERE n.oldlabel IS NOT NULL SET n.label = n.oldlabel"""
+        norm_statement = statement.format(type="")
+        type_statement = statement.format(type="_type")
         self.execute_cypher(norm_statement)
         self.execute_cypher(type_statement)
         self.encode_syllabic_segments(phones)
-        self.encode_syllables('maxonset')
+        self.encode_syllables("maxonset")

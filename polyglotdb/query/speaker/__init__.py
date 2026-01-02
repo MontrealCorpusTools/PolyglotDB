@@ -1,3 +1,2 @@
-from .query import SpeakerQuery
-
 from .attributes import SpeakerNode
+from .query import SpeakerQuery

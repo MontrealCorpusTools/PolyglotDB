@@ -35,19 +35,19 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
-        
+
     - name: Set up JDK 21
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'  # This specifies the JDK distribution. Temurin is a popular choice.
-        java-version: '21'   
+        java-version: '21'
 
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsndfile1 
+        sudo apt-get install -y libsndfile1
 
-        
+
     - name: Install required packages
       run: |
         python -m venv venv
@@ -57,7 +57,7 @@ jobs:
         pip install pyyaml setuptools pandas
         pgdb install $PGDB_HOME
         pgdb start
-        
+
     - name: Download and set up Praat
       run: |
         wget https://github.com/praat/praat/releases/download/v6.4.21/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz

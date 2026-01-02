@@ -13,7 +13,7 @@ RUN apt update && apt install -y \
     tar \
     git \
     cmake \
-    nano \ 
+    nano \
     vim
 
 # Install praat
@@ -40,7 +40,7 @@ ENV reaper=/pgdb/tools/reaper
 
 COPY ./config.ini /pgdb/config.ini
 
-# Create a new conda environment named polyglotdb with Python 3.12  
+# Create a new conda environment named polyglotdb with Python 3.12
 RUN conda create -n polyglotdb -c conda-forge polyglotdb python=3.12
 
 # Make sure bash is the default shell

@@ -1,17 +1,15 @@
-
 import copy
 
-from .elements import (RightAlignedClauseElement, LeftAlignedClauseElement,
-                       NotRightAlignedClauseElement, NotLeftAlignedClauseElement)
-
-from .attributes import (HierarchicalAnnotation)
-
-from .results import QueryResults
-
-from polyglotdb.exceptions import GraphQueryError, AnnotationAttributeError
-
-from ..base import BaseQuery
-
+from polyglotdb.exceptions import GraphQueryError
+from polyglotdb.query.annotations.attributes import HierarchicalAnnotation
+from polyglotdb.query.annotations.elements import (
+    LeftAlignedClauseElement,
+    NotLeftAlignedClauseElement,
+    NotRightAlignedClauseElement,
+    RightAlignedClauseElement,
+)
+from polyglotdb.query.annotations.results import QueryResults
+from polyglotdb.query.base import BaseQuery
 
 
 def base_stop_check():
@@ -31,12 +29,25 @@ class GraphQuery(BaseQuery):
     to_find : :class:`~polyglotdb.query.annotations.attributes.AnnotationNode`
         Name of the annotation type to search for
     """
-    _parameters = ['_criterion', '_columns', '_order_by', '_aggregate',
-                   '_preload', '_set_labels', '_remove_labels',
-                   '_set_properties', '_delete', '_limit',
-                   '_cache', '_acoustic_columns', '_offset', '_preload_acoustics']
 
-    set_pause_template = '''SET {alias} :pause, {type_alias} :pause_type
+    _parameters = [
+        "_criterion",
+        "_columns",
+        "_order_by",
+        "_aggregate",
+        "_preload",
+        "_set_labels",
+        "_remove_labels",
+        "_set_properties",
+        "_delete",
+        "_limit",
+        "_cache",
+        "_acoustic_columns",
+        "_offset",
+        "_preload_acoustics",
+    ]
+
+    set_pause_template = """SET {alias} :pause, {type_alias} :pause_type
     REMOVE {alias}:speech
     WITH {alias}
     OPTIONAL MATCH (prec)-[r1:precedes]->({alias})
@@ -49,7 +60,7 @@ class GraphQuery(BaseQuery):
         FOREACH (o IN CASE WHEN foll IS NOT NULL THEN [foll] ELSE [] END |
           CREATE ({alias})-[:precedes_pause]->(foll)
         )
-    DELETE r2'''
+    DELETE r2"""
 
     def __init__(self, corpus, to_find, stop_check=None):
         super(GraphQuery, self).__init__(corpus, to_find)
@@ -69,15 +80,17 @@ class GraphQuery(BaseQuery):
         return ns
 
     def set_pause(self):
-        """ sets pauses in graph"""
-        self._set_properties['pause'] = True
+        """sets pauses in graph"""
+        self._set_properties["pause"] = True
         self.corpus.execute_cypher(self.cypher(), **self.cypher_params())
         self._set_properties = {}
 
     def _generate_set_properties_return(self):
-        if 'pause' in self._set_properties:
-            kwargs = {'alias': self.to_find.alias,
-                      'type_alias': self.to_find.type_alias}
+        if "pause" in self._set_properties:
+            kwargs = {
+                "alias": self.to_find.alias,
+                "type_alias": self.to_find.type_alias,
+            }
 
             return_statement = self.set_pause_template.format(**kwargs)
             return return_statement
@@ -151,6 +164,7 @@ class GraphQuery(BaseQuery):
     def preload(self, *args):
         from .attributes.path import SubPathAnnotation
         from .attributes.subannotation import SubAnnotation
+
         for a in args:
             if isinstance(a, SubPathAnnotation) and not isinstance(a, SubAnnotation):
                 a.with_subannotations = True
@@ -174,14 +188,14 @@ class GraphQuery(BaseQuery):
             discourse_found = False
             speaker_found = False
             for p in self._preload:
-                if p.node_type == 'Discourse':
+                if p.node_type == "Discourse":
                     discourse_found = True
-                elif p.node_type == 'Speaker':
+                elif p.node_type == "Speaker":
                     speaker_found = True
             if not discourse_found:
-                self.preload(getattr(self.to_find, 'discourse'))
+                self.preload(getattr(self.to_find, "discourse"))
             if not speaker_found:
-                self.preload(getattr(self.to_find, 'speaker'))
+                self.preload(getattr(self.to_find, "speaker"))
         if self._acoustic_columns:
             for a in self._acoustic_columns:
                 discourse_found = False
@@ -190,23 +204,25 @@ class GraphQuery(BaseQuery):
                 end_found = False
                 utterance_id_found = False
                 for c in self._columns + self._hidden_columns:
-                    if a.node.discourse == c.node and c.label == 'name':
+                    if a.node.discourse == c.node and c.label == "name":
                         a.discourse_alias = c.output_alias
                         discourse_found = True
-                    elif a.node.speaker == c.node and c.label == 'name':
+                    elif a.node.speaker == c.node and c.label == "name":
                         a.speaker_alias = c.output_alias
                         speaker_found = True
-                    elif a.node == c.node and c.label == 'begin':
+                    elif a.node == c.node and c.label == "begin":
                         a.begin_alias = c.output_alias
                         begin_found = True
-                    elif a.node == c.node and c.label == 'end':
+                    elif a.node == c.node and c.label == "end":
                         a.end_alias = c.output_alias
                         end_found = True
-                    elif c.node.node_type == 'utterance' and c.label == 'id':
+                    elif c.node.node_type == "utterance" and c.label == "id":
                         a.utterance_alias = c.output_alias
                         utterance_id_found = True
                 if not discourse_found:
-                    self._hidden_columns.append(a.node.discourse.name.column_name(a.discourse_alias))
+                    self._hidden_columns.append(
+                        a.node.discourse.name.column_name(a.discourse_alias)
+                    )
                 if not speaker_found:
                     self._hidden_columns.append(a.node.speaker.name.column_name(a.speaker_alias))
                 if not begin_found:
@@ -214,20 +230,26 @@ class GraphQuery(BaseQuery):
                 if not end_found:
                     self._hidden_columns.append(a.node.end.column_name(a.end_alias))
                 if not utterance_id_found and "utterance" in self.corpus.annotation_types:
-                    if self.to_find.node_type == 'utterance':
+                    if self.to_find.node_type == "utterance":
                         self._hidden_columns.append(a.node.id.column_name(a.utterance_alias))
                     else:
-                        self._hidden_columns.append(a.node.utterance.id.column_name(a.utterance_alias))
+                        self._hidden_columns.append(
+                            a.node.utterance.id.column_name(a.utterance_alias)
+                        )
         return QueryResults(self)
 
     def create_subset(self, label):
         labels_to_add = []
-        if self.to_find.node_type not in self.corpus.hierarchy.subset_tokens or \
-                        label not in self.corpus.hierarchy.subset_tokens[self.to_find.node_type]:
+        if (
+            self.to_find.node_type not in self.corpus.hierarchy.subset_tokens
+            or label not in self.corpus.hierarchy.subset_tokens[self.to_find.node_type]
+        ):
             labels_to_add.append(label)
         super(GraphQuery, self).create_subset(label)
         if labels_to_add:
-            self.corpus.hierarchy.add_token_subsets(self.corpus, self.to_find.node_type, labels_to_add)
+            self.corpus.hierarchy.add_token_subsets(
+                self.corpus, self.to_find.node_type, labels_to_add
+            )
 
     def set_properties(self, **kwargs):
         props_to_remove = []
@@ -240,9 +262,13 @@ class GraphQuery(BaseQuery):
                     props_to_add.append((k, type(kwargs[k])))
         super(GraphQuery, self).set_properties(**kwargs)
         if props_to_add:
-            self.corpus.hierarchy.add_token_properties(self.corpus, self.to_find.node_type, props_to_add)
+            self.corpus.hierarchy.add_token_properties(
+                self.corpus, self.to_find.node_type, props_to_add
+            )
         if props_to_remove:
-            self.corpus.hierarchy.remove_token_properties(self.corpus, self.to_find.node_type, props_to_remove)
+            self.corpus.hierarchy.remove_token_properties(
+                self.corpus, self.to_find.node_type, props_to_remove
+            )
 
     def remove_subset(self, label):
         super(GraphQuery, self).remove_subset(label)
@@ -259,7 +285,9 @@ class GraphQuery(BaseQuery):
                 props_to_add.append((k, float))
 
         if props_to_add:
-            self.corpus.hierarchy.add_token_properties(self.corpus, self.to_find.node_type, props_to_add)
+            self.corpus.hierarchy.add_token_properties(
+                self.corpus, self.to_find.node_type, props_to_add
+            )
 
 
 class SplitQuery(GraphQuery):
@@ -268,10 +296,10 @@ class SplitQuery(GraphQuery):
         try:
             self.splitter = self.corpus.config.query_behavior
         except (AttributeError, GraphQueryError):
-            self.splitter = 'speaker'
+            self.splitter = "speaker"
 
     def base_query(self, filters=None):
-        """ sets up base query
+        """sets up base query
 
         Returns
         -------
@@ -280,7 +308,7 @@ class SplitQuery(GraphQuery):
         """
         q = GraphQuery(self.corpus, self.to_find)
         for p in q._parameters:
-            if p == '_criterion' and filters is not None:
+            if p == "_criterion" and filters is not None:
                 setattr(q, p, filters)
             elif isinstance(getattr(self, p), list):
                 for x in getattr(self, p):
@@ -290,27 +318,28 @@ class SplitQuery(GraphQuery):
         return q
 
     def split_queries(self):
-        """ splits a query into multiple queries """
+        """splits a query into multiple queries"""
         from .elements import BaseNotEqualClauseElement, BaseNotInClauseElement
-        if self.splitter not in ['speaker', 'discourse']:
+
+        if self.splitter not in ["speaker", "discourse"]:
             yield self.base_query()
             return
 
-        labels = [x.attribute.label for x in self._criterion if hasattr(x, 'attribute')]
-        if self._offset is not None or self._limit is not None or 'id' in labels:
+        labels = [x.attribute.label for x in self._criterion if hasattr(x, "attribute")]
+        if self._offset is not None or self._limit is not None or "id" in labels:
             yield self.base_query()
             return
 
-        speaker_annotation = getattr(self.to_find, 'speaker')
-        speaker_attribute = getattr(speaker_annotation, 'name')
+        speaker_annotation = getattr(self.to_find, "speaker")
+        speaker_attribute = getattr(speaker_annotation, "name")
 
-        discourse_annotation = getattr(self.to_find, 'discourse')
-        discourse_attribute = getattr(discourse_annotation, 'name')
+        discourse_annotation = getattr(self.to_find, "discourse")
+        discourse_attribute = getattr(discourse_annotation, "name")
 
-        splitter_names = sorted(getattr(self.corpus, self.splitter + 's'))
+        splitter_names = sorted(getattr(self.corpus, self.splitter + "s"))
         if self.call_back is not None:
             self.call_back(0, len(splitter_names))
-        if self.splitter == 'speaker':
+        if self.splitter == "speaker":
             splitter_annotation = speaker_annotation
             splitter_attribute = speaker_attribute
         else:
@@ -323,14 +352,11 @@ class SplitQuery(GraphQuery):
         filter_on_discourse = False
         for c in self._criterion:
             try:
-                if c.attribute.node == speaker_annotation and \
-                                c.attribute.label == 'name':
+                if c.attribute.node == speaker_annotation and c.attribute.label == "name":
                     filter_on_speaker = True
-                elif c.attribute.node == discourse_annotation and \
-                                c.attribute.label == 'name':
+                elif c.attribute.node == discourse_annotation and c.attribute.label == "name":
                     filter_on_discourse = True
-                if c.attribute.node == splitter_annotation and \
-                                c.attribute.label == 'name':
+                if c.attribute.node == splitter_annotation and c.attribute.label == "name":
                     if isinstance(c.value, (list, tuple, set)):
                         selection.extend(c.value)
                     else:
@@ -352,7 +378,9 @@ class SplitQuery(GraphQuery):
                     continue
             if self.call_back is not None:
                 self.call_back(i)
-                self.call_back('Querying {} {} of {} ({})...'.format(self.splitter, i, len(splitter_names), x))
+                self.call_back(
+                    "Querying {} {} of {} ({})...".format(self.splitter, i, len(splitter_names), x)
+                )
 
             base = self.base_query(reg_filters)
             al = base.required_nodes()
@@ -361,14 +389,14 @@ class SplitQuery(GraphQuery):
             yield base
 
     def set_pause(self):
-        """ sets a pause in queries """
+        """sets a pause in queries"""
         for q in self.split_queries():
             if self.stop_check():
                 return
             q.set_pause()
 
     def all(self):
-        """ returns all results from a query """
+        """returns all results from a query"""
         results = None
         for q in self.split_queries():
             if self.stop_check():
@@ -389,15 +417,15 @@ class SplitQuery(GraphQuery):
     def to_csv(self, path):
         for i, q in enumerate(self.split_queries()):
             if i == 0:
-                mode = 'w'
+                mode = "w"
             else:
-                mode = 'a'
+                mode = "a"
             r = q.all()
 
             r.to_csv(path, mode=mode)
 
     def delete(self):
-        """ deletes the query """
+        """deletes the query"""
         for q in self.split_queries():
             if self.stop_check():
                 return
@@ -410,16 +438,15 @@ class SplitQuery(GraphQuery):
             q.cache(*args)
 
     def set_label(self, *args):
-        """ sets the query type"""
+        """sets the query type"""
         for q in self.split_queries():
             if self.stop_check():
                 return
             q.set_label(*args)
 
     def set_properties(self, **kwargs):
-        """ sets the query token """
+        """sets the query token"""
         for q in self.split_queries():
             if self.stop_check():
                 return
             q.set_properties(**kwargs)
-

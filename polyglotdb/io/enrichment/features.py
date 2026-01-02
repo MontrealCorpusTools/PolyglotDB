@@ -1,4 +1,4 @@
-from .helper import parse_file
+from polyglotdb.io.enrichment.helper import parse_file
 
 
 def enrich_features_from_csv(corpus_context, path):

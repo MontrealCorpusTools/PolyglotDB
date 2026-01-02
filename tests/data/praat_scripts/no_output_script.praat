@@ -12,5 +12,3 @@ To Spectrum... 'fast'
 
 cog = Get centre of gravity... 'power'
 cog$ = fixed$(cog, 2)
-
-

@@ -1,6 +1,5 @@
-from .exceptions import HierarchyError, GraphQueryError
-from .query.annotations.attributes import PauseAnnotation, AnnotationNode
-from datetime import datetime
+from polyglotdb.exceptions import GraphQueryError, HierarchyError
+from polyglotdb.query.annotations.attributes import AnnotationNode, PauseAnnotation
 
 
 class Hierarchy(object):
@@ -49,19 +48,32 @@ class Hierarchy(object):
         self.type_properties = {}
         self.acoustic_properties = {}
 
-        self.speaker_properties = {('name', str)}
-        self.discourse_properties = {('name', str), ('file_path', str), ('low_freq_file_path', str), ('vowel_file_path', str), ('consonant_file_path', str), ('duration', float), ('sampling_rate', int), ('num_channels', int)}
+        self.speaker_properties = {("name", str)}
+        self.discourse_properties = {
+            ("name", str),
+            ("file_path", str),
+            ("low_freq_file_path", str),
+            ("vowel_file_path", str),
+            ("consonant_file_path", str),
+            ("duration", float),
+            ("sampling_rate", int),
+            ("num_channels", int),
+        }
 
     def __getattr__(self, key):
-        if key == 'pause':
+        if key == "pause":
             return PauseAnnotation(corpus=self.corpus_name, hierarchy=self)
-        if key + 's' in self.annotation_types:
-            key += 's'  # FIXME
+        if key + "s" in self.annotation_types:
+            key += "s"  # FIXME
         if key in self.annotation_types:
             return AnnotationNode(key, corpus=self.corpus_name, hierarchy=self)
-        raise (GraphQueryError(
-            'The graph does not have any annotations of type \'{}\'.  Possible types are: {}'.format(key, ', '.join(
-                sorted(self.annotation_types)))))
+        raise (
+            GraphQueryError(
+                "The graph does not have any annotations of type '{}'.  Possible types are: {}".format(
+                    key, ", ".join(sorted(self.annotation_types))
+                )
+            )
+        )
 
     def __getstate__(self):
         return self.to_json()
@@ -106,18 +118,26 @@ class Hierarchy(object):
         dict
             All necessary information for the Hierarchy object
         """
-        data = {'_data': self._data}
-        data['corpus_name'] = self.corpus_name
-        data['acoustic_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.acoustic_properties.items()}
-        data['subannotations'] = {k: sorted(v) for k, v in self.subannotations.items()}
-        data['subannotation_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in
-                                            self.subannotation_properties.items()}
-        data['subset_types'] = {k: sorted(v) for k, v in self.subset_types.items()}
-        data['subset_tokens'] = {k: sorted(v) for k, v in self.subset_tokens.items()}
-        data['token_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.token_properties.items()}
-        data['type_properties'] = {k: sorted((name, t()) for name, t in v) for k, v in self.type_properties.items()}
-        data['speaker_properties'] = sorted((name, t()) for name, t in self.speaker_properties)
-        data['discourse_properties'] = sorted((name, t()) for name, t in self.discourse_properties)
+        data = {"_data": self._data}
+        data["corpus_name"] = self.corpus_name
+        data["acoustic_properties"] = {
+            k: sorted((name, t()) for name, t in v) for k, v in self.acoustic_properties.items()
+        }
+        data["subannotations"] = {k: sorted(v) for k, v in self.subannotations.items()}
+        data["subannotation_properties"] = {
+            k: sorted((name, t()) for name, t in v)
+            for k, v in self.subannotation_properties.items()
+        }
+        data["subset_types"] = {k: sorted(v) for k, v in self.subset_types.items()}
+        data["subset_tokens"] = {k: sorted(v) for k, v in self.subset_tokens.items()}
+        data["token_properties"] = {
+            k: sorted((name, t()) for name, t in v) for k, v in self.token_properties.items()
+        }
+        data["type_properties"] = {
+            k: sorted((name, t()) for name, t in v) for k, v in self.type_properties.items()
+        }
+        data["speaker_properties"] = sorted((name, t()) for name, t in self.speaker_properties)
+        data["discourse_properties"] = sorted((name, t()) for name, t in self.discourse_properties)
         return data
 
     def from_json(self, json):
@@ -129,18 +149,29 @@ class Hierarchy(object):
         json : dict
             Object information
         """
-        self._data = json['_data']
-        self.corpus_name = json['corpus_name']
-        self.acoustic_properties = {k: set((name, type(t)) for name, t in v) for k, v in json.get('acoustic_properties', {}).items()}
-        self.subannotations = {k: set(v) for k, v in json['subannotations'].items()}
-        self.subannotation_properties = {k: set((name, type(t)) for name, t in v) for k, v in
-                                         json['subannotation_properties'].items()}
-        self.subset_types = {k: set(v) for k, v in json['subset_types'].items()}
-        self.subset_tokens = {k: set(v) for k, v in json['subset_tokens'].items()}
-        self.token_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['token_properties'].items()}
-        self.type_properties = {k: set((name, type(t)) for name, t in v) for k, v in json['type_properties'].items()}
-        self.speaker_properties = set((name, type(t)) for name, t in json['speaker_properties'])
-        self.discourse_properties = set((name, type(t)) for name, t in json['discourse_properties'])
+        self._data = json["_data"]
+        self.corpus_name = json["corpus_name"]
+        self.acoustic_properties = {
+            k: set((name, type(t)) for name, t in v)
+            for k, v in json.get("acoustic_properties", {}).items()
+        }
+        self.subannotations = {k: set(v) for k, v in json["subannotations"].items()}
+        self.subannotation_properties = {
+            k: set((name, type(t)) for name, t in v)
+            for k, v in json["subannotation_properties"].items()
+        }
+        self.subset_types = {k: set(v) for k, v in json["subset_types"].items()}
+        self.subset_tokens = {k: set(v) for k, v in json["subset_tokens"].items()}
+        self.token_properties = {
+            k: set((name, type(t)) for name, t in v) for k, v in json["token_properties"].items()
+        }
+        self.type_properties = {
+            k: set((name, type(t)) for name, t in v) for k, v in json["type_properties"].items()
+        }
+        self.speaker_properties = set((name, type(t)) for name, t in json["speaker_properties"])
+        self.discourse_properties = set(
+            (name, type(t)) for name, t in json["discourse_properties"]
+        )
 
     def add_type_subsets(self, corpus_context, annotation_type, subsets):
         """
@@ -156,15 +187,18 @@ class Hierarchy(object):
             List of subsets to add for the annotation type
         """
         statement = self.get_type_subset_template.format(type=annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name))
+        res = list(
+            corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
+        )
         try:
-            cur_subsets = res[0]['subsets']
+            cur_subsets = res[0]["subsets"]
         except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets + subsets)
         statement = self.set_type_subset_template.format(type=annotation_type)
-        corpus_context.execute_cypher(statement, subsets=sorted(updated),
-                                      corpus_name=corpus_context.corpus_name)
+        corpus_context.execute_cypher(
+            statement, subsets=sorted(updated), corpus_name=corpus_context.corpus_name
+        )
         self.subset_types[annotation_type] = updated
         corpus_context.cache_hierarchy()
 
@@ -182,15 +216,18 @@ class Hierarchy(object):
             List of subsets to remove for the annotation type
         """
         statement = self.get_type_subset_template.format(type=annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name))
+        res = list(
+            corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
+        )
         try:
-            cur_subsets = res[0]['subsets']
+            cur_subsets = res[0]["subsets"]
         except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets) - set(subsets)
         statement = self.set_type_subset_template.format(type=annotation_type)
-        corpus_context.execute_cypher(statement, subsets=sorted(updated),
-                                      corpus_name=corpus_context.corpus_name)
+        corpus_context.execute_cypher(
+            statement, subsets=sorted(updated), corpus_name=corpus_context.corpus_name
+        )
         self.subset_types[annotation_type] = updated
         corpus_context.cache_hierarchy()
 
@@ -208,15 +245,18 @@ class Hierarchy(object):
             List of subsets to add for the annotation tokens
         """
         statement = self.get_token_subset_template.format(type=annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name))
+        res = list(
+            corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
+        )
         try:
-            cur_subsets = res[0]['subsets']
+            cur_subsets = res[0]["subsets"]
         except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets + subsets)
         statement = self.set_token_subset_template.format(type=annotation_type)
-        corpus_context.execute_cypher(statement, subsets=sorted(updated),
-                                      corpus_name=corpus_context.corpus_name)
+        corpus_context.execute_cypher(
+            statement, subsets=sorted(updated), corpus_name=corpus_context.corpus_name
+        )
         self.subset_tokens[annotation_type] = updated
         corpus_context.cache_hierarchy()
 
@@ -234,15 +274,18 @@ class Hierarchy(object):
             List of subsets to remove for the annotation tokens
         """
         statement = self.get_token_subset_template.format(type=annotation_type)
-        res = list(corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name))
+        res = list(
+            corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
+        )
         try:
-            cur_subsets = res[0]['subsets']
+            cur_subsets = res[0]["subsets"]
         except (IndexError, AttributeError):
             cur_subsets = []
         updated = set(cur_subsets) - set(subsets)
         statement = self.set_token_subset_template.format(type=annotation_type)
-        corpus_context.execute_cypher(statement, subsets=sorted(updated),
-                                      corpus_name=corpus_context.corpus_name)
+        corpus_context.execute_cypher(
+            statement, subsets=sorted(updated), corpus_name=corpus_context.corpus_name
+        )
         self.subset_tokens[annotation_type] = updated
         corpus_context.cache_hierarchy()
 
@@ -265,9 +308,14 @@ class Hierarchy(object):
         """
         self._data[above] = annotation_type
         self._data[annotation_type] = below
-        self.token_properties[annotation_type] = {('id', str), ('label', str),
-                                                  ('begin', float), ('end', float), ('duration', float)}
-        self.type_properties[annotation_type] = {('label', str)}
+        self.token_properties[annotation_type] = {
+            ("id", str),
+            ("label", str),
+            ("begin", float),
+            ("end", float),
+            ("duration", float),
+        }
+        self.type_properties[annotation_type] = {("label", str)}
 
     def remove_annotation_type(self, annotation_type):
         """
@@ -318,7 +366,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 'n.{0} = ${0}'
+        set_template = "n.{0} = ${0}"
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -329,22 +377,23 @@ class Hierarchy(object):
             elif v == float:
                 v = 0.0
             elif v == str:
-                v = ''
+                v = ""
             elif v == bool:
                 v = False
-            elif v == type(None):
+            elif v is type(None):
                 v = None
             ps.append(set_template.format(k))
             kwargs[k] = v
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        SET {sets}""".format(type=annotation_type, sets=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name, **kwargs)
+        SET {sets}""".format(
+            type=annotation_type, sets=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
 
         if annotation_type not in self.type_properties:
-            self.type_properties[annotation_type] = {('id', str)}
+            self.type_properties[annotation_type] = {("id", str)}
         self.type_properties[annotation_type].update(k for k in properties)
         corpus_context.cache_hierarchy()
 
@@ -361,18 +410,19 @@ class Hierarchy(object):
         properties : iterable
             List of property names to remove
         """
-        remove_template = 'n.{0}'
+        remove_template = "n.{0}"
         ps = []
         for k in properties:
             ps.append(remove_template.format(k))
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        REMOVE {removes}""".format(type=annotation_type, removes=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name)
+        REMOVE {removes}""".format(
+            type=annotation_type, removes=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         if annotation_type not in self.type_properties:
-            self.type_properties[annotation_type] = {('id', str)}
+            self.type_properties[annotation_type] = {("id", str)}
 
         to_remove = set(x for x in self.type_properties[annotation_type] if x[0] in properties)
         self.type_properties[annotation_type].difference_update(to_remove)
@@ -393,7 +443,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 'n.{0} = ${0}'
+        set_template = "n.{0} = ${0}"
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -404,19 +454,20 @@ class Hierarchy(object):
             elif v == float:
                 v = 0.0
             elif v == str:
-                v = ''
+                v = ""
             elif v == bool:
                 v = False
-            elif v == type(None):
+            elif v is type(None):
                 v = None
             ps.append(set_template.format(k))
             kwargs[k] = v
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:has_acoustics]->(n:{type})
-        SET {sets}""".format(type=acoustic_type, sets=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name, **kwargs)
+        SET {sets}""".format(
+            type=acoustic_type, sets=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
         if acoustic_type not in self.acoustic_properties:
             self.acoustic_properties[acoustic_type] = set()
         self.acoustic_properties[acoustic_type].update(k for k in properties)
@@ -435,16 +486,17 @@ class Hierarchy(object):
         properties : iterable
             List of property names
         """
-        remove_template = 'n.{0}'
+        remove_template = "n.{0}"
         ps = []
         for k in properties:
             ps.append(remove_template.format(k))
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:has_acoustics]->(n:{type})
-        REMOVE {removes}""".format(type=acoustic_type, removes=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name)
+        REMOVE {removes}""".format(
+            type=acoustic_type, removes=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         if acoustic_type not in self.acoustic_properties:
             self.acoustic_properties[acoustic_type] = {}
         to_remove = set(x for x in self.acoustic_properties[acoustic_type] if x[0] in properties)
@@ -466,7 +518,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 'n.{0} = ${0}'
+        set_template = "n.{0} = ${0}"
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -477,21 +529,22 @@ class Hierarchy(object):
             elif v == float:
                 v = 0.0
             elif v == str:
-                v = ''
+                v = ""
             elif v == bool:
                 v = False
-            elif v == type(None):
+            elif v is type(None):
                 v = None
             ps.append(set_template.format(k))
             kwargs[k] = v
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(n:{type})
-        SET {sets}""".format(type=annotation_type, sets=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name, **kwargs)
+        SET {sets}""".format(
+            type=annotation_type, sets=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
         if annotation_type not in self.token_properties:
-            self.token_properties[annotation_type] = {('id', str)}
+            self.token_properties[annotation_type] = {("id", str)}
         self.token_properties[annotation_type].update(k for k in properties)
         corpus_context.cache_hierarchy()
 
@@ -508,18 +561,19 @@ class Hierarchy(object):
         properties : iterable
             List of property names to remove
         """
-        remove_template = 'n.{0}'
+        remove_template = "n.{0}"
         ps = []
         for k in properties:
             ps.append(remove_template.format(k))
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(n:{type})
-        REMOVE {removes}""".format(type=annotation_type, removes=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name)
+        REMOVE {removes}""".format(
+            type=annotation_type, removes=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         if annotation_type not in self.token_properties:
-            self.token_properties[annotation_type] = {('id', str)}
+            self.token_properties[annotation_type] = {("id", str)}
         to_remove = set(x for x in self.token_properties[annotation_type] if x[0] in properties)
         self.token_properties[annotation_type].difference_update(to_remove)
         corpus_context.cache_hierarchy()
@@ -537,7 +591,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 's.{0} = ${0}'
+        set_template = "s.{0} = ${0}"
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -548,19 +602,20 @@ class Hierarchy(object):
             elif v == float:
                 v = 0.0
             elif v == str:
-                v = ''
+                v = ""
             elif v == bool:
                 v = False
-            elif v == type(None):
+            elif v is type(None):
                 v = None
             ps.append(set_template.format(k))
             kwargs[k] = v
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_by]->(s:Speaker)
-        SET {sets}""".format(sets=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name, **kwargs)
+        SET {sets}""".format(
+            sets=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
         to_add_names = [x[0] for x in properties]
         self.speaker_properties = {x for x in self.speaker_properties if x[0] not in to_add_names}
         self.speaker_properties.update(k for k in properties)
@@ -577,16 +632,17 @@ class Hierarchy(object):
         properties : iterable
             List of property names to remove
         """
-        remove_template = 's.{0}'
+        remove_template = "s.{0}"
         ps = []
         for k in properties:
             ps.append(remove_template.format(k))
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_by]->(s:Speaker)
-        REMOVE {removes}""".format(removes=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name)
+        REMOVE {removes}""".format(
+            removes=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         to_remove = set(x for x in self.speaker_properties if x[0] in properties)
         self.speaker_properties.difference_update(to_remove)
         corpus_context.cache_hierarchy()
@@ -604,7 +660,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 'd.{0} = ${0}'
+        set_template = "d.{0} = ${0}"
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -615,22 +671,25 @@ class Hierarchy(object):
             elif v == float:
                 v = 0.0
             elif v == str:
-                v = ''
+                v = ""
             elif v == bool:
                 v = False
-            elif v == type(None):
+            elif v is type(None):
                 v = None
             ps.append(set_template.format(k))
             kwargs[k] = v
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_in]->(d:Discourse)
-        SET {sets}""".format(sets=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name, **kwargs)
+        SET {sets}""".format(
+            sets=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
 
         to_add_names = [x[0] for x in properties]
-        self.discourse_properties = {x for x in self.discourse_properties if x[0] not in to_add_names}
+        self.discourse_properties = {
+            x for x in self.discourse_properties if x[0] not in to_add_names
+        }
         self.discourse_properties.update(k for k in properties)
         corpus_context.cache_hierarchy()
 
@@ -645,16 +704,17 @@ class Hierarchy(object):
         properties : iterable
             List of property names to remove
         """
-        remove_template = 'd.{0}'
+        remove_template = "d.{0}"
         ps = []
         for k in properties:
             ps.append(remove_template.format(k))
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_in]->(d:Discourse)
-        REMOVE {removes}""".format(removes=', '.join(ps))
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name)
+        REMOVE {removes}""".format(
+            removes=", ".join(ps)
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         to_remove = set(x for x in self.discourse_properties if x[0] in properties)
         self.discourse_properties.difference_update(to_remove)
         corpus_context.cache_hierarchy()
@@ -886,7 +946,9 @@ class Hierarchy(object):
             return False
         return property_name in [x[0] for x in self.subannotation_properties[subannotation_type]]
 
-    def add_subannotation_type(self, corpus_context, annotation_type, subannotation_type, properties=None):
+    def add_subannotation_type(
+        self, corpus_context, annotation_type, subannotation_type, properties=None
+    ):
         """
         Adds subannotation type for a given annotation type to the Hierarchy object and syncs it to a Neo4j database.
         The list of optional properties are tuples
@@ -907,14 +969,18 @@ class Hierarchy(object):
         if properties is None:
             properties = []
         if subannotation_type in self.subannotation_properties:
-            raise (HierarchyError('The subannotation_type {} is already specified for another linguistic type.'
-                                  ' Please use a different name.'.format(subannotation_type)))
+            raise (
+                HierarchyError(
+                    "The subannotation_type {} is already specified for another linguistic type."
+                    " Please use a different name.".format(subannotation_type)
+                )
+            )
         if annotation_type not in self.subannotations:
             self.subannotations[annotation_type] = set()
         self.subannotations[annotation_type].add(subannotation_type)
         self.subannotation_properties[subannotation_type] = set(k for k in properties)
         if properties:
-            set_template = 's.{0} = ${0}'
+            set_template = "s.{0} = ${0}"
             ps = []
             kwargs = {}
             for k, v in properties:
@@ -925,10 +991,10 @@ class Hierarchy(object):
                 elif v == float:
                     v = 0.0
                 elif v == str:
-                    v = ''
+                    v = ""
                 elif v == bool:
                     v = False
-                elif v == type(None):
+                elif v is type(None):
                     v = None
                 ps.append(set_template.format(k))
                 kwargs[k] = v
@@ -936,16 +1002,20 @@ class Hierarchy(object):
                     WITH a
                     CREATE (a)<-[:annotates]-(s:{s_type})
                     WITH s
-                    SET {sets}""".format(sets=', '.join(ps), a_type= annotation_type, s_type=subannotation_type)
-            corpus_context.execute_cypher(statement,
-                                          corpus_name=corpus_context.corpus_name, **kwargs)
+                    SET {sets}""".format(
+                sets=", ".join(ps), a_type=annotation_type, s_type=subannotation_type
+            )
+            corpus_context.execute_cypher(
+                statement, corpus_name=corpus_context.corpus_name, **kwargs
+            )
 
         else:
             statement = """MATCH (c:Corpus), (c)<-[:contained_by*]-(a:{a_type}) WHERE c.name = $corpus_name
                     WITH a
-                    MERGE (a)<-[:annotates]-(s:{s_type})""".format(a_type= annotation_type, s_type=subannotation_type)
-            corpus_context.execute_cypher(statement,
-                                          corpus_name=corpus_context.corpus_name)
+                    MERGE (a)<-[:annotates]-(s:{s_type})""".format(
+                a_type=annotation_type, s_type=subannotation_type
+            )
+            corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         corpus_context.cache_hierarchy()
 
     def remove_subannotation_type(self, corpus_context, subannotation_type):
@@ -968,9 +1038,10 @@ class Hierarchy(object):
                 self.subannotations[k] = v - {subannotation_type}
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
-        DETACH DELETE s""".format(s_type=subannotation_type)
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name)
+        DETACH DELETE s""".format(
+            s_type=subannotation_type
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         corpus_context.cache_hierarchy()
 
     def add_subannotation_properties(self, corpus_context, subannotation_type, properties):
@@ -989,7 +1060,7 @@ class Hierarchy(object):
         properties : iterable
             Iterable of tuples of the form (property_name, Type)
         """
-        set_template = 's.{0} = ${0}'
+        set_template = "s.{0} = ${0}"
         ps = []
         kwargs = {}
         for k, v in properties:
@@ -1000,19 +1071,20 @@ class Hierarchy(object):
             elif v == float:
                 v = 0.0
             elif v == str:
-                v = ''
+                v = ""
             elif v == bool:
                 v = False
-            elif v == type(None):
+            elif v is type(None):
                 v = None
             ps.append(set_template.format(k))
             kwargs[k] = v
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
-        SET {sets}""".format(sets=', '.join(ps), s_type=subannotation_type)
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name, **kwargs)
+        SET {sets}""".format(
+            sets=", ".join(ps), s_type=subannotation_type
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
 
         self.subannotation_properties[subannotation_type].update(k for k in properties)
         corpus_context.cache_hierarchy()
@@ -1030,17 +1102,20 @@ class Hierarchy(object):
         properties : iterable
             List of property names to remove
         """
-        remove_template = 's.{0}'
+        remove_template = "s.{0}"
         ps = []
         for k in properties:
             ps.append(remove_template.format(k))
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
-        REMOVE {removes}""".format(removes=', '.join(ps), s_type=subannotation_type)
-        corpus_context.execute_cypher(statement,
-                                      corpus_name=corpus_context.corpus_name)
-        to_remove = set(x for x in self.subannotation_properties[subannotation_type] if x[0] in properties)
+        REMOVE {removes}""".format(
+            removes=", ".join(ps), s_type=subannotation_type
+        )
+        corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
+        to_remove = set(
+            x for x in self.subannotation_properties[subannotation_type] if x[0] in properties
+        )
         self.subannotation_properties[subannotation_type].difference_update(to_remove)
         corpus_context.cache_hierarchy()
 
@@ -1179,7 +1254,7 @@ class Hierarchy(object):
             Annotation type that begins with "word"
         """
         for at in self.annotation_types:
-            if at.startswith('word'):
+            if at.startswith("word"):
                 return at
         return None
 

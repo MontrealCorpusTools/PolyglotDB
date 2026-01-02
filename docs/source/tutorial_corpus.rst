@@ -13,7 +13,7 @@ Downloading the tutorial corpus
 
 The following tutorials are written to work with two example English corpora. These are both subsets of the `LibriSpeech`_ test-clean dataset, forced aligned with the `Montreal Forced Aligner (MFA)`_:
 
-* The larger corpus, ``LibriSpeech-aligned``, contains dozens of speakers and 490MB of data. 
+* The larger corpus, ``LibriSpeech-aligned``, contains dozens of speakers and 490MB of data.
 * The smaller corpus, ``LibriSpeech-aligned-subset``, contains just two speakers from the previous corpus and therefore much less data (25MB).
 
 The corpora are made available for download `here <https://mcgill-my.sharepoint.com/:f:/g/personal/morgan_sonderegger_mcgill_ca/EipFbcOfR31JnM4XYprp14oBuYW9lYA9IzOBcEERFZxwyA?e=tiV8bW>`_

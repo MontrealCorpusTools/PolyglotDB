@@ -23,7 +23,7 @@ The complete Python script for Tutorial 2 is available here: `tutorial scripts`_
 Workflow
 ========
 
-This tutorial assumes you have already done Tutorial 1. Tutorial 2 can be followed in two ways, like Tutorial 1 (see :ref:`here<tutorial_1_workflow>`): 
+This tutorial assumes you have already done Tutorial 1. Tutorial 2 can be followed in two ways, like Tutorial 1 (see :ref:`here<tutorial_1_workflow>`):
 
 * Pasting in commands one by one into the Python interpreter
 * Running the entire script at once (``python tutorial_2.py``)
@@ -65,9 +65,9 @@ Encoding syllables
 
 Creating syllable annotations requires two steps.
 
-**Step 1: Specifying syllabic segments** 
+**Step 1: Specifying syllabic segments**
 
-We first specify the subset of phones in the corpus that are syllabic segments and function as syllabic nuclei. In general these will be vowels, but can also include syllabic consonants. 
+We first specify the subset of phones in the corpus that are syllabic segments and function as syllabic nuclei. In general these will be vowels, but can also include syllabic consonants.
 
 Subsets in PolyglotDB are completely arbitrary sets of labels that speed up querying and allow for simpler references; see :ref:`enrichment_subsets` for more details.
 
@@ -174,7 +174,7 @@ than the numeric code used in LibriSpeech. This information can be imported into
 Note that the CSV file could have an arbitrary name and location, in
 general.  The command above assumes the name and location for the
 tutorial corpus.
-	
+
 Once enrichment is complete, we can then query information and extract information about these characteristics of speakers.
 
 .. note::
@@ -209,7 +209,7 @@ of ``stress`` that can be queried on and extracted.
 
 .. note::
 
-    See :ref:`stress_enrichment` for more details on how to encode stress, as well as how to add tone rather than stress information to syllables for tone languages.  
+    See :ref:`stress_enrichment` for more details on how to encode stress, as well as how to add tone rather than stress information to syllables for tone languages.
 
 
 .. _tutorial_additional_enrichment:

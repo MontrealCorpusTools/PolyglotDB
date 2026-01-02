@@ -21,13 +21,13 @@ def make_safe(value, delimiter):
     if isinstance(value, list):
         return delimiter.join(map(lambda x: make_safe(x, delimiter), value))
     if value is None:
-        return ''
+        return ""
     return str(value)
 
 
-def save_results(results, path, header=None, mode='w'):
+def save_results(results, path, header=None, mode="w"):
     """
-    Writes results to path specified 
+    Writes results to path specified
 
     Parameters
     ----------
@@ -43,23 +43,22 @@ def save_results(results, path, header=None, mode='w'):
     if header is None:
         header = results.columns
     if isinstance(path, str):
-        with open(path, mode, encoding='utf8', newline='') as f:
+        with open(path, mode, encoding="utf8", newline="") as f:
             writer = csv.DictWriter(f, header)
-            if mode != 'a':
+            if mode != "a":
                 writer.writeheader()
             for line in results:
                 try:
-                    line = {k: make_safe(line[k], '/') for k in header}
+                    line = {k: make_safe(line[k], "/") for k in header}
                 except KeyError:
                     continue
                 writer.writerow(line)
     else:
-        if mode != 'a':
+        if mode != "a":
             path.writerow(header)
         for line in results:
             try:
-                line = [make_safe(line[k], '/') for k in header]
+                line = [make_safe(line[k], "/") for k in header]
             except KeyError:
                 continue
             path.writerow(line)
-

@@ -1,14 +1,12 @@
 import os
-from praatio.utilities.errors import DuplicateTierName
-from praatio import textgrid
 
+from praatio import textgrid
+from praatio.utilities.errors import DuplicateTierName
 
 from polyglotdb.exceptions import TextGridError
+from polyglotdb.io.helper import find_wav_path
+from polyglotdb.io.parsers.base import BaseParser, DiscourseData
 from polyglotdb.io.types.parsing import Orthography, Transcription
-
-from .base import BaseParser, DiscourseData
-
-from ..helper import find_wav_path
 
 
 class TextgridParser(BaseParser):
@@ -29,14 +27,26 @@ class TextgridParser(BaseParser):
     call_back : callable, optional
         Function to output progress messages
     """
-    _extensions = ['.textgrid']
 
-    def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
-                 make_label=False,
-                 stop_check=None, call_back=None):
-        super(TextgridParser, self).__init__(annotation_tiers, hierarchy,
-                                             make_transcription=True, make_label=True,
-                                             stop_check=stop_check, call_back=call_back)
+    _extensions = [".textgrid"]
+
+    def __init__(
+        self,
+        annotation_tiers,
+        hierarchy,
+        make_transcription=True,
+        make_label=False,
+        stop_check=None,
+        call_back=None,
+    ):
+        super(TextgridParser, self).__init__(
+            annotation_tiers,
+            hierarchy,
+            make_transcription=True,
+            make_label=True,
+            stop_check=stop_check,
+            call_back=call_back,
+        )
 
     def load_textgrid(self, path):
         """
@@ -55,7 +65,7 @@ class TextgridParser(BaseParser):
         try:
             tg = textgrid.openTextgrid(path, includeEmptyIntervals=True)
         except (AssertionError, ValueError, DuplicateTierName) as e:
-            raise (TextGridError('The file {} could not be parsed: {}'.format(path, str(e))))
+            raise (TextGridError("The file {} could not be parsed: {}".format(path, str(e))))
         return tg
 
     def parse_discourse(self, path, types_only=False):
@@ -77,9 +87,13 @@ class TextgridParser(BaseParser):
         tg = self.load_textgrid(path)
 
         if len(tg.tierNames) != len(self.annotation_tiers):
-            raise (TextGridError(
-                "The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(
-                    path)))
+            raise (
+                TextGridError(
+                    "The TextGrid ({}) does not have the same number of interval tiers as the number of annotation types specified.".format(
+                        path
+                    )
+                )
+            )
         name = os.path.splitext(os.path.split(path)[1])[0]
 
         if self.speaker_parser is not None:
@@ -95,7 +109,9 @@ class TextgridParser(BaseParser):
         for i, tier_name in enumerate(tg.tierNames):
             ti = tg.getTier(tier_name)
             if isinstance(ti, textgrid.IntervalTier):
-                self.annotation_tiers[i].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entries))
+                self.annotation_tiers[i].add(
+                    ((text.strip(), begin, end) for (begin, end, text) in ti.entries)
+                )
             else:
                 self.annotation_tiers[i].add(((text.strip(), time) for time, text in ti.entries))
 

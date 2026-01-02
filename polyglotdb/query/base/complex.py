@@ -1,7 +1,5 @@
-
-
 class ComplexClause(object):
-    type_string = ''
+    type_string = ""
 
     def __init__(self, *args):
         self.clauses = args
@@ -74,6 +72,7 @@ class ComplexClause(object):
             a dictionary of parameters
         """
         from .attributes import NodeAttribute
+
         params = {}
         for c in self.clauses:
             if isinstance(c, ComplexClause):
@@ -81,31 +80,31 @@ class ComplexClause(object):
             else:
                 try:
                     if not isinstance(c.value, NodeAttribute):
-                        params[c.cypher_value_string()[1:-1].replace('`', '')] = c.value
+                        params[c.cypher_value_string()[1:-1].replace("`", "")] = c.value
                 except AttributeError:
                     pass
         return params
 
 
 class or_(ComplexClause):
-    type_string = 'or_'
+    type_string = "or_"
 
     def for_cypher(self):
         """
         Return a Cypher representation of the clause.
         """
-        temp = ' OR '.join(x.for_cypher() for x in self.clauses)
+        temp = " OR ".join(x.for_cypher() for x in self.clauses)
         temp = "(" + temp + ")"
         return temp
 
 
 class and_(ComplexClause):
-    type_string = 'and_'
+    type_string = "and_"
 
     def for_cypher(self):
         """
         Return a Cypher representation of the clause.
         """
-        temp = ' AND '.join(x.for_cypher() for x in self.clauses)
+        temp = " AND ".join(x.for_cypher() for x in self.clauses)
         temp = "(" + temp + ")"
         return temp

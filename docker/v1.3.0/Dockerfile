@@ -15,7 +15,7 @@ RUN apt update && apt install -y \
     libsndfile1 \
     git \
     cmake \
-    nano \ 
+    nano \
     vim
 
 # Install praat

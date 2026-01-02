@@ -13,11 +13,11 @@
 .. _tutorial_vq:
 
 *************************
-Tutorial 6: Custom Script 
+Tutorial 6: Custom Script
 *************************
 
 
-This tutorial shows an example of applying a custom Praat script to make phonetic measures on an (already imported/enriched) PolyglotDB corpus. 
+This tutorial shows an example of applying a custom Praat script to make phonetic measures on an (already imported/enriched) PolyglotDB corpus.
 We use the corpus from Tutorials 1-3, and apply a Praat script to extract spectral measures for `voice quality`_ analysis, including H1-H2, H1-A1, H1-A2, and H1-A3.  A time trajectory for each spectral measure is extracted for each vowel token.
 
 The complete Python script for Tutorial  is available here: `tutorial scripts`_.
@@ -28,7 +28,7 @@ Workflow
 
 **This tutorial assumes you have already run Tutorials 1 and 2**, which import and enrich the corpus with syllable, speaker, and utterance information.
 
-Tutorial 6 can be followed in two ways, like other tutorials (see :ref:`here<tutorial_1_workflow>`): 
+Tutorial 6 can be followed in two ways, like other tutorials (see :ref:`here<tutorial_1_workflow>`):
 
 * Pasting in commands one by one into the Python interpreter
 * Running the entire script at once (``python tutorial_6.py``)
@@ -61,10 +61,10 @@ For more information on how to format your Praat script, check out (:ref:`custom
 
 .. _tutorial_vq_analysis:
 
-Performing VQ Analysis 
+Performing VQ Analysis
 ======================
 
-.. code-block:: python 
+.. code-block:: python
 
     with CorpusContext(corpus_name) as c:
         c.reset_acoustic_measure('voice_quality') # Reset exisiting acoustic measure
@@ -76,19 +76,19 @@ Performing VQ Analysis
         arguments = [10]  # Number of measurements per vowel
         c.analyze_track_script('voice_quality', props, script_path, subset='vowel', annotation_type='phone', file_type='vowel', padding=0.1, arguments=arguments, call_back=print)
 
-.. note:: 
+.. note::
 
-    When annotation_type is set to phone or word, some sound file segments may be too short for certain analyses. 
+    When annotation_type is set to phone or word, some sound file segments may be too short for certain analyses.
     (For example, the Sound: To Pitch... command in Praat requires each segment to be longer than a minimum duration.)
 
     If you encounter such an error, you can try adding padding to the segments. The modified segments will have a new duration calculated as:
-    :code:`duration = duration + 2 * padding`. 
+    :code:`duration = duration + 2 * padding`.
 
-    However, ensure that your Praat script defines the analysis range correctly so that the measurements are performed within the original sound range. 
-    Any measurements obtained outside the segment's original time range will not be stored after the analysis is complete.    
+    However, ensure that your Praat script defines the analysis range correctly so that the measurements are performed within the original sound range.
+    Any measurements obtained outside the segment's original time range will not be stored after the analysis is complete.
 
-    The file_type parameter has three options based on resampled frequency upper bounds: 
-    16000Hz for ``consonant``, 11000Hz for ``vowel``, and 2000Hz for ``low_freq``. 
+    The file_type parameter has three options based on resampled frequency upper bounds:
+    16000Hz for ``consonant``, 11000Hz for ``vowel``, and 2000Hz for ``low_freq``.
     Choose the one that best fits your analysis range. By default, you can use consonant.
 
 .. _tutorial_vq_query:
@@ -102,11 +102,11 @@ The CSV file will contain the following columns:
 - Phone label: The label of the phone.
 - Begin/End time: The time range for the phone.
 - Speaker information
-- Current and following word information 
+- Current and following word information
 - Voice quality measures: H1-H2, H1-A1, H1-A2, and H1-A3 values, as well as the timepoint at which they were measured.
 
 
-.. code-block:: python 
+.. code-block:: python
 
     # 2. Query and output analysis results
     print("Querying results...")
@@ -114,8 +114,8 @@ The CSV file will contain the following columns:
         q = c.query_graph(c.phone).filter(c.phone.subset=='vowel')
         q = q.columns(
             c.phone.label.column_name('label'),
-            c.phone.begin.column_name('begin'), 
-            c.phone.end.column_name('end'), 
+            c.phone.begin.column_name('begin'),
+            c.phone.end.column_name('end'),
             c.phone.speaker.name.column_name('speaker'),
             c.phone.speaker.sex.column_name('sex'),
             c.phone.discourse.name.column_name('discourse'),
@@ -146,7 +146,7 @@ To understand the general trend, we can encode acoustic statistics (mean).
 
     with CorpusContext(corpus_name) as c:
         acoustic_statistics = c.get_acoustic_statistic('voice_quality', 'mean', by_annotation='phone', by_speaker=True)
-        
+
         # Display example result
         key = ('61', 'AO1')
         value = acoustic_statistics[key]
@@ -164,7 +164,7 @@ To understand the general trend, we can encode acoustic statistics (mean).
                 writer.writerow(row)
 
 
-The CSV file generated will then be ready to open in other programs or in R for data analysis. 
+The CSV file generated will then be ready to open in other programs or in R for data analysis.
 
 Note that the resulting CSV file, `tutorial_6_subset_voice_quality.csv`, contains measures at multiple time points per vowel.
 
@@ -177,4 +177,3 @@ Next steps
 This tutorial uses a Praat script to do *dynamic* analysis: tracks for each measure (H1-H2) for each vowel, as a function of time, are generated and stored in the database.
 
 :ref:`Case Study 4<case_study_praat>` shows an example of using a Praat script for static analysis, where one value per acoustic measure (e.g. H1-H2 average, across a vowel) is stored in the database.
-

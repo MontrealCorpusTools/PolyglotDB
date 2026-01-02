@@ -1,9 +1,8 @@
-
-from ..query import value_for_cypher
-from ..query.annotations.query import SplitQuery
-from ..query.metadata.query import MetaDataQuery
-from ..structure import Hierarchy
-from .base import BaseContext
+from polyglotdb.corpus.base import BaseContext
+from polyglotdb.query import value_for_cypher
+from polyglotdb.query.annotations.query import SplitQuery
+from polyglotdb.query.metadata.query import MetaDataQuery
+from polyglotdb.structure import Hierarchy
 
 
 def generate_cypher_property_list(property_set):
@@ -22,23 +21,24 @@ def generate_cypher_property_list(property_set):
     """
     props = []
     for name, t in property_set:
-        if name == 'id':
+        if name == "id":
             continue
-        v = ''
+        v = ""
         if t == int:
             v = 0
         elif t == float:
             v = 0.0
         elif t in (list, tuple, set):
             v = []
-        props.append('{}: {}'.format(name, value_for_cypher(v)))
-    return ', '.join(props)
+        props.append(f"{name}: {value_for_cypher(v)}")
+    return ", ".join(props)
 
 
 class StructuredContext(BaseContext):
     """
     Class that contains methods for dealing specifically with metadata for the corpus
     """
+
     def generate_hierarchy(self):
         """
         Get hierarchy schema information from the Neo4j database
@@ -49,7 +49,7 @@ class StructuredContext(BaseContext):
             the structure of the corpus
 
         """
-        hierarchy_statement = '''MATCH
+        hierarchy_statement = """MATCH
         path = (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(nt),
         (c)-[:spoken_by]->(s:Speaker),
         (c)-[:spoken_in]->(d:Discourse)
@@ -57,7 +57,7 @@ class StructuredContext(BaseContext):
         WITH c, n, nt, path, s, d
         OPTIONAL MATCH (n)<-[:annotates]-(subs)
         return c, n, labels(n) as neo4j_labels, nt, path, collect(subs) as subs, s, d
-        order by size(nodes(path))'''
+        order by size(nodes(path))"""
         results = self.execute_cypher(hierarchy_statement, corpus_name=self.corpus_name)
         sup = None
         data = {}
@@ -71,36 +71,36 @@ class StructuredContext(BaseContext):
         acoustics = set()
         for r in results:
             if not acoustics:
-                if r['c'].get('pitch', False):
-                    acoustics.add('pitch')
-                if r['c'].get('formants', False):
-                    acoustics.add('formants')
-                if r['c'].get('intensity', False):
-                    acoustics.add('intensity')
+                if r["c"].get("pitch", False):
+                    acoustics.add("pitch")
+                if r["c"].get("formants", False):
+                    acoustics.add("formants")
+                if r["c"].get("intensity", False):
+                    acoustics.add("intensity")
 
             if not speaker_properties:
-                for k, v in r['s'].items():
+                for k, v in r["s"].items():
                     speaker_properties.add((k, type(v)))
             if not discourse_properties:
-                for k, v in r['d'].items():
+                for k, v in r["d"].items():
                     discourse_properties.add((k, type(v)))
-            at = list(r['neo4j_labels'])[0]
+            at = list(r["neo4j_labels"])[0]
             data[at] = sup
             sup = at
-            if r['subs'] is not None:
-                subs[at] = set([x['type'] for x in r['subs']])
+            if r["subs"] is not None:
+                subs[at] = {x["type"] for x in r["subs"]}
             token_subsets[at] = set()
             type_subsets[at] = set()
-            token_properties[at] = set([('id', type(''))])
+            token_properties[at] = {("id", type(""))}
             type_properties[at] = set()
-            for k, v in r['n'].items():
-                if k == 'subsets':
+            for k, v in r["n"].items():
+                if k == "subsets":
                     token_subsets[at].update(v)
                 else:
                     token_properties[at].add((k, type(v)))
 
-            for k, v in r['nt'].items():
-                if k == 'subsets':
+            for k, v in r["nt"].items():
+                if k == "subsets":
                     type_subsets[at].update(v)
                 else:
                     type_properties[at].add((k, type(v)))
@@ -145,7 +145,8 @@ class StructuredContext(BaseContext):
         """
         Delete the Hierarchy schema in the Neo4j database
         """
-        self.execute_cypher('''MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t),
+        self.execute_cypher(
+            """MATCH (c:Corpus)<-[:contained_by*]-(n)-[:is_a]->(t),
                                 (c)-[:spoken_by]->(s:Speaker),
                                 (c)-[:spoken_in]->(d:Discourse)
                                 WHERE c.name = $corpus
@@ -153,7 +154,9 @@ class StructuredContext(BaseContext):
                                 OPTIONAL MATCH (t)<-[:annotates]-(a)
                                 WITH n, t, c, s, d, a
                                 OPTIONAL MATCH (c)-[:has_acoustics]->(ac)
-                                DETACH DELETE a, t, n, s, d, ac''', corpus=self.corpus_name)
+                                DETACH DELETE a, t, n, s, d, ac""",
+            corpus=self.corpus_name,
+        )
 
     def encode_hierarchy(self):
         """
@@ -161,14 +164,14 @@ class StructuredContext(BaseContext):
         """
 
         self.reset_hierarchy()
-        hierarchy_template = '''({super})<-[:contained_by]-({sub})-[:is_a]->({sub_type})'''
-        subannotation_template = '''({super})<-[:annotates]-({sub})'''
-        speaker_template = '''(c)-[:spoken_by]->(s:Speaker {%s})'''
-        discourse_template = '''(c)-[:spoken_in]->(d:Discourse {%s})'''
-        acoustic_template = '''(c)-[:has_acoustics]->(%s:%s {%s})'''
-        statement = '''MATCH (c:Corpus) WHERE c.name = $corpus_name
+        hierarchy_template = """({super})<-[:contained_by]-({sub})-[:is_a]->({sub_type})"""
+        subannotation_template = """({super})<-[:annotates]-({sub})"""
+        speaker_template = """(c)-[:spoken_by]->(s:Speaker {%s})"""
+        discourse_template = """(c)-[:spoken_in]->(d:Discourse {%s})"""
+        acoustic_template = """(c)-[:has_acoustics]->(%s:%s {%s})"""
+        statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         with c
-        MERGE {merge_statement}'''
+        MERGE {merge_statement}"""
         merge_statements = []
         speaker_props = generate_cypher_property_list(self.hierarchy.speaker_properties)
         discourse_props = generate_cypher_property_list(self.hierarchy.discourse_properties)
@@ -180,26 +183,26 @@ class StructuredContext(BaseContext):
         for at in self.hierarchy.highest_to_lowest:
             sup = self.hierarchy[at]
             if sup is None:
-                sup = 'c'
+                sup = "c"
             else:
-                sup = '{}'.format(sup)
+                sup = "{}".format(sup)
             try:
-                if ('duration', float) not in self.hierarchy.token_properties[at]:
-                    self.hierarchy.token_properties[at].add(('duration', float))
+                if ("duration", float) not in self.hierarchy.token_properties[at]:
+                    self.hierarchy.token_properties[at].add(("duration", float))
                 token_props = generate_cypher_property_list(self.hierarchy.token_properties[at])
                 if token_props:
-                    token_props = ', ' + token_props
-                    token_props += ', duration: 0.0'
+                    token_props = ", " + token_props
+                    token_props += ", duration: 0.0"
             except KeyError:
-                token_props = ''
+                token_props = ""
             try:
                 type_props = generate_cypher_property_list(self.hierarchy.type_properties[at])
                 if type_props:
-                    type_props = ', ' + type_props
+                    type_props = ", " + type_props
                 else:
-                    type_props = ''
+                    type_props = ""
             except KeyError:
-                type_props = ''
+                type_props = ""
 
             try:
                 type_subsets = sorted(self.hierarchy.subset_types[at])
@@ -214,15 +217,20 @@ class StructuredContext(BaseContext):
                 subannotations = sorted(self.hierarchy.subannotations[at])
             except KeyError:
                 subannotations = []
-            sub = "{0}:{0} {{label: '', subsets: {2}, begin:0, end: 0{1}}}".format(at, token_props, token_subsets)
-            sub_type = "{0}_type:{0}_type {{label: '', subsets: {2}{1}}}".format(at, type_props, type_subsets)
-            merge_statements.append(hierarchy_template.format(super=sup, sub=sub,
-                                                              sub_type=sub_type))
+            sub = "{0}:{0} {{label: '', subsets: {2}, begin:0, end: 0{1}}}".format(
+                at, token_props, token_subsets
+            )
+            sub_type = "{0}_type:{0}_type {{label: '', subsets: {2}{1}}}".format(
+                at, type_props, type_subsets
+            )
+            merge_statements.append(
+                hierarchy_template.format(super=sup, sub=sub, sub_type=sub_type)
+            )
             for sa in subannotations:
                 sa = "{0}:{0} {{label: '', begin:0, type: '{0}', end: 0}}".format(sa)
                 merge_statements.append(subannotation_template.format(super=at, sub=sa))
 
-        statement = statement.format(merge_statement='\nMERGE '.join(merge_statements))
+        statement = statement.format(merge_statement="\nMERGE ".join(merge_statements))
 
         self.execute_cypher(statement, corpus_name=self.corpus_name)
         self.cache_hierarchy()
@@ -252,7 +260,7 @@ class StructuredContext(BaseContext):
             higher = higher.filter_by_subset(subset)
 
         q = SplitQuery(self, lower)
-        q.splitter = 'discourse'
+        q.splitter = "discourse"
 
         q.cache(higher.position.column_name(name))
         self.hierarchy.add_token_properties(self, lower_annotation_type, [(name, float)])
@@ -278,7 +286,7 @@ class StructuredContext(BaseContext):
         if subset is not None:
             lower = lower.filter_by_subset(subset)
         q = SplitQuery(self, higher)
-        q.splitter = 'discourse'
+        q.splitter = "discourse"
 
         q.cache(lower.rate.column_name(name))
 
@@ -305,7 +313,7 @@ class StructuredContext(BaseContext):
         if subset is not None:
             lower = lower.filter_by_subset(subset)
         q = SplitQuery(self, higher)
-        q.splitter = 'discourse'
+        q.splitter = "discourse"
 
         q.cache(lower.count.column_name(name))
 

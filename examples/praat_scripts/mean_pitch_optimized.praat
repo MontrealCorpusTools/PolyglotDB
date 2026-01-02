@@ -31,7 +31,7 @@ channel = channel + 1
 Extract one channel... channel
 
 # Extract pitch from full padded segment
-# Padding is added specifically for this step because pitch extraction 
+# Padding is added specifically for this step because pitch extraction
 # requires a minimum window length, which could be too short for certain
 # segments (e.g. a phone/word segment)
 To Pitch... 0 75 600
@@ -45,4 +45,4 @@ echo 'output$'
 
 # Clean up
 select all
-Remove 
+Remove

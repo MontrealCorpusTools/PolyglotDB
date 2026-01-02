@@ -19,7 +19,7 @@ dag <- dagify("0.9" ~ "0.8",
               "0.5" ~ "0.3",
               "0.9" ~ "0.5",
        "0.9" ~ "0.1"
-       ) 
+       )
 
 t <- data.frame(tidy_dagitty(dag, layout='linear'))
 t$edge_label =c('P', 'P.AA1', 'POLYGLOT', 'AA1', 'L', 'L.IY0', 'IY0', 'G', 'G.L.AA2.T', 'L', 'AA2', 'T', '')
@@ -116,7 +116,7 @@ dag <- dagify("CORPUS" ~ "Utterance" + "Pitch" + "Formants" + "Speaker" + "Disco
               "Word" ~ "Syllable" + "Word type",
               "Syllable" ~ "Phone" + "Syllable type",
               "Phone" ~ "Closure" + "Burst" + "Phone type",
-              labels = c("Closure"="begin\nend", 
+              labels = c("Closure"="begin\nend",
                          "Intonation"="tune\nproblematic",
                          "Word"="label\nbegin\nend",
                          "Word type"="label\ntranscription\nfrequency",

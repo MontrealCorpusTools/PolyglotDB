@@ -2,7 +2,7 @@
 title: "Plotting pitch"
 author: "M. Sonderegger & XX"
 date: 'Last update: `r format(Sys.time(), "%B %d")`'
-output: 
+output:
   html_document:
     theme: paper
     toc: true
@@ -65,7 +65,7 @@ We are primarily interested in:
 * `speaker`
 * `consonant`: consonant preceding the vowel
 
-Define and correct some columns:  
+Define and correct some columns:
 
 * `stress`: this is e.g. `1` in `AH1`
 * `stressed`: stress = 0 vs 2/1
@@ -111,9 +111,9 @@ v <- v %>%
 2. Vowel height
 
 ```{r}
-v <- v %>% 
+v <- v %>%
   mutate(
-    vowel_height = 
+    vowel_height =
       fct_recode(
         vowel,
         high = "IY", high = "UH", high = "UW", high = "IH",
@@ -122,7 +122,7 @@ v <- v %>%
         dipth = "OY", dipth = "AY", dipth = "AW"
       )
   )
-  
+
 ```
 
 
@@ -222,7 +222,7 @@ v %>%
   geom_smooth(aes(color = cons_class))
 ```
 
-Beautiful. 
+Beautiful.
 
 In Hz, faceting by gender:
 
@@ -265,7 +265,7 @@ v %>%
 ```
 
 
-Beautiful. 
+Beautiful.
 
 In Hz, faceting by gender:
 
@@ -294,4 +294,3 @@ The effect is larger (in Hz) for F speakers than for M speakers, as expected.
 <!--   ggplot(aes(x = rel_time / dur, y = F0_std)) + -->
 <!--   geom_smooth(aes(color = cons_class)) -->
 <!-- ``` -->
-

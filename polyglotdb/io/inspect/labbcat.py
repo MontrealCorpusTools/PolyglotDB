@@ -1,8 +1,6 @@
+from polyglotdb.io.parsers import LabbCatParser
+from polyglotdb.io.types.parsing import OrthographyTier
 from polyglotdb.structure import Hierarchy
-
-from ..types.parsing import *
-
-from ..parsers import LabbCatParser
 
 
 def inspect_labbcat(path):
@@ -21,11 +19,13 @@ def inspect_labbcat(path):
         Autodetected parser for LabbCat
     """
 
-    annotation_types = [OrthographyTier('transcrip', 'word'),
-                        OrthographyTier('segment', 'phone')]
+    annotation_types = [
+        OrthographyTier("transcrip", "word"),
+        OrthographyTier("segment", "phone"),
+    ]
 
     annotation_types[0].label = True
     annotation_types[1].label = True
-    hierarchy = Hierarchy({'phone': 'word', 'word': None})
+    hierarchy = Hierarchy({"phone": "word", "word": None})
 
     return LabbCatParser(annotation_types, hierarchy)

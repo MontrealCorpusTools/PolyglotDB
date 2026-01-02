@@ -8,11 +8,11 @@ oi_colours <- c('#E69F00', '#56B4E9', '#009E73')
 sibilants <- read_csv('./output/ParlBleu-subset_mts_sibilants_normalized.csv')
 
 # Make the figure
-sibilant_measures <- sibilants %>% 
+sibilant_measures <- sibilants %>%
   pivot_longer(cols = c(spectral_peak_full:F_M),
                names_to = 'acoustics',
-               values_to = 'value') %>% 
-  mutate(acoustics = acoustics %>% fct_relevel(c('spectral_peak_full', 'spectral_cog', 'F_M'))) %>% 
+               values_to = 'value') %>%
+  mutate(acoustics = acoustics %>% fct_relevel(c('spectral_peak_full', 'spectral_cog', 'F_M'))) %>%
   ggplot(aes(x = phone, y = value, colour = acoustics)) +
   geom_boxplot(position = position_dodge(width = 0.85)) +
   facet_wrap(~interaction(speaker, gender %>% str_to_title(), sep = ', '),

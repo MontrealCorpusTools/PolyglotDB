@@ -1,8 +1,9 @@
 from collections import Counter
-from .aligner import AlignerParser
 
-from polyglotdb.io.parsers.speaker import DirectorySpeakerParser
 from praatio import textgrid
+
+from polyglotdb.io.parsers.aligner import AlignerParser
+from polyglotdb.io.parsers.speaker import DirectorySpeakerParser
 
 
 class LabbCatParser(AlignerParser):
@@ -22,15 +23,28 @@ class LabbCatParser(AlignerParser):
     call_back : callable
         Function to report progress in parsing
     """
-    name = 'LabbCat'
-    word_label = 'transcript'
-    phone_label = 'segment'
+
+    name = "LabbCat"
+    word_label = "transcript"
+    phone_label = "segment"
     speaker_first = False
 
-    def __init__(self, annotation_tiers, hierarchy, make_transcription=True,
-                 stop_check=None, call_back=None):
-        super(AlignerParser, self).__init__(annotation_tiers, hierarchy, make_transcription,
-                                        False, stop_check, call_back)
+    def __init__(
+        self,
+        annotation_tiers,
+        hierarchy,
+        make_transcription=True,
+        stop_check=None,
+        call_back=None,
+    ):
+        super(AlignerParser, self).__init__(
+            annotation_tiers,
+            hierarchy,
+            make_transcription,
+            False,
+            stop_check,
+            call_back,
+        )
         self.speaker_parser = DirectorySpeakerParser()
 
     def load_textgrid(self, path):
@@ -51,8 +65,10 @@ class LabbCatParser(AlignerParser):
         try:
             tg = textgrid.openTextgrid(path, includeEmptyIntervals=True)
             new_tiers = []
-            dup_tiers_maxes = {k:0 for k,v in Counter([t for t in tg.tierNames]).items() if v > 1}
-            dup_tiers_inds = {k:0 for k in dup_tiers_maxes.keys()}
+            dup_tiers_maxes = {
+                k: 0 for k, v in Counter([t for t in tg.tierNames]).items() if v > 1
+            }
+            dup_tiers_inds = {k: 0 for k in dup_tiers_maxes.keys()}
 
             for i, t in enumerate(tg.tierNames):
                 if t in dup_tiers_maxes:
@@ -66,6 +82,6 @@ class LabbCatParser(AlignerParser):
                 new_tiers.append(t)
             tg.tiers = new_tiers
             return tg
-        except Exception as e:
-            print('There was an issue parsing {}:'.format(path))
+        except Exception:
+            print(f"There was an issue parsing: {path}")
             raise

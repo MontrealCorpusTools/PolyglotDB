@@ -1,15 +1,20 @@
-import os
 import math
+import os
+
 from praatio import textgrid
 
-
+from polyglotdb.io.helper import guess_trans_delimiter, guess_type
+from polyglotdb.io.parsers import TextgridParser
+from polyglotdb.io.types.parsing import (
+    BreakIndexTier,
+    GroupingTier,
+    OrthographyTier,
+    SegmentTier,
+    TextOrthographyTier,
+    TobiTier,
+    TranscriptionTier,
+)
 from polyglotdb.structure import Hierarchy
-
-from ..helper import guess_type, guess_trans_delimiter
-
-from ..types.parsing import *
-
-from ..parsers import TextgridParser
 
 
 def calculate_probability(x, mean, stdev):
@@ -103,7 +108,9 @@ def average_duration(tier):
     """
 
     if isinstance(tier, textgrid.IntervalTier):
-        return sum(float(end) - float(begin) for (begin, end, _) in tier.entries) / len(tier.entries)
+        return sum(float(end) - float(begin) for (begin, end, _) in tier.entries) / len(
+            tier.entries
+        )
     else:
         return float(tier.maxTime) / len(tier.entries)
 
@@ -141,7 +148,7 @@ def figure_linguistic_type(labels):
     -------
 
         the linguistic type
-     """
+    """
     if len(labels) == 0:
         return None
     elif len(labels) == 1:
@@ -180,15 +187,15 @@ def guess_tiers(tg):
         word_p = word_probability(v[1])
         phone_p = segment_probability(v[1])
         if word_p > phone_p:
-            tier_guesses[k] = ('word', v[0])
+            tier_guesses[k] = ("word", v[0])
         else:
-            tier_guesses[k] = ('segment', v[0])
-    word_labels = [(k, v[1]) for k, v in tier_guesses.items() if v[0] == 'word']
-    phone_labels = [(k, v[1]) for k, v in tier_guesses.items() if v[0] == 'segment']
+            tier_guesses[k] = ("segment", v[0])
+    word_labels = [(k, v[1]) for k, v in tier_guesses.items() if v[0] == "word"]
+    phone_labels = [(k, v[1]) for k, v in tier_guesses.items() if v[0] == "segment"]
     word_type = figure_linguistic_type(word_labels)
     phone_type = figure_linguistic_type(phone_labels)
     for k, v in tier_guesses.items():
-        if 'word' in k.lower() or v[0] == 'word':
+        if "word" in k.lower() or v[0] == "word":
             tier_guesses[k] = word_type
         else:
             tier_guesses[k] = phone_type
@@ -213,12 +220,12 @@ def inspect_textgrid(path):
     :class:`~polyglotdb.io.parsers.textgrid.TextgridParser`
         Autodetected parser for the TextGrid file
     """
-    trans_delimiters = ['.', ' ', ';', ',']
+    trans_delimiters = [".", " ", ";", ","]
     textgrids = []
     if os.path.isdir(path):
         for root, subdirs, files in os.walk(path):
             for filename in files:
-                if not filename.lower().endswith('.textgrid'):
+                if not filename.lower().endswith(".textgrid"):
                     continue
                 textgrids.append(os.path.join(root, filename))
     else:
@@ -231,29 +238,29 @@ def inspect_textgrid(path):
             for i, tier_name in enumerate(tg.tierNames):
                 ti = tg.getTier(tier_name)
                 if tier_name not in tier_guesses:
-                    a = OrthographyTier('word', 'word')
+                    a = OrthographyTier("word", "word")
                     a.ignored = True
-                elif tier_guesses[tier_name] == 'segment':
+                elif tier_guesses[tier_name] == "segment":
                     a = SegmentTier(tier_name, tier_guesses[ti.name])
                 else:
                     labels = uniqueLabels(ti)
                     cat = guess_type(labels, trans_delimiters)
-                    if cat == 'transcription':
+                    if cat == "transcription":
                         a = TranscriptionTier(ti.name, tier_guesses[ti.name])
                         a.trans_delimiter = guess_trans_delimiter(labels)
-                    elif cat == 'numeric':
+                    elif cat == "numeric":
                         if isinstance(ti, textgrid.IntervalTier):
                             raise (NotImplementedError)
                         else:
                             a = BreakIndexTier(ti.name, tier_guesses[ti.name])
-                    elif cat == 'orthography':
+                    elif cat == "orthography":
                         if isinstance(ti, textgrid.IntervalTier):
                             a = OrthographyTier(ti.name, tier_guesses[ti.name])
                         else:
                             a = TextOrthographyTier(ti.name, tier_guesses[ti.name])
-                    elif cat == 'tobi':
+                    elif cat == "tobi":
                         a = TobiTier(tier_name, tier_guesses[ti.name])
-                    elif cat == 'grouping':
+                    elif cat == "grouping":
                         a = GroupingTier(ti.name, tier_guesses[ti.name])
                     else:
                         print(tier_name)
@@ -261,9 +268,15 @@ def inspect_textgrid(path):
                         raise (NotImplementedError)
                 if not a.ignored:
                     if isinstance(ti, textgrid.IntervalTier):
-                        a.add(( (text.strip(), begin, end) for (begin, end, text) in ti.entries), save=False)
+                        a.add(
+                            ((text.strip(), begin, end) for (begin, end, text) in ti.entries),
+                            save=False,
+                        )
                     else:
-                        a.add(((text.strip(), time) for time, text in ti.entries), save=False)
+                        a.add(
+                            ((text.strip(), time) for time, text in ti.entries),
+                            save=False,
+                        )
                 anno_types.append(a)
         else:
             for i, tier_name in enumerate(tg.tierNames):
@@ -271,9 +284,14 @@ def inspect_textgrid(path):
                 if anno_types[i].ignored:
                     continue
                 if isinstance(ti, textgrid.IntervalTier):
-                    anno_types[i].add(( (text.strip(), begin, end) for (begin, end, text) in ti.entries), save=False)
+                    anno_types[i].add(
+                        ((text.strip(), begin, end) for (begin, end, text) in ti.entries),
+                        save=False,
+                    )
                 else:
-                    anno_types[i].add(((text.strip(), time) for time, text in ti.entries), save=False)
+                    anno_types[i].add(
+                        ((text.strip(), time) for time, text in ti.entries), save=False
+                    )
 
     parser = TextgridParser(anno_types, hierarchy)
     return parser

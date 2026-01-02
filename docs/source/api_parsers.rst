@@ -105,4 +105,3 @@ Directory Speaker Parser
 ------------------------
 
 .. autoclass:: polyglotdb.io.parsers.speaker.DirectorySpeakerParser
-

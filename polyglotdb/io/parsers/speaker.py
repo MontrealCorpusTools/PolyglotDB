@@ -19,6 +19,7 @@ class FilenameSpeakerParser(SpeakerParser):
         Whether to pull characters from the left or right of the base file name, defaults to True
 
     """
+
     def __init__(self, number_of_characters, left_orientation=True):
         self.number_of_characters = number_of_characters
         self.left_orientation = left_orientation
@@ -42,9 +43,9 @@ class FilenameSpeakerParser(SpeakerParser):
         if not self.number_of_characters:
             return name
         if self.left_orientation:
-            return name[:self.number_of_characters]
+            return name[: self.number_of_characters]
         else:
-            return name[-1 * self.number_of_characters:]
+            return name[-1 * self.number_of_characters :]
 
 
 class DirectorySpeakerParser(SpeakerParser):
@@ -52,6 +53,7 @@ class DirectorySpeakerParser(SpeakerParser):
     Class for parsing a speaker name from a path that gets the directory immediately containing the file and uses
     its name as the speaker name
     """
+
     def __init__(self):
         pass
 

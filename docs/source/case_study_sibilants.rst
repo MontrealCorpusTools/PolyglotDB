@@ -53,7 +53,7 @@ We first import the corpus into a PolyglotDB database, much like in Tutorial 1.
 .. literalinclude:: ../../examples/case_studies/sibilants/1_import.py
 	:language: python
 
-.. note:: 
+.. note::
 	All the Python scripts in this case study us the so-called ``if __name__ == '__main__':`` idiom, where the code is wrapped in a function called ``main()`` that is executed only when the script is called directly. This is to avoid issues with the ``multiprocessing`` module.
 
 
@@ -135,7 +135,7 @@ Once this finishes, we run the command: ``Rscript 4_generate-mts-measures.R ./ou
 Here's what each argument does:
 
 1. The positional arguments do the same thing as above (note: the output directory must be the same as that used in the `mean_spectrum` step);
-2. The ``-f``, ``-d``, ``-w`` flags do the same as above; 
+2. The ``-f``, ``-d``, ``-w`` flags do the same as above;
 3. The ``-p`` flag, with the value ``sibilant``, tells the program we want spectra for *sibilants* (rather than for *utterances*);
 4. The ``-z`` flag specifies that we want to apply the amplitude normalization scheme;
 5. The ``-m`` flag specifies the timepoint(s) at which measurements are desired--in our case, a value of ``0.5`` is used to obtain measurements at sibilant midpoint.
@@ -163,5 +163,3 @@ Overall, the three measures seem to tell a similar story (which is expected). Th
 1. Amongst the measures, peak has the highest variance and produces a sizeable number of both high and low outliers (especially for /s/).
 2. While the speaker means of peak and F\ :subscript:`M` are roughly the same (since for a large number of tokens, peak == F\ :subscript:`M`\ ), that of COG tends to be slightly higher. This is especially evident for /ʃ/ and for the male speakers, and likely reflects the presence of an additional, higher-frequency (but lower-amplitude) peak in these spectra (assuming this peak would often be above 11 kHz in female /s/).
 3. The distribution of F\ :subscript:`M` for speaker 14401's /s/ appears slightly left-skewed. This may be an indication that an upper limit of 8000 Hz may be somewhat too low for this speaker.
-
-

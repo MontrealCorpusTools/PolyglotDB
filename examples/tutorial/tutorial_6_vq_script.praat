@@ -1,5 +1,5 @@
 form Variables
-   sentence filename 
+   sentence filename
    integer chunk
 endform
 
@@ -65,7 +65,7 @@ for kounter from 1 to chunk
    f2hzpt = Get value at time... 2 n_md Hertz Linear
    if f1hzpt = undefined or f2hzpt = undefined
       # do nothing skip the chunk
-   else 
+   else
       if xx > 2
          f3hzpt = Get value at time... 3 n_md Hertz Linear
       else
@@ -77,7 +77,7 @@ for kounter from 1 to chunk
       spectrum_end = begin + (kounter * n_seg)
       Extract part...  'spectrum_begin' 'spectrum_end' Hanning 1 no
       Rename... 'name$'_slice
-      sound_16khz_slice = selected("Sound") 
+      sound_16khz_slice = selected("Sound")
       To Spectrum (fft)
       spectrum = selected("Spectrum")
       To Ltas (1-to-1)
@@ -86,7 +86,7 @@ for kounter from 1 to chunk
       select 'pitch_interpolated'
       n_f0md = Get value at time... 'n_md' Hertz Linear
 
-      if n_f0md <> undefined  
+      if n_f0md <> undefined
 
          p10_nf0md = 'n_f0md' / 10
          select 'ltas'

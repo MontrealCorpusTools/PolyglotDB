@@ -38,16 +38,20 @@ class DiscourseData(object):
         self.wav_path = None
         for k, at in self.data.items():
             self.hierarchy.type_properties[at.name] = at.type_properties
-            self.hierarchy.type_properties[at.name].add(('id', type('')))
-            self.hierarchy.type_properties[at.name].add(('label', type('')))
+            self.hierarchy.type_properties[at.name].add(("id", type("")))
+            self.hierarchy.type_properties[at.name].add(("label", type("")))
             if not at.token_properties:
-                self.hierarchy.token_properties[at.name] = set((x, type(None)) for x in at.token_property_keys if x not in ['id', 'label', 'begin', 'end'])
+                self.hierarchy.token_properties[at.name] = set(
+                    (x, type(None))
+                    for x in at.token_property_keys
+                    if x not in ["id", "label", "begin", "end"]
+                )
             else:
                 self.hierarchy.token_properties[at.name] = at.token_properties
-            self.hierarchy.token_properties[at.name].add(('id', type('')))
-            self.hierarchy.token_properties[at.name].add(('label', type('')))
-            self.hierarchy.token_properties[at.name].add(('begin', type(0.0)))
-            self.hierarchy.token_properties[at.name].add(('end', type(0.0)))
+            self.hierarchy.token_properties[at.name].add(("id", type("")))
+            self.hierarchy.token_properties[at.name].add(("label", type("")))
+            self.hierarchy.token_properties[at.name].add(("begin", type(0.0)))
+            self.hierarchy.token_properties[at.name].add(("end", type(0.0)))
 
     def __getitem__(self, key):
         return self.data[key]
@@ -88,9 +92,21 @@ class DiscourseData(object):
         """
         headers = {}
         for x in self.annotation_types:
-            token_header = ['begin', 'end', 'type_id', 'id', 'previous_id', 'speaker', 'discourse', 'label']
+            token_header = [
+                "begin",
+                "end",
+                "type_id",
+                "id",
+                "previous_id",
+                "speaker",
+                "discourse",
+                "label",
+            ]
             token_header += sorted(
-                y[0] for y in self.hierarchy.token_properties[x] if y[0] not in ['label', 'begin', 'end', 'id'])
+                y[0]
+                for y in self.hierarchy.token_properties[x]
+                if y[0] not in ["label", "begin", "end", "id"]
+            )
             supertype = self[x].supertype
             if supertype is not None:
                 token_header.append(supertype)
@@ -109,19 +125,19 @@ class DiscourseData(object):
 
     @property
     def annotation_types(self):
-        """ Returns corpus annotation types"""
+        """Returns corpus annotation types"""
         return self.keys()
 
     def keys(self):
-        """ Returns corpus keys"""
+        """Returns corpus keys"""
         return self.data.keys()
 
     def values(self):
-        """ Returns tuple of values in corpus"""
+        """Returns tuple of values in corpus"""
         return (self.data[x] for x in self.keys())
 
     def items(self):
-        """ Returns tuple of items in corpus"""
+        """Returns tuple of items in corpus"""
         return ((x, self.data[x]) for x in self.keys())
 
     def types(self, corpus_name):
@@ -146,7 +162,7 @@ class DiscourseData(object):
             types[k] = set()
             for w in v:
                 if k not in type_headers:
-                    type_headers[k] = ['id'] + w.type_keys()
+                    type_headers[k] = ["id"] + w.type_keys()
                 id = w.sha(corpus_name)
                 props = tuple([id] + [x for x in w.type_values()])
                 types[k].add(props)

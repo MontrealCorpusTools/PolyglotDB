@@ -1,4 +1,4 @@
-from .base import BaseAnnotationType, BaseAnnotation
+from polyglotdb.io.types.base import BaseAnnotation, BaseAnnotationType
 
 
 class IntervalAnnotation(BaseAnnotation):

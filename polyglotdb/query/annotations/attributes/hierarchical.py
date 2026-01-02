@@ -1,11 +1,15 @@
-from .base import AnnotationNode, key_for_cypher
+from polyglotdb.query.annotations.attributes.base import AnnotationNode, key_for_cypher
 
 
 class HierarchicalAnnotation(AnnotationNode):
-    match_template = '''({anchor_alias})-[:contained_by]->({higher_alias})-[:is_a]->({higher_type_alias})'''
+    match_template = (
+        """({anchor_alias})-[:contained_by]->({higher_alias})-[:is_a]->({higher_type_alias})"""
+    )
 
     def __init__(self, anchor_node, higher_node):
-        super(HierarchicalAnnotation, self).__init__(higher_node.node_type, higher_node.corpus, higher_node.hierarchy)
+        super(HierarchicalAnnotation, self).__init__(
+            higher_node.node_type, higher_node.corpus, higher_node.hierarchy
+        )
         self.anchor_node = anchor_node
         self.higher_node = higher_node
 
@@ -43,8 +47,9 @@ class HierarchicalAnnotation(AnnotationNode):
         return base
 
     def __repr__(self):
-        return '<HierarchicalAnnotation object of \'{}\' type from \'{}\'>'.format(self.node_type,
-                                                                                   self.anchor_node.node_type)
+        return "<HierarchicalAnnotation object of '{}' type from '{}'>".format(
+            self.node_type, self.anchor_node.node_type
+        )
 
     # def __getattr__(self, key):
     #     if key == 'annotation':
@@ -102,18 +107,19 @@ class HierarchicalAnnotation(AnnotationNode):
 
     @property
     def alias(self):
-
         """Returns a cypher formatted string of keys and prefixes"""
 
-        pre = ''
-        #if self.pos < 0:
+        pre = ""
+        # if self.pos < 0:
         #    pre += 'prev_{}_'.format(-1 * self.pos)
-        #elif self.pos > 0:
+        # elif self.pos > 0:
         #    pre += 'foll_{}_'.format(self.pos)
-        return key_for_cypher(pre + self.anchor_node.alias.replace('`', '') + '_' + self.node_type)
+        return key_for_cypher(pre + self.anchor_node.alias.replace("`", "") + "_" + self.node_type)
 
     def for_match(self):
-        kwargs = {'anchor_alias': self.anchor_node.alias,
-                  'higher_alias': self.define_alias,
-                  'higher_type_alias': self.define_type_alias}
+        kwargs = {
+            "anchor_alias": self.anchor_node.alias,
+            "higher_alias": self.define_alias,
+            "higher_type_alias": self.define_type_alias,
+        }
         return self.match_template.format(**kwargs)

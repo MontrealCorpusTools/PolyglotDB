@@ -25,7 +25,7 @@ This section describes instructions for restarting the Roquefort ISCAN server at
     - ``cd /data/mmcauliffe/dev/iscan-spade-server/``
     - ``celery -A iscan_server worker -l info``
 
-#. Press *ctrl+a then d* to close the screen without stopping it. Then, in the main window, run the following command: 
+#. Press *ctrl+a then d* to close the screen without stopping it. Then, in the main window, run the following command:
 
     - ``sudo service apache2 restart``
 

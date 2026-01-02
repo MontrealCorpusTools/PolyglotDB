@@ -7,14 +7,15 @@ class Track(object):
     points : iterable of :class:`~polyglotdb.acoustics.classes.TimePoint`
         Time points with values of the acoustic track
     """
+
     def __init__(self):
         self.points = []
 
     def __str__(self):
-        return '<Track: {}>'.format(self.points)
+        return "<Track: {}>".format(self.points)
 
     def __repr__(self):
-        return '<TrackObject with {} points'.format(len(self.points))
+        return "<TrackObject with {} points".format(len(self.points))
 
     def keys(self):
         """
@@ -124,12 +125,13 @@ class TimePoint(object):
     values : dict
         Dictionary of acoustic measures for the given time point
     """
+
     def __init__(self, time):
         self.time = time
         self.values = {}
 
     def __str__(self):
-        return '<Time point {}: {}>'.format(self.time, self.values)
+        return "<Time point {}: {}>".format(self.time, self.values)
 
     def __repr__(self):
         return str(self)
@@ -138,7 +140,7 @@ class TimePoint(object):
         return item in self.values
 
     def __getitem__(self, item):
-        if item == 'time':
+        if item == "time":
             return self.time
         return self.values[item]
 
@@ -180,7 +182,7 @@ class TimePoint(object):
             Subset of values if their name is in the specified columns
 
         """
-        return {k: v for k,v in self.values.items() if k in columns}
+        return {k: v for k, v in self.values.items() if k in columns}
 
     def add_value(self, name, value):
         """
@@ -206,5 +208,5 @@ class TimePoint(object):
             TimePoint to get values from
 
         """
-        for k,v in point.values.items():
+        for k, v in point.values.items():
             self.values[k] = v

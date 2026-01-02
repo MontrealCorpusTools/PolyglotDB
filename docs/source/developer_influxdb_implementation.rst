@@ -42,7 +42,7 @@ along with the ``time`` in seconds will always give a unique acoustic time point
 
 
 In addition to these tags, there are several queryable fields which are always present in addition to the measurement fields.
-First, the ``phone``, ``word``, ``syllable``(if syllable encoding has been performed for the corpus) for the time point are saved to allow for efficient aggregation across annotations.  
+First, the ``phone``, ``word``, ``syllable``(if syllable encoding has been performed for the corpus) for the time point are saved to allow for efficient aggregation across annotations.
 Second, the ``utterance_id``for the time point is also saved.  The ``utterance_id`` is used for general querying, where each utterance's track for the
 requested acoustic property is queried once and then cached for any further results to use without needing to query the
 InfluxDB again.  For instance, a query on phone formant tracks might return 2000 phones.  Without the ``utterance_id``, there

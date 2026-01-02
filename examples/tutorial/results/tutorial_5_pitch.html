@@ -325,9 +325,9 @@ v &lt;- v %&gt;%
 <ol start="2" style="list-style-type: decimal">
 <li>Vowel height</li>
 </ol>
-<pre class="r"><code>v &lt;- v %&gt;% 
+<pre class="r"><code>v &lt;- v %&gt;%
   mutate(
-    vowel_height = 
+    vowel_height =
       fct_recode(
         vowel,
         high = &quot;IY&quot;, high = &quot;UH&quot;, high = &quot;UW&quot;, high = &quot;IH&quot;,
