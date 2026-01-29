@@ -304,55 +304,14 @@ class BaseContext(object):
         Remove all nodes and relationships in the corpus.
         """
 
-        delete_statement = """MATCH (n:{corpus}:{anno})-[:spoken_by]->(s:{corpus}:Speaker)
-        where s.name = $speaker
-        with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count"""
-
-        delete_type_statement = """MATCH (n:{corpus}:{anno}_type)
-        with n LIMIT 1000 DETACH DELETE n return count(n) as deleted_count"""
-
         if call_back is not None:
             call_back("Resetting database...")
-            number = self.execute_cypher(
-                """MATCH (n:{}) return count(*) as number """.format(self.cypher_safe_name)
-            )["number"]
-            call_back(0, number)
-        num_deleted = 0
-        for a in self.hierarchy.annotation_types:
-            if stop_check is not None and stop_check():
-                break
-            for s in self.speakers:
-                if stop_check is not None and stop_check():
-                    break
-                deleted = 1000
-                while deleted > 0:
-                    if stop_check is not None and stop_check():
-                        break
-                    deleted = self.execute_cypher(
-                        delete_statement.format(corpus=self.cypher_safe_name, anno=a),
-                        speaker=s,
-                    )[0]["deleted_count"]
-                    num_deleted += deleted
-                    if call_back is not None:
-                        call_back(num_deleted)
 
-            deleted = 1000
-            while deleted > 0:
-                if stop_check is not None and stop_check():
-                    break
-                deleted = self.execute_cypher(
-                    delete_type_statement.format(corpus=self.cypher_safe_name, anno=a)
-                )[0]["deleted_count"]
-                num_deleted += deleted
-                if call_back is not None:
-                    call_back(num_deleted)
-
-        self.execute_cypher(
-            """MATCH (n:{}:Speaker) DETACH DELETE n """.format(self.cypher_safe_name)
-        )
-        self.execute_cypher(
-            """MATCH (n:{}:Discourse) DETACH DELETE n """.format(self.cypher_safe_name)
-        )
+        delete_statement = f"""MATCH (n:{self.cypher_safe_name})
+        CALL (n) {{
+            DETACH DELETE n
+        }} IN TRANSACTIONS OF 100 ROWS"""
+        self.execute_cypher(delete_statement)
         self.reset_hierarchy()
         self.execute_cypher(
             """MATCH (n:Corpus) where n.name = $corpus_name DELETE n """,

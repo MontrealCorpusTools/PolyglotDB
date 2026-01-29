@@ -90,8 +90,8 @@ def import_type_csvs(corpus_context, type_headers):
         else:
             type_prop_string = ""
         type_import_statement = """
-        CALL {{
-            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        CALL (csvLine) {{
             MERGE (n:{annotation_type}_type:{corpus_name} {{ {type_property_string} }})
         }} IN TRANSACTIONS OF 2000 ROWS
         """
@@ -217,8 +217,8 @@ def import_csvs(
                 else:
                     token_prop_string = ""
                 node_import_statement = """
-                CALL {{
-                    LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                CALL (csvLine) {{
                     CREATE (t:{annotation_type}:{corpus_name}:speech {{
                         id: csvLine.id,
                         begin: toFloat(csvLine.begin),
@@ -235,8 +235,8 @@ def import_csvs(
                 }
                 if st is not None:
                     rel_import_statement = """
-                    CALL{{
-                        LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                    CALL (csvLine) {{
                         MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}), (super:{stype}:{corpus_name} {{id: csvLine.{stype}}}),
                         (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
                         (s:Speaker:{corpus_name} {{name: csvLine.speaker}}),
@@ -257,8 +257,8 @@ def import_csvs(
                     }
                 else:
                     rel_import_statement = """
-                    CALL{{
-                        LOAD CSV WITH HEADERS FROM '{path}' AS csvLine
+                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                    CALL (csvLine) {{
                         MATCH (n:{annotation_type}_type:{corpus_name} {{id: csvLine.type_id}}),
                         (d:Discourse:{corpus_name} {{name: csvLine.discourse}}),
                         (s:Speaker:{corpus_name} {{ name: csvLine.speaker}}),
@@ -336,8 +336,8 @@ def import_csvs(
                     sub_path = "file:///{}".format(make_path_safe(path))
 
                 rel_import_statement = """
-                CALL {{
-                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                CALL (csvLine) {{
                     MATCH (n:{annotation_type} {{id: csvLine.annotation_id}})
                     CREATE (t:{subannotation_type}:{corpus_name}:speech {{
                         id: csvLine.id,
@@ -406,8 +406,8 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
         lex_path = "file:///{}".format(make_path_safe(path))
     if case_sensitive:
         import_statement = """
-        CALL {
-            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        CALL (csvLine) {{
             WITH csvLine
             MATCH (n:{word_type}_type:{corpus_name}) WHERE n.label = csvLine.label
             SET {new_properties}
@@ -416,8 +416,8 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
 
     else:
         import_statement = """
-        CALL {{
-            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        CALL (csvLine) {{
             MATCH (n:{word_type}_type:{corpus_name}) WHERE n.label_insensitive = csvLine.label
             SET {new_properties}
         }} IN TRANSACTIONS OF 3000 ROWS
@@ -788,8 +788,8 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             node_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
                     (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}})
                 WITH csvLine, begin, end
@@ -812,8 +812,8 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (d:Discourse:{corpus})<-[:spoken_in]-(begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}})-[:spoken_by]->(s:Speaker:{corpus}),
                     (utt:utterance:{corpus}:speech {{id: csvLine.id}})
                 CREATE
@@ -833,8 +833,8 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
                     (utt:utterance:{corpus}:speech {{id: csvLine.id}}),
                     (prev:utterance {{id: csvLine.prev_id}})
@@ -854,8 +854,8 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             word_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (begin:{word_type}:{corpus}:speech {{id: csvLine.begin_word_id}}),
                     (utt:utterance:{corpus}:speech {{id: csvLine.id}}),
                     (end:{word_type}:{corpus}:speech {{id: csvLine.end_word_id}}),
@@ -872,8 +872,8 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
             )
             corpus_context.execute_cypher(statement)
             word_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (n)-[:contained_by*]->()-[:contained_by]->(utt:utterance:{corpus}:speech {{id: csvLine.id}})
                 WITH utt, collect(n) AS subunits
                 UNWIND subunits AS w
@@ -977,8 +977,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             nucleus_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (n:{phone_name}:{corpus}:speech {{id: csvLine.vowel_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech)
                 SET n :nucleus, n.syllable_position = 'nucleus'
             }} IN TRANSACTIONS OF 2000 ROWS
@@ -995,8 +995,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             node_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
                 ON CREATE SET s_type.label = csvLine.label
                 WITH s_type, csvLine
@@ -1019,8 +1019,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
                     (s:syllable:{corpus}:speech {{id: csvLine.id}})
                 WITH n, w, s
@@ -1036,8 +1036,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
             )
             corpus_context.execute_cypher(statement)
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
                     (w)-[:contained_by]->(n)
                 WITH s, collect(n) as superunits
@@ -1061,8 +1061,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (n:{phone_name}:{corpus}:speech:nucleus {{id: csvLine.vowel_id}}),
                     (s:syllable:{corpus}:speech {{id: csvLine.id}}),
                     (n)-[:spoken_by]->(sp:Speaker),
@@ -1084,8 +1084,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             prev_rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
                 WITH csvLine, s
                 MATCH (prev:syllable {{id: csvLine.prev_id}})
@@ -1106,8 +1106,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             onset_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (n:{phone_name}:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
                 WITH csvLine, s, w, n
                 OPTIONAL MATCH
@@ -1136,8 +1136,8 @@ def import_syllable_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             coda_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (n:nucleus:{corpus}:speech)-[:contained_by]->(s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
                 WITH csvLine, s, w, n
                 OPTIONAL MATCH
@@ -1248,8 +1248,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             node_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MERGE (s_type:syllable_type:{corpus} {{id: csvLine.type_id}})
                 ON CREATE SET s_type.label = csvLine.label
                 WITH s_type, csvLine
@@ -1273,8 +1273,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}})-[r:contained_by]->(w:{word_name}:{corpus}:speech),
                     (o)-[:spoken_by]->(sp:Speaker),
                     (o)-[:spoken_in]->(d:Discourse),
@@ -1293,8 +1293,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
             )
             corpus_context.execute_cypher(statement)
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech),
                     (w)-[:contained_by]->(n)
                 WITH s, collect(n) as superunits
@@ -1318,8 +1318,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
                 with csvLine, s
                 MATCH (prev:syllable {{id:csvLine.prev_id}})
@@ -1342,8 +1342,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             rel_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" as csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (s:syllable:{corpus}:speech {{id: csvLine.id}})
                 with csvLine, s
                 MATCH (foll:syllable {{prev_id:csvLine.id}})
@@ -1366,8 +1366,8 @@ def import_nonsyl_csv(corpus_context, call_back=None, stop_check=None):
 
             begin = time.time()
             phone_statement = """
-            CALL {{
-                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+            CALL (csvLine) {{
                 MATCH (o:{phone_name}:{corpus}:speech {{id: csvLine.onset_id}}),
                     (s:syllable:{corpus}:speech {{id: csvLine.id}})-[:contained_by]->(w:{word_name}:{corpus}:speech)
                 WITH o, w, csvLine, s
@@ -1443,8 +1443,8 @@ def import_subannotation_csv(corpus_context, type, annotated_type, props):
     else:
         properties = ""
     statement = """
-    CALL {{
         LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+        CALL (csvLine) {{
         MATCH (annotated:{a_type}:{corpus} {{id: csvLine.annotated_id}})
         CREATE (annotated) <-[:annotates]-(annotation:{type}:{corpus} {{
             id: csvLine.id,
@@ -1547,8 +1547,8 @@ def import_token_csv(corpus_context, path, annotated_type, id_column, properties
     )
 
     statement = """
-    CALL {{
-        LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
+    LOAD CSV WITH HEADERS FROM "file://{path}" AS csvLine
+    CALL (csvLine) {{
         MATCH (x:{a_type}:{corpus} {{id: csvLine.{id_column}}})
         SET {property_update}
     }} IN TRANSACTIONS OF 500 ROWS
@@ -1684,8 +1684,8 @@ def import_token_csv_with_timestamp(
     )
 
     statement = """
-    CALL {{
-        LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+    CALL (csvLine) {{
         MATCH (d:Discourse {{name: csvLine.{discourse_column}}})
         MATCH (x:{a_type}:{corpus})-[:spoken_in]->(d)
         WHERE x.begin <= toFloat(csvLine.{timestamp_column}) <= x.end
