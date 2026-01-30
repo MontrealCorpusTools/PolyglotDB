@@ -38,7 +38,7 @@ def save_config(c):
         c.write(configfile)
 
 
-NEO4J_VERSION = "5.21.0"
+NEO4J_VERSION = "5.26.20"
 
 INFLUXDB_VERSION = "1.8.9"
 
@@ -61,7 +61,7 @@ def download_neo4j(data_directory, overwrite=False):
         print("Using existing Neo4j installation.")
         return
     os.makedirs(TEMP_DIR, exist_ok=True)
-    print("Downloading Neo4j...")
+    print(f"Downloading Neo4j {NEO4J_VERSION}...")
 
     if sys.platform.startswith("win"):
         dist_string = "windows.zip"
@@ -99,7 +99,7 @@ def download_influxdb(data_directory, overwrite=False):
         print("Using existing InfluxDB installation.")
         return
     os.makedirs(TEMP_DIR, exist_ok=True)
-    print("Downloading InfluxDB...")
+    print(f"Downloading InfluxDB {INFLUXDB_VERSION}...")
 
     if sys.platform.startswith("win"):
         dist_string = "windows_amd64.zip"

@@ -178,8 +178,8 @@ def point_measures_from_csv(corpus_context, header_info, annotation_type="phone"
             import_path = "file:///{}".format(make_path_safe(path))
 
         import_statement = """
-                CALL {{
-                    LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                LOAD CSV WITH HEADERS FROM "{path}" AS csvLine
+                CALL (csvLine) {{
                     MATCH (n:{annotation_type}:{corpus_name}) WHERE n.id = csvLine.id
                     SET {new_properties}
                 }} IN TRANSACTIONS OF 2000 ROWS"""
