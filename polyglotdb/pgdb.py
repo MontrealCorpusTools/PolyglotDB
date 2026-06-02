@@ -7,7 +7,7 @@ import shutil
 import signal
 import subprocess
 import sys
-from urllib.request import urlretrieve
+from urllib.request import build_opener, install_opener, urlretrieve
 
 from tqdm import tqdm
 
@@ -118,6 +118,9 @@ def download_influxdb(data_directory, overwrite=False):
     )
 
     with tqdm(unit="B", unit_scale=True, miniters=1) as t:
+        opener = build_opener()
+        opener.addheaders = [("User-Agent", "PolyglotDB/1.4")]
+        install_opener(opener)
         filename, headers = urlretrieve(download_link, path, reporthook=tqdm_hook(t), data=None)
     shutil.unpack_archive(filename, data_directory)
     for d in os.listdir(data_directory):
