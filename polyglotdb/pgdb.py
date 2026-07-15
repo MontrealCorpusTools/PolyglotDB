@@ -7,9 +7,13 @@ import shutil
 import signal
 import subprocess
 import sys
-from urllib.request import build_opener, install_opener, urlretrieve
 
+import requests
 from tqdm import tqdm
+
+NEO4J_VERSION = "5.26.20"
+
+INFLUXDB_VERSION = "1.8.9"
 
 
 def load_config():
@@ -38,21 +42,29 @@ def save_config(c):
         c.write(configfile)
 
 
-NEO4J_VERSION = "5.26.20"
-
-INFLUXDB_VERSION = "1.8.9"
-
-
-def tqdm_hook(t):
-    last_b = [0]
-
-    def inner(b=1, bsize=1, tsize=None):
-        if tsize is not None:
-            t.total = tsize
-        t.update((b - last_b[0]) * bsize)
-        last_b[0] = b
-
-    return inner
+def download_file(url: str, fname: str, chunk_size=1024):
+    resp = requests.get(
+        url,
+        stream=True,
+        headers={
+            "User-Agent": (
+                f"PolyglotDB/1.4.0"
+                "(https://github.com/MontrealCorpusTools/PolyglotDB) "
+                f"requests/{requests.__version__}"
+            ),
+        },
+    )
+    total = int(resp.headers.get("content-length", 0))
+    with open(fname, "wb") as file, tqdm(
+        desc=fname,
+        total=total,
+        unit="iB",
+        unit_scale=True,
+        unit_divisor=1024,
+    ) as bar:
+        for data in resp.iter_content(chunk_size=chunk_size):
+            size = file.write(data)
+            bar.update(size)
 
 
 def download_neo4j(data_directory, overwrite=False):
@@ -76,9 +88,8 @@ def download_neo4j(data_directory, overwrite=False):
         )
     )
 
-    with tqdm(unit="B", unit_scale=True, miniters=1) as t:
-        filename, headers = urlretrieve(download_link, path, reporthook=tqdm_hook(t), data=None)
-    shutil.unpack_archive(filename, data_directory)
+    download_file(download_link, path)
+    shutil.unpack_archive(path, data_directory)
     for d in os.listdir(data_directory):
         if d.startswith(("neo4j")):
             os.rename(os.path.join(data_directory, d), neo4j_directory)
@@ -116,13 +127,8 @@ def download_influxdb(data_directory, overwrite=False):
             version=INFLUXDB_VERSION, dist_string=dist_string
         )
     )
-
-    with tqdm(unit="B", unit_scale=True, miniters=1) as t:
-        opener = build_opener()
-        opener.addheaders = [("User-Agent", "PolyglotDB/1.4")]
-        install_opener(opener)
-        filename, headers = urlretrieve(download_link, path, reporthook=tqdm_hook(t), data=None)
-    shutil.unpack_archive(filename, data_directory)
+    download_file(download_link, path)
+    shutil.unpack_archive(path, data_directory)
     for d in os.listdir(data_directory):
         if d.startswith(("influxdb")):
             os.rename(os.path.join(data_directory, d), influxdb_directory)
