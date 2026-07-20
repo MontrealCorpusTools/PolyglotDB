@@ -12,5 +12,6 @@ dependencies:
     - future
     - requests
     - neo4j-python-driver
-    - pip:
-        - conch-sounds
+    - pytest
+    - pre-commit
+    - conch-sounds
