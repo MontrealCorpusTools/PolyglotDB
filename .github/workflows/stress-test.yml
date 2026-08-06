@@ -17,16 +17,12 @@ jobs:
       with:
         repository: MontrealCorpusTools/PolyglotDB
 
-    - name: Set up Git for cloning
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-
-    - name: Clone the private repository
-      run: |
-        eval `ssh-agent -s`
-        ssh-add - <<< '${{ secrets.TESTING_SSH_KEY }}'
-        git clone ssh://git@github.com/MontrealCorpusTools/polyglotdb-testing.git testing
+    - name: Checkout testing repository
+      uses: actions/checkout@v3
+      with:
+        repository: MontrealCorpusTools/polyglotdb-testing
+        ssh-key: ${{ secrets.TESTING_SSH_KEY }}
+        path: testing
 
     - name: Set environment variable for private repo root
       run: echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
