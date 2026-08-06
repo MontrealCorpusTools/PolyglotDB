@@ -24,9 +24,9 @@ jobs:
 
     - name: Clone the private repository
       run: |
-        git clone https://x-access-token:${{ secrets.PAT }}@github.com/MontrealCorpusTools/polyglotdb-testing.git testing
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
+        eval `ssh-agent -s`
+        ssh-add - <<< '${{ secrets.TESTING_SSH_KEY }}'
+        git clone ssh://git@github.com/MontrealCorpusTools/polyglotdb-testing.git testing
 
     - name: Set environment variable for private repo root
       run: echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
