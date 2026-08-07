@@ -10,6 +10,7 @@ jobs:
 
     env:
       PGDB_HOME: ${{ github.workspace }}/pgdb_home  # Use workspace directory
+      TEST_REPO_ROOT: ${{ github.workspace }}/testing  # Use workspace directory
 
     steps:
     - name: Checkout main repository
@@ -23,14 +24,8 @@ jobs:
       with:
         repository: MontrealCorpusTools/polyglotdb-testing
         ssh-key: ${{ secrets.PRIVATE_SSH_KEY }}
-        path: testing
+        path: ${{ github.workspace }}/testing
         fetch-depth: 0
-
-    - name: Set environment variable for private repo root
-      run: |
-        echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
-        ls
-        ls $TEST_REPO_ROOT
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v4
@@ -66,6 +61,8 @@ jobs:
 
     - name: Run duration.py
       run: |
+        echo $TEST_REPO_ROOT
+        ls $TEST_REPO_ROOT
         source venv/bin/activate
         cd testing
         python duration.py -r ice-can
