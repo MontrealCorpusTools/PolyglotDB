@@ -25,7 +25,6 @@ jobs:
         repository: MontrealCorpusTools/polyglotdb-testing
         ssh-key: ${{ secrets.PRIVATE_SSH_KEY }}
         path: ${{ github.workspace }}/testing
-        fetch-depth: 0
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v4
