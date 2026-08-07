@@ -25,6 +25,7 @@ jobs:
         repository: MontrealCorpusTools/polyglotdb-testing
         ssh-key: ${{ secrets.PRIVATE_SSH_KEY }}
         path: ${{ github.workspace }}/testing
+        lfs: true
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v4
@@ -40,7 +41,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsndfile1 sox
+        sudo apt-get install -y libsndfile1
 
     - name: Install required packages
       run: |
@@ -60,10 +61,6 @@ jobs:
 
     - name: Run duration.py
       run: |
-        echo $TEST_REPO_ROOT
-        ls $TEST_REPO_ROOT
-        ls -al $TEST_REPO_ROOT/ice-can/audio_and_transcripts
-        soxi $TEST_REPO_ROOT/ice-can/audio_and_transcripts/S2A-001_1.wav
         source venv/bin/activate
         cd testing
         python duration.py -r ice-can
