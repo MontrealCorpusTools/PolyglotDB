@@ -13,16 +13,18 @@ jobs:
 
     steps:
     - name: Checkout main repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@main
       with:
         repository: MontrealCorpusTools/PolyglotDB
+        fetch-depth: 0
 
     - name: Checkout testing repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@main
       with:
         repository: MontrealCorpusTools/polyglotdb-testing
         ssh-key: ${{ secrets.TESTING_SSH_KEY }}
         path: testing
+        fetch-depth: 0
 
     - name: Set environment variable for private repo root
       run: echo "TEST_REPO_ROOT=$(pwd)/testing" >> $GITHUB_ENV
