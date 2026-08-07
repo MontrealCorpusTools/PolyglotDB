@@ -22,7 +22,7 @@ jobs:
       uses: actions/checkout@main
       with:
         repository: MontrealCorpusTools/polyglotdb-testing
-        ssh-key: ${{ secrets.TESTING_SSH_KEY }}
+        ssh-key: ${{ secrets.PRIVATE_SSH_KEY }}
         path: testing
         fetch-depth: 0
 
