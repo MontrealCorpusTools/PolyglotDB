@@ -1,10 +1,8 @@
-import os
-
 import pytest
 
 from polyglotdb import CorpusContext
+from polyglotdb.exceptions import SubsetError
 from polyglotdb.io.inspect.partitur import inspect_partitur
-from polyglotdb.io.parsers.partitur import PartiturParser
 
 
 def test_load_partitur(partitur_test_dir, graph_db):
@@ -20,7 +18,8 @@ def test_load_partitur(partitur_test_dir, graph_db):
         results = q.all()
         assert len(results) == 1
 
-        c.encode_pauses("<p:>")
+        with pytest.raises(SubsetError):
+            c.encode_pauses("<p:>")
 
         c.encode_utterances(min_pause_length=0)
 
