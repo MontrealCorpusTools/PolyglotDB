@@ -862,7 +862,7 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                     path = shortestPath((begin)-[:precedes*0..]->(end))
                 WITH utt, nodes(path) AS words
                 UNWIND words AS w
-                CREATE (w)-[:contained_by]->(utt)
+                MERGE (w)-[:contained_by]->(utt)
             }} IN TRANSACTIONS OF 1000 ROWS
             """
             statement = word_statement.format(
@@ -877,7 +877,7 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                 MATCH (n)-[:contained_by*]->()-[:contained_by]->(utt:utterance:{corpus}:speech {{id: csvLine.id}})
                 WITH utt, collect(n) AS subunits
                 UNWIND subunits AS w
-                CREATE (w)-[:contained_by]->(utt)
+                MERGE (w)-[:contained_by]->(utt)
             }} IN TRANSACTIONS OF 1000 ROWS
             """
             statement = word_statement.format(

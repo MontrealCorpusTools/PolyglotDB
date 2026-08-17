@@ -1,4 +1,5 @@
 from polyglotdb.corpus.importable import ImportContext
+from polyglotdb.exceptions import SubsetError
 
 
 class PauseContext(ImportContext):
@@ -51,7 +52,9 @@ class PauseContext(ImportContext):
                 else:
                     raise NotImplementedError
                 q.set_pause()
-
+        total_pauses = self.query_graph(self.pause).count()
+        if total_pauses == 0:
+            raise SubsetError(f"No words matched {pause_words} for creating pauses")
         if call_back is not None:
             call_back("Finishing up...")
         for s in self.speakers:
