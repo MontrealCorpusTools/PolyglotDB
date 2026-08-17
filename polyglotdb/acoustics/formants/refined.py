@@ -349,8 +349,6 @@ def analyze_formant_points_refinement(
                 prev_prototype_metadata = prototype_metadata
                 best_prototype_metadata.update(prototype_metadata)
 
-            last_iteration_best_numbers = best_numbers
-
             if iteration > 0:
                 changed_numbers = 0
                 for b_i, bn in enumerate(best_numbers):
@@ -358,6 +356,9 @@ def analyze_formant_points_refinement(
                         changed_numbers += 1
                 if changed_numbers == 0:
                     break
+
+            last_iteration_best_numbers = best_numbers
+
         log_output.append([speaker, vowel, str(len(output)), str(iteration + 1)])
     for s, v, token_count, iteration_count in log_output:
         print(
