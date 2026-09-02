@@ -1,4 +1,7 @@
+import logging
 import re
+from collections.abc import Callable
+from typing import NamedTuple
 from uuid import uuid1
 
 from polyglotdb.corpus.utterance import UtteranceContext
@@ -13,12 +16,45 @@ from polyglotdb.io.importer import (
     syllables_data_to_csvs,
     syllables_enrichment_data_to_csvs,
 )
+from polyglotdb.query.base.results import BaseRecord
 from polyglotdb.syllabification.maxonset import split_nonsyllabic_maxonset, split_ons_coda_maxonset
 from polyglotdb.syllabification.probabilistic import (
     norm_count_dict,
     split_nonsyllabic_prob,
     split_ons_coda_prob,
 )
+
+logger = logging.getLogger(__name__)
+
+type Phone = str
+# A word is just a list of phones.
+type Word = list[Phone]
+
+
+class Syllable(NamedTuple):
+    """The boundaries of a syllable in a word.
+
+    Each of `onset`, `nucleus`, and `coda` is a pair of start/end indices indicating
+    the slice of the word's phone sequence that corresponds to the syllable constituent.
+    For example, for the word ['k', 'ae', 't', 's'], we would have the following values:
+
+    - `onset`: (0, 1)
+    - `nucleus`: (1, 2)
+    - `coda`: (2, 4)
+
+    For now, for any well-formed syllable, we assume that `onset[1] == nucleus[0]`
+    and `nucleus[1] == coda[0]`. Following existing code, we also assume that the
+    nucleus has either zero or one phone. In the case where the nucleus is empty
+    (a degenerate syllable), both onset and coda must not be empty. Note that these
+    are preconditions that the syllabification algorithm must verify by itself.
+    """
+
+    onset: tuple[int, int]
+    nucleus: tuple[int, int]
+    coda: tuple[int, int]
+
+
+type SyllabificationAlgo = Callable[[list[Word]], list[Syllable]]
 
 
 def make_label_safe_for_cypher(label):
@@ -68,8 +104,7 @@ class SyllabicContext(UtteranceContext):
         for s in self.speakers:
             discourses = self.get_discourses_of_speaker(s)
             for d in discourses:
-                statement = f"""match
-                (w:{self.word_name}:{self.cypher_safe_name})-[:spoken_by]->(s:Speaker:{self.cypher_safe_name}),
+                statement = f"""match (w:{self.word_name}:{self.cypher_safe_name})-[:spoken_by]->(s:Speaker:{self.cypher_safe_name}),
                 (w)-[:spoken_in]->(d:Discourse:{self.cypher_safe_name})
         where (w)<-[:contained_by]-()-[:is_a]->(:{syllabic_name})
         AND s.name = $speaker
@@ -175,7 +210,7 @@ class SyllabicContext(UtteranceContext):
                         (s)-[:spoken_in]->(d:Discourse:{self.cypher_safe_name})
                         WHERE sp.name = $speaker_name
                         AND d.name = $discourse_name
-                        with p,w
+                        WITH DISTINCT p,w
                         CREATE (p)-[:contained_by]->(w)
                 """
                 self.execute_cypher(phone_rel_statement, speaker_name=s, discourse_name=d)
@@ -250,6 +285,210 @@ class SyllabicContext(UtteranceContext):
             True if the syllables are in the Hierarchy
         """
         return "syllable" in self.hierarchy.annotation_types
+
+    def encode_syllables_v2(self, algorithm: SyllabificationAlgo):
+        """
+        Encode syllables to the corpus using the given algorithm.
+
+        Like with phones and words, syllables are connected through a `precedes`
+        relationship per discourse. When a corpus is syllabified, phones
+        retain their `contained_by` relationships with words and super-word units.
+        """
+        self.reset_syllables()
+        self._init_syllables_v2()
+
+        # Find all syllabic phone types (those that act as nuclei) in current corpus
+        # statement = """MATCH (n:{}:{}) return n.label as label""".format(
+        #     self.cypher_safe_name, make_label_safe_for_cypher("syllabic")
+        # )
+        # results = self.execute_cypher(statement)
+        # syllabics = {r["label"] for r in results}
+
+        for speaker_ind, speaker_name in enumerate(self.speakers):
+            logger.info("Processing speaker %d of %d", speaker_ind, len(self.speakers))
+            discourses = self.get_discourses_of_speaker(speaker_name)
+            for discourse_name in discourses:
+                query = (
+                    self.query_graph(self.word)
+                    .filter(self.word.speaker.name == speaker_name)
+                    .filter(self.word.discourse.name == discourse_name)
+                    .order_by(self.word.begin)
+                    .columns(
+                        self.word.id.column_name("id"),
+                        self.word.phone.id.column_name("phone_id"),
+                        self.word.begin.column_name("begin"),
+                        self.word.label.column_name("label"),
+                        self.word.end.column_name("end"),
+                        self.word.phone.label.column_name("phones"),
+                        self.word.phone.begin.column_name("phone_begins"),
+                        self.word.phone.end.column_name("phone_ends"),
+                    )
+                )
+                results = query.all()
+                if results is None:
+                    continue
+                syllable_info_per_discourse = []
+                for word_row in results:
+                    syllables = algorithm(word_row["phones"])
+                    syllable_info_per_discourse.append((word_row, syllables))
+                self._write_syllables_v2(syllable_info_per_discourse)
+
+        self.hierarchy.add_annotation_type("syllable", above=self.phone_name, below=self.word_name)
+        self.hierarchy.add_token_subsets(self, self.phone_name, ["onset", "coda", "nucleus"])
+        self.hierarchy.add_token_properties(self, self.phone_name, [("syllable_position", str)])
+        self.encode_hierarchy()
+
+    def _init_syllables_v2(self):
+        """Initialize the corpus in preparation for syllabification."""
+        _ = self.graph_driver.execute_query(
+            "CREATE CONSTRAINT syllable_id_unique IF NOT EXISTS FOR (node:syllable) REQUIRE node.id IS UNIQUE"
+        )
+        _ = self.graph_driver.execute_query(
+            "CREATE CONSTRAINT syllable_type_id_unique IF NOT EXISTS FOR (node:syllable_type) REQUIRE node.id IS UNIQUE"
+        )
+        _ = self.graph_driver.execute_query(
+            "CREATE INDEX IF NOT EXISTS FOR (s:syllable) ON (s.begin)"
+        )
+        _ = self.graph_driver.execute_query(
+            "CREATE INDEX IF NOT EXISTS FOR (s:syllable) ON (s.end)"
+        )
+        _ = self.graph_driver.execute_query(
+            "CREATE INDEX IF NOT EXISTS FOR (s:syllable) ON (s.label)"
+        )
+        _ = self.graph_driver.execute_query(
+            "CREATE INDEX IF NOT EXISTS FOR (s:syllable_type) ON (s.label)"
+        )
+
+    def _write_syllables_v2(self, syllable_info: list[tuple[BaseRecord, list[Syllable]]]):
+        """Write syllables into the database.
+
+        Parameters
+        ----------
+        syllable_info
+            A list of tuples each containing 1) the database query result row for a word
+            and 2) the list of syllables returned by the syllabification algorithm.
+        """
+        if not syllable_info:
+            return
+        corpus = self.cypher_safe_name
+        phone_label_name = self.phone_name
+        word_label_name = self.word_name
+
+        rows = []
+        prev_syllable_id = None
+        for word_row, syllables in syllable_info:
+            phone_ids = word_row["phone_id"] or []
+            if not phone_ids:
+                continue
+            phones = word_row["phones"]
+            phone_begins = word_row["phone_begins"]
+            phone_ends = word_row["phone_ends"]
+            for syl in syllables:
+                onset_start, onset_end = syl.onset
+                nucleus_start, nucleus_end = syl.nucleus
+                coda_start, coda_end = syl.coda
+
+                label = ".".join(phones[onset_start:coda_end])
+                begin = phone_begins[onset_start]
+                end = phone_ends[coda_end - 1]
+
+                row = {
+                    "id": str(uuid1()),
+                    "label": label,
+                    "begin": begin,
+                    "end": end,
+                    "type_id": make_type_id([label], self.corpus_name),
+                    "nucleus_id": phone_ids[nucleus_start]
+                    if nucleus_start < nucleus_end
+                    else None,
+                    "onset_ids": phone_ids[onset_start:onset_end],
+                    "coda_ids": phone_ids[coda_start:coda_end],
+                    "prev_syllable_id": prev_syllable_id,
+                }
+                rows.append(row)
+                prev_syllable_id = row["id"]
+
+        if not rows:
+            return
+
+        # Create syllable and syllable type nodes
+        _ = self.graph_driver.execute_query(
+            f"""UNWIND $rows AS row
+            MERGE (st:syllable_type:{corpus} {{id: row.type_id}})
+            ON CREATE SET st.label = row.label
+            CREATE (s:syllable:{corpus}:speech {{
+                id: row.id,
+                label: row.label,
+                begin: row.begin,
+                end: row.end
+            }})
+            CREATE (s)-[:is_a]->(st)""",
+            rows=rows,
+        )
+
+        # Create precedence relationships on syllables
+        _ = self.graph_driver.execute_query(
+            f"""UNWIND $rows AS row
+            MATCH (prev:syllable:{corpus}:speech {{id: row.prev_syllable_id}})
+            MATCH (s:syllable:{corpus}:speech {{id: row.id}})
+            CREATE (prev)-[:precedes]->(s)""",
+            rows=rows,
+        )
+
+        # Identify and set all nuclei. Since property matches never match
+        # null == null, rows without nuclei are skipped.
+        # Connect nucleus to syllable to word
+        _ = self.graph_driver.execute_query(
+            f"""UNWIND $rows AS row
+            MATCH (s:syllable:{corpus}:speech {{id: row.id}})
+            MATCH (n:{phone_label_name}:{corpus}:speech {{id: row.nucleus_id}})-[:contained_by]->(w:{word_label_name}:{corpus}:speech)
+            SET n :nucleus, n.syllable_position = 'nucleus'
+            CREATE (n)-[:contained_by]->(s)
+            CREATE (s)-[:contained_by]->(w)""",
+            rows=rows,
+        )
+
+        # Identify and set all onsets, and connect onset to syllable to word.
+        # Use MERGE to create the syllable-to-word relationship since it will create
+        # the relationship for degenerate syllables and avoid duplicating it for
+        # regular syllables.
+        _ = self.graph_driver.execute_query(
+            f"""UNWIND $rows AS row
+            MATCH (s:syllable:{corpus}:speech {{id: row.id}})
+            UNWIND row.onset_ids AS onset_id
+            MATCH (o:{phone_label_name}:{corpus}:speech {{id: onset_id}})-[:contained_by]->(w:{word_label_name}:{corpus}:speech)
+            SET o :onset, o.syllable_position = 'onset'
+            CREATE (o)-[:contained_by]->(s)
+            MERGE (s)-[:contained_by]->(w)""",
+            rows=rows,
+        )
+
+        # Identify and set all codas, and connect coda to syllable.
+        # We don't need to create the syllable-to-word relationship anymore, because
+        # the nucleus and onset cases should handle all syllables.
+        _ = self.graph_driver.execute_query(
+            f"""UNWIND $rows AS row
+            MATCH (s:syllable:{corpus}:speech {{id: row.id}})
+            UNWIND row.coda_ids AS coda_id
+            MATCH (c:{phone_label_name}:{corpus}:speech {{id: coda_id}})-[:contained_by]->(w:{word_label_name}:{corpus}:speech)
+            SET c :coda, c.syllable_position = 'coda'
+            CREATE (c)-[:contained_by]->(s)""",
+            rows=rows,
+        )
+
+        # Connect syllable to superunits (currently, the only superunit is the utterance)
+        # and create spoken relationships
+        _ = self.graph_driver.execute_query(
+            f"""UNWIND $rows AS row
+            MATCH (s:syllable:{corpus}:speech {{id: row.id}})-[:contained_by]->(w:{word_label_name}:{corpus}:speech)
+            MATCH (w)-[:contained_by]->(super)
+            CREATE (s)-[:contained_by]->(super)
+            MATCH (w)-[:spoken_by]->(sp:Speaker),
+                    (w)-[:spoken_in]->(d:Discourse)
+            CREATE (s)-[:spoken_by]->(sp)
+            CREATE (s)-[:spoken_in]->(d)""",
+            rows=rows,
+        )
 
     def encode_syllables(
         self,
