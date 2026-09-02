@@ -65,6 +65,9 @@ docs/source/generated/
 # PyBuilder
 target/
 
+# Editor files
+.zed/
+.vscode/
 
 docs/source/_static/img/\.Rhistory
 
