@@ -1,7 +1,7 @@
 import logging
 import re
 from collections.abc import Callable
-from typing import NamedTuple
+from typing import NamedTuple, Protocol
 from uuid import uuid1
 
 from polyglotdb.corpus.utterance import UtteranceContext
@@ -23,38 +23,9 @@ from polyglotdb.syllabification.probabilistic import (
     split_nonsyllabic_prob,
     split_ons_coda_prob,
 )
+from polyglotdb.types import SyllabificationAlgo, Syllable
 
 logger = logging.getLogger(__name__)
-
-type Phone = str
-# A word is just a list of phones.
-type Word = list[Phone]
-
-
-class Syllable(NamedTuple):
-    """The boundaries of a syllable in a word.
-
-    Each of `onset`, `nucleus`, and `coda` is a pair of start/end indices indicating
-    the slice of the word's phone sequence that corresponds to the syllable constituent.
-    For example, for the word ['k', 'ae', 't', 's'], we would have the following values:
-
-    - `onset`: (0, 1)
-    - `nucleus`: (1, 2)
-    - `coda`: (2, 4)
-
-    For now, for any well-formed syllable, we assume that `onset[1] == nucleus[0]`
-    and `nucleus[1] == coda[0]`. Following existing code, we also assume that the
-    nucleus has either zero or one phone. In the case where the nucleus is empty
-    (a degenerate syllable), both onset and coda must not be empty. Note that these
-    are preconditions that the syllabification algorithm must verify by itself.
-    """
-
-    onset: tuple[int, int]
-    nucleus: tuple[int, int]
-    coda: tuple[int, int]
-
-
-type SyllabificationAlgo = Callable[[list[Word]], list[Syllable]]
 
 
 def make_label_safe_for_cypher(label):
@@ -287,8 +258,7 @@ class SyllabicContext(UtteranceContext):
         return "syllable" in self.hierarchy.annotation_types
 
     def encode_syllables_v2(self, algorithm: SyllabificationAlgo):
-        """
-        Encode syllables to the corpus using the given algorithm.
+        """Encode syllables to the corpus using the given algorithm.
 
         Like with phones and words, syllables are connected through a `precedes`
         relationship per discourse. When a corpus is syllabified, phones
@@ -296,13 +266,6 @@ class SyllabicContext(UtteranceContext):
         """
         self.reset_syllables()
         self._init_syllables_v2()
-
-        # Find all syllabic phone types (those that act as nuclei) in current corpus
-        # statement = """MATCH (n:{}:{}) return n.label as label""".format(
-        #     self.cypher_safe_name, make_label_safe_for_cypher("syllabic")
-        # )
-        # results = self.execute_cypher(statement)
-        # syllabics = {r["label"] for r in results}
 
         for speaker_ind, speaker_name in enumerate(self.speakers):
             logger.info("Processing speaker %d of %d", speaker_ind, len(self.speakers))
@@ -329,7 +292,7 @@ class SyllabicContext(UtteranceContext):
                     continue
                 syllable_info_per_discourse = []
                 for word_row in results:
-                    syllables = algorithm(word_row["phones"])
+                    syllables = algorithm.syllabify(word_row["phones"])
                     syllable_info_per_discourse.append((word_row, syllables))
                 self._write_syllables_v2(syllable_info_per_discourse)
 
