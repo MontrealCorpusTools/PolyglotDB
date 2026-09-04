@@ -1,7 +1,6 @@
 import logging
 import re
-from collections.abc import Callable
-from typing import NamedTuple, Protocol
+from collections import Counter
 from uuid import uuid1
 
 from polyglotdb.corpus.utterance import UtteranceContext
@@ -54,7 +53,7 @@ class SyllabicContext(UtteranceContext):
     Class that contains methods for dealing specifically with syllables
     """
 
-    def find_onsets(self, syllabic_label="syllabic"):
+    def find_onsets(self, syllabic_label="syllabic") -> Counter[tuple]:
         """
         Gets syllable onsets across the corpus
 
@@ -446,6 +445,7 @@ class SyllabicContext(UtteranceContext):
             MATCH (s:syllable:{corpus}:speech {{id: row.id}})-[:contained_by]->(w:{word_label_name}:{corpus}:speech)
             MATCH (w)-[:contained_by]->(super)
             CREATE (s)-[:contained_by]->(super)
+            WITH s, w
             MATCH (w)-[:spoken_by]->(sp:Speaker),
                     (w)-[:spoken_in]->(d:Discourse)
             CREATE (s)-[:spoken_by]->(sp)
