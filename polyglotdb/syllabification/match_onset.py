@@ -22,10 +22,10 @@ class MatchOnset(SyllabificationAlgo):
     If no onset is found, the algorithm will syllabify the entire word as a coda.
     """
 
-    onsets: set[list[Phone]]
+    onsets: set[tuple[Phone]]
     syllabics: set[Phone]
 
-    def __init__(self, onsets: set[list[Phone]], syllabics: set[Phone]):
+    def __init__(self, onsets: set[tuple[Phone]], syllabics: set[Phone]):
         self.syllabics = syllabics
         self.onsets = onsets
 
@@ -38,7 +38,8 @@ class MatchOnset(SyllabificationAlgo):
         syllabics using `CorpusContext.encode_syllabic_segments()`.
         """
         query = cast(
-            LiteralString, f"MATCH (n:{corpus.cypher_safe_name}:syllabic) return n.label as label"
+            LiteralString,
+            f"MATCH (n:{corpus.cypher_safe_name}:syllabic) return n.label as label",
         )
         records = corpus.graph_driver.execute_query(query).records
         syllabics = {x["label"] for x in records}
@@ -47,6 +48,7 @@ class MatchOnset(SyllabificationAlgo):
         return cls(onsets, syllabics)
 
     def syllabify(self, word: Word) -> list[Syllable]:
+        word_tuple = tuple(word)
         syllabic_indices = [i for i, phone in enumerate(word) if phone in self.syllabics]
 
         if not word:
@@ -54,23 +56,23 @@ class MatchOnset(SyllabificationAlgo):
 
         if not syllabic_indices:
             for i in range(len(word), 0, -1):
-                if word[:i] in self.onsets:
+                if word_tuple[:i] in self.onsets:
                     return [Syllable(onset=(0, i), nucleus=(i, i), coda=(i, len(word)))]
             return [Syllable(onset=(0, 0), nucleus=(0, 0), coda=(0, len(word)))]
 
         syllables: list[Syllable] = []
 
         # Check word-initial onset permissibility
-        if word[: syllabic_indices[0]] not in self.onsets:
+        if word_tuple[: syllabic_indices[0]] not in self.onsets:
             raise ValueError(
-                f"Word initial cluster {word[:syllabic_indices[0]]} in word {word} is not a permissible onset"
+                f"Word initial cluster {word[: syllabic_indices[0]]} in word {word} is not a permissible onset"
             )
 
         prev_onset_start = 0
         for i in range(len(syllabic_indices) - 1):
             next_onset_start = syllabic_indices[i] + 1
             while next_onset_start < syllabic_indices[i + 1]:
-                if word[next_onset_start : syllabic_indices[i + 1]] in self.onsets:
+                if word_tuple[next_onset_start : syllabic_indices[i + 1]] in self.onsets:
                     break
                 next_onset_start += 1
             syllables.append(
