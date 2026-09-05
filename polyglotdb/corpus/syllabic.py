@@ -412,8 +412,8 @@ class SyllabicContext(UtteranceContext):
 
         # Identify and set all onsets, and connect onset to syllable to word.
         # Use MERGE to create the syllable-to-word relationship since it will create
-        # the relationship for degenerate syllables and avoid duplicating it for
-        # regular syllables.
+        # the relationship for degenerate syllables with an onset and avoid
+        # duplicating it for regular syllables.
         _ = self.graph_driver.execute_query(
             f"""UNWIND $rows AS row
             MATCH (s:syllable:{corpus}:speech {{id: row.id}})
@@ -425,16 +425,17 @@ class SyllabicContext(UtteranceContext):
             rows=rows,
         )
 
-        # Identify and set all codas, and connect coda to syllable.
-        # We don't need to create the syllable-to-word relationship anymore, because
-        # the nucleus and onset cases should handle all syllables.
+        # Identify and set all codas, and connect coda to syllable. Use MERGE
+        # to create the syllable-to-word relationship for coda-only degenerate
+        # syllables.
         _ = self.graph_driver.execute_query(
             f"""UNWIND $rows AS row
             MATCH (s:syllable:{corpus}:speech {{id: row.id}})
             UNWIND row.coda_ids AS coda_id
             MATCH (c:{phone_label_name}:{corpus}:speech {{id: coda_id}})-[:contained_by]->(w:{word_label_name}:{corpus}:speech)
             SET c :coda, c.syllable_position = 'coda'
-            CREATE (c)-[:contained_by]->(s)""",
+            CREATE (c)-[:contained_by]->(s)
+            MERGE (s)-[:contained_by]->(w)""",
             rows=rows,
         )
 

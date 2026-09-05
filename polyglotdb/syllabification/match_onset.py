@@ -22,10 +22,10 @@ class MatchOnset(SyllabificationAlgo):
     If no onset is found, the algorithm will syllabify the entire word as a coda.
     """
 
-    onsets: set[tuple[Phone]]
+    onsets: set[tuple[Phone, ...]]
     syllabics: set[Phone]
 
-    def __init__(self, onsets: set[tuple[Phone]], syllabics: set[Phone]):
+    def __init__(self, onsets: set[tuple[Phone, ...]], syllabics: set[Phone]):
         self.syllabics = syllabics
         self.onsets = onsets
 
@@ -63,7 +63,7 @@ class MatchOnset(SyllabificationAlgo):
         syllables: list[Syllable] = []
 
         # Check word-initial onset permissibility
-        if word_tuple[: syllabic_indices[0]] not in self.onsets:
+        if syllabic_indices[0] > 0 and word_tuple[: syllabic_indices[0]] not in self.onsets:
             raise ValueError(
                 f"Word initial cluster {word[: syllabic_indices[0]]} in word {word} is not a permissible onset"
             )
