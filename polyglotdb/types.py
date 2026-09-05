@@ -23,9 +23,8 @@ class Syllable(NamedTuple):
 
     For now, for any well-formed syllable, we assume that `onset[1] == nucleus[0]`
     and `nucleus[1] == coda[0]`. Following existing code, we also assume that the
-    nucleus has either zero or one phone. In the case where the nucleus is empty
-    (a degenerate syllable), both onset and coda must not be empty. Note that these
-    are preconditions that the syllabification algorithm must verify by itself.
+    nucleus has either zero or one phone. Note that these are preconditions that
+    the syllabification algorithm must verify by itself.
     """
 
     onset: tuple[int, int]
