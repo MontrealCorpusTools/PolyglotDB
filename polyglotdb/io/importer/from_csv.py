@@ -765,7 +765,7 @@ def import_utterance_csv(corpus_context, call_back=None, stop_check=None):
                 return
             if call_back is not None:
                 call_back(
-                    "Importing data for speaker {} of {} ({})...".format(i, len(speakers), s)
+                    "Importing data for speaker {} of {} ({})...".format(i + 1, len(speakers), s)
                 )
                 call_back(i)
 
