@@ -24,9 +24,9 @@ def generate_cypher_property_list(property_set):
         if name == "id":
             continue
         v = ""
-        if t == int:
+        if t is int:
             v = 0
-        elif t == float:
+        elif t is float:
             v = 0.0
         elif t in (list, tuple, set):
             v = []

@@ -9,13 +9,13 @@ from polyglotdb.acoustics.utils import PADDING
 
 
 def get_default_for_type(t):
-    if t == float:
+    if t is float:
         return 0.0
-    elif t == str:
+    elif t is str:
         return ""
-    elif t == int:
+    elif t is int:
         return 0
-    elif t == bool:
+    elif t is bool:
         return False
     return None
 
