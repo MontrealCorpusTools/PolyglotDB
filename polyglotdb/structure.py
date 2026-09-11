@@ -387,9 +387,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        SET {sets}""".format(
-            type=annotation_type, sets=", ".join(ps)
-        )
+        SET {sets}""".format(type=annotation_type, sets=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
 
         if annotation_type not in self.type_properties:
@@ -417,9 +415,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a:{type})-[:is_a]->(n:{type}_type)
-        REMOVE {removes}""".format(
-            type=annotation_type, removes=", ".join(ps)
-        )
+        REMOVE {removes}""".format(type=annotation_type, removes=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         if annotation_type not in self.type_properties:
             self.type_properties[annotation_type] = {("id", str)}
@@ -464,9 +460,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:has_acoustics]->(n:{type})
-        SET {sets}""".format(
-            type=acoustic_type, sets=", ".join(ps)
-        )
+        SET {sets}""".format(type=acoustic_type, sets=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
         if acoustic_type not in self.acoustic_properties:
             self.acoustic_properties[acoustic_type] = set()
@@ -493,9 +487,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:has_acoustics]->(n:{type})
-        REMOVE {removes}""".format(
-            type=acoustic_type, removes=", ".join(ps)
-        )
+        REMOVE {removes}""".format(type=acoustic_type, removes=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         if acoustic_type not in self.acoustic_properties:
             self.acoustic_properties[acoustic_type] = {}
@@ -539,9 +531,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(n:{type})
-        SET {sets}""".format(
-            type=annotation_type, sets=", ".join(ps)
-        )
+        SET {sets}""".format(type=annotation_type, sets=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
         if annotation_type not in self.token_properties:
             self.token_properties[annotation_type] = {("id", str)}
@@ -568,9 +558,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(n:{type})
-        REMOVE {removes}""".format(
-            type=annotation_type, removes=", ".join(ps)
-        )
+        REMOVE {removes}""".format(type=annotation_type, removes=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         if annotation_type not in self.token_properties:
             self.token_properties[annotation_type] = {("id", str)}
@@ -612,9 +600,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_by]->(s:Speaker)
-        SET {sets}""".format(
-            sets=", ".join(ps)
-        )
+        SET {sets}""".format(sets=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
         to_add_names = [x[0] for x in properties]
         self.speaker_properties = {x for x in self.speaker_properties if x[0] not in to_add_names}
@@ -639,9 +625,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_by]->(s:Speaker)
-        REMOVE {removes}""".format(
-            removes=", ".join(ps)
-        )
+        REMOVE {removes}""".format(removes=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         to_remove = set(x for x in self.speaker_properties if x[0] in properties)
         self.speaker_properties.difference_update(to_remove)
@@ -681,9 +665,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_in]->(d:Discourse)
-        SET {sets}""".format(
-            sets=", ".join(ps)
-        )
+        SET {sets}""".format(sets=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
 
         to_add_names = [x[0] for x in properties]
@@ -711,9 +693,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)-[:spoken_in]->(d:Discourse)
-        REMOVE {removes}""".format(
-            removes=", ".join(ps)
-        )
+        REMOVE {removes}""".format(removes=", ".join(ps))
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         to_remove = set(x for x in self.discourse_properties if x[0] in properties)
         self.discourse_properties.difference_update(to_remove)
@@ -1038,9 +1018,7 @@ class Hierarchy(object):
                 self.subannotations[k] = v - {subannotation_type}
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
-        DETACH DELETE s""".format(
-            s_type=subannotation_type
-        )
+        DETACH DELETE s""".format(s_type=subannotation_type)
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         corpus_context.cache_hierarchy()
 
@@ -1081,9 +1059,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
-        SET {sets}""".format(
-            sets=", ".join(ps), s_type=subannotation_type
-        )
+        SET {sets}""".format(sets=", ".join(ps), s_type=subannotation_type)
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name, **kwargs)
 
         self.subannotation_properties[subannotation_type].update(k for k in properties)
@@ -1109,9 +1085,7 @@ class Hierarchy(object):
 
         statement = """MATCH (c:Corpus) WHERE c.name = $corpus_name
         MATCH (c)<-[:contained_by*]-(a)<-[:annotates]-(s:{s_type})
-        REMOVE {removes}""".format(
-            removes=", ".join(ps), s_type=subannotation_type
-        )
+        REMOVE {removes}""".format(removes=", ".join(ps), s_type=subannotation_type)
         corpus_context.execute_cypher(statement, corpus_name=corpus_context.corpus_name)
         to_remove = set(
             x for x in self.subannotation_properties[subannotation_type] if x[0] in properties

@@ -57,6 +57,7 @@ MOCK_MODULES = [
     "praatio.utilities.errors",
     "conch.utils",
     "conch.analysis",
+    "conch.analysis.helper",
     "conch.analysis.autovot",
     "conch.analysis.praat",
     "conch.analysis.segments",
@@ -65,7 +66,6 @@ MOCK_MODULES = [
     "conch.analysis.intensity",
     "conch.multiprocessing",
     "conch.main",
-    "conch.utils" "conch.analysis.helper",
 ]
 
 for mod_name in MOCK_MODULES:
