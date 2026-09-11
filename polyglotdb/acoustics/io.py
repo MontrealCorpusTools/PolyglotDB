@@ -156,11 +156,11 @@ def point_measures_from_csv(corpus_context, header_info, annotation_type="phone"
     string_set_template = "n.{name} = csvLine.{name}"
     properties = []
     for h, t in header_info.items():
-        if t == int:
+        if t is int:
             properties.append(int_set_template.format(name=h))
-        elif t == float:
+        elif t is float:
             properties.append(float_set_template.format(name=h))
-        elif t == bool:
+        elif t is bool:
             properties.append(bool_set_template.format(name=h))
         else:
             properties.append(string_set_template.format(name=h))

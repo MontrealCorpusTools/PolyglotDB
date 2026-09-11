@@ -114,12 +114,12 @@ def dicthelper(dict1, dict2):
     # compare innermost dictionaries
     current1, current2 = dict1, dict2
     while True:
-        if type(current1[list(current1.keys())[0]]) == dict:
+        if type(current1[list(current1.keys())[0]]) is dict:
             current1 = current1[list(current1.keys())[0]]
         else:
             break
     while True:
-        if type(current2[list(current2.keys())[0]]) == dict:
+        if type(current2[list(current2.keys())[0]]) is dict:
             current2 = current2[list(current2.keys())[0]]
         else:
             break

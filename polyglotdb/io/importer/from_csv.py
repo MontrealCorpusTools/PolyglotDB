@@ -387,11 +387,11 @@ def import_lexicon_csvs(corpus_context, typed_data, case_sensitive=False):
     )
     properties = []
     for h, v in typed_data.items():
-        if v == int:
+        if v is int:
             template = int_set_template
-        elif v == bool:
+        elif v is bool:
             template = bool_set_template
-        elif v == float:
+        elif v is float:
             template = float_set_template
         else:
             template = string_set_template
@@ -460,11 +460,11 @@ def import_feature_csvs(corpus_context, typed_data):
     )
     properties = []
     for h, v in typed_data.items():
-        if v == int:
+        if v is int:
             template = int_set_template
-        elif v == bool:
+        elif v is bool:
             template = bool_set_template
-        elif v == float:
+        elif v is float:
             template = float_set_template
         else:
             template = string_set_template
@@ -521,11 +521,11 @@ def import_syllable_enrichment_csvs(corpus_context, typed_data):
     )
     properties = []
     for h, v in typed_data.items():
-        if v == int:
+        if v is int:
             template = int_set_template
-        elif v == bool:
+        elif v is bool:
             template = bool_set_template
-        elif v == float:
+        elif v is float:
             template = float_set_template
         else:
             template = string_set_template
@@ -579,11 +579,11 @@ def import_utterance_enrichment_csvs(corpus_context, typed_data):
     )
     properties = []
     for h, v in typed_data.items():
-        if v == int:
+        if v is int:
             template = int_set_template
-        elif v == bool:
+        elif v is bool:
             template = bool_set_template
-        elif v == float:
+        elif v is float:
             template = float_set_template
         else:
             template = string_set_template
@@ -637,11 +637,11 @@ def import_speaker_csvs(corpus_context, typed_data):
     )
     properties = []
     for h, v in typed_data.items():
-        if v == int:
+        if v is int:
             template = int_set_template
-        elif v == bool:
+        elif v is bool:
             template = bool_set_template
-        elif v == float:
+        elif v is float:
             template = float_set_template
         else:
             template = string_set_template
@@ -695,11 +695,11 @@ def import_discourse_csvs(corpus_context, typed_data):
     )
     properties = []
     for h, v in typed_data.items():
-        if v == int:
+        if v is int:
             template = int_set_template
-        elif v == bool:
+        elif v is bool:
             template = bool_set_template
-        elif v == float:
+        elif v is float:
             template = float_set_template
         else:
             template = string_set_template

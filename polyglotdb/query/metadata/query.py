@@ -40,15 +40,15 @@ class MetaDataQuery(object):
         factors = []
         if isinstance(self.to_find, AnnotationNode):
             factors.extend(
-                x[0] for x in hierarchy.token_properties[self.to_find.node_type] if x[1] == str
+                x[0] for x in hierarchy.token_properties[self.to_find.node_type] if x[1] is str
             )
             factors.extend(
-                x[0] for x in hierarchy.type_properties[self.to_find.node_type] if x[1] == str
+                x[0] for x in hierarchy.type_properties[self.to_find.node_type] if x[1] is str
             )
         elif isinstance(self.to_find, DiscourseNode):
-            factors.extend(x[0] for x in hierarchy.discourse_properties if x[1] == str)
+            factors.extend(x[0] for x in hierarchy.discourse_properties if x[1] is str)
         elif isinstance(self.to_find, SpeakerNode):
-            factors.extend(x[0] for x in hierarchy.speaker_properties if x[1] == str)
+            factors.extend(x[0] for x in hierarchy.speaker_properties if x[1] is str)
         return factors
 
     def numerics(self):
