@@ -370,15 +370,15 @@ class Hierarchy(object):
         ps = []
         kwargs = {}
         for k, v in properties:
-            if v == int:
+            if v is int:
                 v = 0
-            elif v == list:
+            elif v is list:
                 v = []
-            elif v == float:
+            elif v is float:
                 v = 0.0
-            elif v == str:
+            elif v is str:
                 v = ""
-            elif v == bool:
+            elif v is bool:
                 v = False
             elif v is type(None):
                 v = None
@@ -443,15 +443,15 @@ class Hierarchy(object):
         ps = []
         kwargs = {}
         for k, v in properties:
-            if v == int:
+            if v is int:
                 v = 0
-            elif v == list:
+            elif v is list:
                 v = []
-            elif v == float:
+            elif v is float:
                 v = 0.0
-            elif v == str:
+            elif v is str:
                 v = ""
-            elif v == bool:
+            elif v is bool:
                 v = False
             elif v is type(None):
                 v = None
@@ -514,15 +514,15 @@ class Hierarchy(object):
         ps = []
         kwargs = {}
         for k, v in properties:
-            if v == int:
+            if v is int:
                 v = 0
-            elif v == list:
+            elif v is list:
                 v = []
-            elif v == float:
+            elif v is float:
                 v = 0.0
-            elif v == str:
+            elif v is str:
                 v = ""
-            elif v == bool:
+            elif v is bool:
                 v = False
             elif v is type(None):
                 v = None
@@ -583,15 +583,15 @@ class Hierarchy(object):
         ps = []
         kwargs = {}
         for k, v in properties:
-            if v == int:
+            if v is int:
                 v = 0
-            elif v == list:
+            elif v is list:
                 v = []
-            elif v == float:
+            elif v is float:
                 v = 0.0
-            elif v == str:
+            elif v is str:
                 v = ""
-            elif v == bool:
+            elif v is bool:
                 v = False
             elif v is type(None):
                 v = None
@@ -648,15 +648,15 @@ class Hierarchy(object):
         ps = []
         kwargs = {}
         for k, v in properties:
-            if v == int:
+            if v is int:
                 v = 0
-            elif v == list:
+            elif v is list:
                 v = []
-            elif v == float:
+            elif v is float:
                 v = 0.0
-            elif v == str:
+            elif v is str:
                 v = ""
-            elif v == bool:
+            elif v is bool:
                 v = False
             elif v is type(None):
                 v = None
@@ -964,15 +964,15 @@ class Hierarchy(object):
             ps = []
             kwargs = {}
             for k, v in properties:
-                if v == int:
+                if v is int:
                     v = 0
-                elif v == list:
+                elif v is list:
                     v = []
-                elif v == float:
+                elif v is float:
                     v = 0.0
-                elif v == str:
+                elif v is str:
                     v = ""
-                elif v == bool:
+                elif v is bool:
                     v = False
                 elif v is type(None):
                     v = None
@@ -1042,15 +1042,15 @@ class Hierarchy(object):
         ps = []
         kwargs = {}
         for k, v in properties:
-            if v == int:
+            if v is int:
                 v = 0
-            elif v == list:
+            elif v is list:
                 v = []
-            elif v == float:
+            elif v is float:
                 v = 0.0
-            elif v == str:
+            elif v is str:
                 v = ""
-            elif v == bool:
+            elif v is bool:
                 v = False
             elif v is type(None):
                 v = None
