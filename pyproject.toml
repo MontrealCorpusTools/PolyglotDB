@@ -5,17 +5,12 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 version_file = "polyglotdb/_version.py"
 
-[tool.black]
+[tool.ruff]
 line-length = 99
 
-[tool.isort]
-line_length = 99
-profile = "black"
-
-[tool.flake8]
-max-line-length = 99
-extend-ignore = ["D203", "E203", "E251", "E266", "E302", "E305", "E401", "E402", "E501", "F401", "F403", "W503"]
-exclude = [".git", "__pycache__", "dist"]
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E203", "E266", "E302", "E305", "E401", "E402", "E501", "F401", "F403"]
 
 
 [tool.check-manifest]
