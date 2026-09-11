@@ -171,9 +171,7 @@ def analyze_vot(
             UNWIND {{data}} as d
             MERGE (n:vot:{corpus_name} {{id: d.id}})
             SET n += d.props
-            """.format(
-                corpus_name=corpus_context.cypher_safe_name
-            )
+            """.format(corpus_name=corpus_context.cypher_safe_name)
             corpus_context.execute_cypher(statement, data=updated_data)
 
         if new_data:
@@ -183,9 +181,7 @@ def analyze_vot(
             MATCH (annotated:phone:{corpus_name} {{id: d.annotated_id}})
             CREATE (annotated) <-[:annotates]-(annotation:vot:{corpus_name}
                 {{{default_node}}})
-            """.format(
-                corpus_name=corpus_context.cypher_safe_name, default_node=default_node
-            )
+            """.format(corpus_name=corpus_context.cypher_safe_name, default_node=default_node)
             corpus_context.execute_cypher(statement, data=new_data)
     else:
         list_of_stops = []

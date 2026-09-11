@@ -222,8 +222,9 @@ def analyze_pitch(
                         n += 1
                         sum_pitch += v
             mean_pitch = sum_pitch / n
-            speaker_data[k] = int(mean_pitch / math.pow(2, adjusted_octaves)), int(
-                mean_pitch * math.pow(2, adjusted_octaves)
+            speaker_data[k] = (
+                int(mean_pitch / math.pow(2, adjusted_octaves)),
+                int(mean_pitch * math.pow(2, adjusted_octaves)),
             )
 
     for i, ((speaker,), v) in enumerate(segment_mapping.items()):

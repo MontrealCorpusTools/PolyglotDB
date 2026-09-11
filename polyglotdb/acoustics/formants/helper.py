@@ -295,7 +295,7 @@ def extract_and_save_formant_tracks(
         track = {}
         for time, formants in v.items():
             track[time] = {f: formants[f] for f in formant_tracks}
-        if not k["speaker"] in tracks:
+        if k["speaker"] not in tracks:
             tracks[k["speaker"]] = {}
         tracks[k["speaker"]][k] = track
 

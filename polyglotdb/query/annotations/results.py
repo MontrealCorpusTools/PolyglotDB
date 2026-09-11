@@ -4,9 +4,9 @@ from polyglotdb.query.annotations.attributes import (
     DiscourseAnnotation,
     HierarchicalAnnotation,
     SpeakerAnnotation,
+    SubPathAnnotation,
 )
 from polyglotdb.query.annotations.attributes import SubAnnotation as QuerySubAnnotation
-from polyglotdb.query.annotations.attributes import SubPathAnnotation
 from polyglotdb.query.annotations.attributes import Track as TrackAnnotation
 from polyglotdb.query.annotations.attributes.precedence import (
     FollowingAnnotation,
