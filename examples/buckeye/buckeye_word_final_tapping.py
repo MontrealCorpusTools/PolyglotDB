@@ -5,8 +5,9 @@ import time
 base = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, base)
 
-from polyglotdb import CorpusContext
 from polyglotdb.graph.func import Average, Count
+
+from polyglotdb import CorpusContext
 
 graph_db = {"host": "localhost", "port": 7474, "user": "neo4j", "password": "test"}
 

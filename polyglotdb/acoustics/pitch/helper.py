@@ -22,7 +22,7 @@ def generate_pitch_function(algorithm, min_pitch, max_pitch, path=None, kwargs=N
             min_pitch=min_pitch,
             max_pitch=max_pitch,
             time_step=time_step,
-            **kwargs
+            **kwargs,
         )
     else:
         pitch_function = PitchTrackFunction(
