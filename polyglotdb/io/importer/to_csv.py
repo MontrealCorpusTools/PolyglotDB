@@ -86,7 +86,7 @@ def data_to_graph_csvs(corpus_context, data):
                     speaker=s,
                     discourse=data.name,
                     previous_id=d.previous_id,
-                    **token_additional
+                    **token_additional,
                 )
             )
             if d.subannotations:

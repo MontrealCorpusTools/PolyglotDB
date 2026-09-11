@@ -144,9 +144,7 @@ class UtteranceContext(PauseContext):
     AND NONE (x in ns where x:speech)
     WITH foll_node_word, prev_node_word
     RETURN prev_node_word.end AS begin, prev_node_word.id AS begin_id, foll_node_word.begin AS end, foll_node_word.id AS end_id, foll_node_word.begin - prev_node_word.end AS duration
-    ORDER BY begin""".format(
-                corpus=self.cypher_safe_name, word_type=word_type
-            )
+    ORDER BY begin""".format(corpus=self.cypher_safe_name, word_type=word_type)
             results = list(
                 self.execute_cypher(
                     statement,
@@ -171,9 +169,7 @@ class UtteranceContext(PauseContext):
             with [x in words where x.begin = min_begin or x.end = max_end | x] as c UNWIND c as w
             return w.id as id, w.begin as begin, w.end as end
             order by w.begin
-            """.format(
-                corpus=self.cypher_safe_name, word_type=word_type
-            )
+            """.format(corpus=self.cypher_safe_name, word_type=word_type)
             end_words = list(self.execute_cypher(statement, discourse=discourse, speaker=s))
 
             if len(end_words) == 0:
@@ -259,9 +255,7 @@ WHERE foll_node_word.begin - prev_node_word.end >= $node_pause_duration
 AND NONE (x in ns where x:speech)
 WITH foll_node_word, prev_node_word
 RETURN prev_node_word.end AS begin, foll_node_word.begin AS end, foll_node_word.begin - prev_node_word.end AS duration
-ORDER BY begin""".format(
-            corpus=self.cypher_safe_name, word_type=word_type
-        )
+ORDER BY begin""".format(corpus=self.cypher_safe_name, word_type=word_type)
         results = list(
             self.execute_cypher(
                 statement, node_pause_duration=min_pause_length, discourse=discourse
@@ -333,9 +327,7 @@ ORDER BY begin""".format(
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            """.format(
-                w_type=w_type, corpus_name=self.cypher_safe_name
-            )
+            """.format(w_type=w_type, corpus_name=self.cypher_safe_name)
             split_names = self.speakers
         elif self.config.query_behavior == "discourse":
             statement = """MATCH (node_utterance:utterance:speech:{corpus_name})-[:spoken_in]->(discourse:Discourse:{corpus_name}),
@@ -349,9 +341,7 @@ ORDER BY begin""".format(
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            """.format(
-                w_type=w_type, corpus_name=self.cypher_safe_name
-            )
+            """.format(w_type=w_type, corpus_name=self.cypher_safe_name)
             split_names = self.discourses
         else:
             statement = """MATCH (node_utterance:utterance:speech:{corpus_name}),
@@ -364,9 +354,7 @@ ORDER BY begin""".format(
             UNWIND pos as p
             WITH node_utterance, p, nodes[p] as n
             SET n.position_in_utterance = p + 1
-            """.format(
-                w_type=w_type, corpus_name=self.cypher_safe_name
-            )
+            """.format(w_type=w_type, corpus_name=self.cypher_safe_name)
             split_names = None
 
         if split_names is None:

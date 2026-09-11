@@ -371,9 +371,7 @@ class LinguisticAnnotation(BaseAnnotation):
                     )
                     res = self.corpus_context.execute_cypher(
                         """MATCH (sub:{a_type})-[:annotates]->(token {{id: $id}})
-                            RETURN sub""".format(
-                            a_type=key
-                        ),
+                            RETURN sub""".format(a_type=key),
                         id=self._id,
                     )
 
@@ -456,9 +454,7 @@ class LinguisticAnnotation(BaseAnnotation):
     def channel(self):
         statement = """MATCH (s:Speaker:{corpus_name})-[r:speaks_in]->(d:Discourse:{corpus_name})
         WHERE s.name = $speaker_name and d.name = $discourse_name
-        RETURN r.channel as channel""".format(
-            corpus_name=self.corpus_context.cypher_safe_name
-        )
+        RETURN r.channel as channel""".format(corpus_name=self.corpus_context.cypher_safe_name)
         results = self.corpus_context.execute_cypher(
             statement,
             speaker_name=self.speaker.name,
@@ -709,9 +705,7 @@ class Speaker(SubAnnotation):
         res = list(
             self.corpus_context.execute_cypher(
                 """MATCH (speaker:{a_type} {{id: $id}})
-                RETURN speaker""".format(
-                    a_type=self._type
-                ),
+                RETURN speaker""".format(a_type=self._type),
                 id=id,
             )
         )

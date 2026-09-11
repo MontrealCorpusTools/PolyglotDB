@@ -132,9 +132,7 @@ class ImportContext(StructuredContext):
                         MERGE (d:Discourse:{corpus_name} {{name: $discourse_name}})
                          MERGE (n)-[r:speaks_in]->(d)
                         WITH r
-                        SET r.channel = $channel""".format(
-                    corpus_name=self.cypher_safe_name
-                ),
+                        SET r.channel = $channel""".format(corpus_name=self.cypher_safe_name),
                 speaker_name=speaker_name,
                 discourse_name=discourse_name,
                 channel=channel,

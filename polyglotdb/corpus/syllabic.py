@@ -461,9 +461,7 @@ class SyllabicContext(UtteranceContext):
                     """MATCH (s:{corpus_name}:Speaker)<-[:spoken_by]-(n:{corpus_name}:syllable)-[:spoken_in]->(d:{corpus_name}:Discourse)
                     where s.name = $speaker_name
                     AND d.name = $discourse_name and n.prev_id is not Null
-                    REMOVE n.prev_id""".format(
-                        corpus_name=self.cypher_safe_name
-                    ),
+                    REMOVE n.prev_id""".format(corpus_name=self.cypher_safe_name),
                     speaker_name=s,
                     discourse_name=d,
                 )

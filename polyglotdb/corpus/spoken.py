@@ -88,9 +88,7 @@ class SpokenContext(AudioContext):
         """
         query = """MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE d.name = $discourse_name
-                RETURN s.name as speaker""".format(
-            corpus_name=self.cypher_safe_name
-        )
+                RETURN s.name as speaker""".format(corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(query, discourse_name=discourse)
         speakers = [x["speaker"] for x in results]
         return speakers
@@ -111,9 +109,7 @@ class SpokenContext(AudioContext):
         """
         query = """MATCH (d:Discourse:{corpus_name})<-[:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE s.name = $speaker_name
-                RETURN d.name as discourse""".format(
-            corpus_name=self.cypher_safe_name
-        )
+                RETURN d.name as discourse""".format(corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(query, speaker_name=speaker)
         discourses = [x["discourse"] for x in results]
         return discourses
@@ -136,9 +132,7 @@ class SpokenContext(AudioContext):
         """
         query = """MATCH (d:Discourse:{corpus_name})<-[r:speaks_in]-(s:Speaker:{corpus_name})
                 WHERE s.name = $speaker_name AND d.name = $discourse_name
-                RETURN r.channel as channel""".format(
-            corpus_name=self.cypher_safe_name
-        )
+                RETURN r.channel as channel""".format(corpus_name=self.cypher_safe_name)
         results = self.execute_cypher(query, speaker_name=speaker, discourse_name=discourse)
         return results[0]["channel"]
 

@@ -100,9 +100,7 @@ class PauseContext(ImportContext):
                 WHERE (n)-[:precedes_pause]->()
                 AND s.name = $speaker
                 AND d.name = $discourse
-                DELETE r""".format(
-                    corpus=self.cypher_safe_name, word_type=self.word_name
-                )
+                DELETE r""".format(corpus=self.cypher_safe_name, word_type=self.word_name)
                 self.execute_cypher(statement, speaker=s, discourse=d)
 
                 statement = """MATCH (n:{corpus}:{word_type})-[r:precedes_pause]->(m:{corpus}:{word_type}),
@@ -111,9 +109,7 @@ class PauseContext(ImportContext):
                 WHERE s.name = $speaker
                 AND d.name = $discourse
                 MERGE (n)-[:precedes]->(m)
-                DELETE r""".format(
-                    corpus=self.cypher_safe_name, word_type=self.word_name
-                )
+                DELETE r""".format(corpus=self.cypher_safe_name, word_type=self.word_name)
                 self.execute_cypher(statement, speaker=s, discourse=d)
 
                 statement = """MATCH (n:pause:{corpus})-[:spoken_by]->(s:Speaker:{corpus}),
@@ -121,9 +117,7 @@ class PauseContext(ImportContext):
                 WHERE s.name = $speaker
                 AND d.name = $discourse
                 SET n :speech
-                REMOVE n:pause""".format(
-                    corpus=self.cypher_safe_name
-                )
+                REMOVE n:pause""".format(corpus=self.cypher_safe_name)
                 self.execute_cypher(statement, speaker=s, discourse=d)
         try:
             self.hierarchy.subset_tokens[self.word_name].remove("pause")
