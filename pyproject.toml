@@ -11,7 +11,7 @@ line-length = 99
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 # E501: Line too long
-ignore = ["E501", "F403"]
+ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 # E402: Module level import not at top of file
