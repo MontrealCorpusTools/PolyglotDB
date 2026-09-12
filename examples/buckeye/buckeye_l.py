@@ -5,7 +5,6 @@ import time
 base = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, base)
 
-from polyglotdb.graph.func import Average, Count
 
 from polyglotdb import CorpusContext
 

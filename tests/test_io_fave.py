@@ -1,9 +1,4 @@
-import os
-
-import pytest
-
 from polyglotdb import CorpusContext
-from polyglotdb.exceptions import GraphQueryError, TextGridError
 from polyglotdb.io import inspect_fave
 
 
