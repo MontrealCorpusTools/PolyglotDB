@@ -1,8 +1,3 @@
-import os
-from decimal import Decimal
-
-import pytest
-
 from polyglotdb import CorpusContext
 
 # def test_query(acoustic_utt_config, praat_path):
