@@ -7,3 +7,21 @@ from .path import PathAttribute, PositionalAnnotation, PositionalAttribute, SubP
 from .pause import FollowingPauseAnnotation, PauseAnnotation, PreviousPauseAnnotation
 from .speaker import SpeakerAnnotation
 from .subannotation import SubAnnotation
+
+__all__ = [
+    "Track",
+    "AggregateAttribute",
+    "AnnotationAttribute",
+    "AnnotationNode",
+    "DiscourseAnnotation",
+    "HierarchicalAnnotation",
+    "PathAttribute",
+    "PositionalAnnotation",
+    "PositionalAttribute",
+    "SubPathAnnotation",
+    "FollowingPauseAnnotation",
+    "PauseAnnotation",
+    "PreviousPauseAnnotation",
+    "SpeakerAnnotation",
+    "SubAnnotation",
+]

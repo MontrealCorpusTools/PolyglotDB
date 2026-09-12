@@ -60,7 +60,7 @@ def generate_spectrogram(signal, sr, log_color_scale=True):
     float
         Frequency step between bins
     """
-    from scipy.signal import gaussian, lfilter
+    from scipy.signal import gaussian
 
     n_fft = 256
     # if len(self._signal) / self._sr > 30:

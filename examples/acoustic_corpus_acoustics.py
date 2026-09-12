@@ -1,10 +1,8 @@
 import os
 import sys
-import time
 
 base = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, base)
-import polyglotdb.io as aio
 from polyglotdb import CorpusContext
 from polyglotdb.config import CorpusConfig
 
