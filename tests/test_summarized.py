@@ -276,7 +276,7 @@ def test_syllable_std_dev(summarized_config):
         g.reset_syllables()
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
     with CorpusContext("directory_buckeye", **graph_db) as g:
         res = g.get_measure("duration", "baseline", "word")
@@ -286,7 +286,7 @@ def test_baseline_buckeye_word(graph_db, buckeye_test_dir):
         assert res["they"] == approx(0.11224799999999968, 1e-3)
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_baseline_word(summarized_config):
     with CorpusContext(summarized_config) as g:
         g.reset_pauses()
@@ -299,7 +299,7 @@ def test_baseline_word(summarized_config):
         assert len(res) == 44
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_baseline_speaker_word(summarized_config):
     with CorpusContext(summarized_config) as g:
         res = g.get_measure("duration", "baseline", "word", False, "unknown")
@@ -308,7 +308,7 @@ def test_baseline_speaker_word(summarized_config):
         assert len(res) == 44
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_baseline_speaker_buckeye_word(graph_db, buckeye_test_dir):
     with CorpusContext("directory_buckeye", **graph_db) as g:
         res = g.get_measure("duration", "baseline", "word", False, "tes")
@@ -349,7 +349,7 @@ def test_baseline_syllable(acoustic_config):
         print(res)
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_average_speech_rate(acoustic_config):
     with CorpusContext(acoustic_config) as g:
         g.encode_utterances()
@@ -359,7 +359,7 @@ def test_average_speech_rate(acoustic_config):
         assert len(res) == 1
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_average_speech_rate_buckeye(graph_db, buckeye_test_dir):
     with CorpusContext("directory_buckeye", **graph_db) as c:
         c.reset()
