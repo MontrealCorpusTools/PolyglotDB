@@ -156,8 +156,6 @@ class PhonologicalContext(LexicalContext):
         )
         self.execute_cypher(norm_statement, oldphones=oldphones)
         self.execute_cypher(type_statement, oldphones=oldphones)
-        self.encode_syllabic_segments(newphones)
-        self.encode_syllables("maxonset")
 
     def reset_to_old_label(self):
         """
@@ -177,5 +175,3 @@ class PhonologicalContext(LexicalContext):
         type_statement = statement.format(type="_type")
         self.execute_cypher(norm_statement)
         self.execute_cypher(type_statement)
-        self.encode_syllabic_segments(phones)
-        self.encode_syllables("maxonset")
