@@ -5,7 +5,7 @@ from collections.abc import Callable
 import pytest
 
 from polyglotdb import CorpusConfig, CorpusContext
-from polyglotdb.syllabification.match_onset import MatchOnset
+from polyglotdb.syllabification.max_onset_syllabifier import MaxOnsetSyllabifier
 
 
 @pytest.fixture
@@ -114,7 +114,7 @@ def test_encode_syllables_v2(make_timed_config: Callable[[], CorpusConfig]):
     timed_config = make_timed_config()
     with CorpusContext(timed_config) as c:
         c.encode_syllabic_segments(syllabics)
-        c.encode_syllables_v2(MatchOnset.from_corpus(c))
+        c.encode_syllables_v2(MaxOnsetSyllabifier.from_corpus(c))
         sig_v2 = make_canonical_signatures(c)
 
     # Because node ids are not stabble, we only compare the signatures themselves

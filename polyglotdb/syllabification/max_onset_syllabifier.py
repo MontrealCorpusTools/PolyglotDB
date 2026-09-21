@@ -1,10 +1,10 @@
 from typing import LiteralString, cast
 
 from polyglotdb.corpus.context import CorpusContext
-from polyglotdb.types import Phone, SyllabificationAlgo, Syllable, Word
+from polyglotdb.types import Phone, Syllabifier, Syllable, Word
 
 
-class MatchOnset(SyllabificationAlgo):
+class MaxOnsetSyllabifier(Syllabifier):
     """Syllabify by matching against a set of onsets, choosing the longest match.
 
     The algorithm is initialized with a set of permissible onsets and a set of syllabic

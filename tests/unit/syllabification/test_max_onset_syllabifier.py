@@ -1,12 +1,12 @@
 import pytest
 
-from polyglotdb.syllabification.match_onset import MatchOnset
+from polyglotdb.syllabification.max_onset_syllabifier import MaxOnsetSyllabifier
 from polyglotdb.types import Syllable, Word
 
 
 @pytest.fixture
-def algo() -> MatchOnset:
-    return MatchOnset(
+def algo() -> MaxOnsetSyllabifier:
+    return MaxOnsetSyllabifier(
         onsets={("k",), ("s", "k"), ("s", "k", "r")},
         syllabics={"iy", "aa"},
     )
@@ -122,7 +122,7 @@ def algo() -> MatchOnset:
         ),
     ],
 )
-def test_syllabify_simple(algo: MatchOnset, word: Word, expected: list[Syllable]):
+def test_syllabify_simple(algo: MaxOnsetSyllabifier, word: Word, expected: list[Syllable]):
     assert algo.syllabify(word) == expected
 
 
@@ -133,6 +133,6 @@ def test_syllabify_simple(algo: MatchOnset, word: Word, expected: list[Syllable]
         pytest.param(["k", "t", "iy"], id="ccv"),
     ],
 )
-def test_syllabify_impermissible_onset(algo: MatchOnset, word: Word):
+def test_syllabify_impermissible_onset(algo: MaxOnsetSyllabifier, word: Word):
     with pytest.raises(ValueError):
         algo.syllabify(word)

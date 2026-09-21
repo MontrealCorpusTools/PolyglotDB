@@ -32,6 +32,6 @@ class Syllable(NamedTuple):
     coda: tuple[int, int]
 
 
-class SyllabificationAlgo(Protocol):
+class Syllabifier(Protocol):
     def syllabify(self, word: Word) -> list[Syllable]:
         ...

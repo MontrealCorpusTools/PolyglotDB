@@ -23,7 +23,7 @@ from polyglotdb.syllabification.probabilistic import (
     split_nonsyllabic_prob,
     split_ons_coda_prob,
 )
-from polyglotdb.types import SyllabificationAlgo, Syllable
+from polyglotdb.types import Syllabifier, Syllable
 
 logger = logging.getLogger(__name__)
 
@@ -257,7 +257,7 @@ class SyllabicContext(UtteranceContext):
         """
         return "syllable" in self.hierarchy.annotation_types
 
-    def encode_syllables_v2(self, algorithm: SyllabificationAlgo):
+    def encode_syllables_v2(self, algorithm: Syllabifier):
         """Encode syllables to the corpus using the given algorithm.
 
         Like with phones and words, syllables are connected through a `precedes`
