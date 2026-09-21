@@ -30,21 +30,22 @@ class MaxOnsetSyllabifier(Syllabifier):
         self.onsets = onsets
 
     @classmethod
-    def from_corpus(cls, corpus: CorpusContext):
+    def from_corpus(cls, corpus: CorpusContext, syllabic_label: str = "syllabic"):
         """Initialize the algorithm by finding onsets and syllabics from the corpus.
 
         Specifically, onsets are found using `CorpusContext.find_onsets()`.
         Syllabics are initialized to the segments previously designated as
         syllabics using `CorpusContext.encode_syllabic_segments()`.
+        Alternative syllabic labels can be specified through the `syllabic_label` argument.
         """
         query = cast(
             LiteralString,
-            f"MATCH (n:{corpus.cypher_safe_name}:syllabic) return n.label as label",
+            f"MATCH (n:{corpus.cypher_safe_name}:{syllabic_label}) return n.label as label",
         )
         records = corpus.graph_driver.execute_query(query).records
         syllabics = {x["label"] for x in records}
 
-        onsets = set(corpus.find_onsets().keys())
+        onsets = set(corpus.find_onsets(syllabic_label=syllabic_label).keys())
         return cls(onsets, syllabics)
 
     def syllabify(self, word: Word) -> list[Syllable]:
