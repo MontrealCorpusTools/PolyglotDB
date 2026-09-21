@@ -374,9 +374,8 @@ class SyllabicContext(UtteranceContext):
         if not rows:
             return
 
-        # Create syllable and syllable type nodes
-        query = cast(
-            LiteralString,
+        queries = [
+            # Create syllable and syllable type nodes
             f"""UNWIND $rows AS row
             MERGE (st:syllable_type:{corpus} {{id: row.type_id}})
             ON CREATE SET st.label = row.label
@@ -387,39 +386,24 @@ class SyllabicContext(UtteranceContext):
                 end: row.end
             }})
             CREATE (s)-[:is_a]->(st)""",
-        )
-        _ = self.graph_driver.execute_query(query, rows=rows)
-
-        # Create precedence relationships on syllables
-        query = cast(
-            LiteralString,
+            # Create precedence relationships on syllables
             f"""UNWIND $rows AS row
             MATCH (prev:syllable:{corpus}:speech {{id: row.prev_syllable_id}})
             MATCH (s:syllable:{corpus}:speech {{id: row.id}})
             CREATE (prev)-[:precedes]->(s)""",
-        )
-        _ = self.graph_driver.execute_query(query, rows=rows)
-
-        # Identify and set all nuclei. Since property matches never match
-        # null == null, rows without nuclei are skipped.
-        # Connect nucleus to syllable to word
-        query = cast(
-            LiteralString,
+            # Identify and set all nuclei. Since property matches never match
+            # null == null, rows without nuclei are skipped.
+            # Connect nucleus to syllable to word
             f"""UNWIND $rows AS row
             MATCH (s:syllable:{corpus}:speech {{id: row.id}})
             MATCH (n:{phone_label_name}:{corpus}:speech {{id: row.nucleus_id}})-[:contained_by]->(w:{word_label_name}:{corpus}:speech)
             SET n :nucleus, n.syllable_position = 'nucleus'
             CREATE (n)-[:contained_by]->(s)
             CREATE (s)-[:contained_by]->(w)""",
-        )
-        _ = self.graph_driver.execute_query(query, rows=rows)
-
-        # Identify and set all onsets, and connect onset to syllable to word.
-        # Use MERGE to create the syllable-to-word relationship since it will create
-        # the relationship for degenerate syllables with an onset and avoid
-        # duplicating it for regular syllables.
-        query = cast(
-            LiteralString,
+            # Identify and set all onsets, and connect onset to syllable to word.
+            # Use MERGE to create the syllable-to-word relationship since it will create
+            # the relationship for degenerate syllables with an onset and avoid
+            # duplicating it for regular syllables.
             f"""UNWIND $rows AS row
             MATCH (s:syllable:{corpus}:speech {{id: row.id}})
             UNWIND row.onset_ids AS onset_id
@@ -427,14 +411,9 @@ class SyllabicContext(UtteranceContext):
             SET o :onset, o.syllable_position = 'onset'
             CREATE (o)-[:contained_by]->(s)
             MERGE (s)-[:contained_by]->(w)""",
-        )
-        _ = self.graph_driver.execute_query(query, rows=rows)
-
-        # Identify and set all codas, and connect coda to syllable. Use MERGE
-        # to create the syllable-to-word relationship for coda-only degenerate
-        # syllables.
-        query = cast(
-            LiteralString,
+            # Identify and set all codas, and connect coda to syllable. Use MERGE
+            # to create the syllable-to-word relationship for coda-only degenerate
+            # syllables.
             f"""UNWIND $rows AS row
             MATCH (s:syllable:{corpus}:speech {{id: row.id}})
             UNWIND row.coda_ids AS coda_id
@@ -442,13 +421,8 @@ class SyllabicContext(UtteranceContext):
             SET c :coda, c.syllable_position = 'coda'
             CREATE (c)-[:contained_by]->(s)
             MERGE (s)-[:contained_by]->(w)""",
-        )
-        _ = self.graph_driver.execute_query(query, rows=rows)
-
-        # Connect syllable to superunits (currently, the only superunit is the utterance)
-        # and create spoken relationships
-        query = cast(
-            LiteralString,
+            # Connect syllable to superunits (currently, the only superunit is the utterance)
+            # and create spoken relationships
             f"""UNWIND $rows AS row
             MATCH (s:syllable:{corpus}:speech {{id: row.id}})-[:contained_by]->(w:{word_label_name}:{corpus}:speech)
             MATCH (w)-[:contained_by]->(super)
@@ -458,8 +432,10 @@ class SyllabicContext(UtteranceContext):
                     (w)-[:spoken_in]->(d:Discourse)
             CREATE (s)-[:spoken_by]->(sp)
             CREATE (s)-[:spoken_in]->(d)""",
-        )
-        _ = self.graph_driver.execute_query(query, rows=rows)
+        ]
+
+        for query in queries:
+            _ = self.graph_driver.execute_query(cast(LiteralString, query), rows=rows)
 
     def encode_syllables(
         self,
