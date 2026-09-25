@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 version_file = "polyglotdb/_version.py"
 
 [tool.ruff]
+target-version = "py311"
 line-length = 99
 
 [tool.ruff.lint]

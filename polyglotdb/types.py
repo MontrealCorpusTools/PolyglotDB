@@ -7,8 +7,8 @@ many of these types will eventually be rewritten.
 
 from typing import NamedTuple, Protocol
 
-type Phone = str
-type Word = list[Phone]
+Phone = str
+Word = list[Phone]
 
 
 class Syllable(NamedTuple):
