@@ -1,9 +1,54 @@
-[project]
-requires-python = ">=3.11"
-
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8"]
+requires = ["setuptools>=77", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "polyglotdb"
+dynamic = ["version"]
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Montreal Corpus Tools", email = "michael.e.mcauliffe@gmail.com" }]
+keywords = ["phonology", "corpus", "phonetics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "conch-sounds",
+    "influxdb",
+    "librosa",
+    "neo4j",
+    "praatio",
+    "requests",
+    "scipy",
+    "tqdm",
+    "pywin32; os_name == 'nt'",
+]
+
+[project.optional-dependencies]
+dev = ["pre-commit", "pytest"]
+
+[project.scripts]
+pgdb = "polyglotdb.pgdb:main"
+
+[project.urls]
+Homepage = "https://github.com/MontrealCorpusTools/PolyglotDB"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+namespaces = false
+
+[tool.setuptools.package-data]
+polyglotdb = ["databases/*.conf", "polyglotdb/acoustics/formants/*.praat"]
 
 [tool.setuptools_scm]
 version_file = "polyglotdb/_version.py"
@@ -39,7 +84,6 @@ exclude = [
     "tests",
     "build",
     "dist",
-    "setup.py",
     "docs"
 ]
 verbose = 100
