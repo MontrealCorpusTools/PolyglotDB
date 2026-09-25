@@ -46,6 +46,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 namespaces = false
+exclude = ["tests*"]
 
 [tool.setuptools.package-data]
 polyglotdb = ["databases/*.conf", "polyglotdb/acoustics/formants/*.praat"]
