@@ -49,7 +49,7 @@ namespaces = false
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
-polyglotdb = ["databases/*.conf", "polyglotdb/acoustics/formants/*.praat"]
+polyglotdb = ["databases/*.conf"]
 
 [tool.setuptools_scm]
 version_file = "polyglotdb/_version.py"
