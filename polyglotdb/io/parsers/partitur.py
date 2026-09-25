@@ -70,7 +70,7 @@ class PartiturParser(BaseParser):
             # self.annotation_tiers[0][-1].type_properties['transcription'] = tup[3]
 
         for tup in phones.values():
-            self.annotation_tiers[2].add(((x for x in tup)))
+            self.annotation_tiers[2].add((x for x in tup))
         pg_annotations = self._parse_annotations(types_only)
         data = DiscourseData(name, pg_annotations, self.hierarchy)
 

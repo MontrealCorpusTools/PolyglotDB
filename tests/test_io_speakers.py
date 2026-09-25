@@ -1,7 +1,5 @@
 import os
 
-import pytest
-
 from polyglotdb.io.parsers.speaker import DirectorySpeakerParser, FilenameSpeakerParser
 
 

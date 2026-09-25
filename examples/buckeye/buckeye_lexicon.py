@@ -4,9 +4,8 @@ import time
 
 base = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, base)
-import polyglotdb.io as pgio
 from polyglotdb import CorpusContext
-from polyglotdb.io import enrich_lexicon_from_csv, enrich_speakers_from_csv
+from polyglotdb.io import enrich_lexicon_from_csv
 
 path_to_buckeye = r"D:\Data\VIC\Speakers"
 # path_to_buckeye = r'D:\Data\BuckeyeSubset'

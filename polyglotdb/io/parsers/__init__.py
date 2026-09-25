@@ -10,3 +10,19 @@ from .text_orthography import OrthographyTextParser
 from .text_transcription import TranscriptionTextParser
 from .textgrid import TextgridParser
 from .timit import TimitParser
+
+__all__ = [
+    "BuckeyeParser",
+    "FaveParser",
+    "IlgParser",
+    "LabbCatParser",
+    "MausParser",
+    "MfaParser",
+    "PartiturParser",
+    "DirectorySpeakerParser",
+    "FilenameSpeakerParser",
+    "OrthographyTextParser",
+    "TranscriptionTextParser",
+    "TextgridParser",
+    "TimitParser",
+]

@@ -1,7 +1,5 @@
 import os
 
-import pytest
-
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_timit
 from polyglotdb.io.parsers.timit import read_phones, read_words

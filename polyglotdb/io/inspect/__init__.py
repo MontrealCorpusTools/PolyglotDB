@@ -9,3 +9,17 @@ from .text_orthography import inspect_orthography
 from .text_transcription import inspect_transcription
 from .textgrid import inspect_textgrid
 from .timit import inspect_timit
+
+__all__ = [
+    "inspect_buckeye",
+    "inspect_fave",
+    "inspect_ilg",
+    "inspect_labbcat",
+    "inspect_maus",
+    "inspect_mfa",
+    "inspect_partitur",
+    "inspect_orthography",
+    "inspect_transcription",
+    "inspect_textgrid",
+    "inspect_timit",
+]

@@ -1,5 +1,5 @@
 __all__ = [
-    "query",
+    "graph",
     "io",
     "corpus",
     "config",
