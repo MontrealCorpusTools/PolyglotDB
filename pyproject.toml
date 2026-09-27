@@ -45,8 +45,7 @@ Homepage = "https://github.com/MontrealCorpusTools/PolyglotDB"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-namespaces = false
-exclude = ["tests*"]
+include = ["polyglotdb*"]
 
 [tool.setuptools.package-data]
 polyglotdb = ["databases/*.conf"]
