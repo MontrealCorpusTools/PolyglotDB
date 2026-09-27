@@ -4,10 +4,11 @@ This file is currently WIP. Definitions in this file are only used in new code
 related to syllabification. However, since we should move towards adopting an OGM,
 many of these types will eventually be rewritten.
 """
+
 from typing import NamedTuple, Protocol
 
-type Phone = str
-type Word = list[Phone]
+Phone = str
+Word = list[Phone]
 
 
 class Syllable(NamedTuple):
@@ -33,5 +34,4 @@ class Syllable(NamedTuple):
 
 
 class Syllabifier(Protocol):
-    def syllabify(self, word: Word) -> list[Syllable]:
-        ...
+    def syllabify(self, word: Word) -> list[Syllable]: ...

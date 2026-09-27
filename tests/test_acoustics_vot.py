@@ -1,6 +1,3 @@
-import os
-from decimal import Decimal
-
 import pytest
 
 from polyglotdb import CorpusContext

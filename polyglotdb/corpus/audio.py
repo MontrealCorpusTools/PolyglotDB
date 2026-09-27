@@ -946,9 +946,7 @@ class AudioContext(SyllabicContext):
         else:
             columns = '"time", {}'.format(", ".join(property_names))
         query = """select {} from "{}"
-                        {};""".format(
-            columns, acoustic_name, filter_string
-        )
+                        {};""".format(columns, acoustic_name, filter_string)
         result = self.execute_influxdb(query)
         track = Track()
         for r in result.get_points(acoustic_name):
@@ -1591,7 +1589,7 @@ class AudioContext(SyllabicContext):
         """
         if acoustic_name not in self.hierarchy.acoustics:
             raise ValueError(
-                f'Acoustic measure must be one of: {", ".join(self.hierarchy.acoustics)}.'
+                f"Acoustic measure must be one of: {', '.join(self.hierarchy.acoustics)}."
             )
 
         if not by_speaker and not by_annotation:
@@ -1600,7 +1598,7 @@ class AudioContext(SyllabicContext):
         valid_annotation_types = [atype for atype in self.annotation_types if atype != "utterance"]
         if by_annotation and by_annotation not in valid_annotation_types:
             raise Exception(
-                f'Annotation type must be one of: {", ".join(valid_annotation_types)}.'
+                f"Annotation type must be one of: {', '.join(valid_annotation_types)}."
             )
 
         client = self.acoustic_client()
@@ -1634,9 +1632,10 @@ class AudioContext(SyllabicContext):
                     for k, v in result.items():
                         v = list(v)
                         for measure, (mean_name, sd_name) in aliases.items():
-                            summary_data[(k[1]["speaker"], item, measure)] = v[0].get(
-                                mean_name
-                            ), v[0].get(sd_name)
+                            summary_data[(k[1]["speaker"], item, measure)] = (
+                                v[0].get(mean_name),
+                                v[0].get(sd_name),
+                            )
                 else:
                     query = """select {} from "{}"
                                 where "{}" = '{}';""".format(
@@ -1659,8 +1658,9 @@ class AudioContext(SyllabicContext):
             for k, v in result.items():
                 v = list(v)
                 for measure, (mean_name, sd_name) in aliases.items():
-                    summary_data[(k[1]["speaker"], measure)] = v[0].get(mean_name), v[0].get(
-                        sd_name
+                    summary_data[(k[1]["speaker"], measure)] = (
+                        v[0].get(mean_name),
+                        v[0].get(sd_name),
                     )
 
         for s in self.speakers:

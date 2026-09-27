@@ -4,11 +4,8 @@ from decimal import Decimal
 import pytest
 
 from polyglotdb import CorpusContext
-from polyglotdb.acoustics.formants.base import analyze_formant_points
 from polyglotdb.acoustics.formants.refined import (
     analyze_formant_points_refinement,
-    get_mean_SD,
-    save_formant_point_data,
 )
 
 

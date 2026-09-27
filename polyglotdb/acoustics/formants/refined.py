@@ -307,6 +307,9 @@ def analyze_formant_points_refinement(
             my_iterations = [0]
         else:
             my_iterations = range(num_iterations)
+
+        last_iteration_best_numbers = []
+
         for iteration in my_iterations:
             best_numbers = []
             selected_tracks = {}

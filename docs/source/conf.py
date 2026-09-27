@@ -57,6 +57,7 @@ MOCK_MODULES = [
     "praatio.utilities.errors",
     "conch.utils",
     "conch.analysis",
+    "conch.analysis.helper",
     "conch.analysis.autovot",
     "conch.analysis.praat",
     "conch.analysis.segments",
@@ -65,7 +66,6 @@ MOCK_MODULES = [
     "conch.analysis.intensity",
     "conch.multiprocessing",
     "conch.main",
-    "conch.utils" "conch.analysis.helper",
 ]
 
 for mod_name in MOCK_MODULES:
@@ -77,7 +77,6 @@ for mod_name in MOCK_MODULES:
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath("../../"))
-import polyglotdb
 
 # -- General configuration ------------------------------------------------
 

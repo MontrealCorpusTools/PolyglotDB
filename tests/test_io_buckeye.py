@@ -1,7 +1,5 @@
 import os
 
-import pytest
-
 from polyglotdb import CorpusContext
 from polyglotdb.io import inspect_buckeye
 from polyglotdb.io.parsers.buckeye import read_phones, read_words

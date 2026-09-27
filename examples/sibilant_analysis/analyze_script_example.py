@@ -5,14 +5,10 @@ import time
 base = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, base)
 
-import polyglotdb.io as aio
+# from polyglotdb.query.graph.func import Count
+
 from polyglotdb import CorpusContext
 from polyglotdb.config import CorpusConfig
-from polyglotdb.corpus import AudioContext
-from polyglotdb.io import inspect_textgrid
-
-# from polyglotdb.query.graph.func import Count
-from polyglotdb.query.annotations.func import Count
 
 # exports all sibilants
 

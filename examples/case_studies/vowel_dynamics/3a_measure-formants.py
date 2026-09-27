@@ -1,5 +1,4 @@
 from polyglotdb import CorpusContext
-from polyglotdb.acoustics.formants.refined import analyze_formant_points_refinement
 
 
 def main():
