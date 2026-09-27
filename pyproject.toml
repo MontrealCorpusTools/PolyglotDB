@@ -41,9 +41,6 @@ pgdb = "polyglotdb.pgdb:main"
 [project.urls]
 Homepage = "https://github.com/MontrealCorpusTools/PolyglotDB"
 
-[tool.setuptools]
-include-package-data = true
-
 [tool.setuptools.packages.find]
 include = ["polyglotdb*"]
 
