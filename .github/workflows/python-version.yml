@@ -1,0 +1,22 @@
+name: Python version
+
+on:
+  workflow_call:
+    outputs:
+      min:
+        description: Minimum Python version from requires-python in pyproject.toml
+        value: ${{ jobs.python-version.outputs.min }}
+
+jobs:
+  python-version:
+    runs-on: ubuntu-latest
+    outputs:
+      min: ${{ steps.min.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: min
+        run: >-
+          python3 -c "import re, tomllib;
+          spec = tomllib.load(open('pyproject.toml', 'rb'))['project']['requires-python'];
+          print('version=' + re.fullmatch(r'>=\s*(\d+\.\d+)', spec).group(1))"
+          >> "$GITHUB_OUTPUT"
