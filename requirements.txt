@@ -1,9 +1,0 @@
-neo4j
-librosa
-scipy
-praatio
-influxdb
-tqdm
-conch_sounds
-future
-requests
