@@ -25,6 +25,7 @@ jobs:
         python-version: ["${{ needs.python-version.outputs.min }}", "3.x"]
     env:
       PGDB_HOME: ${{ github.workspace }}/pgdb_home
+    timeout-minutes: 60
     steps:
       - name: Checkout main repository
         uses: actions/checkout@v7
