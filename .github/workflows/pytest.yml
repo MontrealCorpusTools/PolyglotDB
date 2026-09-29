@@ -49,13 +49,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libsndfile1
-      - name: Install required packages and run pytest
+      - name: Install package
+        run: pip install -e ".[dev]"
+      - name: Install and start databases
         run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -e ".[dev]"
-          pgdb install $PGDB_HOME
+          pgdb install "$PGDB_HOME"
           pgdb start
-          pytest
-          pgdb stop
+      - name: Run pytest
+        run: pytest
