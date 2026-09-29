@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
   # Allow rebuilds via API
   repository_dispatch:
     types: rebuild
