@@ -7,17 +7,7 @@ on:
 
 jobs:
   python-version:
-    runs-on: ubuntu-latest
-    outputs:
-      min: ${{ steps.min.outputs.version }}
-    steps:
-      - uses: actions/checkout@v7
-      - id: min
-        run: >-
-          python3 -c "import re, tomllib;
-          spec = tomllib.load(open('pyproject.toml', 'rb'))['project']['requires-python'];
-          print('version=' + re.fullmatch(r'>=\s*(\d+\.\d+)', spec).group(1))"
-          >> "$GITHUB_OUTPUT"
+    uses: $/.github/workflows/python-version.yml
   build-n-publish:
     name: Build and publish to PyPI
     needs: python-version
