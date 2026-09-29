@@ -10,8 +10,8 @@ on:
     types: rebuild
 
 concurrency:
-  group: run_tests-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   python-version:
