@@ -1,19 +1,37 @@
-name: Publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+name: Build and publish to PyPI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    tags: ["v*"]
 
 jobs:
+  python-version:
+    runs-on: ubuntu-latest
+    outputs:
+      min: ${{ steps.min.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: min
+        run: >-
+          python3 -c "import re, tomllib;
+          spec = tomllib.load(open('pyproject.toml', 'rb'))['project']['requires-python'];
+          print('version=' + re.fullmatch(r'>=\s*(\d+\.\d+)', spec).group(1))"
+          >> "$GITHUB_OUTPUT"
   build-n-publish:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+    name: Build and publish to PyPI
+    needs: python-version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v7
         with:
-          python-version: ${{ env.MIN_PYTHON_VERSION }}
+          # Always fetch entire history for setuptools-scm to work properly
+          # https://setuptools-scm.readthedocs.io/latest/integrations/#troubleshooting
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ needs.python-version.outputs.min }}
       - name: Install pypa/build
         run: >-
           python -m
@@ -28,8 +46,8 @@ jobs:
           --wheel
           --outdir dist/
           .
-      - name: Publish distribution 📦 to PyPI
-        if: startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@master
+      - name: Publish to PyPI
+        if: github.ref_type == 'tag'
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
