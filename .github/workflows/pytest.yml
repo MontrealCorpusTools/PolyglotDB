@@ -1,11 +1,11 @@
-name: pytest
+name: Pytest
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  # Allow rebuilds via API.
+  # Allow rebuilds via API
   repository_dispatch:
     types: rebuild
 
@@ -14,48 +14,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  python-version:
+    uses: $/.github/workflows/python-version.yml
   test:
+    needs: python-version
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["${{ needs.python-version.outputs.min }}", "3.x"]
     env:
       PGDB_HOME: ${{ github.workspace }}/pgdb_home
-
     steps:
       - name: Checkout main repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           repository: MontrealCorpusTools/PolyglotDB
           fetch-depth: 0
-
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
-          python-version: ${{ env.MIN_PYTHON_VERSION }}
-
+          python-version: ${{ matrix.python-version }}
       - name: Set up JDK 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v6
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "21"
-
       - name: Download and set up Praat
         run: |
           wget https://github.com/praat/praat/releases/download/v6.4.21/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz
           tar -xvzf praat.tar.gz
           echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libsndfile1
-
       - name: Install required packages and run pytest
         run: |
           python -m venv venv
           source venv/bin/activate
           pip install --upgrade pip
-          pip install -e .
-          pip install pyyaml setuptools pytest
+          pip install -e ".[dev]"
           pgdb install $PGDB_HOME
           pgdb start
           pytest
