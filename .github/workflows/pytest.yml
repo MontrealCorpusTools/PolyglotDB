@@ -50,7 +50,7 @@ jobs:
           wget -q https://github.com/praat/praat/releases/download/v6.4.21/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz
           tar -xzf praat.tar.gz
           echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
-      - name: Install package
+      - name: Install packages
         run: pip install -e ".[dev]"
       - name: Install and start databases
         run: |
