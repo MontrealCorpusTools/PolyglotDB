@@ -3,22 +3,15 @@ repos:
     hooks:
       - id: profile-check
         name: no profiling
-        entry: '@profile'
+        entry: "@profile"
         language: pygrep
-        types: [ python ]
+        types: [python]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.7
     hooks:
       - id: ruff-check
-        args: [ --fix ]
+        args: [--fix]
       - id: ruff-format
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.2.0
-    hooks:
-      - id: setup-cfg-fmt
-        args:
-          - --min-py3-version
-          - "3.8"
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
@@ -33,6 +26,7 @@ repos:
         exclude: .txt$
       - id: end-of-file-fixer
         exclude: .txt$
+      # This does nothing on CI unless --enforce-all is added
       - id: check-added-large-files
-        args: ['--maxkb=2000']
+        args: ["--maxkb=2000"]
       - id: mixed-line-ending
