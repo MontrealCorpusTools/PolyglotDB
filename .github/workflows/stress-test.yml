@@ -20,7 +20,10 @@ jobs:
     needs: python-version
     runs-on: ubuntu-latest
     env:
+      # Configures where PolyglotDB is installed, also read by `pgdb.py`
       PGDB_HOME: ${{ github.workspace }}/pgdb_home
+      # Stress test scripts read this
+      TEST_REPO_ROOT: ${{ github.workspace }}/testing
     timeout-minutes: 120
     steps:
       - name: Checkout main repository
