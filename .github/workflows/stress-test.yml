@@ -49,9 +49,10 @@ jobs:
           tar -xzf praat.tar.gz
           echo "praat_path=$(pwd)/praat_barren" >> $GITHUB_ENV
       - name: Install packages
+        # pyyaml and pandas are dependencies from the stress test repo
         run: |
           pip install -e .
-          pip install pandas
+          pip install pyyaml pandas
       - name: Install and start databases
         run: |
           pgdb install "$PGDB_HOME"
