@@ -12,13 +12,6 @@ repos:
       - id: ruff-check
         args: [ --fix ]
       - id: ruff-format
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.2.0
-    hooks:
-      - id: setup-cfg-fmt
-        args:
-          - --min-py3-version
-          - "3.8"
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
