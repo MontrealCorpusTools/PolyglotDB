@@ -1,62 +1,58 @@
-name: pytest
+name: Pytest
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
-  # Allow rebuilds via API.
+    branches: [main]
+  workflow_dispatch:
+  # Allow rebuilds via API
   repository_dispatch:
     types: rebuild
 
+permissions:
+  contents: read
+
 concurrency:
-  group: run_tests-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  python-version:
+    uses: $/.github/workflows/python-version.yml
   test:
+    needs: python-version
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["${{ needs.python-version.outputs.min }}", "3.x"]
     env:
       PGDB_HOME: ${{ github.workspace }}/pgdb_home
-
+    timeout-minutes: 60
     steps:
-    - name: Checkout main repository
-      uses: actions/checkout@v3
-      with:
-        repository: MontrealCorpusTools/PolyglotDB
-        fetch-depth: 0
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.MIN_PYTHON_VERSION }}
-
-    - name: Set up JDK 21
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-
-    - name: Download and set up Praat
-      run: |
-        wget https://github.com/praat/praat/releases/download/v6.4.21/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz
-        tar -xvzf praat.tar.gz
-        echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libsndfile1
-
-    - name: Install required packages and run pytest
-      run: |
-        python -m venv venv
-        source venv/bin/activate
-        pip install --upgrade pip
-        pip install -e .
-        pip install pyyaml setuptools pytest
-        pgdb install $PGDB_HOME
-        pgdb start
-        pytest
-        pgdb stop
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Download and set up Praat
+        run: |
+          wget -q https://github.com/praat/praat/releases/download/v6.4.21/praat6421_linux-intel64-barren.tar.gz -O praat.tar.gz
+          tar -xzf praat.tar.gz
+          echo "praat=$(pwd)/praat_barren" >> $GITHUB_ENV
+      - name: Install packages
+        run: pip install -e ".[dev]"
+      - name: Install and start databases
+        run: |
+          pgdb install "$PGDB_HOME"
+          pgdb start
+      - name: Run pytest
+        run: pytest
