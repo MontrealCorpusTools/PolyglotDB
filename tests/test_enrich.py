@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from polyglotdb import CorpusContext
@@ -40,6 +42,16 @@ def test_stress_enrichment(stressed_config):
 
         assert c.hierarchy.has_type_property("syllable", "stress")
 
+        q = c.query_lexicon(c.lexicon_phone)
+        q = q.columns(c.lexicon_phone.label.column_name("label"))
+        for r in q.all():
+            assert re.search(r"[0-2]$", r["label"]) is None
+
+        q = c.query_lexicon(c.lexicon_syllable)
+        q = q.columns(c.lexicon_syllable.label.column_name("label"))
+        for r in q.all():
+            assert re.search(r"[0-2]", r["label"]) is None
+
 
 def test_stress_enrichment_no_clean(stressed_config):
     syllabics = "AA0,AA1,AA2,AH0,AH1,AH2,AE0,AE1,AE2,AY0,AY1,AY2,ER0,ER1,ER2,EH0,EH1,EH2,EY1,EY2,IH0,IH1,IH2,IY0,IY1,IY2,UW0,UW1,UW2".split(
@@ -67,6 +79,7 @@ def test_stress_enrichment_no_clean(stressed_config):
         res = q.all()
         for r in res:
             assert r["syllable_stress"] is not None
+            assert re.search(r"[0-2]", r["syllable"]) is not None
 
 
 def test_relativized_enrichment_syllables(acoustic_config):

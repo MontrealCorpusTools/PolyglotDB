@@ -1,5 +1,3 @@
-import re
-
 from polyglotdb.corpus.lexical import LexicalContext
 from polyglotdb.io.enrichment.features import enrich_features_from_csv, parse_file
 from polyglotdb.io.importer import feature_data_to_csvs, import_feature_csvs
@@ -111,71 +109,60 @@ class PhonologicalContext(LexicalContext):
         self.hierarchy.add_type_properties(self, self.phone_name, type_data.items())
         self.encode_hierarchy()
 
-    def remove_pattern(self, pattern="[0-2]"):
+    def remove_pattern(self, annotation_type: str = None, pattern: str = "[0-2]"):
         """
-        removes a stress or tone pattern from all phones
+        Removes a stress or tone pattern from all phones
 
         Parameters
         ----------
+        annotation_type: str
+            Type of annotation to remove pattern, defaults to phones if not specified
         pattern : str
             the regular expression for the pattern to remove
             Defaults to '[0-2]'
 
         """
-        phone = getattr(self, self.phone_name)
-        if pattern == "":
+        if not annotation_type:
+            annotation_type = self.phone_name
+        if not pattern:
             pattern = "[0-2]"
-        q = self.query_graph(phone)
-        results = q.all()
-        oldphones = []
-        length = 0
-        newphones = []
-        toAdd = {}
-        for item in results:
-            phone = item["label"]
-            if re.search(pattern, phone) is not None:
-                newphone = re.sub(pattern, "", phone)
-                length = len(phone) - len(newphone)
-                oldphones.append(phone)
-                newphones.append(newphone)
-                toAdd.update({"label": newphone})
-        statement = """MATCH (n:{phone_name}{type}:{corpus_name}) WHERE n.label in $oldphones
-        SET n.oldlabel = n.label
-        SET n.label=substring(n.label,0,size(n.label)-{length})"""
+        match_pattern = pattern
+        if not match_pattern.startswith("^"):
+            match_pattern = ".*" + match_pattern
+        if not match_pattern.endswith("$"):
+            match_pattern += ".*"
+        statement = """CYPHER 25
+        MATCH (n:{annotation_type}{type}:{corpus_name}) WHERE n.label =~ $match_regex
+        SET n.old_label = n.label
+        SET n.label=string.regexReplace(n.label, $regex, "")"""
         norm_statement = statement.format(
-            phone_name=self.phone_name,
+            annotation_type=annotation_type,
             type="",
             corpus_name=self.cypher_safe_name,
-            length=length,
         )
         type_statement = statement.format(
-            phone_name=self.phone_name,
+            annotation_type=annotation_type,
             type="_type",
             corpus_name=self.cypher_safe_name,
-            length=length,
         )
-        self.execute_cypher(norm_statement, oldphones=oldphones)
-        self.execute_cypher(type_statement, oldphones=oldphones)
-        self.encode_syllabic_segments(newphones)
-        self.encode_syllables("maxonset")
+        self.execute_cypher(norm_statement, match_regex=match_pattern, regex=pattern)
+        self.execute_cypher(type_statement, match_regex=match_pattern, regex=pattern)
 
-    def reset_to_old_label(self):
+    def reset_to_old_label(self, annotation_type: str = None):
         """
         Reset phones back to their old labels which include stress and tone
-        """
-        phones = []
-        getphone = f"""MATCH (n:{self.phone_name}_type:{self.cypher_safe_name})
-        WHERE n.oldlabel IS NOT NULL
-        RETURN n.oldlabel"""
-        results = self.execute_cypher(getphone)
-        for item in results:
-            phones.append(item["n.oldlabel"])
 
-        statement = f"""MATCH (n:{self.phone_name}{{type}}:{self.cypher_safe_name})
-        WHERE n.oldlabel IS NOT NULL SET n.label = n.oldlabel"""
-        norm_statement = statement.format(type="")
+        Parameters
+        ----------
+        annotation_type: str
+            Type of annotation to reset, defaults to phones if not specified
+        """
+        if not annotation_type:
+            annotation_type = self.phone_name
+
+        statement = f"""MATCH (n:{annotation_type}{{type}}:{self.cypher_safe_name})
+        WHERE n.old_label IS NOT NULL SET n.label = n.old_label"""
+        token_statement = statement.format(type="")
         type_statement = statement.format(type="_type")
-        self.execute_cypher(norm_statement)
+        self.execute_cypher(token_statement)
         self.execute_cypher(type_statement)
-        self.encode_syllabic_segments(phones)
-        self.encode_syllables("maxonset")
