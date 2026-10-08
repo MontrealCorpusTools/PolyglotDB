@@ -228,7 +228,6 @@ class SyllabicContext(UtteranceContext):
                 self, self.phone_name, ["onset", "coda", "nucleus"]
             )
             self.hierarchy.remove_token_properties(self, self.phone_name, ["syllable_position"])
-            # self.reset_to_old_label()
             self.encode_hierarchy()
         except KeyError:
             pass
@@ -741,7 +740,9 @@ class SyllabicContext(UtteranceContext):
 
         enrich_dict = self._generate_stress_enrichment(regex, clean_phone_label)
         if clean_phone_label:
-            self.remove_pattern(regex)
+            self.remove_pattern(annotation_type=self.phone_name, pattern=regex)
+            positionless_regex = regex.replace("$", "").replace("^", "")
+            self.remove_pattern(annotation_type="syllable", pattern=positionless_regex)
         self.enrich_syllables(enrich_dict)
         self.encode_hierarchy()
 
@@ -763,7 +764,9 @@ class SyllabicContext(UtteranceContext):
         enrich_dict = self._generate_tone_enrichment(regex, clean_phone_label)
 
         if clean_phone_label:
-            self.remove_pattern(regex)
+            self.remove_pattern(annotation_type=self.phone_name, pattern=regex)
+            positionless_regex = regex.replace("$", "").replace("^", "")
+            self.remove_pattern(annotation_type="syllable", pattern=positionless_regex)
         self.enrich_syllables(enrich_dict)
         self.encode_hierarchy()
 
