@@ -147,7 +147,13 @@ def download_influxdb(data_directory, overwrite=False):
         version=INFLUXDB_VERSION, dist_string=dist_string
     )
     download_file(download_link, path)
-    shutil.unpack_archive(path, influxdb_directory)
+    if sys.platform.startswith("win"):
+        shutil.unpack_archive(path, influxdb_directory)
+    else:
+        shutil.unpack_archive(path, data_directory)
+        for d in os.listdir(data_directory):
+            if d.startswith("influxdb"):
+                os.rename(os.path.join(data_directory, d), influxdb_directory)
     return True
 
 
