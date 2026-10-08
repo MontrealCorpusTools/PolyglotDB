@@ -2,6 +2,7 @@
 
 import argparse
 import configparser
+import json
 import os
 import shutil
 import signal
@@ -11,9 +12,9 @@ import sys
 import requests
 from tqdm import tqdm
 
-NEO4J_VERSION = "5.26.20"
+NEO4J_VERSION = "2026.09.0"
 
-INFLUXDB_VERSION = "1.8.9"
+INFLUXDB_VERSION = "1.13.1"
 
 
 def load_config():
@@ -40,6 +41,23 @@ def load_config():
 def save_config(c):
     with open(CONFIG_PATH, "w") as configfile:
         c.write(configfile)
+
+
+def check_versions():
+    version_path = os.path.join(CONFIG["Data"]["directory"], "versions.json")
+    version_error = Exception(
+        "Currently installed versions are out of date, "
+        "please run `pgdb uninstall` followed by `pgdb install`."
+    )
+    if not os.path.exists(version_path):
+        raise version_error
+    with open(version_path, "r", encoding="utf8") as f:
+        versions = json.load(f)
+    try:
+        if versions["neo4j"] != NEO4J_VERSION or versions["influxdb"] != INFLUXDB_VERSION:
+            raise version_error
+    except KeyError:
+        raise version_error
 
 
 def download_file(url: str, fname: str, chunk_size=1024):
@@ -116,26 +134,26 @@ def download_influxdb(data_directory, overwrite=False):
     print(f"Downloading InfluxDB {INFLUXDB_VERSION}...")
 
     if sys.platform.startswith("win"):
-        dist_string = "windows_amd64.zip"
+        dist_string = "-windows_amd64.zip"
         path = os.path.join(TEMP_DIR, "influxdb.zip")
     elif sys.platform == "darwin":
-        dist_string = "darwin_amd64.tar.gz"
+        dist_string = "_darwin_amd64.tar.gz"
         path = os.path.join(TEMP_DIR, "influxdb.tar.gz")
     else:
-        dist_string = "linux_amd64.tar.gz"
+        dist_string = "_linux_amd64.tar.gz"
         path = os.path.join(TEMP_DIR, "influxdb.tar.gz")
 
-    download_link = (
-        "https://dl.influxdata.com/influxdb/releases/influxdb-{version}_{dist_string}".format(
-            version=INFLUXDB_VERSION, dist_string=dist_string
-        )
+    download_link = "https://dl.influxdata.com/influxdb/releases/v{version}/influxdb-{version}{dist_string}".format(
+        version=INFLUXDB_VERSION, dist_string=dist_string
     )
     download_file(download_link, path)
-    shutil.unpack_archive(path, data_directory)
-    for d in os.listdir(data_directory):
-        if d.startswith(("influxdb")):
-            os.rename(os.path.join(data_directory, d), influxdb_directory)
-
+    if sys.platform.startswith("win"):
+        shutil.unpack_archive(path, influxdb_directory)
+    else:
+        shutil.unpack_archive(path, data_directory)
+        for d in os.listdir(data_directory):
+            if d.startswith("influxdb"):
+                os.rename(os.path.join(data_directory, d), influxdb_directory)
     return True
 
 
@@ -193,9 +211,11 @@ def uninstall():
         shutil.rmtree(CONFIG_DIR)
     except FileNotFoundError:
         pass
+    print("Successfully uninstalled Neo4j and InfluxDB.")
 
 
 def start():
+    check_versions()
     try:
         shutil.rmtree(os.path.expanduser("~/.neo4j"))
     except FileNotFoundError:
@@ -206,15 +226,11 @@ def start():
         exe = "neo4j"
 
     neo4j_bin = os.path.join(CONFIG["Data"]["directory"], "neo4j", "bin", exe)
-    print(neo4j_bin)
     subprocess.call([neo4j_bin, "start"])
-    print(neo4j_bin)
     if sys.platform.startswith("win"):
         influxdb_bin = os.path.join(CONFIG["Data"]["directory"], "influxdb", "influxd.exe")
     else:
-        influxdb_bin = os.path.join(
-            CONFIG["Data"]["directory"], "influxdb", "usr", "bin", "influxd"
-        )
+        influxdb_bin = os.path.join(CONFIG["Data"]["directory"], "influxdb", "influxd")
     influxdb_conf = os.path.join(CONFIG["Data"]["directory"], "influxdb", "influxdb.conf")
     influx_proc = subprocess.Popen(
         [influxdb_bin, "-config", influxdb_conf],
@@ -249,10 +265,6 @@ def stop():
         pass
 
 
-def status(name):
-    pass
-
-
 def main():
     global CONFIG_DIR
     CONFIG_DIR = os.environ.get("PGDB_HOME", os.path.expanduser("~/.pgdb"))
@@ -284,9 +296,6 @@ def main():
 
     start_parser = subparsers.add_parser("start")
     start_parser.set_defaults(which="start")
-
-    status_parser = subparsers.add_parser("status")
-    status_parser.set_defaults(which="status")
 
     stop_parser = subparsers.add_parser("stop")
     stop_parser.set_defaults(which="stop")
@@ -336,12 +345,15 @@ def main():
             shutil.rmtree(TEMP_DIR)
         except FileNotFoundError:
             pass
+        version_path = os.path.join(CONFIG["Data"]["directory"], "versions.json")
+        with open(version_path, "w", encoding="utf8") as f:
+            json.dump({"neo4j": NEO4J_VERSION, "influxdb": INFLUXDB_VERSION}, f)
+        print("Successfully installed Neo4j and InfluxDB.")
     elif args.which == "uninstall":
+        stop()
         uninstall()
     elif args.which == "start":
         start()
-    elif args.which == "status":
-        pass
     elif args.which == "stop":
         stop()
 
