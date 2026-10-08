@@ -1,5 +1,3 @@
-import re
-
 from polyglotdb.corpus.lexical import LexicalContext
 from polyglotdb.io.enrichment.features import enrich_features_from_csv, parse_file
 from polyglotdb.io.importer import feature_data_to_csvs, import_feature_csvs
@@ -128,7 +126,13 @@ class PhonologicalContext(LexicalContext):
             annotation_type = self.phone_name
         if not pattern:
             pattern = "[0-2]"
-        statement = """MATCH (n:{annotation_type}{type}:{corpus_name}) WHERE n.label =~ $regex
+        match_pattern = pattern
+        if not match_pattern.startswith("^"):
+            match_pattern = ".*" + match_pattern
+        if not match_pattern.endswith("$"):
+            match_pattern += ".*"
+        statement = """CYPHER 25
+        MATCH (n:{annotation_type}{type}:{corpus_name}) WHERE n.label =~ $match_regex
         SET n.old_label = n.label
         SET n.label=string.regexReplace(n.label, $regex, "")"""
         norm_statement = statement.format(
@@ -141,8 +145,8 @@ class PhonologicalContext(LexicalContext):
             type="_type",
             corpus_name=self.cypher_safe_name,
         )
-        self.execute_cypher(norm_statement, regex=pattern)
-        self.execute_cypher(type_statement, regex=pattern)
+        self.execute_cypher(norm_statement, match_regex=match_pattern, regex=pattern)
+        self.execute_cypher(type_statement, match_regex=match_pattern, regex=pattern)
 
     def reset_to_old_label(self, annotation_type: str = None):
         """
@@ -155,13 +159,6 @@ class PhonologicalContext(LexicalContext):
         """
         if not annotation_type:
             annotation_type = self.phone_name
-        labels = []
-        query_statement = f"""MATCH (n:{annotation_type}_type:{self.cypher_safe_name})
-        WHERE n.old_label IS NOT NULL
-        RETURN n.old_label"""
-        results = self.execute_cypher(query_statement)
-        for item in results:
-            labels.append(item["n.old_label"])
 
         statement = f"""MATCH (n:{annotation_type}{{type}}:{self.cypher_safe_name})
         WHERE n.old_label IS NOT NULL SET n.label = n.old_label"""
