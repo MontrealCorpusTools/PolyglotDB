@@ -224,9 +224,7 @@ def start():
     if sys.platform.startswith("win"):
         influxdb_bin = os.path.join(CONFIG["Data"]["directory"], "influxdb", "influxd.exe")
     else:
-        influxdb_bin = os.path.join(
-            CONFIG["Data"]["directory"], "influxdb", "usr", "bin", "influxd"
-        )
+        influxdb_bin = os.path.join(CONFIG["Data"]["directory"], "influxdb", "influxd")
     influxdb_conf = os.path.join(CONFIG["Data"]["directory"], "influxdb", "influxdb.conf")
     influx_proc = subprocess.Popen(
         [influxdb_bin, "-config", influxdb_conf],
