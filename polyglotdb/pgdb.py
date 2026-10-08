@@ -134,16 +134,16 @@ def download_influxdb(data_directory, overwrite=False):
     print(f"Downloading InfluxDB {INFLUXDB_VERSION}...")
 
     if sys.platform.startswith("win"):
-        dist_string = "windows_amd64.zip"
+        dist_string = "-windows_amd64.zip"
         path = os.path.join(TEMP_DIR, "influxdb.zip")
     elif sys.platform == "darwin":
-        dist_string = "darwin_amd64.tar.gz"
+        dist_string = "_darwin_amd64.tar.gz"
         path = os.path.join(TEMP_DIR, "influxdb.tar.gz")
     else:
-        dist_string = "linux_amd64.tar.gz"
+        dist_string = "_linux_amd64.tar.gz"
         path = os.path.join(TEMP_DIR, "influxdb.tar.gz")
 
-    download_link = "https://dl.influxdata.com/influxdb/releases/v{version}/influxdb-{version}-{dist_string}".format(
+    download_link = "https://dl.influxdata.com/influxdb/releases/v{version}/influxdb-{version}{dist_string}".format(
         version=INFLUXDB_VERSION, dist_string=dist_string
     )
     download_file(download_link, path)
