@@ -10,7 +10,6 @@ BASE_DIR = os.path.join(CONFIG_DIR, "data")
 
 CONFIG_PATH = os.path.join(CONFIG_DIR, "config.ini")
 
-# pgdb's defaults, overridden by whatever its config.ini sets.
 CONFIG = configparser.ConfigParser()
 CONFIG.read_dict(default_config(os.path.join(CONFIG_DIR, "data")))
 if os.path.exists(CONFIG_PATH):
