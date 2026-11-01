@@ -18,21 +18,13 @@ INFLUXDB_VERSION = "1.13.1"
 
 
 def load_config():
+    from polyglotdb.databases.config import default_config
+
     c = configparser.ConfigParser()
+    c.read_dict(default_config(DEFAULT_DATA_DIR))
     if os.path.exists(CONFIG_PATH):
         c.read(CONFIG_PATH)
     else:
-        c["Neo4j"] = {"http_port": 7474, "https_port": 7475, "bolt_port": 7687}
-        c["Neo4j_wrapper"] = {"max_heap": 4096}
-        c["InfluxDB"] = {
-            "http_port": 8086,
-            "udp_port": 8087,
-            "auth_enabled": "false",
-            "data_directory": os.path.join(DEFAULT_DATA_DIR, "influxdb", "data"),
-            "wal_directory": os.path.join(DEFAULT_DATA_DIR, "influxdb", "wal"),
-            "meta_directory": os.path.join(DEFAULT_DATA_DIR, "influxdb", "meta"),
-        }
-        c["Data"] = {"directory": DEFAULT_DATA_DIR}
         global CONFIG_CHANGED
         CONFIG_CHANGED = True
     return c
@@ -164,8 +156,17 @@ def configure_neo4j(data_directory):
     with open(neo4j_template_path, "r") as f:
         template = f.read()
 
+    heap = {}
+    for name in ("initial_heap", "max_heap"):
+        try:
+            heap[name] = CONFIG.getint("Neo4j_wrapper", name)
+        except ValueError:
+            sys.exit(
+                f"{name} in the [Neo4j_wrapper] section of config.ini must be a whole number "
+                "of megabytes."
+            )
     with open(neo4j_conf_path, "w") as f:
-        f.write(template.format(**CONFIG["Neo4j"]))
+        f.write(template.format(**CONFIG["Neo4j"], **heap))
 
 
 def make_influxdb_safe(string):
@@ -216,6 +217,9 @@ def uninstall():
 
 def start():
     check_versions()
+    # Regenerate the database config files, so changes to config.ini take effect.
+    configure_neo4j(CONFIG["Data"]["directory"])
+    configure_influxdb(CONFIG["Data"]["directory"])
     try:
         shutil.rmtree(os.path.expanduser("~/.neo4j"))
     except FileNotFoundError:
