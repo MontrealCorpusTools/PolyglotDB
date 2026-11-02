@@ -2,6 +2,8 @@ import configparser
 import logging
 import os
 
+from polyglotdb.databases.config import default_config
+
 CONFIG_DIR = os.environ.get("PGDB_HOME", os.path.expanduser("~/.pgdb"))
 
 BASE_DIR = os.path.join(CONFIG_DIR, "data")
@@ -9,6 +11,7 @@ BASE_DIR = os.path.join(CONFIG_DIR, "data")
 CONFIG_PATH = os.path.join(CONFIG_DIR, "config.ini")
 
 CONFIG = configparser.ConfigParser()
+CONFIG.read_dict(default_config(os.path.join(CONFIG_DIR, "data")))
 if os.path.exists(CONFIG_PATH):
     CONFIG.read(CONFIG_PATH)
     BASE_DIR = os.path.expanduser(os.path.join(CONFIG["Data"]["directory"], "data"))
@@ -75,13 +78,13 @@ class CorpusConfig(object):
         self.corpus_name = corpus_name
         self.acoustic_user = None
         self.acoustic_password = None
-        self.acoustic_http_port = 8086
+        self.acoustic_http_port = CONFIG.getint("InfluxDB", "http_port")
         self.graph_user = None
         self.graph_password = None
         self.host = "localhost"
         self.query_behavior = "speaker"
-        self.graph_http_port = 7474
-        self.graph_bolt_port = 7687
+        self.graph_http_port = CONFIG.getint("Neo4j", "http_port")
+        self.graph_bolt_port = CONFIG.getint("Neo4j", "bolt_port")
         self.debug = False
 
         if data_dir is None:
