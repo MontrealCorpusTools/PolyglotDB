@@ -5,8 +5,7 @@ from collections.abc import Iterable, Mapping
 
 from polyglotdb.syllabification.sonority import SonorityClass
 
-# Canonically equivalent strings have the same NFC form (and the same NFD form), so
-# either form works for exact matching. NFC keeps segments short and readable.
+# Changing this would break the special rule for diphthongs below
 _NORMAL_FORM = "NFC"
 
 
@@ -128,6 +127,14 @@ def get_sonority_class(
 
     if key in IPA_SONORITY_CLASSES:
         return IPA_SONORITY_CLASSES[key]
+
+    # Special rule for diphthongs
+    if len(key) == 2 and (
+        IPA_SONORITY_CLASSES.get(key[0])
+        == IPA_SONORITY_CLASSES.get(key[1])
+        == SonorityClass.VOCOID
+    ):
+        return SonorityClass.VOCOID
 
     if key in AMBIGUOUS_SEGMENTS:
         raise ValueError(
