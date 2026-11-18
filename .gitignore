@@ -72,3 +72,5 @@ target/
 docs/source/_static/img/\.Rhistory
 
 examples/tutorial/\.ipynb_checkpoints/
+
+pyrightconfig.json
