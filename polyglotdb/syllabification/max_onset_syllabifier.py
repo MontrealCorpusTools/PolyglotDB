@@ -1,5 +1,7 @@
 from typing import LiteralString, cast
 
+from typing_extensions import override
+
 from polyglotdb.corpus.context import CorpusContext
 from polyglotdb.types import Phone, Syllabifier, Syllable, Word
 
@@ -48,6 +50,7 @@ class MaxOnsetSyllabifier(Syllabifier):
         onsets = set(corpus.find_onsets(syllabic_label=syllabic_label).keys())
         return cls(onsets, syllabics)
 
+    @override
     def syllabify(self, word: Word) -> list[Syllable]:
         word_tuple = tuple(word)
         syllabic_indices = [i for i, phone in enumerate(word) if phone in self.syllabics]
