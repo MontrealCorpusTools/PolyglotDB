@@ -40,25 +40,33 @@ class SonoritySyllabifier(Syllabifier):
                 "Sequences returned by to_syllabicity and to_sonority must have the same length as the word"
             )
 
+        # Sonority value adjusted to account for syllabicity
+        sonority_adjusted = [
+            s.value + 1 if syllabicity[i] else s.value for i, s in enumerate(sonority)
+        ]
+
         # Step 1: Assign NUCLEUS to syllabics
         constituents = [_Constituent.NUCLEUS if s else None for s in syllabicity]
 
         # Step 2: Adjoin lower sonority segments to the left
         for i in range(len(constituents) - 1, 0, -1):
-            if constituents[i] is _Constituent.NUCLEUS:
+            if constituents[i - 1] is _Constituent.NUCLEUS:
                 continue
             # Special CV rule (p. 300)
-            if constituents[i + 1] is _Constituent.NUCLEUS:
-                constituents[i] = _Constituent.ONSET
-            # Regular sonority rule
-            elif constituents[i + 1] is _Constituent.ONSET and sonority[i] < sonority[i + 1]:
-                constituents[i] = _Constituent.ONSET
-
-        # Step 3: Adjoin higher sonority segments to the right
-        for i in range(1, len(constituents)):
             if constituents[i] is _Constituent.NUCLEUS:
+                constituents[i - 1] = _Constituent.ONSET
+            # Regular sonority rule
+            elif (
+                constituents[i] is _Constituent.ONSET
+                and sonority_adjusted[i] > sonority_adjusted[i - 1]
+            ):
+                constituents[i - 1] = _Constituent.ONSET
+
+        # Step 3: Adjoin lower sonority segments to the right
+        for i in range(1, len(constituents)):
+            if constituents[i] is not None:
                 continue
-            if constituents[i - 1] is not None and sonority[i] < sonority[i - 1]:
+            if constituents[i - 1] is not None and sonority_adjusted[i] < sonority_adjusted[i - 1]:
                 constituents[i] = _Constituent.CODA
 
         # Create syllables list
