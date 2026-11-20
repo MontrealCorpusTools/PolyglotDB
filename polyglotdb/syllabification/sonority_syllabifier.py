@@ -26,7 +26,6 @@ class SonoritySyllabifier(Syllabifier):
         self.to_syllabicity = to_syllabicity
         self.to_sonority = to_sonority
 
-    # TODO: What happens when there are no syllabics?
     @override
     def syllabify(self, word: Word) -> list[Syllable]:
         if not word:
