@@ -23,6 +23,8 @@ value plus one.
 
 from enum import IntEnum
 
+from typing_extensions import override
+
 
 class SonorityClass(IntEnum):
     """Major sonority classes; each value is the class's nonsyllabic rank."""
@@ -31,6 +33,10 @@ class SonorityClass(IntEnum):
     NASAL = 1
     LIQUID = 2
     VOCOID = 3  # glides and vowels
+
+    @override
+    def __str__(self):
+        return self.name[0]
 
     @classmethod
     def from_letter(cls, letter: str):
