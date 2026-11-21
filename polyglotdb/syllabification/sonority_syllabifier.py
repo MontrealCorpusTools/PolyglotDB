@@ -15,7 +15,41 @@ class _Constituent(Enum):
 
 
 class SonoritySyllabifier(Syllabifier):
-    """Syllabify following the Core Syllabification Principle of Clements (1990)."""
+    """Syllabify words following the Core Syllabification Principle of Clements (1990).
+
+    The syllabifier works only with the syllabicity and sonority class of each phone,
+    both of which are supplied by the caller. Given a word, it:
+
+    1. makes each syllabic phone the nucleus of its own syllable;
+    2. extends each onset leftward from its nucleus, one phone at a time, as long as
+       each new phone is lower in sonority than the phone after it;
+    3. extends each coda rightward, one phone at a time, as long as each new phone
+       has not been syllabified yet and is lower in sonority than the phone before it.
+
+    A syllabic phone ranks one above its sonority class, so a vowel outranks a glide,
+    and a syllabic liquid ranks the same as a glide.
+
+    If `dispersion_limits` is given, a phone is adjoined in step 2 or 3 only if the
+    resulting demisyllable (onset + nucleus, or nucleus + coda) is within the limits
+    for its peak. Once a phone is rejected, the onset or coda stops growing.
+
+    Phones that cannot be adjoined, such as the first of two obstruents in a sonority
+    plateau (the [s] in [s k aɪ]), belong to no syllable: they fall in the gaps between
+    the spans of the returned syllables. A word without syllabic phones has no
+    syllables.
+
+    Parameters
+    ----------
+    to_syllabicity :
+        A callable object that returns, for each phone of a word, whether it is syllabic.
+        It receives the whole word so that syllabicity can depend on context.
+    to_sonority :
+        A callable object that returns the sonority class of each phone of a word.
+    dispersion_limits : Mapping[SonorityClass, PeakLimits], optional
+        Limits on permisseble onsets and codas following the dispersion principle.
+        Limits are specified per demisyllables type (i.e., unique combination of peak class
+        and position).
+    """
 
     to_syllabicity: Callable[[Word], Sequence[bool]]
     to_sonority: Callable[[Word], Sequence[SonorityClass]]
@@ -44,6 +78,20 @@ class SonoritySyllabifier(Syllabifier):
 
     @override
     def syllabify(self, word: Word) -> list[Syllable]:
+        """Divide a word into syllables.
+
+        Returns
+        -------
+        list[Syllable]
+            The syllables of the word, in order. Phones that belong to no syllable are
+            not covered by any syllable's span.
+
+        Raises
+        ------
+        ValueError
+            If `to_syllabicity` or `to_sonority` does not return one value per phone,
+            or if `dispersion_limits` has no entry for a peak class in the word.
+        """
         if not word:
             return []
 
@@ -130,3 +178,8 @@ class SonoritySyllabifier(Syllabifier):
                 cur_syllable_onset_end = i + 1
 
         return syllables
+
+
+# if __name__ == "__main__":
+#     import doctest
+#     doctest.testmod()
