@@ -51,7 +51,7 @@ class SonoritySyllabifier(Syllabifier):
         for i in range(len(constituents) - 1, 0, -1):
             if constituents[i - 1] is _Constituent.NUCLEUS:
                 continue
-            # Special CV rule (p. 300)
+            # First onset special rule (p. 300)
             if constituents[i] is _Constituent.NUCLEUS:
                 constituents[i - 1] = _Constituent.ONSET
             # Regular sonority rule
