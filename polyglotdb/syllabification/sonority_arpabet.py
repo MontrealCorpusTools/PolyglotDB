@@ -142,6 +142,8 @@ def get_sonority_class(
         return sonority_ipa.get_sonority_class(ipa)
     except ValueError as e:
         raise ValueError(
-            f"ARPABET symbol {symbol!r} (IPA {ipa!r}) has no default sonority class; "
-            "provide one through `overrides`"
+            (
+                f"ARPABET symbol {symbol!r} (IPA {ipa!r}) has no default sonority class; "
+                "provide one through `overrides`"
+            )
         ) from e
