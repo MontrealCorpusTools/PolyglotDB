@@ -6,16 +6,9 @@ from polyglotdb.syllabification.sonority import SonorityClass
 from polyglotdb.syllabification.sonority_syllabifier import SonoritySyllabifier
 from polyglotdb.types import Syllable, Word
 
-_SONORITY_CLASSES = {
-    "O": SonorityClass.OBSTRUENT,
-    "N": SonorityClass.NASAL,
-    "L": SonorityClass.LIQUID,
-    "V": SonorityClass.VOCOID,
-}
-
 
 def _to_sonority(word: Word) -> Sequence[SonorityClass]:
-    return [_SONORITY_CLASSES[phone] for phone in word]
+    return [SonorityClass.from_letter(phone) for phone in word]
 
 
 def _to_syllabicity(word: Word) -> Sequence[bool]:

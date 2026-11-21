@@ -31,3 +31,11 @@ class SonorityClass(IntEnum):
     NASAL = 1
     LIQUID = 2
     VOCOID = 3  # glides and vowels
+
+    @classmethod
+    def from_letter(cls, letter: str):
+        """Construct a `SonorityClass` from O, N, L, V."""
+        for member in cls:
+            if member.name[0].lower() == letter.lower():
+                return member
+        raise ValueError(f"No sonority class for letter: {letter}")
