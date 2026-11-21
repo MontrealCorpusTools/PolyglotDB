@@ -29,6 +29,7 @@ they are all ranked once, in `COMPLEXITY`.
 
 from collections import defaultdict
 from collections.abc import Iterator, Mapping
+from dataclasses import dataclass
 from enum import Enum, auto
 from fractions import Fraction
 from itertools import combinations
@@ -87,7 +88,7 @@ class Demisyllable(NamedTuple):
     @override
     def __str__(self) -> str:
         peak = "V" if self.peak is SonorityClass.VOCOID else str(self.peak) + "̩"
-        margin = "".join(str(cls) for cls in self.margin)
+        margin = "".join("G" if cls is SonorityClass.VOCOID else str(cls) for cls in self.margin)
         if self.position is Position.INITIAL:
             return margin + peak
         return peak + margin
@@ -152,3 +153,63 @@ def _rank_core_demisyllables() -> dict[Demisyllable, int]:
 
 COMPLEXITY: Mapping[Demisyllable, int] = _rank_core_demisyllables()
 """Complexity rank of every core demisyllable."""
+
+
+@dataclass(frozen=True)
+class DemisyllableLimits:
+    """Language-specific limits on one type of demisyllable (ex. 34 iii and iv).
+
+    A type is a position combined with a peak class. `max_length` is the maximal
+    length of the type, counting the peak. `max_complexity[i]` is the maximal
+    complexity rank of the type's demisyllables of length ``i + 2``, so it has
+    ``max_length - 1`` entries.
+
+    Since demisyllables of length 1 belong to the cohort of length 2, `max_length`
+    should be set to 2 even if a language only permits length 1 for some
+    demisyllable type, e.g., if a language prohibits VC. The restriction should
+    instead be specified by setting `max_complexity` to (0,).
+
+    Raises
+    ------
+    ValueError
+        If `max_length` is less than 2, or `max_complexity` does not have
+        ``max_length - 1`` entries.
+    """
+
+    max_length: int
+    max_complexity: tuple[int, ...]
+
+    def __post_init__(self):
+        if self.max_length < 2:
+            raise ValueError(
+                (
+                    "max_length must be at least 2. To restrict length to 1 (for a final "
+                    "demisyllable), set max_complexity to (0,)."
+                )
+            )
+        if len(self.max_complexity) != self.max_length - 1:
+            raise ValueError(
+                (
+                    f"max_complexity must have max_length - 1 = {self.max_length - 1} entries, "
+                    f"got {len(self.max_complexity)}"
+                )
+            )
+
+    def permits(self, demisyllable: Demisyllable) -> bool:
+        """Return whether a demisyllable of this type falls within the limits."""
+        if demisyllable.length > self.max_length:
+            return False
+        complexity = COMPLEXITY.get(demisyllable)
+        if complexity is None:
+            raise ValueError(f"Demisyllable {demisyllable} is not a core demisyllable")
+        # cohort_length is max(2, demisyllable.length)
+        cohort_length = demisyllable.cohort.length
+        return complexity <= self.max_complexity[cohort_length - 2]
+
+
+@dataclass(frozen=True)
+class PeakLimits:
+    """Limits on the initial and final demisyllables with one kind of peak."""
+
+    initial: DemisyllableLimits
+    final: DemisyllableLimits

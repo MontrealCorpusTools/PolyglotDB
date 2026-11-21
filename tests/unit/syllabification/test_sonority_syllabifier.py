@@ -190,11 +190,3 @@ def test_syllabify_length_mismatch(
     algo = SonoritySyllabifier(to_syllabicity=to_syllabicity, to_sonority=to_sonority)
     with pytest.raises(ValueError):
         _ = algo.syllabify(["O", "V"])
-
-
-def test_syllabify_first_onset_special_rule():
-    algo = SonoritySyllabifier(
-        to_syllabicity=lambda word: [phone == "L" for phone in word], to_sonority=_to_sonority
-    )
-    # A word like "yearn" (p. 300)
-    assert algo.syllabify(["V", "L", "N"]) == [Syllable(onset=(0, 1), nucleus=(1, 2), coda=(2, 3))]

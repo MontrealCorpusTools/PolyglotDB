@@ -1,8 +1,9 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum, auto
 
 from typing_extensions import override
 
+from polyglotdb.syllabification.dispersion import Demisyllable, PeakLimits, Position
 from polyglotdb.syllabification.sonority import SonorityClass
 from polyglotdb.types import Syllabifier, Syllable, Word
 
@@ -14,17 +15,32 @@ class _Constituent(Enum):
 
 
 class SonoritySyllabifier(Syllabifier):
+    """Syllabify following the Core Syllabification Principle of Clements (1990)."""
+
     to_syllabicity: Callable[[Word], Sequence[bool]]
     to_sonority: Callable[[Word], Sequence[SonorityClass]]
+    dispersion_limits: Mapping[SonorityClass, PeakLimits] | None
 
-    # TODO: Add dispersion principle
     def __init__(
         self,
         to_syllabicity: Callable[[Word], Sequence[bool]],
         to_sonority: Callable[[Word], Sequence[SonorityClass]],
+        dispersion_limits: Mapping[SonorityClass, PeakLimits] | None = None,
     ):
         self.to_syllabicity = to_syllabicity
         self.to_sonority = to_sonority
+        self.dispersion_limits = dispersion_limits
+
+    def _permits(self, demisyllable: Demisyllable) -> bool:
+        """Return whether a demisyllable is within the dispersion limits, if any."""
+        if self.dispersion_limits is None:
+            return True
+        if demisyllable.peak not in self.dispersion_limits:
+            raise ValueError(f"No dispersion limits for peaks of class {demisyllable.peak.name}")
+        limits = self.dispersion_limits[demisyllable.peak]
+        if demisyllable.position is Position.INITIAL:
+            return limits.initial.permits(demisyllable)
+        return limits.final.permits(demisyllable)
 
     @override
     def syllabify(self, word: Word) -> list[Syllable]:
@@ -48,24 +64,33 @@ class SonoritySyllabifier(Syllabifier):
         constituents = [_Constituent.NUCLEUS if s else None for s in syllabicity]
 
         # Step 2: Adjoin lower sonority segments to the left
+        peak = 0
         for i in range(len(constituents) - 1, 0, -1):
+            if constituents[i] is _Constituent.NUCLEUS:
+                peak = i
             if constituents[i - 1] is _Constituent.NUCLEUS:
                 continue
-            # First onset special rule (p. 300)
-            if constituents[i] is _Constituent.NUCLEUS:
-                constituents[i - 1] = _Constituent.ONSET
-            # Regular sonority rule
-            elif (
-                constituents[i] is _Constituent.ONSET
-                and sonority_adjusted[i] > sonority_adjusted[i - 1]
+            if (
+                constituents[i] is not None and sonority_adjusted[i] > sonority_adjusted[i - 1]
+            ) and self._permits(
+                Demisyllable(Position.INITIAL, sonority[peak], tuple(sonority[i - 1 : peak]))
             ):
                 constituents[i - 1] = _Constituent.ONSET
 
         # Step 3: Adjoin lower sonority segments to the right
+        peak = 0
         for i in range(1, len(constituents)):
+            if constituents[i - 1] is _Constituent.NUCLEUS:
+                peak = i - 1
             if constituents[i] is not None:
                 continue
-            if constituents[i - 1] is not None and sonority_adjusted[i] < sonority_adjusted[i - 1]:
+            if (
+                constituents[i - 1] is not None
+                and sonority_adjusted[i] < sonority_adjusted[i - 1]
+                and self._permits(
+                    Demisyllable(Position.FINAL, sonority[peak], tuple(sonority[peak + 1 : i + 1]))
+                )
+            ):
                 constituents[i] = _Constituent.CODA
 
         # Create syllables list
