@@ -178,8 +178,3 @@ class SonoritySyllabifier(Syllabifier):
                 cur_syllable_onset_end = i + 1
 
         return syllables
-
-
-# if __name__ == "__main__":
-#     import doctest
-#     doctest.testmod()

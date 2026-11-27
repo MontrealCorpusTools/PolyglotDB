@@ -79,7 +79,7 @@ class Demisyllable(NamedTuple):
     @property
     def ranks(self) -> tuple[int, ...]:
         """Sonority rank of each segment, in word order."""
-        margin = tuple(int(cls) for cls in self.margin)
+        margin = tuple(int(sonority_class) for sonority_class in self.margin)
         peak = int(self.peak) + 1
         if self.position is Position.INITIAL:
             return (*margin, peak)
@@ -88,7 +88,10 @@ class Demisyllable(NamedTuple):
     @override
     def __str__(self) -> str:
         peak = "V" if self.peak is SonorityClass.VOCOID else str(self.peak) + "̩"
-        margin = "".join("G" if cls is SonorityClass.VOCOID else str(cls) for cls in self.margin)
+        margin = "".join(
+            "G" if sonority_class is SonorityClass.VOCOID else str(sonority_class)
+            for sonority_class in self.margin
+        )
         if self.position is Position.INITIAL:
             return margin + peak
         return peak + margin
@@ -119,7 +122,7 @@ def _core_demisyllables() -> Iterator[Demisyllable]:
     """Yield every core demisyllable, for every position and peak class."""
     for peak in SonorityClass:
         # Nonsyllabic classes ranking lower than the syllabic peak
-        below = [cls for cls in SonorityClass if cls <= peak]
+        below = [sonority_class for sonority_class in SonorityClass if sonority_class <= peak]
         for length in range(len(below) + 1):
             for margin in combinations(below, length):
                 yield Demisyllable(Position.INITIAL, peak, margin)
