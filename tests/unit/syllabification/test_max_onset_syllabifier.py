@@ -135,4 +135,4 @@ def test_syllabify_simple(algo: MaxOnsetSyllabifier, word: Word, expected: list[
 )
 def test_syllabify_impermissible_onset(algo: MaxOnsetSyllabifier, word: Word):
     with pytest.raises(ValueError):
-        algo.syllabify(word)
+        _ = algo.syllabify(word)
