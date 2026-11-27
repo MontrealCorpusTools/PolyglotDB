@@ -128,11 +128,9 @@ def get_sonority_class(
     if key in IPA_SONORITY_CLASSES:
         return IPA_SONORITY_CLASSES[key]
 
-    # Special rule for diphthongs
-    if len(key) == 2 and (
-        IPA_SONORITY_CLASSES.get(key[0])
-        == IPA_SONORITY_CLASSES.get(key[1])
-        == SonorityClass.VOCOID
+    # Special rule for diphthongs, triphthongs, etc.
+    if len(key) >= 2 and all(
+        IPA_SONORITY_CLASSES.get(part) == SonorityClass.VOCOID for part in key
     ):
         return SonorityClass.VOCOID
 
