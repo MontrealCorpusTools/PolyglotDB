@@ -10,7 +10,7 @@ class MaxOnsetSyllabifier(Syllabifier):
     """Syllabify by matching against a set of onsets, choosing the longest match.
 
     The algorithm is initialized with a set of permissible onsets and a set of syllabic
-    segments. Upon calling `syllabify()` given a word, for each list of segments between
+    segments. Upon calling `syllabify` given a word, for each list of segments between
     two syllabic segments, the algorithm tries to find the longest suffix that is a
     permissible onset. All remaining segments before the suffix are syllabified as
     a coda.
@@ -35,9 +35,9 @@ class MaxOnsetSyllabifier(Syllabifier):
     def from_corpus(cls, corpus: CorpusContext, syllabic_label: str = "syllabic"):
         """Initialize the algorithm by finding onsets and syllabics from the corpus.
 
-        Specifically, onsets are found using `CorpusContext.find_onsets()`.
+        Specifically, onsets are found using `CorpusContext.find_onsets`.
         Syllabics are initialized to the segments previously designated as
-        syllabics using `CorpusContext.encode_syllabic_segments()`.
+        syllabics using `CorpusContext.encode_syllabic_segments`.
         Alternative syllabic labels can be specified through the `syllabic_label` argument.
         """
         query = cast(
